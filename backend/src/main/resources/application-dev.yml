@@ -1,0 +1,165 @@
+# YCS LMS Development Configuration
+spring:
+  profiles:
+    active: dev
+  
+  # Database Configuration
+  datasource:
+    url: jdbc:h2:mem:ycs_lms_dev;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password: 
+    driver-class-name: org.h2.Driver
+    
+  # H2 Console for development
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      
+  # JPA Configuration  
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
+        
+  # Redis Configuration (embedded for dev)
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+          
+  # Mail Configuration (mock for dev)
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${SMTP_USER:test@gmail.com}
+    password: ${SMTP_PASS:testpassword}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+# Server Configuration
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+    
+# Logging Configuration
+logging:
+  level:
+    com.ycs.lms: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.web: INFO
+    org.mybatis: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Application Configuration
+app:
+  jwt:
+    secret: ${JWT_SECRET:ycs-lms-dev-secret-key-2024-super-secure-token}
+    expiration: 86400000 # 24 hours
+    refresh-expiration: 604800000 # 7 days
+    
+  cors:
+    allowed-origins:
+      - http://localhost:3000
+      - http://localhost:5173
+      - http://127.0.0.1:3000
+      - http://127.0.0.1:5173
+    allowed-methods:
+      - GET
+      - POST  
+      - PUT
+      - DELETE
+      - OPTIONS
+    allowed-headers:
+      - "*"
+    allow-credentials: true
+    
+  security:
+    bcrypt-strength: 10
+    password-policy:
+      min-length: 6
+      require-uppercase: false
+      require-lowercase: false
+      require-numbers: false
+      require-special-chars: false
+      
+  business-rules:
+    cbm-threshold: 29.0
+    high-value-threshold-thb: 1500.0
+    member-code-grace-period-days: 30
+    
+  external-apis:
+    ems:
+      url: ${EMS_API_URL:https://api.test.com/ems}
+      key: ${EMS_API_KEY:test-key}
+      timeout: 10000
+      fallback-enabled: true
+    hs-code:
+      url: ${HS_API_URL:https://api.test.com/hs}
+      key: ${HS_API_KEY:test-key}
+      timeout: 10000
+      fallback-enabled: true
+    exchange-rate:
+      url: ${EXCHANGE_API_URL:https://api.exchangerate-api.com/v4/latest/THB}
+      timeout: 5000
+      
+  file-storage:
+    type: local
+    base-path: ${java.io.tmpdir}/ycs-lms-uploads
+    max-file-size: 10MB
+    allowed-types:
+      - image/jpeg
+      - image/png  
+      - image/gif
+      - application/pdf
+      
+  notification:
+    email-enabled: false
+    sms-enabled: false
+    
+# MyBatis Configuration
+mybatis:
+  mapper-locations: classpath:mappers/*.xml
+  type-aliases-package: com.ycs.lms.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: true
+    lazy-loading-enabled: true
+    multiple-result-sets-enabled: true
+    use-column-label: true
+    use-generated-keys: true
+    default-executor-type: reuse
+    default-statement-timeout: 25000
+
+# Management Endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env
+  endpoint:
+    health:
+      show-details: always
+      
+# Development Features
+debug: true
+
+# Initialization
+spring.sql.init.mode: always
+spring.sql.init.data-locations: classpath:data-dev.sql

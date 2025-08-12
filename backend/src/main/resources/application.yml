@@ -1,0 +1,145 @@
+spring:
+  application:
+    name: ycs-lms
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+    
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/ycs_lms?useSSL=false&serverTimezone=Asia/Bangkok&characterEncoding=UTF-8}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    timeout: 10000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+        
+  kafka:
+    bootstrap-servers: ${KAFKA_BROKERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: ycs-lms-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.ycs.lms.dto"
+        
+  mail:
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USER:}
+    password: ${SMTP_PASS:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          timeout: 5000
+          connectiontimeout: 5000
+          
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+    
+mybatis:
+  mapper-locations: classpath:mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    default-fetch-size: 100
+    default-statement-timeout: 30
+    
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /api
+    
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+      
+logging:
+  level:
+    root: INFO
+    com.ycs.lms: DEBUG
+    org.springframework.web: DEBUG
+    org.mybatis: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/ycs-lms.log
+    
+# Application specific properties
+app:
+  jwt:
+    secret: ${JWT_SECRET:ycs-lms-secret-key-for-jwt-token-generation-2024}
+    expiration: 3600000 # 1 hour
+    refresh-expiration: 604800000 # 7 days
+    
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:3000,http://localhost:5173}
+    allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+    allowed-headers: "*"
+    allow-credentials: true
+    
+  file:
+    upload-dir: ${FILE_UPLOAD_DIR:./uploads}
+    max-size: 10485760 # 10MB
+    allowed-extensions: jpg,jpeg,png,pdf,doc,docx,xls,xlsx
+    
+  external-api:
+    ems:
+      url: ${EMS_API_URL:}
+      key: ${EMS_API_KEY:}
+      timeout: 30000
+    hs-code:
+      url: ${HS_API_URL:}
+      key: ${HS_API_KEY:}
+      timeout: 30000
+    exchange-rate:
+      url: ${EXCHANGE_RATE_API_URL:}
+      key: ${EXCHANGE_RATE_API_KEY:}
+      timeout: 10000
+      
+  business-rules:
+    cbm-threshold: 29.0
+    thb-amount-threshold: 1500.0
+    auto-air-conversion: true
+    require-member-code: true
+    enterprise-approval-days: 2
+    partner-approval-days: 2
+    
+  recaptcha:
+    site-key: ${RECAPTCHA_SITE_KEY:}
+    secret-key: ${RECAPTCHA_SECRET_KEY:}
+    verify-url: https://www.google.com/recaptcha/api/siteverify

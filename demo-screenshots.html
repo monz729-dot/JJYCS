@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YCS LMS Demo Screenshots</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 2rem;
+            background: #f8fafc;
+        }
+        
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .demo-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .demo-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin: 0 0 0.5rem 0;
+        }
+        
+        .demo-subtitle {
+            font-size: 1.25rem;
+            color: #6b7280;
+            margin: 0;
+        }
+        
+        .demo-section {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0 0 1rem 0;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 0.5rem;
+        }
+        
+        .mockup {
+            border: 2px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            background: #fafafa;
+            font-family: monospace;
+            font-size: 0.875rem;
+            line-height: 1.4;
+        }
+        
+        .mockup-browser {
+            border: 2px solid #d1d5db;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            margin: 1rem 0;
+            background: white;
+        }
+        
+        .browser-header {
+            background: #f3f4f6;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #d1d5db;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        
+        .browser-content {
+            padding: 1.5rem;
+        }
+        
+        .form-mockup {
+            display: grid;
+            gap: 1rem;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .form-label {
+            font-weight: 500;
+            color: #374151;
+            font-size: 0.875rem;
+        }
+        
+        .form-input {
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            background: white;
+        }
+        
+        .form-input.focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.875rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+        
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-approved {
+            background: #d1fae5;
+            color: #047857;
+        }
+        
+        .status-rejected {
+            background: #fecaca;
+            color: #b91c1c;
+        }
+        
+        .user-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            background: white;
+        }
+        
+        .user-card.pending {
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .user-card.approved {
+            border-left: 4px solid #10b981;
+        }
+        
+        .user-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .user-name {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0;
+        }
+        
+        .user-email {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin: 0.25rem 0;
+        }
+        
+        .role-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border-radius: 9999px;
+            text-transform: uppercase;
+        }
+        
+        .role-enterprise {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .role-partner {
+            background: #f3e8ff;
+            color: #7c3aed;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+            margin-top: 1rem;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+        }
+        
+        .alert-info {
+            background: #dbeafe;
+            border: 1px solid #bfdbfe;
+            color: #1e40af;
+        }
+        
+        .alert-success {
+            background: #d1fae5;
+            border: 1px solid #a7f3d0;
+            color: #065f46;
+        }
+        
+        .alert-warning {
+            background: #fef3c7;
+            border: 1px solid #fde68a;
+            color: #92400e;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1 class="demo-title">YCS LMS 화면 데모</h1>
+            <p class="demo-subtitle">회원가입-어드민 승인 연동 시스템 미리보기</p>
+        </div>
+
+        <!-- 회원가입 화면 -->
+        <div class="demo-section">
+            <h2 class="section-title">1. 기업 회원가입 화면</h2>
+            <p>URL: <code>http://localhost:5173/register</code></p>
+            
+            <div class="mockup-browser">
+                <div class="browser-header">
+                    🌐 localhost:5173/register - YCS LMS 회원가입
+                </div>
+                <div class="browser-content">
+                    <h3 style="text-align: center; margin-bottom: 2rem;">YCS LMS 회원가입</h3>
+                    
+                    <div style="margin-bottom: 2rem;">
+                        <h4>계정 유형 선택</h4>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+                            <div style="border: 2px solid #e5e7eb; padding: 1rem; border-radius: 0.5rem;">
+                                <input type="radio" name="role" id="individual" />
+                                <label for="individual"><strong>개인</strong><br/>
+                                <small>개인 사용자 (즉시 승인)</small></label>
+                            </div>
+                            <div style="border: 2px solid #3b82f6; background: #dbeafe; padding: 1rem; border-radius: 0.5rem;">
+                                <input type="radio" name="role" id="enterprise" checked />
+                                <label for="enterprise"><strong>기업</strong><br/>
+                                <small>기업 회원 (승인 필요)</small></label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-mockup">
+                        <div class="form-group">
+                            <label class="form-label">이메일 *</label>
+                            <input class="form-input" type="email" value="kim.enterprise@company.com" />
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">회사명 *</label>
+                            <input class="form-input focus" type="text" value="(주)글로벌무역" />
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">사업자등록번호 *</label>
+                            <input class="form-input" type="text" value="123-45-67890" />
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">회사 주소</label>
+                            <input class="form-input" type="text" value="서울시 강남구 테헤란로 123" />
+                        </div>
+                        
+                        <button class="btn btn-primary" style="margin-top: 1rem;">
+                            📝 회원가입 신청
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="alert alert-info">
+                <strong>💡 가입 완료 메시지:</strong><br/>
+                "기업 회원가입 신청이 완료되었습니다. 평일 1~2일 내에 승인 결과를 안내드리겠습니다."
+            </div>
+        </div>
+
+        <!-- 어드민 승인 화면 -->
+        <div class="demo-section">
+            <h2 class="section-title">2. 어드민 승인 관리 화면</h2>
+            <p>URL: <code>http://localhost:5173/admin/user-approval</code></p>
+            
+            <div class="mockup-browser">
+                <div class="browser-header">
+                    🌐 localhost:5173/admin/user-approval - 사용자 승인 관리
+                </div>
+                <div class="browser-content">
+                    <h3 style="margin-bottom: 2rem;">사용자 승인 관리</h3>
+                    
+                    <!-- 통계 카드 -->
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem;">
+                        <div style="background: #fef3c7; padding: 1rem; border-radius: 0.5rem; text-align: center;">
+                            <div style="font-size: 2rem; font-weight: 700; color: #92400e;">3</div>
+                            <div style="color: #92400e; font-size: 0.875rem;">승인 대기</div>
+                        </div>
+                        <div style="background: #d1fae5; padding: 1rem; border-radius: 0.5rem; text-align: center;">
+                            <div style="font-size: 2rem; font-weight: 700; color: #047857;">10</div>
+                            <div style="color: #047857; font-size: 0.875rem;">승인 완료</div>
+                        </div>
+                        <div style="background: #fecaca; padding: 1rem; border-radius: 0.5rem; text-align: center;">
+                            <div style="font-size: 2rem; font-weight: 700; color: #b91c1c;">2</div>
+                            <div style="color: #b91c1c; font-size: 0.875rem;">승인 거절</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 사용자 카드 -->
+                    <div class="user-card pending">
+                        <div class="user-header">
+                            <div>
+                                <h4 class="user-name">김기업</h4>
+                                <div class="user-email">kim.enterprise@company.com</div>
+                                <span class="role-badge role-enterprise">ENTERPRISE</span>
+                            </div>
+                            <div style="text-align: right;">
+                                <span class="status-badge status-pending">⏱️ 승인 대기</span>
+                                <div style="font-size: 0.75rem; color: #9ca3af; margin-top: 0.25rem;">
+                                    2025.8.12 10:30
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1rem;">
+                            <div>
+                                <strong>회사명:</strong> (주)글로벌무역
+                            </div>
+                            <div>
+                                <strong>사업자번호:</strong> 123-45-67890
+                            </div>
+                            <div style="grid-column: 1 / -1;">
+                                <strong>주소:</strong> 서울시 강남구 테헤란로 123
+                            </div>
+                        </div>
+                        
+                        <div class="action-buttons">
+                            <button class="btn btn-danger">
+                                ❌ 거절
+                            </button>
+                            <button class="btn btn-success">
+                                ✅ 승인
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 승인 완료된 사용자 -->
+                    <div class="user-card approved">
+                        <div class="user-header">
+                            <div>
+                                <h4 class="user-name">최창고</h4>
+                                <div class="user-email">choi.warehouse@logistics.com</div>
+                                <span class="role-badge role-partner">WAREHOUSE</span>
+                            </div>
+                            <div style="text-align: right;">
+                                <span class="status-badge status-approved">✅ 승인 완료</span>
+                                <div style="font-size: 0.75rem; color: #9ca3af; margin-top: 0.25rem;">
+                                    admin@ycs.com<br/>
+                                    2025.8.12 08:30
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 승인 처리 과정 -->
+        <div class="demo-section">
+            <h2 class="section-title">3. 승인 처리 과정 시뮬레이션</h2>
+            
+            <div class="mockup">
+👨‍💼 [어드민 액션] "김기업" 승인 버튼 클릭
+⏳ 처리 중... (1.5초 로딩)
+
+✅ 승인 완료!
+📧 알림 이메일 발송:
+   To: kim.enterprise@company.com
+   Subject: YCS LMS 가입 승인 완료
+   
+   안녕하세요 김기업님,
+   YCS LMS 기업 회원 가입이 승인되었습니다.
+   이제 로그인하여 서비스를 이용하실 수 있습니다.
+   
+   승인 완료일: 2025년 8월 12일
+   처리 담당자: admin@ycs.com
+
+🎉 사용자 상태 업데이트: pending → approved
+            </div>
+        </div>
+
+        <!-- 로그인 제어 -->
+        <div class="demo-section">
+            <h2 class="section-title">4. 로그인 상태별 제어</h2>
+            
+            <h4>승인 대기 중 로그인 시도:</h4>
+            <div class="alert alert-warning">
+                <strong>⏱️ 승인 대기 중</strong><br/>
+                계정 승인 대기 중입니다. 평일 1~2일 내에 승인 결과를 안내드리겠습니다.
+            </div>
+            
+            <h4>승인 완료 후 로그인:</h4>
+            <div class="alert alert-success">
+                <strong>🎉 로그인 성공!</strong><br/>
+                YCS LMS에 오신 것을 환영합니다.
+            </div>
+        </div>
+
+        <!-- 접속 방법 -->
+        <div class="demo-section">
+            <h2 class="section-title">5. 실제 테스트 방법</h2>
+            
+            <div style="background: #f8fafc; padding: 1.5rem; border-radius: 0.5rem; border: 1px solid #e5e7eb;">
+                <h4 style="margin-top: 0;">🌐 브라우저에서 직접 테스트:</h4>
+                
+                <ol>
+                    <li><strong>메인 화면 접속:</strong> <code>http://localhost:5173</code></li>
+                    <li><strong>회원가입:</strong> "회원가입" 버튼 → 기업 선택 → 정보 입력</li>
+                    <li><strong>승인 대기 확인:</strong> 가입 완료 후 메시지 확인</li>
+                    <li><strong>어드민 접속:</strong> <code>http://localhost:5173/admin/user-approval</code></li>
+                    <li><strong>승인 처리:</strong> 사용자 카드에서 승인/거절 버튼 클릭</li>
+                    <li><strong>로그인 테스트:</strong> 승인 후 로그인 가능 여부 확인</li>
+                </ol>
+                
+                <div style="margin-top: 1rem; padding: 1rem; background: #e0f2fe; border-radius: 0.375rem;">
+                    <strong>💡 개발 서버 실행 중:</strong><br/>
+                    Frontend: http://localhost:5173 ✅<br/>
+                    Backend: http://localhost:8080 ✅<br/>
+                    Database: Mock MySQL ✅
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
