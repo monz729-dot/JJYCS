@@ -1,288 +1,200 @@
 import { defineStore } from 'pinia'
-import { ref, computed, readonly } from 'vue'
-import { authApi } from '@/services/authApi'
-import type { User, LoginRequest, RegisterRequest, AuthResponse } from '@/types/auth'
+import { ref, computed } from 'vue'
+import { AuthService } from '@/services/authService'
+import type { UserProfile, SignUpData, LoginData } from '@/lib/supabase'
 
 export const useAuthStore = defineStore('auth', () => {
-  // State
-  const user = ref<User | null>(null)
-  const token = ref<string | null>(localStorage.getItem('auth_token'))
-  const isInitialized = ref(false)
-  const isLoading = ref(false)
+  // 상태
+  const user = ref<UserProfile | null>(null)
+  const loading = ref(false)
   const error = ref<string | null>(null)
 
-  // Getters
-  const isAuthenticated = computed(() => !!user.value && !!token.value)
-  const userRole = computed(() => user.value?.role || null)
-  const userStatus = computed(() => user.value?.status || null)
-  const isPending = computed(() => userStatus.value === 'pending_approval')
-  const isActive = computed(() => userStatus.value === 'active')
-  const isSuspended = computed(() => userStatus.value === 'suspended')
-  const canCreateOrder = computed(() => 
-    isActive.value && ['individual', 'enterprise'].includes(userRole.value || '')
-  )
+  // 계산된 속성
+  const isAuthenticated = computed(() => !!user.value)
+  const isAdmin = computed(() => user.value?.user_type === 'admin')
+  const isApproved = computed(() => user.value?.approval_status === 'approved')
+  const isPending = computed(() => user.value?.approval_status === 'pending')
+  const isRejected = computed(() => user.value?.approval_status === 'rejected')
+  const userType = computed(() => user.value?.user_type)
 
-  // Actions
-  const initialize = async () => {
-    if (isInitialized.value) return
-
-    try {
-      if (token.value) {
-        await getCurrentUser()
-      }
-    } catch (error) {
-      console.error('Failed to initialize auth:', error)
-      await logout()
-    } finally {
-      isInitialized.value = true
-    }
-  }
-
-  const login = async (credentials: LoginRequest): Promise<AuthResponse> => {
-    isLoading.value = true
+  // 액션
+  const signUp = async (data: SignUpData) => {
+    loading.value = true
     error.value = null
-
-    try {
-      const response = await authApi.login(credentials)
-      
-      if (response.success && response.data) {
-        token.value = response.data.token
-        user.value = response.data.user
-        
-        localStorage.setItem('auth_token', response.data.token)
-        localStorage.setItem('current_user_id', response.data.user.id)
-        
-        // Setup axios default header
-        setAuthHeader(response.data.token)
-      }
-
-      return response
-    } catch (err: any) {
-      error.value = err.message || 'Login failed'
-      throw err
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  const register = async (userData: RegisterRequest): Promise<AuthResponse> => {
-    isLoading.value = true
-    error.value = null
-
-    try {
-      const response = await authApi.register(userData)
-      
-      if (response.success && response.data) {
-        token.value = response.data.token
-        user.value = response.data.user
-        
-        localStorage.setItem('auth_token', response.data.token)
-        localStorage.setItem('current_user_id', response.data.user.id)
-        setAuthHeader(response.data.token)
-      }
-
-      return response
-    } catch (err: any) {
-      error.value = err.message || 'Registration failed'
-      throw err
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  const logout = async () => {
-    isLoading.value = true
     
     try {
-      if (token.value) {
-        await authApi.logout()
-      }
-    } catch (error) {
-      console.error('Logout API error:', error)
-    } finally {
-      // Clear state regardless of API success
-      user.value = null
-      token.value = null
-      error.value = null
+      const result = await AuthService.signUp(data)
       
-      localStorage.removeItem('auth_token')
-      localStorage.removeItem('current_user_id')
-      removeAuthHeader()
-      
-      isLoading.value = false
-    }
-  }
-
-  const getCurrentUser = async () => {
-    if (!token.value) throw new Error('No token available')
-
-    try {
-      const response = await authApi.getCurrentUser()
-      
-      if (response.success && response.data) {
-        user.value = response.data
+      if (result.success) {
+        // 회원가입 성공 시 이메일 인증 안내
+        return { success: true, message: '회원가입이 완료되었습니다. 이메일을 확인하여 인증을 완료해주세요.' }
       } else {
-        throw new Error('Failed to get current user')
+        error.value = result.error || '회원가입에 실패했습니다.'
+        return { success: false, error: error.value }
       }
-    } catch (error) {
-      console.error('Get current user error:', error)
-      throw error
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '회원가입 중 오류가 발생했습니다.'
+      return { success: false, error: error.value }
+    } finally {
+      loading.value = false
     }
   }
 
-  const updateProfile = async (profileData: Partial<User>) => {
-    isLoading.value = true
+  const signIn = async (data: LoginData) => {
+    loading.value = true
     error.value = null
-
+    
     try {
-      const response = await authApi.updateProfile(profileData)
+      const result = await AuthService.signIn(data)
       
-      if (response.success && response.data) {
-        user.value = { ...user.value, ...response.data }
+      if (result.success) {
+        await fetchUserProfile()
+        return { success: true }
+      } else {
+        error.value = result.error || '로그인에 실패했습니다.'
+        return { success: false, error: error.value }
       }
-
-      return response
-    } catch (err: any) {
-      error.value = err.message || 'Profile update failed'
-      throw err
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '로그인 중 오류가 발생했습니다.'
+      return { success: false, error: error.value }
     } finally {
-      isLoading.value = false
+      loading.value = false
     }
   }
 
-  const changePassword = async (currentPassword: string, newPassword: string) => {
-    isLoading.value = true
+  const signOut = async () => {
+    loading.value = true
     error.value = null
-
+    
     try {
-      const response = await authApi.changePassword(currentPassword, newPassword)
-      return response
-    } catch (err: any) {
-      error.value = err.message || 'Password change failed'
-      throw err
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  const requestPasswordReset = async (email: string) => {
-    isLoading.value = true
-    error.value = null
-
-    try {
-      const response = await authApi.requestPasswordReset(email)
-      return response
-    } catch (err: any) {
-      error.value = err.message || 'Password reset request failed'
-      throw err
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  const resetPassword = async (token: string, newPassword: string) => {
-    isLoading.value = true
-    error.value = null
-
-    try {
-      const response = await authApi.resetPassword(token, newPassword)
-      return response
-    } catch (err: any) {
-      error.value = err.message || 'Password reset failed'
-      throw err
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  const verifyEmail = async (token: string) => {
-    isLoading.value = true
-    error.value = null
-
-    try {
-      const response = await authApi.verifyEmail(token)
+      const result = await AuthService.signOut()
       
-      if (response.success && user.value) {
-        user.value.emailVerified = true
+      if (result.success) {
+        user.value = null
+        return { success: true }
+      } else {
+        error.value = result.error || '로그아웃에 실패했습니다.'
+        return { success: false, error: error.value }
       }
-
-      return response
-    } catch (err: any) {
-      error.value = err.message || 'Email verification failed'
-      throw err
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '로그아웃 중 오류가 발생했습니다.'
+      return { success: false, error: error.value }
     } finally {
-      isLoading.value = false
+      loading.value = false
     }
   }
 
-  const enable2FA = async () => {
-    isLoading.value = true
-    error.value = null
-
+  const fetchUserProfile = async () => {
     try {
-      const response = await authApi.enable2FA()
-      return response
-    } catch (err: any) {
-      error.value = err.message || '2FA setup failed'
-      throw err
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  const disable2FA = async (code: string) => {
-    isLoading.value = true
-    error.value = null
-
-    try {
-      const response = await authApi.disable2FA(code)
+      const result = await AuthService.getCurrentUserProfile()
       
-      if (response.success && user.value) {
-        user.value.twoFactorEnabled = false
+      if (result.data) {
+        user.value = result.data
+        return { success: true }
+      } else {
+        error.value = result.error || '사용자 정보를 가져올 수 없습니다.'
+        return { success: false, error: error.value }
       }
-
-      return response
-    } catch (err: any) {
-      error.value = err.message || '2FA disable failed'
-      throw err
-    } finally {
-      isLoading.value = false
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '사용자 정보 조회 중 오류가 발생했습니다.'
+      return { success: false, error: error.value }
     }
   }
 
-  const verify2FA = async (code: string) => {
-    isLoading.value = true
+  const updateProfile = async (updates: Partial<UserProfile>) => {
+    loading.value = true
     error.value = null
-
+    
     try {
-      const response = await authApi.verify2FA(code)
+      const result = await AuthService.updateUserProfile(updates)
       
-      if (response.success && response.data) {
-        token.value = response.data.token
-        user.value = response.data.user
-        
-        localStorage.setItem('auth_token', response.data.token)
-        setAuthHeader(response.data.token)
+      if (result.success) {
+        await fetchUserProfile() // 업데이트된 정보 다시 가져오기
+        return { success: true }
+      } else {
+        error.value = result.error || '프로필 업데이트에 실패했습니다.'
+        return { success: false, error: error.value }
       }
-
-      return response
-    } catch (err: any) {
-      error.value = err.message || '2FA verification failed'
-      throw err
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '프로필 업데이트 중 오류가 발생했습니다.'
+      return { success: false, error: error.value }
     } finally {
-      isLoading.value = false
+      loading.value = false
     }
   }
 
-  const checkAuth = async () => {
-    if (!token.value) return false
-
+  const checkUsernameAvailability = async (username: string) => {
     try {
-      await getCurrentUser()
-      return true
-    } catch (error) {
-      await logout()
-      return false
+      const result = await AuthService.checkUsernameAvailability(username)
+      return result
+    } catch (err) {
+      return { 
+        available: false, 
+        error: err instanceof Error ? err.message : '아이디 중복 확인 중 오류가 발생했습니다.' 
+      }
+    }
+  }
+
+  const resendEmailVerification = async () => {
+    loading.value = true
+    error.value = null
+    
+    try {
+      const result = await AuthService.resendEmailVerification()
+      
+      if (result.success) {
+        return { success: true, message: '이메일 인증 메일을 재발송했습니다.' }
+      } else {
+        error.value = result.error || '이메일 인증 재발송에 실패했습니다.'
+        return { success: false, error: error.value }
+      }
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '이메일 인증 재발송 중 오류가 발생했습니다.'
+      return { success: false, error: error.value }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const sendPasswordResetEmail = async (email: string) => {
+    loading.value = true
+    error.value = null
+    
+    try {
+      const result = await AuthService.sendPasswordResetEmail(email)
+      
+      if (result.success) {
+        return { success: true, message: '비밀번호 재설정 이메일을 발송했습니다.' }
+      } else {
+        error.value = result.error || '비밀번호 재설정 이메일 발송에 실패했습니다.'
+        return { success: false, error: error.value }
+      }
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '비밀번호 재설정 이메일 발송 중 오류가 발생했습니다.'
+      return { success: false, error: error.value }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const resetPassword = async (newPassword: string) => {
+    loading.value = true
+    error.value = null
+    
+    try {
+      const result = await AuthService.resetPassword(newPassword)
+      
+      if (result.success) {
+        return { success: true, message: '비밀번호가 성공적으로 변경되었습니다.' }
+      } else {
+        error.value = result.error || '비밀번호 재설정에 실패했습니다.'
+        return { success: false, error: error.value }
+      }
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '비밀번호 재설정 중 오류가 발생했습니다.'
+      return { success: false, error: error.value }
+    } finally {
+      loading.value = false
     }
   }
 
@@ -290,148 +202,42 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
   }
 
-  // Utility functions
-  const setAuthHeader = (authToken: string) => {
-    // This will be set up when we configure axios
-    if (typeof window !== 'undefined' && (window as any).axios) {
-      (window as any).axios.defaults.headers.common['Authorization'] = `Bearer ${authToken}`
-    }
-  }
-
-  const removeAuthHeader = () => {
-    if (typeof window !== 'undefined' && (window as any).axios) {
-      delete (window as any).axios.defaults.headers.common['Authorization']
-    }
-  }
-
-  const hasRole = (role: string | string[]) => {
-    if (!userRole.value) return false
-    
-    if (Array.isArray(role)) {
-      return role.includes(userRole.value)
-    }
-    
-    return userRole.value === role
-  }
-
-  const hasAnyRole = (roles: string[]) => {
-    return roles.some(role => hasRole(role))
-  }
-
-  const canAccess = (route: any) => {
-    // Check authentication requirement
-    if (route.meta?.requiresAuth && !isAuthenticated.value) {
-      return false
-    }
-
-    // Check role requirement
-    if (route.meta?.requiresRole && !hasAnyRole(
-      Array.isArray(route.meta.requiresRole) 
-        ? route.meta.requiresRole 
-        : [route.meta.requiresRole]
-    )) {
-      return false
-    }
-
-    // Check status requirements
-    if (isPending.value && route.name !== 'Approval') {
-      const allowedRoutes = ['Approval', 'Profile', 'ProfileSecurity']
-      return allowedRoutes.includes(route.name)
-    }
-
-    if (isSuspended.value) {
-      return false
-    }
-
-    return true
-  }
-
-  // Admin functions
-  const getAllUsers = async () => {
-    try {
-      const response = await authApi.getAllUsers()
-      if (response.success && response.data) {
-        return response.data
+  const initializeAuth = () => {
+    // 인증 상태 변경 구독
+    AuthService.onAuthStateChange((authUser) => {
+      if (authUser) {
+        fetchUserProfile()
+      } else {
+        user.value = null
       }
-      return []
-    } catch (error) {
-      console.error('Failed to get all users:', error)
-      return []
-    }
-  }
-
-  const approveUser = async (userId: string) => {
-    isLoading.value = true
-    error.value = null
-
-    try {
-      const response = await authApi.approveUser(userId)
-      return response
-    } catch (err: any) {
-      error.value = err.message || 'User approval failed'
-      throw err
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  const rejectUser = async (userId: string) => {
-    isLoading.value = true
-    error.value = null
-
-    try {
-      const response = await authApi.rejectUser(userId)
-      return response
-    } catch (err: any) {
-      error.value = err.message || 'User rejection failed'
-      throw err
-    } finally {
-      isLoading.value = false
-    }
+    })
   }
 
   return {
-    // State
-    user: readonly(user),
-    token: readonly(token),
-    isInitialized: readonly(isInitialized),
-    isLoading: readonly(isLoading),
-    error: readonly(error),
+    // 상태
+    user,
+    loading,
+    error,
     
-    // Getters
+    // 계산된 속성
     isAuthenticated,
-    userRole,
-    userStatus,
+    isAdmin,
+    isApproved,
     isPending,
-    isActive,
-    isSuspended,
-    canCreateOrder,
+    isRejected,
+    userType,
     
-    // Actions
-    initialize,
-    login,
-    register,
-    logout,
-    getCurrentUser,
+    // 액션
+    signUp,
+    signIn,
+    signOut,
+    fetchUserProfile,
     updateProfile,
-    changePassword,
-    requestPasswordReset,
+    checkUsernameAvailability,
+    resendEmailVerification,
+    sendPasswordResetEmail,
     resetPassword,
-    verifyEmail,
-    enable2FA,
-    disable2FA,
-    verify2FA,
-    checkAuth,
     clearError,
-    
-    // Utilities
-    hasRole,
-    hasAnyRole,
-    canAccess,
-    
-    // Admin functions
-    getAllUsers,
-    approveUser,
-    rejectUser
+    initializeAuth
   }
 })

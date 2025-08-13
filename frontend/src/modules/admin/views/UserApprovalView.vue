@@ -484,48 +484,48 @@ onMounted(() => {
 
 <style scoped>
 .user-approval-page {
-  padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
+  padding: 0;
+  max-width: 100%;
+  margin: 0;
 }
 
 .page-header {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .page-title {
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: #1f2937;
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.25rem 0;
 }
 
 .page-subtitle {
   color: #6b7280;
-  font-size: 1.1rem;
-  margin: 0 0 2rem 0;
+  font-size: 0.875rem;
+  margin: 0 0 1rem 0;
 }
 
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .stat-card {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
   background: white;
-  padding: 1.5rem;
-  border-radius: 1rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 }
 
 .stat-icon {
-  width: 3rem;
-  height: 3rem;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -545,8 +545,8 @@ onMounted(() => {
 }
 
 .stat-icon .icon {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.25rem;
+  height: 1.25rem;
 }
 
 .stat-icon.pending .icon {
@@ -562,22 +562,23 @@ onMounted(() => {
 }
 
 .stat-number {
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: #1f2937;
+  line-height: 1;
 }
 
 .stat-label {
   color: #6b7280;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
 }
 
 .filter-section {
   background: white;
-  border-radius: 1rem;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 }
 
 .filter-controls {
@@ -588,11 +589,12 @@ onMounted(() => {
 }
 
 .filter-select {
-  padding: 0.75rem;
+  padding: 0.5rem 0.75rem;
   border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
+  border-radius: 0.375rem;
   font-size: 0.875rem;
   min-width: 150px;
+  height: 36px;
 }
 
 .search-box {
@@ -613,17 +615,18 @@ onMounted(() => {
 
 .search-input {
   width: 100%;
-  padding: 0.75rem 1rem 0.75rem 3rem;
+  padding: 0.5rem 0.75rem 0.5rem 2.5rem;
   border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
+  border-radius: 0.375rem;
   font-size: 0.875rem;
+  height: 36px;
 }
 
 .user-list {
   background: white;
-  border-radius: 1rem;
+  border-radius: 0.5rem;
   overflow: hidden;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 }
 
 .loading-state,
@@ -664,7 +667,7 @@ onMounted(() => {
 
 .user-card {
   background: white;
-  padding: 2rem;
+  padding: 1.25rem;
   transition: all 0.2s;
 }
 
@@ -688,7 +691,7 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .user-info {
@@ -698,8 +701,8 @@ onMounted(() => {
 }
 
 .user-avatar {
-  width: 3rem;
-  height: 3rem;
+  width: 2.5rem;
+  height: 2.5rem;
   background: #e5e7eb;
   border-radius: 50%;
   display: flex;
@@ -708,22 +711,22 @@ onMounted(() => {
 }
 
 .avatar-icon {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.25rem;
+  height: 1.25rem;
   color: #6b7280;
 }
 
 .user-name {
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: 600;
   color: #1f2937;
-  margin: 0 0 0.25rem 0;
+  margin: 0 0 0.125rem 0;
 }
 
 .user-email {
   color: #6b7280;
-  font-size: 0.875rem;
-  margin: 0 0 0.5rem 0;
+  font-size: 0.75rem;
+  margin: 0 0 0.25rem 0;
 }
 
 .user-role-badge {
@@ -793,14 +796,14 @@ onMounted(() => {
 }
 
 .user-content {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .detail-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
 }
 
 .detail-item {

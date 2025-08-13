@@ -13,6 +13,7 @@
   "dependencies": {
     "@formkit/auto-animate": "^0.8.1",
     "@heroicons/vue": "^2.2.0",
+    "@supabase/supabase-js": "^2.55.0",
     "@vee-validate/i18n": "^4.12.4",
     "@vee-validate/rules": "^4.12.4",
     "@vueuse/core": "^10.7.2",

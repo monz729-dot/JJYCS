@@ -81,11 +81,17 @@ const routes: RouteRecordRaw[] = [
     ]
   },
 
-  // 메인 애플리케이션 라우트
+  // 루트 경로를 로그인으로 리다이렉트
   {
     path: '/',
+    redirect: '/login'
+  },
+
+  // 메인 애플리케이션 라우트
+  {
+    path: '/app',
     component: MainLayout,
-    redirect: '/dashboard',
+    redirect: '/app/dashboard',
     meta: { requiresAuth: true },
     children: [
       // 대시보드
@@ -418,7 +424,7 @@ const routes: RouteRecordRaw[] = [
           {
             path: '',
             name: 'Profile',
-            component: () => import('@/modules/profile/views/ProfileView.vue'),
+            component: () => import('@/modules/profile/components/ProfileForm.vue'),
             meta: { title: 'profile.title' }
           },
           {
@@ -489,9 +495,18 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/signup',
     name: 'PublicSignup',
-    component: () => import('@/modules/auth/views/PublicSignupView.vue'),
+    component: () => import('@/modules/auth/components/SignUpForm.vue'),
     meta: { 
       title: 'auth.register.title',
+      requiresGuest: true 
+    }
+  },
+  {
+    path: '/login',
+    name: 'PublicLogin',
+    component: () => import('@/modules/auth/components/LoginForm.vue'),
+    meta: { 
+      title: 'auth.login.title',
       requiresGuest: true 
     }
   },
@@ -529,18 +544,13 @@ const router = createRouter({
   }
 })
 
-// 라우터 가드
+// 라우터 가드 (간소화)
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
   
-  // 인증 상태 확인
-  if (!authStore.isInitialized) {
-    await authStore.initialize()
-  }
-
   const isAuthenticated = authStore.isAuthenticated
-  const userRole = authStore.user?.role
-  const userStatus = authStore.user?.status
+  const userType = authStore.userType
+  const userStatus = authStore.user?.approval_status
 
   // 게스트만 접근 가능한 페이지 (로그인, 회원가입 등)
   if (to.meta.requiresGuest && isAuthenticated) {
@@ -553,53 +563,6 @@ router.beforeEach(async (to, from, next) => {
       name: 'Login', 
       query: { redirect: to.fullPath } 
     })
-  }
-
-  // 역할 기반 접근 제어
-  if (to.meta.requiresRole && isAuthenticated) {
-    const requiredRoles = Array.isArray(to.meta.requiresRole) 
-      ? to.meta.requiresRole 
-      : [to.meta.requiresRole]
-    
-    if (!requiredRoles.includes(userRole)) {
-      return next({ 
-        name: 'Error', 
-        query: { 
-          code: '403', 
-          message: 'Access denied' 
-        } 
-      })
-    }
-  }
-
-  // 승인 대기 중인 사용자는 승인 페이지로만 이동 가능
-  if (isAuthenticated && userStatus === 'pending_approval' && to.name !== 'Approval') {
-    const allowedRoutes = ['Approval', 'Profile', 'ProfileSecurity', 'Logout']
-    if (!allowedRoutes.includes(to.name as string)) {
-      return next({ name: 'Approval' })
-    }
-  }
-
-  // 정지된 사용자 접근 제한
-  if (isAuthenticated && userStatus === 'suspended') {
-    return next({ 
-      name: 'Error', 
-      query: { 
-        code: '403', 
-        message: 'Account suspended' 
-      } 
-    })
-  }
-
-  // 모바일 감지 및 리다이렉트
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-  const isTablet = /iPad/i.test(navigator.userAgent)
-  
-  if (isMobile && !isTablet && to.path.startsWith('/') && !to.path.startsWith('/mobile') && !to.path.startsWith('/auth')) {
-    // 창고 스캔 페이지는 모바일로 리다이렉트
-    if (to.name === 'WarehouseScan') {
-      return next({ name: 'MobileScan' })
-    }
   }
 
   // 페이지 제목 설정

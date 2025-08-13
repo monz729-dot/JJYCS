@@ -392,7 +392,7 @@ const showProcessModal = ref(false)
 const selectedScanData = ref<any>(null)
 
 // 피드백 상태
-const showFeedback = ref(false)
+const showFeedbackModal = ref(false)
 const feedbackType = ref<'success' | 'error'>('success')
 const feedbackMessage = ref('')
 

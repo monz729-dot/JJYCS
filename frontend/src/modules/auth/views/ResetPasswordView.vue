@@ -104,6 +104,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
+import { AuthService } from '@/services/authService'
 
 const route = useRoute()
 const router = useRouter()
@@ -157,8 +158,12 @@ const handleSubmit = async () => {
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 2000))
     
-    // TODO: Implement actual password reset API call
-    console.log('Resetting password with token:', token, 'New password:', form.password)
+    // AuthService를 사용하여 비밀번호 재설정
+    const result = await AuthService.resetPassword(form.password)
+    
+    if (!result.success) {
+      throw new Error(result.error || '비밀번호 재설정에 실패했습니다.')
+    }
     
     success.value = true
     toast.success('비밀번호가 성공적으로 변경되었습니다.')

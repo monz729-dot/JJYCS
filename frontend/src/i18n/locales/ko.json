@@ -437,5 +437,50 @@
       "approval_required": "승인이 필요한 견적서입니다",
       "expired_estimate": "이 견적서는 만료되었습니다"
     }
+  },
+  
+  "roles": {
+    "individual": "개인",
+    "enterprise": "기업",
+    "partner": "파트너",
+    "warehouse": "창고",
+    "admin": "관리자"
+  },
+
+  "partner": {
+    "types": {
+      "affiliate": "제휴",
+      "referral": "추천",
+      "corporate": "기업"
+    }
+  },
+
+  "admin": {
+    "user_approval": {
+      "title": "사용자 승인 관리",
+      "subtitle": "가입 신청한 사용자를 검토하고 승인하세요",
+      "pending": "승인 대기",
+      "approved": "승인됨",
+      "rejected": "거절됨",
+      "all_roles": "모든 역할",
+      "all_statuses": "모든 상태",
+      "search_placeholder": "이름, 이메일 또는 회사명으로 검색",
+      "loading": "사용자 목록을 불러오는 중...",
+      "no_users": "사용자가 없습니다",
+      "no_users_desc": "현재 표시할 사용자가 없습니다",
+      "phone": "전화번호",
+      "company_name": "회사명",
+      "business_number": "사업자등록번호",
+      "partner_type": "파트너 유형",
+      "warehouse_name": "창고명",
+      "notes": "메모",
+      "reject": "거절",
+      "approve": "승인",
+      "processed_by": "처리자",
+      "reject_user": "사용자 거절",
+      "reject_confirmation": "{{name}}님의 가입 신청을 거절하시겠습니까?",
+      "reject_reason": "거절 사유",
+      "reject_reason_placeholder": "거절 사유를 입력하세요 (필수)"
+    }
   }
 }

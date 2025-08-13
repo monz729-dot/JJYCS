@@ -1,480 +1,390 @@
 <template>
-  <div class="profile-view">
-    <div class="container mx-auto p-6">
-      <div class="max-w-4xl mx-auto">
-        <!-- Header -->
-        <div class="bg-white rounded-lg shadow p-6 mb-6">
-          <h1 class="text-2xl font-bold text-gray-900 mb-2">프로필</h1>
-          <p class="text-gray-600">계정 정보를 관리하고 설정을 변경할 수 있습니다.</p>
+  <div class="max-w-4xl mx-auto p-6">
+    <div class="bg-white rounded-lg shadow-lg p-8">
+      <h2 class="text-2xl font-bold text-gray-900 mb-6">마이페이지</h2>
+      
+      <!-- 프로필 정보 -->
+      <div class="mb-8 p-6 bg-gray-50 rounded-lg">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">프로필 정보</h3>
+        
+        <div v-if="loading" class="text-center py-4">
+          <div class="text-gray-600">정보를 불러오는 중...</div>
         </div>
-
-        <!-- Profile Info -->
-        <div class="bg-white rounded-lg shadow p-6 mb-6">
-          <div class="flex items-center space-x-6">
-            <!-- Avatar -->
-            <div class="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center">
-              <UserIcon class="w-10 h-10 text-gray-500" />
-            </div>
-            
-            <!-- User Info -->
-            <div class="flex-1">
-              <h2 class="text-xl font-semibold text-gray-900">{{ user?.name || '사용자' }}</h2>
-              <p class="text-gray-600">{{ user?.email || 'email@example.com' }}</p>
-              <div class="flex items-center space-x-2 mt-2">
-                <span class="px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded-full">
-                  {{ getRoleText(user?.role || 'individual') }}
-                </span>
-                <span class="px-3 py-1 text-sm bg-green-100 text-green-800 rounded-full">
-                  {{ getStatusText(user?.status || 'active') }}
-                </span>
+        
+        <div v-else-if="profile" class="space-y-4">
+          <!-- 회원 상태 표시 -->
+          <div class="flex items-center justify-between p-4 rounded-md" 
+               :class="{
+                 'bg-green-50 border border-green-200': profile.approval_status === 'approved',
+                 'bg-yellow-50 border border-yellow-200': profile.approval_status === 'pending',
+                 'bg-red-50 border border-red-200': profile.approval_status === 'rejected'
+               }">
+            <div class="flex items-center">
+              <div class="flex-shrink-0">
+                <svg v-if="profile.approval_status === 'approved'" class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                </svg>
+                <svg v-else-if="profile.approval_status === 'pending'" class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>
+                <svg v-else class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                </svg>
+              </div>
+              <div class="ml-3">
+                <p class="text-sm font-medium" 
+                   :class="{
+                     'text-green-800': profile.approval_status === 'approved',
+                     'text-yellow-800': profile.approval_status === 'pending',
+                     'text-red-800': profile.approval_status === 'rejected'
+                   }">
+                  {{ getStatusText(profile.approval_status) }}
+                </p>
+                <p v-if="profile.user_type !== 'general' && profile.approval_status === 'pending'" 
+                   class="text-xs mt-1"
+                   :class="{
+                     'text-yellow-600': profile.approval_status === 'pending'
+                   }">
+                  관리자 승인까지 평일 1~2일이 소요됩니다.
+                </p>
               </div>
             </div>
-            
-            <!-- Edit Button -->
-            <div class="flex space-x-2">
-              <button
-                v-if="!editMode"
-                @click="startEdit"
-                :disabled="isLoading"
-                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            <div class="text-right">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                    :class="{
+                      'bg-green-100 text-green-800': profile.approval_status === 'approved',
+                      'bg-yellow-100 text-yellow-800': profile.approval_status === 'pending',
+                      'bg-red-100 text-red-800': profile.approval_status === 'rejected'
+                    }">
+                {{ getUserTypeText(profile.user_type) }}
+              </span>
+            </div>
+          </div>
+
+          <!-- 기본 정보 표시 -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700">아이디</label>
+              <div class="mt-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-900">
+                {{ profile.username }}
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">이메일</label>
+              <div class="mt-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-900">
+                {{ profile.email || '-' }}
+                <span v-if="!profile.email_verified" class="ml-2 text-xs text-red-600">미인증</span>
+                <span v-else class="ml-2 text-xs text-green-600">인증완료</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 정보 수정 폼 -->
+      <form @submit.prevent="handleSubmit" class="space-y-6">
+        <h3 class="text-lg font-semibold text-gray-900">정보 수정</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">이름 *</label>
+            <input
+              v-model="form.name"
+              type="text"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="이름을 입력하세요"
+              required
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">연락처</label>
+            <input
+              v-model="form.phone"
+              type="tel"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="연락처를 입력하세요"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">주소</label>
+          <input
+            v-model="form.address"
+            type="text"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="주소를 입력하세요"
+          />
+        </div>
+
+        <!-- 이메일 변경 -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            이메일 변경
+            <span class="text-xs text-gray-500">(변경 시 이메일 인증 재발송)</span>
+          </label>
+          <input
+            v-model="form.email"
+            type="email"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="새 이메일을 입력하세요"
+          />
+        </div>
+
+        <!-- 사업자등록증 업데이트 (기업/파트너 회원) -->
+        <div v-if="profile && (profile.user_type === 'corporate' || profile.user_type === 'partner')">
+          <label class="block text-sm font-medium text-gray-700 mb-2">사업자등록증 업데이트</label>
+          
+          <!-- 현재 파일 표시 -->
+          <div v-if="profile.business_license_url" class="mb-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-blue-800">현재 업로드된 파일</span>
+              <a 
+                :href="profile.business_license_url" 
+                target="_blank"
+                class="text-blue-600 hover:text-blue-800 text-sm"
               >
-                편집
-              </button>
-              <button
-                v-if="editMode"
-                @click="cancelEdit"
-                :disabled="isLoading"
-                class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-              >
-                취소
-              </button>
+                파일 보기
+              </a>
+            </div>
+          </div>
+          
+          <!-- 새 파일 업로드 -->
+          <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+            <input
+              ref="fileInput"
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png"
+              @change="handleFileChange"
+              class="hidden"
+            />
+            <div v-if="!form.business_license_file" @click="$refs.fileInput?.click()" class="cursor-pointer">
+              <div class="text-gray-600 mb-2">새 파일을 선택하거나 여기에 드래그하세요</div>
+              <div class="text-sm text-gray-500">PDF, JPG, PNG 파일만 가능 (최대 10MB)</div>
+            </div>
+            <div v-else class="text-left">
+              <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-700">{{ form.business_license_file.name }}</span>
+                <button
+                  type="button"
+                  @click="removeFile"
+                  class="text-red-500 hover:text-red-700 text-sm"
+                >
+                  삭제
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Profile Form -->
-        <div class="bg-white rounded-lg shadow p-6">
-          <form @submit.prevent="updateProfile">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <!-- Name -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">이름</label>
-                <input
-                  v-model="form.name"
-                  :disabled="!editMode"
-                  type="text"
-                  class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
-                  :class="{
-                    'border-red-300': errors.name,
-                    'border-gray-300': !errors.name
-                  }"
-                />
-                <p v-if="errors.name" class="mt-1 text-sm text-red-600">{{ errors.name }}</p>
-              </div>
-
-              <!-- Email -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">이메일</label>
-                <input
-                  v-model="form.email"
-                  disabled
-                  type="email"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50"
-                />
-                <p class="text-sm text-gray-500 mt-1">이메일은 변경할 수 없습니다.</p>
-              </div>
-
-              <!-- Phone -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">전화번호</label>
-                <input
-                  v-model="form.phone"
-                  :disabled="!editMode"
-                  type="tel"
-                  placeholder="010-1234-5678"
-                  class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
-                  :class="{
-                    'border-red-300': errors.phone,
-                    'border-gray-300': !errors.phone
-                  }"
-                />
-                <p v-if="errors.phone" class="mt-1 text-sm text-red-600">{{ errors.phone }}</p>
-              </div>
-
-              <!-- Role (Read-only) -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">계정 유형</label>
-                <input
-                  :value="getRoleText(user?.role || 'individual')"
-                  disabled
-                  type="text"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50"
-                />
-              </div>
-
-              <!-- Member Code -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">회원 코드</label>
-                <div class="flex items-center space-x-2">
-                  <input
-                    :value="memberCode || '미설정'"
-                    disabled
-                    type="text"
-                    class="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50"
-                  />
-                  <button
-                    v-if="!hasMemberCode"
-                    @click="generateMemberCode"
-                    :disabled="isLoading"
-                    type="button"
-                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-                  >
-                    생성
-                  </button>
-                </div>
-                <p v-if="!hasMemberCode" class="text-sm text-orange-600 mt-1">
-                  ⚠️ 회원 코드가 없으면 배송이 지연될 수 있습니다.
-                </p>
-              </div>
-
-              <!-- Email Verification Status -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">이메일 인증</label>
-                <div class="flex items-center space-x-2">
-                  <span 
-                    class="px-3 py-1 text-sm rounded-full"
-                    :class="{
-                      'bg-green-100 text-green-800': isEmailVerified,
-                      'bg-yellow-100 text-yellow-800': !isEmailVerified
-                    }"
-                  >
-                    {{ isEmailVerified ? '✓ 인증 완료' : '○ 미인증' }}
-                  </span>
-                  <button
-                    v-if="!isEmailVerified"
-                    type="button"
-                    class="text-sm text-blue-600 hover:text-blue-800"
-                    @click="resendVerificationEmail"
-                  >
-                    인증 메일 재발송
-                  </button>
-                </div>
-              </div>
-
-              <!-- 2FA Status -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">2단계 인증</label>
-                <div class="flex items-center space-x-2">
-                  <span 
-                    class="px-3 py-1 text-sm rounded-full"
-                    :class="{
-                      'bg-green-100 text-green-800': is2FAEnabled,
-                      'bg-gray-100 text-gray-800': !is2FAEnabled
-                    }"
-                  >
-                    {{ is2FAEnabled ? '✓ 활성화' : '○ 비활성화' }}
-                  </span>
-                  <router-link
-                    to="/profile/security"
-                    class="text-sm text-blue-600 hover:text-blue-800"
-                  >
-                    {{ is2FAEnabled ? '설정 관리' : '활성화하기' }}
-                  </router-link>
-                </div>
-              </div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div v-if="editMode" class="mt-6 flex justify-end space-x-4">
-              <button
-                type="button"
-                @click="cancelEdit"
-                :disabled="isLoading"
-                class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-              >
-                취소
-              </button>
-              <button
-                type="submit"
-                :disabled="isLoading"
-                class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 relative"
-              >
-                <span v-if="isLoading" class="absolute inset-0 flex items-center justify-center">
-                  <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                </span>
-                <span :class="{ 'opacity-0': isLoading }">저장</span>
-              </button>
-            </div>
-          </form>
+        <!-- 에러 메시지 -->
+        <div v-if="error" class="text-red-600 text-sm bg-red-50 p-3 rounded-md">
+          {{ error }}
         </div>
 
-        <!-- Quick Actions -->
-        <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <router-link
-            to="/profile/security"
-            class="bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow"
-          >
-            <div class="flex items-center space-x-3">
-              <LockClosedIcon class="w-8 h-8 text-blue-600" />
-              <div>
-                <h3 class="font-medium text-gray-900">보안 설정</h3>
-                <p class="text-sm text-gray-500">비밀번호 및 2FA 관리</p>
-              </div>
-            </div>
-          </router-link>
-
-          <router-link
-            to="/profile/preferences"
-            class="bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow"
-          >
-            <div class="flex items-center space-x-3">
-              <CogIcon class="w-8 h-8 text-green-600" />
-              <div>
-                <h3 class="font-medium text-gray-900">환경 설정</h3>
-                <p class="text-sm text-gray-500">언어 및 알림 설정</p>
-              </div>
-            </div>
-          </router-link>
-
-          <router-link
-            to="/profile/notifications"
-            class="bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow"
-          >
-            <div class="flex items-center space-x-3">
-              <BellIcon class="w-8 h-8 text-yellow-600" />
-              <div>
-                <h3 class="font-medium text-gray-900">알림 설정</h3>
-                <p class="text-sm text-gray-500">알림 수신 방법 설정</p>
-              </div>
-            </div>
-          </router-link>
+        <!-- 성공 메시지 -->
+        <div v-if="success" class="text-green-600 text-sm bg-green-50 p-3 rounded-md">
+          {{ success }}
         </div>
-      </div>
+
+        <!-- 제출 버튼 -->
+        <div class="flex gap-4">
+          <button
+            type="submit"
+            :disabled="updateLoading"
+            class="bg-blue-600 text-white py-2 px-6 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {{ updateLoading ? '업데이트 중...' : '정보 업데이트' }}
+          </button>
+          
+          <button
+            v-if="profile && !profile.email_verified"
+            type="button"
+            @click="resendEmailVerification"
+            :disabled="emailLoading"
+            class="bg-green-600 text-white py-2 px-6 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {{ emailLoading ? '발송 중...' : '이메일 인증 재발송' }}
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted } from 'vue'
-import { useAuthStore } from '@/stores/auth'
-import { useNotificationStore } from '@/stores/notification'
-import {
-  UserIcon,
-  LockClosedIcon,
-  CogIcon,
-  BellIcon
-} from '@heroicons/vue/24/outline'
+import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useToast } from 'vue-toastification'
+import { AuthService } from '@/services/authService'
+import type { UserProfile } from '@/lib/supabase'
 
-const authStore = useAuthStore()
-const notificationStore = useNotificationStore()
+const router = useRouter()
+const toast = useToast()
 
-// State
-const editMode = ref(false)
-const isLoading = ref(false)
-const errors = ref<Record<string, string>>({})
+// 상태
+const loading = ref(true)
+const updateLoading = ref(false)
+const emailLoading = ref(false)
+const error = ref('')
+const success = ref('')
+const profile = ref<UserProfile | null>(null)
 
-// Computed
-const user = computed(() => authStore.user)
-
-// Reactive form
+// 폼 데이터
 const form = reactive({
   name: '',
+  phone: '',
+  address: '',
   email: '',
-  phone: ''
+  business_license_file: null as File | null
 })
 
-// Initialize form data when user changes
-const initializeForm = () => {
-  if (user.value) {
-    form.name = user.value.name || ''
-    form.email = user.value.email || ''
-    form.phone = user.value.phone || ''
-  }
-}
-
-// Watch for user changes
-watch(user, initializeForm, { immediate: true })
-
-// Methods
-const getRoleText = (role: string) => {
-  const roleTexts = {
-    'individual': '개인',
-    'enterprise': '기업',
-    'partner': '파트너',
-    'warehouse': '창고',
-    'admin': '관리자'
-  }
-  return roleTexts[role as keyof typeof roleTexts] || role
-}
-
+// 사용자 상태 텍스트
 const getStatusText = (status: string) => {
-  const statusTexts = {
-    'active': '활성',
-    'pending_approval': '승인 대기',
-    'suspended': '정지'
+  switch (status) {
+    case 'approved': return '승인 완료'
+    case 'pending': return '승인 대기 중'
+    case 'rejected': return '승인 거절'
+    default: return '알 수 없음'
   }
-  return statusTexts[status as keyof typeof statusTexts] || status
 }
 
-// Validation
-const validateForm = (): boolean => {
-  errors.value = {}
-  
-  if (!form.name || form.name.trim().length < 2) {
-    errors.value.name = '이름은 2자 이상 입력해주세요.'
+// 회원 유형 텍스트
+const getUserTypeText = (type: string) => {
+  switch (type) {
+    case 'general': return '일반회원'
+    case 'corporate': return '기업회원'
+    case 'partner': return '파트너회원'
+    default: return '알 수 없음'
   }
-  
-  if (!form.email || !/\S+@\S+\.\S+/.test(form.email)) {
-    errors.value.email = '올바른 이메일 주소를 입력해주세요.'
-  }
-  
-  if (form.phone && !/^01[016789]-?\d{3,4}-?\d{4}$/.test(form.phone)) {
-    errors.value.phone = '올바른 전화번호 형식을 입력해주세요.'
-  }
-  
-  return Object.keys(errors.value).length === 0
 }
 
-const updateProfile = async () => {
-  if (!validateForm()) {
-    notificationStore.error('입력 정보를 확인해주세요.', '프로필 업데이트 실패')
-    return
-  }
-
-  isLoading.value = true
-  
-  try {
-    const updateData = {
-      name: form.name.trim(),
-      phone: form.phone.trim()
+// 파일 선택 처리
+const handleFileChange = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (target.files && target.files[0]) {
+    const file = target.files[0]
+    
+    // 파일 크기 검사 (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('파일 크기는 10MB 이하여야 합니다.')
+      return
     }
     
-    const response = await authStore.updateProfile(updateData)
+    // 파일 형식 검사
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png']
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('PDF, JPG, PNG 파일만 업로드 가능합니다.')
+      return
+    }
     
-    if (response.success) {
-      notificationStore.success(
-        '프로필이 성공적으로 업데이트되었습니다.',
-        '프로필 업데이트 완료'
-      )
-      editMode.value = false
-      errors.value = {}
+    form.business_license_file = file
+  }
+}
+
+// 파일 제거
+const removeFile = () => {
+  form.business_license_file = null
+  const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
+  if (fileInput) {
+    fileInput.value = ''
+  }
+}
+
+// 프로필 정보 로드
+const loadProfile = async () => {
+  loading.value = true
+  error.value = ''
+
+  try {
+    const result = await AuthService.getCurrentUserProfile()
+    
+    if (result.data) {
+      profile.value = result.data
+      
+      // 폼에 현재 정보 입력
+      form.name = result.data.name || ''
+      form.phone = result.data.phone || ''
+      form.address = result.data.address || ''
+      form.email = result.data.email || ''
     } else {
-      throw new Error(response.message || '프로필 업데이트에 실패했습니다.')
+      error.value = result.error || '프로필 정보를 불러오지 못했습니다.'
     }
-  } catch (error: any) {
-    console.error('Profile update error:', error)
-    notificationStore.error(
-      error.message || '프로필 업데이트 중 오류가 발생했습니다.',
-      '프로필 업데이트 실패'
-    )
+  } catch (err) {
+    error.value = '프로필 정보 로드 중 오류가 발생했습니다.'
   } finally {
-    isLoading.value = false
+    loading.value = false
   }
 }
 
-const cancelEdit = () => {
-  editMode.value = false
-  errors.value = {}
-  initializeForm() // Reset form to original values
-}
+// 정보 업데이트
+const handleSubmit = async () => {
+  updateLoading.value = true
+  error.value = ''
+  success.value = ''
 
-const startEdit = () => {
-  editMode.value = true
-  errors.value = {}
-}
-
-// Member code management
-const hasMemberCode = computed(() => user.value?.memberCode)
-const memberCode = computed(() => user.value?.memberCode)
-
-const generateMemberCode = async () => {
-  if (hasMemberCode.value) return
-  
   try {
-    isLoading.value = true
+    // 사업자등록증 파일 업로드 처리는 AuthService에서 처리
+    const updates: Partial<UserProfile> = {
+      name: form.name,
+      phone: form.phone || undefined,
+      address: form.address || undefined
+    }
+
+    // 이메일 변경이 있는 경우
+    if (form.email !== profile.value?.email) {
+      updates.email = form.email
+      updates.email_verified = false // 이메일 변경 시 인증 상태 초기화
+    }
+
+    const result = await AuthService.updateUserProfile(updates)
     
-    // For demo purposes, generate a simple member code
-    const rolePrefix = {
-      'individual': 'IND',
-      'enterprise': 'ENT',
-      'partner': 'PTR',
-      'warehouse': 'WH',
-      'admin': 'ADM'
-    }[user.value?.role || 'individual']
-    
-    const randomNum = Math.floor(Math.random() * 999) + 1
-    const newMemberCode = `${rolePrefix}${String(randomNum).padStart(3, '0')}`
-    
-    const response = await authStore.updateProfile({ memberCode: newMemberCode })
-    
-    if (response.success) {
-      notificationStore.success(
-        `회원 코드가 생성되었습니다: ${newMemberCode}`,
-        '회원 코드 생성 완료'
-      )
+    if (result.success) {
+      success.value = '정보가 성공적으로 업데이트되었습니다.'
+      
+      // 이메일 변경이 있었다면 인증 이메일 자동 발송
+      if (form.email !== profile.value?.email) {
+        success.value += ' 이메일 인증 메일이 발송되었습니다.'
+      }
+      
+      // 프로필 정보 재로드
+      await loadProfile()
+      
+      toast.success(success.value)
     } else {
-      throw new Error('회원 코드 생성에 실패했습니다.')
+      error.value = result.error || '정보 업데이트에 실패했습니다.'
     }
-  } catch (error: any) {
-    console.error('Member code generation error:', error)
-    notificationStore.error(
-      error.message || '회원 코드 생성 중 오류가 발생했습니다.',
-      '회원 코드 생성 실패'
-    )
+  } catch (err) {
+    error.value = '정보 업데이트 중 오류가 발생했습니다.'
   } finally {
-    isLoading.value = false
+    updateLoading.value = false
   }
 }
 
-// Account verification status
-const isEmailVerified = computed(() => user.value?.emailVerified || false)
-const is2FAEnabled = computed(() => user.value?.twoFactorEnabled || false)
+// 이메일 인증 재발송
+const resendEmailVerification = async () => {
+  emailLoading.value = true
+  error.value = ''
 
-// Email verification
-const resendVerificationEmail = async () => {
-  if (isEmailVerified.value) return
-  
   try {
-    isLoading.value = true
+    const result = await AuthService.resendEmailVerification()
     
-    // For demo purposes, simulate verification email sending
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    notificationStore.success(
-      '인증 메일이 발송되었습니다. 이메일을 확인해주세요.',
-      '인증 메일 발송 완료'
-    )
-  } catch (error: any) {
-    console.error('Email verification error:', error)
-    notificationStore.error(
-      error.message || '인증 메일 발송 중 오류가 발생했습니다.',
-      '인증 메일 발송 실패'
-    )
+    if (result.success) {
+      toast.success('이메일 인증 메일이 재발송되었습니다.')
+    } else {
+      error.value = result.error || '이메일 인증 재발송에 실패했습니다.'
+    }
+  } catch (err) {
+    error.value = '이메일 인증 재발송 중 오류가 발생했습니다.'
   } finally {
-    isLoading.value = false
+    emailLoading.value = false
   }
 }
 
-// Lifecycle
-onMounted(async () => {
-  try {
-    // Ensure we have fresh user data
-    if (authStore.token) {
-      await authStore.getCurrentUser()
-    }
-    initializeForm()
-  } catch (error) {
-    console.error('Failed to load user data:', error)
-  }
+
+// 컴포넌트 마운트 시 프로필 로드
+onMounted(() => {
+  loadProfile()
 })
 </script>
-
-<style scoped>
-.profile-view {
-  min-height: 100vh;
-  background-color: #f8fafc;
-}
-</style>

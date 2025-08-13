@@ -89,6 +89,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from 'vue-toastification'
+import { AuthService } from '@/services/authService'
 
 const route = useRoute()
 const router = useRouter()
@@ -144,8 +145,12 @@ const resendVerification = async () => {
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000))
     
-    // TODO: Implement actual resend verification API call
-    console.log('Resending verification email')
+    // AuthService를 사용하여 이메일 인증 재발송
+    const result = await AuthService.resendEmailVerification()
+    
+    if (!result.success) {
+      throw new Error(result.error || '이메일 재발송에 실패했습니다.')
+    }
     
     toast.success('인증 이메일을 다시 발송했습니다.')
     startResendCooldown()

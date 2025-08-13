@@ -1,428 +1,411 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8">
-      <!-- Header -->
-      <div>
-        <div class="mx-auto h-12 w-12 text-center">
-          <svg class="w-12 h-12 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.477 0 10s4.477 10 10 10 10-4.477 10-10S15.523 0 10 0zM8 5a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1zm1 3a1 1 0 100 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-          </svg>
+  <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <!-- Background Pattern -->
+    <div class="absolute inset-0 bg-white/50 backdrop-blur-[2px]"></div>
+    <div class="absolute top-0 left-0 w-full h-full">
+      <div class="absolute top-10 left-10 w-72 h-72 bg-blue-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+      <div class="absolute top-10 right-10 w-72 h-72 bg-purple-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+      <div class="absolute bottom-10 left-20 w-72 h-72 bg-pink-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+    </div>
+    
+    <!-- Login Card -->
+    <div class="relative max-w-md w-full">
+      <div class="bg-white/80 backdrop-blur-md rounded-2xl shadow-2xl border border-white/50 p-8">
+        <!-- Logo & Title -->
+        <div class="text-center mb-8">
+          <div class="mx-auto w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+          </div>
+          <h1 class="text-2xl font-bold text-gray-900 mb-2">YCS 물류관리</h1>
+          <p class="text-gray-600 text-sm">안전하고 빠른 글로벌 배송 서비스</p>
         </div>
-        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          {{ $t('auth.login.title') }}
-        </h2>
-        <p class="mt-2 text-center text-sm text-gray-600">
-          {{ $t('auth.login.subtitle') }}
-          <router-link 
-            to="/auth/register" 
-            class="font-medium text-blue-600 hover:text-blue-500 ml-1"
-          >
-            {{ $t('auth.login.signup_link') }}
-          </router-link>
-        </p>
-      </div>
 
-      <!-- Login Form -->
-      <form class="mt-8 space-y-6" @submit.prevent="handleSubmit">
-        <div class="rounded-md shadow-sm -space-y-px">
+        <!-- Login Form -->
+        <form @submit.prevent="handleSubmit" class="space-y-6">
           <!-- Email Field -->
-          <div>
-            <label for="email" class="sr-only">{{ $t('auth.login.email') }}</label>
-            <input
-              id="email"
-              v-model="form.email"
-              name="email"
-              type="email"
-              autocomplete="email"
-              required
-              class="appearance-none rounded-none relative block w-full px-3 py-2 border placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-              :class="{
-                'border-red-300': errors.email,
-                'border-gray-300': !errors.email
-              }"
-              :placeholder="$t('auth.login.email_placeholder')"
-              @blur="validateField('email')"
-            />
-            <p v-if="errors.email" class="mt-1 text-sm text-red-600">
-              {{ errors.email }}
-            </p>
+          <div class="space-y-2">
+            <label for="email" class="text-sm font-medium text-gray-700 block">이메일 또는 아이디</label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                </svg>
+              </div>
+              <input
+                id="email"
+                v-model="form.email"
+                type="text"
+                required
+                class="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                placeholder="이메일 또는 아이디를 입력하세요"
+              />
+            </div>
           </div>
 
           <!-- Password Field -->
-          <div>
-            <label for="password" class="sr-only">{{ $t('auth.login.password') }}</label>
+          <div class="space-y-2">
+            <label for="password" class="text-sm font-medium text-gray-700 block">비밀번호</label>
             <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
               <input
                 id="password"
                 v-model="form.password"
-                name="password"
                 :type="showPassword ? 'text' : 'password'"
-                autocomplete="current-password"
                 required
-                class="appearance-none rounded-none relative block w-full px-3 py-2 pr-10 border placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                :class="{
-                  'border-red-300': errors.password,
-                  'border-gray-300': !errors.password
-                }"
-                :placeholder="$t('auth.login.password_placeholder')"
-                @blur="validateField('password')"
+                class="block w-full pl-10 pr-12 py-3 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                placeholder="비밀번호를 입력하세요"
               />
               <button
                 type="button"
-                class="absolute inset-y-0 right-0 pr-3 flex items-center"
                 @click="showPassword = !showPassword"
+                class="absolute inset-y-0 right-0 pr-3 flex items-center hover:text-blue-600 transition-colors"
               >
-                <svg 
-                  class="h-5 w-5 text-gray-400" 
-                  :class="{ 'text-blue-500': showPassword }"
-                  fill="none" 
-                  viewBox="0 0 24 24" 
-                  stroke="currentColor"
-                >
-                  <path 
-                    v-if="!showPassword"
-                    stroke-linecap="round" 
-                    stroke-linejoin="round" 
-                    stroke-width="2" 
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" 
-                  />
-                  <path 
-                    v-if="!showPassword"
-                    stroke-linecap="round" 
-                    stroke-linejoin="round" 
-                    stroke-width="2" 
-                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" 
-                  />
-                  <path 
-                    v-else
-                    stroke-linecap="round" 
-                    stroke-linejoin="round" 
-                    stroke-width="2" 
-                    d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L8.464 8.464m1.414 1.414l-1.414-1.414m4.242 4.242l1.414 1.414M14.12 14.12l1.415 1.415" 
-                  />
+                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path v-if="!showPassword" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path v-if="!showPassword" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
                 </svg>
               </button>
             </div>
-            <p v-if="errors.password" class="mt-1 text-sm text-red-600">
-              {{ errors.password }}
-            </p>
           </div>
-        </div>
 
-        <!-- Remember & Forgot Password -->
-        <div class="flex items-center justify-between">
-          <div class="flex items-center">
-            <input
-              id="remember-me"
-              v-model="form.rememberMe"
-              name="remember-me"
-              type="checkbox"
-              class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <label for="remember-me" class="ml-2 block text-sm text-gray-900">
-              {{ $t('auth.login.remember_me') }}
+          <!-- Remember Me & Forgot Password -->
+          <div class="flex items-center justify-between">
+            <label class="flex items-center">
+              <input
+                v-model="rememberMe"
+                type="checkbox"
+                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-colors"
+              />
+              <span class="ml-2 text-sm text-gray-600">로그인 상태 유지</span>
             </label>
-          </div>
-
-          <div class="text-sm">
-            <router-link 
-              :to="{ name: 'ForgotPassword' }"
-              class="font-medium text-blue-600 hover:text-blue-500"
+            <button
+              type="button"
+              @click="showForgotPassword = true"
+              class="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
             >
-              {{ $t('auth.login.forgot_password') }}
-            </router-link>
+              비밀번호 찾기
+            </button>
           </div>
-        </div>
 
-        <!-- Submit Button -->
-        <div>
+          <!-- Error Message -->
+          <div v-if="error" class="p-4 rounded-xl bg-red-50 border border-red-200">
+            <div class="flex">
+              <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+              </svg>
+              <div class="ml-3">
+                <p class="text-sm text-red-800">{{ error }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Login Button -->
           <button
             type="submit"
-            :disabled="isLoading || !isFormValid"
-            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="loading"
+            class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg"
           >
-            <span class="absolute left-0 inset-y-0 flex items-center pl-3">
-              <svg 
-                v-if="isLoading"
-                class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" 
-                fill="none" 
-                viewBox="0 0 24 24"
-              >
+            <div class="flex items-center justify-center">
+              <svg v-if="loading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              <svg 
-                v-else
-                class="h-5 w-5 text-blue-500 group-hover:text-blue-400" 
-                fill="currentColor" 
-                viewBox="0 0 20 20"
-              >
-                <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
-              </svg>
-            </span>
-            {{ isLoading ? $t('auth.login.signing_in') : $t('auth.login.sign_in') }}
-          </button>
-        </div>
-
-        <!-- Divider -->
-        <div class="relative">
-          <div class="absolute inset-0 flex items-center">
-            <div class="w-full border-t border-gray-300" />
-          </div>
-          <div class="relative flex justify-center text-sm">
-            <span class="px-2 bg-gray-50 text-gray-500">{{ $t('auth.login.or') }}</span>
-          </div>
-        </div>
-
-        <!-- Social Login Buttons -->
-        <div class="space-y-3">
-          <button
-            type="button"
-            class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-            @click="loginWithGoogle"
-          >
-            <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
-            {{ $t('auth.login.google_login') }}
+              {{ loading ? '로그인 중...' : '로그인' }}
+            </div>
           </button>
 
-          <button
-            type="button"
-            class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-            @click="loginWithNaver"
-          >
-            <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="#03C75A">
-              <path d="M16.273 12.845 7.376 0H0v24h7.726V11.156L16.624 24H24V0h-7.727v12.845Z"/>
-            </svg>
-            {{ $t('auth.login.naver_login') }}
-          </button>
-        </div>
-      </form>
-
-      <!-- Error Display -->
-      <div v-if="authStore.error" class="rounded-md bg-red-50 p-4 mt-4">
-        <div class="flex">
-          <div class="flex-shrink-0">
-            <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-            </svg>
-          </div>
-          <div class="ml-3">
-            <h3 class="text-sm font-medium text-red-800">
-              {{ $t('auth.login.error_title') }}
-            </h3>
-            <div class="mt-2 text-sm text-red-700">
-              {{ authStore.error }}
+          <!-- Divider -->
+          <div class="relative">
+            <div class="absolute inset-0 flex items-center">
+              <div class="w-full border-t border-gray-200"></div>
+            </div>
+            <div class="relative flex justify-center text-sm">
+              <span class="px-3 bg-white text-gray-500">또는</span>
             </div>
           </div>
-          <div class="ml-auto pl-3">
+
+          <!-- Quick Actions -->
+          <div class="flex space-x-3 text-sm">
             <button
               type="button"
-              class="inline-flex rounded-md text-red-400 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
-              @click="authStore.clearError"
+              @click="showEmailFind = true"
+              class="flex-1 text-gray-600 hover:text-blue-600 transition-colors"
             >
-              <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-              </svg>
+              이메일 찾기
+            </button>
+            <button
+              type="button"
+              @click="showForgotPassword = true"
+              class="flex-1 text-gray-600 hover:text-blue-600 transition-colors"
+            >
+              비밀번호 찾기
             </button>
           </div>
+        </form>
+
+        <!-- Sign Up Link -->
+        <div class="mt-6 text-center">
+          <p class="text-gray-600 text-sm">
+            계정이 없으신가요?
+            <router-link to="/signup" class="font-medium text-blue-600 hover:text-blue-700 transition-colors">
+              회원가입하기
+            </router-link>
+          </p>
         </div>
       </div>
+      
+      <!-- Forgot Password Modal -->
+      <div v-if="showForgotPassword" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click.self="showForgotPassword = false">
+        <div class="bg-white rounded-2xl p-6 max-w-md w-full">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">비밀번호 재설정</h3>
+          <form @submit.prevent="handleForgotPassword" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">이메일</label>
+              <input
+                v-model="forgotPasswordEmail"
+                type="email"
+                required
+                class="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="가입 시 사용한 이메일을 입력하세요"
+              />
+            </div>
+            <div v-if="forgotPasswordError" class="text-red-600 text-sm">
+              {{ forgotPasswordError }}
+            </div>
+            <div v-if="forgotPasswordSuccess" class="text-green-600 text-sm bg-green-50 p-3 rounded-xl">
+              {{ forgotPasswordSuccess }}
+            </div>
+            <div class="flex gap-3">
+              <button
+                type="submit"
+                :disabled="forgotPasswordLoading"
+                class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50"
+              >
+                {{ forgotPasswordLoading ? '발송 중...' : '재설정 이메일 발송' }}
+              </button>
+              <button
+                type="button"
+                @click="showForgotPassword = false"
+                class="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-xl hover:bg-gray-200 transition-colors"
+              >
+                취소
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+      <!-- Email Find Modal -->
+      <div v-if="showEmailFind" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click.self="showEmailFind = false">
+        <div class="bg-white rounded-2xl p-6 max-w-md w-full">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">이메일 찾기</h3>
+          <form @submit.prevent="handleEmailFind" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">이름</label>
+              <input
+                v-model="emailFindForm.name"
+                type="text"
+                required
+                class="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="가입 시 입력한 이름을 입력하세요"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">연락처</label>
+              <input
+                v-model="emailFindForm.phone"
+                type="tel"
+                required
+                class="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="가입 시 입력한 연락처를 입력하세요"
+              />
+            </div>
+            <div v-if="emailFindError" class="text-red-600 text-sm">
+              {{ emailFindError }}
+            </div>
+            <div v-if="emailFindSuccess" class="text-green-600 text-sm bg-green-50 p-3 rounded-xl">
+              {{ emailFindSuccess }}
+            </div>
+            <div class="flex gap-3">
+              <button
+                type="submit"
+                :disabled="emailFindLoading"
+                class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50"
+              >
+                {{ emailFindLoading ? '확인 중...' : '확인' }}
+              </button>
+              <button
+                type="button"
+                @click="showEmailFind = false"
+                class="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-xl hover:bg-gray-200 transition-colors"
+              >
+                취소
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
 
-      <!-- 2FA Modal -->
-      <TwoFactorModal 
-        v-if="show2FAModal" 
-        @verify="handle2FAVerification"
-        @cancel="show2FAModal = false"
-      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
-import { useNotificationStore } from '@/stores/notification'
-import TwoFactorModal from '../components/TwoFactorModal.vue'
-import type { LoginRequest } from '@/types/auth'
+import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useToast } from 'vue-toastification'
+import { AuthService } from '@/services/authService'
 
-// Composables
 const router = useRouter()
-const route = useRoute()
-const authStore = useAuthStore()
-const notificationStore = useNotificationStore()
+const toast = useToast()
 
-// Form state
-const form = ref<LoginRequest>({
-  email: '',
-  password: '',
-  rememberMe: false
-})
-
+// 상태
+const loading = ref(false)
+const error = ref('')
 const showPassword = ref(false)
-const show2FAModal = ref(false)
-const errors = ref<Record<string, string>>({})
+const rememberMe = ref(false)
 
-// Computed
-const isLoading = computed(() => authStore.isLoading)
-const isFormValid = computed(() => {
-  return form.value.email && 
-         form.value.password && 
-         !Object.keys(errors.value).length
+// 폼 데이터
+const form = reactive({
+  email: '',
+  password: ''
 })
 
-// Validation
-const validateField = (field: string) => {
-  switch (field) {
-    case 'email':
-      if (!form.value.email) {
-        errors.value.email = 'Email is required'
-      } else if (!/\S+@\S+\.\S+/.test(form.value.email)) {
-        errors.value.email = 'Please enter a valid email'
-      } else {
-        delete errors.value.email
-      }
-      break
-    
-    case 'password':
-      if (!form.value.password) {
-        errors.value.password = 'Password is required'
-      } else if (form.value.password.length < 6) {
-        errors.value.password = 'Password must be at least 6 characters'
-      } else {
-        delete errors.value.password
-      }
-      break
-  }
-}
+// 비밀번호 찾기 모달
+const showForgotPassword = ref(false)
+const forgotPasswordEmail = ref('')
+const forgotPasswordLoading = ref(false)
+const forgotPasswordError = ref('')
+const forgotPasswordSuccess = ref('')
 
-const validateForm = () => {
-  validateField('email')
-  validateField('password')
-  return Object.keys(errors.value).length === 0
-}
+// 이메일 찾기 모달
+const showEmailFind = ref(false)
+const emailFindForm = reactive({
+  name: '',
+  phone: ''
+})
+const emailFindLoading = ref(false)
+const emailFindError = ref('')
+const emailFindSuccess = ref('')
 
-// Form submission
+// 로그인 처리
 const handleSubmit = async () => {
-  if (!validateForm()) return
-
-  try {
-    const response = await authStore.login(form.value)
-    
-    if (response.success) {
-      // Check if 2FA is required
-      if (response.data?.requires2FA) {
-        show2FAModal.value = true
-        return
-      }
-      
-      // Show success message
-      notificationStore.success(
-        'Login Successful',
-        'Welcome back to YCS LMS!'
-      )
-      
-      // Redirect to intended page or dashboard
-      const redirectTo = (route.query.redirect as string) || '/dashboard'
-      await router.push(redirectTo)
-    }
-  } catch (error: any) {
-    // Error is already handled by the store
-    console.error('Login error:', error)
-  }
-}
-
-// 2FA handling
-const handle2FAVerification = async (code: string) => {
-  try {
-    const response = await authStore.verify2FA(code)
-    
-    if (response.success) {
-      show2FAModal.value = false
-      
-      notificationStore.success(
-        'Login Successful',
-        'Welcome back to YCS LMS!'
-      )
-      
-      const redirectTo = (route.query.redirect as string) || '/dashboard'
-      await router.push(redirectTo)
-    }
-  } catch (error) {
-    // Error handling is done in the modal component
-    console.error('2FA verification error:', error)
-  }
-}
-
-// Social login methods
-const loginWithGoogle = () => {
-  // Redirect to Google OAuth endpoint
-  window.location.href = '/api/auth/google'
-}
-
-const loginWithNaver = () => {
-  // Redirect to Naver OAuth endpoint
-  window.location.href = '/api/auth/naver'
-}
-
-// Lifecycle
-onMounted(() => {
-  // Clear any existing errors when component mounts
-  authStore.clearError()
-  
-  // Check for OAuth callback parameters
-  const { code, state, error } = route.query
-  if (code && state) {
-    // Handle OAuth callback
-    handleOAuthCallback(code as string, state as string, error as string)
-  }
-})
-
-const handleOAuthCallback = async (code: string, state: string, error?: string) => {
-  if (error) {
-    notificationStore.error('Login Failed', `OAuth error: ${error}`)
+  if (!form.email || !form.password) {
+    error.value = '이메일과 비밀번호를 모두 입력해주세요.'
     return
   }
-  
+
+  loading.value = true
+  error.value = ''
+
   try {
-    // Make API call to exchange code for tokens
-    const response = await fetch('/api/auth/oauth/callback', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ code, state })
+    const result = await AuthService.signIn({
+      email: form.email,
+      password: form.password
     })
-    
-    const data = await response.json()
-    
-    if (data.success) {
-      // Set user and token in store
-      authStore.user = data.data.user
-      authStore.token = data.data.token
-      
-      notificationStore.success('Login Successful', 'Welcome to YCS LMS!')
-      
-      const redirectTo = (route.query.redirect as string) || '/dashboard'
-      await router.push(redirectTo)
+
+    if (result.success) {
+      toast.success('로그인되었습니다.')
+      router.push('/app/dashboard')
     } else {
-      notificationStore.error('Login Failed', data.message || 'OAuth login failed')
+      error.value = result.error || '로그인에 실패했습니다.'
     }
   } catch (err) {
-    console.error('OAuth callback error:', err)
-    notificationStore.error('Login Failed', 'Failed to process OAuth login')
+    error.value = '로그인 중 오류가 발생했습니다.'
+  } finally {
+    loading.value = false
   }
 }
+
+// 비밀번호 찾기 처리
+const handleForgotPassword = async () => {
+  if (!forgotPasswordEmail.value) {
+    forgotPasswordError.value = '이메일을 입력해주세요.'
+    return
+  }
+
+  forgotPasswordLoading.value = true
+  forgotPasswordError.value = ''
+  forgotPasswordSuccess.value = ''
+
+  try {
+    const result = await AuthService.sendPasswordResetEmail(forgotPasswordEmail.value)
+    
+    if (result.success) {
+      forgotPasswordSuccess.value = '비밀번호 재설정 이메일을 발송했습니다.'
+    } else {
+      forgotPasswordError.value = result.error || '비밀번호 재설정 이메일 발송에 실패했습니다.'
+    }
+  } catch (err) {
+    forgotPasswordError.value = '비밀번호 재설정 중 오류가 발생했습니다.'
+  } finally {
+    forgotPasswordLoading.value = false
+  }
+}
+
+// 이메일 찾기 처리
+const handleEmailFind = async () => {
+  if (!emailFindForm.name || !emailFindForm.phone) {
+    emailFindError.value = '이름과 연락처를 모두 입력해주세요.'
+    return
+  }
+
+  emailFindLoading.value = true
+  emailFindError.value = ''
+  emailFindSuccess.value = ''
+
+  try {
+    // Mock 응답 (실제 구현에서는 API 호출)
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    if (emailFindForm.name && emailFindForm.phone) {
+      emailFindSuccess.value = '입력하신 정보로 등록된 이메일이 있습니다. 관리자에게 문의하세요.'
+    } else {
+      emailFindError.value = '입력하신 정보와 일치하는 계정을 찾을 수 없습니다.'
+    }
+  } catch (err) {
+    emailFindError.value = '이메일 찾기 중 오류가 발생했습니다.'
+  } finally {
+    emailFindLoading.value = false
+  }
+}
+
 </script>
 
 <style scoped>
-/* Custom styles for login form */
-.login-form {
-  /* Add any custom styling here */
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
 }
 </style>

@@ -14,7 +14,11 @@ const authStore = useAuthStore()
 
 onMounted(async () => {
   // Check authentication status on app mount
-  await authStore.checkAuth()
+  try {
+    await authStore.fetchUserProfile()
+  } catch (error) {
+    console.log('No user session found')
+  }
 })
 </script>
 

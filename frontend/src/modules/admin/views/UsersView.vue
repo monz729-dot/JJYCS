@@ -98,13 +98,16 @@
                 역할
               </th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                담당자 정보
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                회사/단체
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 상태
               </th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 가입일
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                최근 로그인
               </th>
               <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 작업
@@ -138,6 +141,20 @@
                   {{ getRoleText(user.role) }}
                 </span>
               </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <div v-if="user.role !== 'individual' && user.role !== 'admin'">
+                  <div class="font-medium">{{ user.manager_name || '-' }}</div>
+                  <div class="text-gray-500">{{ user.manager_contact || '-' }}</div>
+                </div>
+                <div v-else class="text-gray-400">-</div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <div v-if="user.role !== 'individual' && user.role !== 'admin'">
+                  <div class="font-medium">{{ user.company_name || '-' }}</div>
+                  <div v-if="user.business_number" class="text-gray-500">{{ user.business_number }}</div>
+                </div>
+                <div v-else class="text-gray-400">-</div>
+              </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full"
                       :class="getStatusClass(user.status)">
@@ -146,9 +163,6 @@
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 {{ formatDate(user.createdAt) }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {{ user.lastLoginAt ? formatDate(user.lastLoginAt) : '없음' }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <div class="flex items-center justify-end space-x-2">
@@ -292,6 +306,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { AuthService } from '@/services/authService'
 import {
   UserIcon,
   MagnifyingGlassIcon,
@@ -311,6 +326,11 @@ interface User {
   lastLoginAt?: string
   memberCode?: string
   phone?: string
+  manager_name?: string
+  manager_contact?: string
+  company_name?: string
+  business_number?: string
+  business_license_url?: string
 }
 
 const router = useRouter()
@@ -343,7 +363,24 @@ const userForm = ref({
 const users = ref<User[]>([])
 const loadUsers = async () => {
   try {
-    users.value = await authStore.getAllUsers()
+    // AuthService에서 실제 가입된 사용자들 불러오기
+    const userData = await AuthService.getAllUsers()
+    users.value = userData.map((user: any) => ({
+      id: parseInt(user.id),
+      name: user.name,
+      email: user.email,
+      role: user.role || user.user_type,
+      status: user.status || (user.approval_status === 'approved' ? 'active' : 'pending_approval'),
+      createdAt: user.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+      lastLoginAt: user.lastLoginAt,
+      memberCode: user.memberCode,
+      phone: user.phone,
+      manager_name: user.manager_name,
+      manager_contact: user.manager_contact,
+      company_name: user.company_name,
+      business_number: user.business_number,
+      business_license_url: user.business_license_url
+    }))
   } catch (error) {
     console.error('Failed to load users:', error)
   }
