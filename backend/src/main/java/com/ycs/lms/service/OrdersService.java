@@ -1,7 +1,5 @@
 package com.ycs.lms.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ycs.lms.dto.OrderCreateRequest;
 import com.ycs.lms.dto.OrderResponse;
 import com.ycs.lms.dto.PageResponse;
@@ -11,477 +9,351 @@ import com.ycs.lms.entity.OrderItem;
 import com.ycs.lms.entity.User;
 import com.ycs.lms.exception.BadRequestException;
 import com.ycs.lms.exception.NotFoundException;
-import com.ycs.lms.mapper.OrderMapper;
-import com.ycs.lms.mapper.UserMapper;
-import com.ycs.lms.security.UserPrincipal;
+import com.ycs.lms.repository.OrderRepository;
+import com.ycs.lms.repository.OrderBoxRepository;
+import com.ycs.lms.repository.OrderItemRepository;
+import com.ycs.lms.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
+@Slf4j
+@Transactional
 public class OrdersService {
 
-    private final OrderMapper orderMapper;
-    private final UserMapper userMapper;
+    private final OrderRepository orderRepository;
+    private final OrderItemRepository orderItemRepository;
+    private final OrderBoxRepository orderBoxRepository;
+    private final UserRepository userRepository;
     private final BusinessRuleService businessRuleService;
-    private final ExternalApiService externalApiService;
-    private final ObjectMapper objectMapper;
 
-    @Transactional
+    /**
+     * 주문 생성
+     */
     public OrderResponse createOrder(OrderCreateRequest request) {
-        UserPrincipal currentUser = getCurrentUser();
-        User user = userMapper.findById(currentUser.getId())
-            .orElseThrow(() -> new NotFoundException("사용자를 찾을 수 없습니다."));
+        log.info("Creating order for user: {}", request.getUserId());
 
-        // 1. 주문 기본 정보 생성
-        Order order = createOrderEntity(request, user);
-        
-        // 2. 상품 정보 생성 및 총액 계산
-        List<OrderItem> items = createOrderItems(request.getItems(), order.getId());
-        BigDecimal totalAmount = calculateTotalAmount(items);
-        
-        // 3. 박스 정보 생성 및 CBM 계산
-        List<OrderBox> boxes = createOrderBoxes(request.getBoxes(), order.getId());
-        BigDecimal totalCbm = calculateTotalCbm(boxes);
-        
-        // 4. 비즈니스 룰 적용
-        BusinessRuleService.OrderValidationResult validation = businessRuleService.validateOrder(
-            totalCbm, totalAmount, request.getItems().get(0).getCurrency(), 
-            user.getMemberCode(), "active".equals(user.getStatus())
-        );
-        
-        // 5. 주문 정보 업데이트
-        updateOrderWithBusinessRules(order, totalAmount, totalCbm, validation);
-        
-        // 6. DB 저장
-        String orderCode = orderMapper.generateOrderCode();
-        order.setOrderCode(orderCode);
-        orderMapper.insertOrder(order);
-        
-        // 상품 저장
-        for (int i = 0; i < items.size(); i++) {
-            items.get(i).setOrderId(order.getId());
-            items.get(i).setItemOrder(i + 1);
-            orderMapper.insertOrderItem(items.get(i));
+        // 사용자 존재 확인
+        User user = userRepository.findById(request.getUserId())
+            .orElseThrow(() -> new NotFoundException("사용자를 찾을 수 없습니다: " + request.getUserId()));
+
+        // 주문 생성
+        Order order = Order.builder()
+            .orderCode(generateOrderCode())
+            .userId(request.getUserId())
+            .status(Order.OrderStatus.REQUESTED)
+            .orderType(Order.OrderType.SEA) // 기본값, CBM 검사 후 변경될 수 있음
+            .recipientName(request.getRecipientName())
+            .recipientPhone(request.getRecipientPhone())
+            .recipientAddress(request.getRecipientAddress())
+            .recipientCountry(request.getRecipientCountry())
+            .urgency(request.isUrgent() ? Order.OrderUrgency.URGENT : Order.OrderUrgency.NORMAL)
+            .needsRepacking(request.isNeedsRepacking())
+            .specialInstructions(request.getSpecialInstructions())
+            .currency("THB")
+            .paymentMethod(Order.PaymentMethod.PREPAID)
+            .paymentStatus(Order.PaymentStatus.PENDING)
+            .createdBy(request.getUserId())
+            .build();
+
+        // 주문 저장
+        order = orderRepository.save(order);
+        final Long savedOrderId = order.getId();
+
+        // 주문 아이템 생성
+        if (request.getItems() != null && !request.getItems().isEmpty()) {
+            List<OrderItem> items = request.getItems().stream()
+                .map(itemRequest -> OrderItem.builder()
+                    .orderId(savedOrderId)
+                    .itemOrder(itemRequest.getItemOrder())
+                    .name(itemRequest.getName())
+                    .description(itemRequest.getDescription())
+                    .category(itemRequest.getCategory())
+                    .quantity(itemRequest.getQuantity())
+                    .unitWeight(itemRequest.getUnitWeight())
+                    .unitPrice(itemRequest.getUnitPrice())
+                    .totalAmount(itemRequest.getUnitPrice().multiply(BigDecimal.valueOf(itemRequest.getQuantity())))
+                    .currency("THB")
+                    .hsCode(itemRequest.getHsCode())
+                    .emsCode(itemRequest.getEmsCode())
+                    .countryOfOrigin(itemRequest.getCountryOfOrigin())
+                    .brand(itemRequest.getBrand())
+                    .restricted(itemRequest.isRestricted())
+                    .restrictionNote(itemRequest.getRestrictionNote())
+                    .build())
+                .collect(Collectors.toList());
+
+            orderItemRepository.saveAll(items);
         }
-        
-        // 박스 저장
-        for (int i = 0; i < boxes.size(); i++) {
-            OrderBox box = boxes.get(i);
-            box.setOrderId(order.getId());
-            box.setBoxNumber(i + 1);
-            box.setLabelCode(generateBoxLabelCode(orderCode, i + 1));
-            box.setStatus("created");
-            
-            // JSON 변환
-            try {
-                String itemIdsJson = objectMapper.writeValueAsString(box.getItemIds());
-                box.setItemIdsJson(itemIdsJson);
-            } catch (Exception e) {
-                log.error("Failed to serialize item IDs for box", e);
+
+        // 주문 박스 생성
+        if (request.getBoxes() != null && !request.getBoxes().isEmpty()) {
+            List<OrderBox> boxes = request.getBoxes().stream()
+                .map(boxRequest -> OrderBox.builder()
+                    .orderId(savedOrderId)
+                    .boxNumber(boxRequest.getBoxNumber())
+                    .labelCode(generateLabelCode(savedOrderId, boxRequest.getBoxNumber()))
+                    .widthCm(boxRequest.getWidthCm())
+                    .heightCm(boxRequest.getHeightCm())
+                    .depthCm(boxRequest.getDepthCm())
+                    .weightKg(boxRequest.getWeightKg())
+                    .status(OrderBox.BoxStatus.CREATED)
+                    .notes(boxRequest.getNotes())
+                    .build())
+                .collect(Collectors.toList());
+
+            orderBoxRepository.saveAll(boxes);
+        }
+
+        // 비즈니스 룰 적용
+        applyBusinessRules(savedOrderId);
+
+        // 업데이트된 주문 조회 및 반환
+        Order savedOrder = orderRepository.findById(savedOrderId).orElse(order);
+        return convertToOrderResponse(savedOrder);
+    }
+
+    /**
+     * 주문 목록 조회
+     */
+    @Transactional(readOnly = true)
+    public PageResponse<OrderResponse> getOrders(Long userId, String status, String orderType,
+                                                LocalDateTime startDate, LocalDateTime endDate,
+                                                Pageable pageable) {
+        log.info("Getting orders for user: {}, status: {}, type: {}", userId, status, orderType);
+
+        Page<Order> orders;
+
+        if (userId != null) {
+            if (status != null) {
+                Order.OrderStatus orderStatus = Order.OrderStatus.valueOf(status.toUpperCase());
+                orders = orderRepository.findByUserIdAndStatus(userId, orderStatus, pageable);
+            } else {
+                orders = orderRepository.findByUserId(userId, pageable);
             }
-            
-            orderMapper.insertOrderBox(box);
+        } else {
+            if (status != null) {
+                Order.OrderStatus orderStatus = Order.OrderStatus.valueOf(status.toUpperCase());
+                orders = orderRepository.findByStatus(orderStatus, pageable);
+            } else {
+                orders = orderRepository.findAll(pageable);
+            }
         }
-        
-        // 7. 비동기 외부 API 검증 (백그라운드)
-        validateExternalCodes(items);
-        
-        // 8. 응답 생성
-        OrderResponse response = buildOrderResponse(order, items, boxes, user);
-        
-        // 경고 메시지 추가
-        for (BusinessRuleService.Warning warning : validation.getWarnings()) {
-            response.addWarning(warning.getType(), warning.getMessage(), null);
-        }
-        
-        log.info("Order created successfully: orderId={}, orderCode={}, totalCbm={}, totalAmount={}", 
-                order.getId(), order.getOrderCode(), totalCbm, totalAmount);
-        
-        return response;
-    }
 
-    public OrderResponse getOrder(Long orderId) {
-        UserPrincipal currentUser = getCurrentUser();
-        Order order = orderMapper.findOrderById(orderId);
-        
-        if (order == null) {
-            throw new NotFoundException("주문을 찾을 수 없습니다.");
-        }
-        
-        // 권한 체크: 본인 주문이거나 관리자/창고 직원
-        if (!canAccessOrder(currentUser, order)) {
-            throw new BadRequestException("해당 주문에 접근할 권한이 없습니다.");
-        }
-        
-        User user = userMapper.findById(order.getUserId()).orElse(null);
-        return buildOrderResponse(order, order.getItems(), order.getBoxes(), user);
-    }
-
-    public PageResponse<OrderResponse> getOrders(String status, String startDate, String endDate, Pageable pageable) {
-        UserPrincipal currentUser = getCurrentUser();
-        Long userId = isAdminOrWarehouse(currentUser) ? null : currentUser.getId();
-        
-        int offset = pageable.getPageNumber() * pageable.getPageSize();
-        List<Order> orders = orderMapper.findOrders(userId, status, startDate, endDate, 
-                                                   pageable.getPageSize(), offset);
-        
-        long total = orderMapper.countOrders(userId, status, startDate, endDate);
-        
-        List<OrderResponse> responses = orders.stream()
-            .map(order -> {
-                User user = userMapper.findById(order.getUserId()).orElse(null);
-                return buildOrderResponseSummary(order, user);
-            })
+        List<OrderResponse> orderResponses = orders.getContent().stream()
+            .map(this::convertToOrderResponse)
             .collect(Collectors.toList());
-        
-        return PageResponse.of(responses, pageable.getPageNumber(), pageable.getPageSize(), total);
-    }
 
-    @Transactional
-    public OrderResponse updateOrder(Long orderId, OrderCreateRequest request) {
-        UserPrincipal currentUser = getCurrentUser();
-        Order existingOrder = orderMapper.findOrderById(orderId);
-        
-        if (existingOrder == null) {
-            throw new NotFoundException("주문을 찾을 수 없습니다.");
-        }
-        
-        if (!canModifyOrder(currentUser, existingOrder)) {
-            throw new BadRequestException("해당 주문을 수정할 권한이 없습니다.");
-        }
-        
-        // 수정 가능한 상태인지 체크
-        if (!isModifiableStatus(existingOrder.getStatus())) {
-            throw new BadRequestException("현재 상태에서는 주문을 수정할 수 없습니다.");
-        }
-        
-        // TODO: 주문 수정 로직 구현
-        // 현재는 새로운 주문 생성과 동일한 로직을 사용
-        
-        return getOrder(orderId);
-    }
-
-    @Transactional
-    public void cancelOrder(Long orderId) {
-        UserPrincipal currentUser = getCurrentUser();
-        Order order = orderMapper.findOrderById(orderId);
-        
-        if (order == null) {
-            throw new NotFoundException("주문을 찾을 수 없습니다.");
-        }
-        
-        if (!canModifyOrder(currentUser, order)) {
-            throw new BadRequestException("해당 주문을 취소할 권한이 없습니다.");
-        }
-        
-        if (!isCancellableStatus(order.getStatus())) {
-            throw new BadRequestException("현재 상태에서는 주문을 취소할 수 없습니다.");
-        }
-        
-        orderMapper.cancelOrder(orderId);
-        log.info("Order cancelled: orderId={}, cancelledBy={}", orderId, currentUser.getId());
-    }
-
-    private Order createOrderEntity(OrderCreateRequest request, User user) {
-        return Order.builder()
-            .userId(user.getId())
-            .status(businessRuleService.determineOrderStatus(user.getMemberCode(), "active".equals(user.getStatus())))
-            .orderType(request.getShipping().getPreferredType())
-            .recipientName(request.getRecipient().getName())
-            .recipientPhone(request.getRecipient().getPhone())
-            .recipientAddress(request.getRecipient().getAddress())
-            .recipientZipCode(request.getRecipient().getZipCode())
-            .recipientCountry(request.getRecipient().getCountry())
-            .urgency(request.getShipping().getUrgency())
-            .needsRepacking(request.getShipping().isNeedsRepacking())
-            .specialInstructions(request.getShipping().getSpecialInstructions())
-            .currency(request.getItems().get(0).getCurrency()) // 첫 번째 아이템 통화 사용
-            .paymentMethod(request.getPayment().getMethod())
-            .paymentStatus("pending")
-            .createdBy(user.getId())
-            .estimatedDeliveryDate(LocalDate.now().plusDays("air".equals(request.getShipping().getPreferredType()) ? 7 : 14))
+        return PageResponse.<OrderResponse>builder()
+            .content(orderResponses)
+            .page(orders.getNumber())
+            .size(orders.getSize())
+            .totalElements(orders.getTotalElements())
+            .totalPages(orders.getTotalPages())
+            .first(orders.isFirst())
+            .last(orders.isLast())
             .build();
     }
 
-    private List<OrderItem> createOrderItems(List<OrderCreateRequest.ItemInfo> itemInfos, Long orderId) {
-        return itemInfos.stream()
-            .map(itemInfo -> OrderItem.builder()
-                .orderId(orderId)
-                .name(itemInfo.getName())
-                .description(itemInfo.getDescription())
-                .category(itemInfo.getCategory())
-                .quantity(itemInfo.getQuantity())
-                .unitWeight(itemInfo.getWeight())
-                .unitPrice(itemInfo.getAmount().divide(BigDecimal.valueOf(itemInfo.getQuantity()), 2, BigDecimal.ROUND_HALF_UP))
-                .totalAmount(itemInfo.getAmount())
-                .currency(itemInfo.getCurrency())
-                .hsCode(itemInfo.getHsCode())
-                .emsCode(itemInfo.getEmsCode())
-                .brand(itemInfo.getBrand())
-                .model(itemInfo.getModel())
-                .restricted(false)
-                .build())
-            .collect(Collectors.toList());
+    /**
+     * 주문 상세 조회
+     */
+    @Transactional(readOnly = true)
+    public OrderResponse getOrder(Long orderId) {
+        log.info("Getting order: {}", orderId);
+
+        Order order = orderRepository.findById(orderId)
+            .orElseThrow(() -> new NotFoundException("주문을 찾을 수 없습니다: " + orderId));
+
+        return convertToOrderResponse(order);
     }
 
-    private List<OrderBox> createOrderBoxes(List<OrderCreateRequest.BoxInfo> boxInfos, Long orderId) {
-        return boxInfos.stream()
-            .map(boxInfo -> {
-                BigDecimal cbm = businessRuleService.calculateCBM(boxInfo.getWidth(), boxInfo.getHeight(), boxInfo.getDepth());
-                
-                // Convert item indexes to item IDs (for now, use indexes as IDs)
-                List<Long> itemIds = boxInfo.getItemIndexes().stream()
-                    .map(index -> (long) (index + 1))
-                    .collect(Collectors.toList());
-                
-                return OrderBox.builder()
-                    .orderId(orderId)
-                    .widthCm(boxInfo.getWidth())
-                    .heightCm(boxInfo.getHeight())
-                    .depthCm(boxInfo.getDepth())
-                    .cbmM3(cbm)
-                    .weightKg(boxInfo.getWeight())
-                    .itemIds(itemIds)
-                    .build();
-            })
-            .collect(Collectors.toList());
-    }
+    /**
+     * 주문 상태 업데이트
+     */
+    public OrderResponse updateOrderStatus(Long orderId, String status) {
+        log.info("Updating order {} status to: {}", orderId, status);
 
-    private BigDecimal calculateTotalAmount(List<OrderItem> items) {
-        return items.stream()
-            .map(OrderItem::getTotalAmount)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
+        Order order = orderRepository.findById(orderId)
+            .orElseThrow(() -> new NotFoundException("주문을 찾을 수 없습니다: " + orderId));
 
-    private BigDecimal calculateTotalCbm(List<OrderBox> boxes) {
-        return boxes.stream()
-            .map(OrderBox::getCbmM3)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
+        try {
+            order.setStatus(Order.OrderStatus.valueOf(status.toUpperCase()));
+            order = orderRepository.save(order);
 
-    private void updateOrderWithBusinessRules(Order order, BigDecimal totalAmount, BigDecimal totalCbm,
-                                            BusinessRuleService.OrderValidationResult validation) {
-        order.setTotalAmount(totalAmount);
-        order.setTotalCbmM3(totalCbm);
-        order.setRequiresExtraRecipient(validation.isRequiresExtraRecipient());
-        
-        if (validation.isConvertToAir()) {
-            order.setOrderType("air");
-            order.setEstimatedDeliveryDate(LocalDate.now().plusDays(7));
-        }
-        
-        if (validation.isHasDelayedProcessing()) {
-            order.setStatus("delayed");
+            return convertToOrderResponse(order);
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("잘못된 주문 상태입니다: " + status);
         }
     }
 
-    private String generateBoxLabelCode(String orderCode, int boxNumber) {
-        return orderCode + "-" + String.format("%02d", boxNumber);
+    /**
+     * 주문 취소
+     */
+    public OrderResponse cancelOrder(Long orderId, String reason) {
+        log.info("Cancelling order: {} with reason: {}", orderId, reason);
+
+        Order order = orderRepository.findById(orderId)
+            .orElseThrow(() -> new NotFoundException("주문을 찾을 수 없습니다: " + orderId));
+
+        if (order.getStatus() == Order.OrderStatus.DELIVERED ||
+            order.getStatus() == Order.OrderStatus.SHIPPED) {
+            throw new BadRequestException("배송된 주문은 취소할 수 없습니다");
+        }
+
+        order.setStatus(Order.OrderStatus.CANCELLED);
+        order.setNotes(order.getNotes() + "\n취소 사유: " + reason);
+        order = orderRepository.save(order);
+
+        return convertToOrderResponse(order);
     }
 
-    private void validateExternalCodes(List<OrderItem> items) {
-        items.parallelStream().forEach(item -> {
-            if (item.getEmsCode() != null) {
-                CompletableFuture<ExternalApiService.EmsValidationResult> emsValidation = 
-                    externalApiService.validateEmsCodeAsync(item.getEmsCode());
-                
-                emsValidation.thenAccept(result -> {
-                    if (!result.isValid()) {
-                        log.warn("Invalid EMS code detected: itemId={}, code={}, reason={}", 
-                                item.getId(), item.getEmsCode(), result.getMessage());
-                        // TODO: 알림 시스템으로 전송
-                    }
-                });
+    /**
+     * 비즈니스 룰 적용
+     */
+    private void applyBusinessRules(Long orderId) {
+        log.info("Applying business rules for order: {}", orderId);
+
+        Order order = orderRepository.findById(orderId).orElse(null);
+        if (order == null) return;
+
+        // CBM 계산 및 29 초과 시 항공 전환
+        BigDecimal totalCbm = orderBoxRepository.sumCbmByOrderId(orderId);
+        if (totalCbm != null) {
+            order.setTotalCbmM3(totalCbm);
+
+            if (totalCbm.compareTo(BigDecimal.valueOf(29.0)) > 0) {
+                log.warn("Order {} CBM ({}) exceeds 29m³, converting to AIR", orderId, totalCbm);
+                order.setOrderType(Order.OrderType.AIR);
             }
-            
-            if (item.getHsCode() != null) {
-                CompletableFuture<ExternalApiService.HsCodeValidationResult> hsValidation = 
-                    externalApiService.validateHsCodeAsync(item.getHsCode());
-                
-                hsValidation.thenAccept(result -> {
-                    if (!result.isValid()) {
-                        log.warn("Invalid HS code detected: itemId={}, code={}, reason={}", 
-                                item.getId(), item.getHsCode(), result.getMessage());
-                        // TODO: 알림 시스템으로 전송
-                    }
-                });
+        }
+
+        // THB 1,500 초과 시 추가 수취인 정보 필요
+        BigDecimal totalAmount = orderItemRepository.sumTotalAmountByOrderId(orderId);
+        if (totalAmount != null) {
+            order.setTotalAmount(totalAmount);
+
+            if (totalAmount.compareTo(BigDecimal.valueOf(1500.0)) > 0) {
+                log.warn("Order {} amount ({}) exceeds 1500 THB, requires extra recipient info", orderId, totalAmount);
+                order.setRequiresExtraRecipient(true);
             }
-        });
+        }
+
+        // 회원 코드 없는 사용자 지연 처리
+        User user = userRepository.findById(order.getUserId()).orElse(null);
+        if (user != null && (user.getMemberCode() == null || user.getMemberCode().trim().isEmpty())) {
+            log.warn("Order {} user has no member code, marking for delay", orderId);
+            // 상태를 지연으로 설정하거나 특별 플래그 설정
+            order.setNotes(order.getNotes() + "\n회원코드 미등록으로 지연 처리됨");
+        }
+
+        orderRepository.save(order);
     }
 
-    private OrderResponse buildOrderResponse(Order order, List<OrderItem> items, List<OrderBox> boxes, User user) {
+    /**
+     * 주문 코드 생성
+     */
+    private String generateOrderCode() {
+        long count = orderRepository.count();
+        return String.format("YCS-%d-%05d", LocalDate.now().getYear(), count + 1);
+    }
+
+    /**
+     * 라벨 코드 생성
+     */
+    private String generateLabelCode(Long orderId, int boxNumber) {
+        return String.format("BOX-%d-%05d-%02d", LocalDate.now().getYear(), orderId, boxNumber);
+    }
+
+    /**
+     * Order를 OrderResponse로 변환
+     */
+    private OrderResponse convertToOrderResponse(Order order) {
+        // 관련 데이터 조회
+        List<OrderItem> items = orderItemRepository.findByOrderIdOrderByItemOrder(order.getId());
+        List<OrderBox> boxes = orderBoxRepository.findByOrderIdOrderByBoxNumber(order.getId());
+
         return OrderResponse.builder()
-            .orderId(order.getId())
+            .id(order.getId())
             .orderCode(order.getOrderCode())
-            .status(order.getStatus())
-            .orderType(order.getOrderType())
-            .totalCBM(order.getTotalCbmM3())
-            .totalWeight(calculateTotalWeight(items))
+            .userId(order.getUserId())
+            .status(order.getStatus().name())
+            .orderType(order.getOrderType().name())
+            .recipientName(order.getRecipientName())
+            .recipientPhone(order.getRecipientPhone())
+            .recipientAddress(order.getRecipientAddress())
+            .recipientCountry(order.getRecipientCountry())
+            .urgency(order.getUrgency().name())
+            .needsRepacking(order.isNeedsRepacking())
+            .specialInstructions(order.getSpecialInstructions())
             .totalAmount(order.getTotalAmount())
             .currency(order.getCurrency())
+            .totalCbmM3(order.getTotalCbmM3())
             .requiresExtraRecipient(order.isRequiresExtraRecipient())
-            .hasMemberCodeIssue(user != null && (user.getMemberCode() == null || user.getMemberCode().isEmpty()))
-            .recipient(OrderResponse.RecipientInfo.builder()
-                .name(order.getRecipientName())
-                .phone(order.getRecipientPhone())
-                .address(order.getRecipientAddress())
-                .zipCode(order.getRecipientZipCode())
-                .country(order.getRecipientCountry())
-                .build())
-            .items(mapOrderItems(items))
-            .boxes(mapOrderBoxes(boxes))
-            .shipping(OrderResponse.ShippingInfo.builder()
-                .urgency(order.getUrgency())
-                .needsRepacking(order.isNeedsRepacking())
-                .specialInstructions(order.getSpecialInstructions())
-                .paymentMethod(order.getPaymentMethod())
-                .paymentStatus(order.getPaymentStatus())
-                .build())
-            .estimatedDelivery(order.getEstimatedDeliveryDate())
-            .actualDelivery(order.getActualDeliveryDate())
+            .estimatedDeliveryDate(order.getEstimatedDeliveryDate())
+            .actualDeliveryDate(order.getActualDeliveryDate())
+            .paymentMethod(order.getPaymentMethod().name())
+            .paymentStatus(order.getPaymentStatus().name())
+            .estimatedCost(order.getEstimatedCost())
+            .actualCost(order.getActualCost())
+            .notes(order.getNotes())
             .createdAt(order.getCreatedAt())
             .updatedAt(order.getUpdatedAt())
-            .user(user != null ? OrderResponse.UserInfo.builder()
-                .id(user.getId())
-                .name(user.getName())
-                .email(user.getEmail())
-                .memberCode(user.getMemberCode())
-                .role(user.getRole())
-                .build() : null)
-            .timeline(buildTimeline(order))
+            .itemCount(items.size())
+            .boxCount(boxes.size())
             .build();
     }
 
-    private OrderResponse buildOrderResponseSummary(Order order, User user) {
-        return OrderResponse.builder()
-            .orderId(order.getId())
-            .orderCode(order.getOrderCode())
-            .status(order.getStatus())
-            .orderType(order.getOrderType())
-            .totalAmount(order.getTotalAmount())
-            .currency(order.getCurrency())
-            .recipient(OrderResponse.RecipientInfo.builder()
-                .name(order.getRecipientName())
-                .country(order.getRecipientCountry())
-                .build())
-            .createdAt(order.getCreatedAt())
-            .estimatedDelivery(order.getEstimatedDeliveryDate())
-            .user(user != null ? OrderResponse.UserInfo.builder()
-                .id(user.getId())
-                .name(user.getName())
-                .memberCode(user.getMemberCode())
-                .role(user.getRole())
-                .build() : null)
+    /**
+     * 사용자별 주문 통계
+     */
+    @Transactional(readOnly = true)
+    public OrderStatsResponse getUserOrderStats(Long userId) {
+        long totalOrders = orderRepository.countByUserId(userId);
+        long pendingOrders = orderRepository.countByUserIdAndStatus(userId, Order.OrderStatus.REQUESTED);
+        long inTransitOrders = orderRepository.countByUserIdAndStatus(userId, Order.OrderStatus.IN_PROGRESS);
+        BigDecimal totalSpent = orderRepository.sumTotalAmountByUserIdAndCompleted(userId);
+        if (totalSpent == null) totalSpent = BigDecimal.ZERO;
+
+        return OrderStatsResponse.builder()
+            .totalOrders(totalOrders)
+            .pendingOrders(pendingOrders)
+            .inTransitOrders(inTransitOrders)
+            .totalSpent(totalSpent)
             .build();
     }
 
-    // Helper methods
-    private UserPrincipal getCurrentUser() {
-        return (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-    }
+    /**
+     * 최근 주문 조회
+     */
+    @Transactional(readOnly = true)
+    public List<OrderResponse> getRecentOrders(Long userId, int limit) {
+        Pageable pageable = org.springframework.data.domain.PageRequest.of(0, limit);
+        List<Order> orders = orderRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
 
-    private boolean canAccessOrder(UserPrincipal user, Order order) {
-        return order.getUserId().equals(user.getId()) || 
-               isAdminOrWarehouse(user);
-    }
-
-    private boolean canModifyOrder(UserPrincipal user, Order order) {
-        return order.getUserId().equals(user.getId()) || 
-               user.getAuthorities().stream().anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
-    }
-
-    private boolean isAdminOrWarehouse(UserPrincipal user) {
-        return user.getAuthorities().stream()
-            .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN") || 
-                             auth.getAuthority().equals("ROLE_WAREHOUSE"));
-    }
-
-    private boolean isModifiableStatus(String status) {
-        return "requested".equals(status) || "confirmed".equals(status) || "delayed".equals(status);
-    }
-
-    private boolean isCancellableStatus(String status) {
-        return !"shipped".equals(status) && !"delivered".equals(status) && !"cancelled".equals(status);
-    }
-
-    private BigDecimal calculateTotalWeight(List<OrderItem> items) {
-        return items.stream()
-            .map(item -> item.getUnitWeight().multiply(BigDecimal.valueOf(item.getQuantity())))
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    private List<OrderResponse.ItemInfo> mapOrderItems(List<OrderItem> items) {
-        if (items == null) return new ArrayList<>();
-        
-        return items.stream()
-            .map(item -> OrderResponse.ItemInfo.builder()
-                .itemId(item.getId())
-                .name(item.getName())
-                .description(item.getDescription())
-                .category(item.getCategory())
-                .quantity(item.getQuantity())
-                .unitWeight(item.getUnitWeight())
-                .unitPrice(item.getUnitPrice())
-                .totalAmount(item.getTotalAmount())
-                .currency(item.getCurrency())
-                .hsCode(item.getHsCode())
-                .emsCode(item.getEmsCode())
-                .brand(item.getBrand())
-                .model(item.getModel())
-                .restricted(item.isRestricted())
-                .restrictionNote(item.getRestrictionNote())
-                .build())
+        return orders.stream()
+            .map(this::convertToOrderResponse)
             .collect(Collectors.toList());
     }
 
-    private List<OrderResponse.BoxInfo> mapOrderBoxes(List<OrderBox> boxes) {
-        if (boxes == null) return new ArrayList<>();
-        
-        return boxes.stream()
-            .map(box -> OrderResponse.BoxInfo.builder()
-                .boxId(box.getId())
-                .boxNumber(box.getBoxNumber())
-                .labelCode(box.getLabelCode())
-                .qrCodeUrl(box.getQrCodeUrl())
-                .width(box.getWidthCm())
-                .height(box.getHeightCm())
-                .depth(box.getDepthCm())
-                .cbm(box.getCbmM3())
-                .weight(box.getWeightKg())
-                .status(box.getStatus())
-                .trackingNumber(box.getTrackingNumber())
-                .carrier(box.getCarrier())
-                .shippedDate(box.getShippedDate())
-                .itemIds(box.getItemIds())
-                .build())
-            .collect(Collectors.toList());
-    }
-
-    private List<OrderResponse.StatusTimeline> buildTimeline(Order order) {
-        List<OrderResponse.StatusTimeline> timeline = new ArrayList<>();
-        
-        timeline.add(OrderResponse.StatusTimeline.builder()
-            .status("requested")
-            .timestamp(order.getCreatedAt())
-            .note("주문 접수")
-            .build());
-        
-        // TODO: 실제 상태 변경 로그에서 조회
-        
-        return timeline;
+    // Inner class for order statistics
+    @lombok.Data
+    @lombok.Builder
+    public static class OrderStatsResponse {
+        private long totalOrders;
+        private long pendingOrders;
+        private long inTransitOrders;
+        private BigDecimal totalSpent;
     }
 }

@@ -4,8 +4,9 @@ import com.ycs.lms.dto.*;
 import com.ycs.lms.entity.OrderBox;
 import com.ycs.lms.exception.BadRequestException;
 import com.ycs.lms.exception.NotFoundException;
-import com.ycs.lms.mapper.OrderMapper;
-import com.ycs.lms.mapper.WarehouseMapper;
+import com.ycs.lms.repository.OrderRepository;
+import com.ycs.lms.repository.OrderBoxRepository;
+import com.ycs.lms.repository.UserRepository;
 import com.ycs.lms.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,28 +25,33 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class WarehouseService {
 
-    private final WarehouseMapper warehouseMapper;
-    private final OrderMapper orderMapper;
+    private final OrderRepository orderRepository;
+    private final OrderBoxRepository orderBoxRepository;
+    private final UserRepository userRepository;
     private final QrCodeService qrCodeService;
+    
+    // Mock storage for warehouse/inventory data (will be replaced with database entities later)
+    private final Map<Long, Map<String, Object>> warehouseData = new HashMap<>();
+    private final Map<String, Map<String, Object>> inventoryData = new HashMap<>();
+    private final Map<Long, Map<String, Object>> scanEventsData = new HashMap<>();
+    private Long scanEventIdCounter = 1L;
 
     @Transactional
     public ScanResponse scanBox(ScanRequest request) {
         UserPrincipal currentUser = getCurrentUser();
         
         // 1. 박스 정보 조회
-        OrderBox box = orderMapper.findOrderBoxByLabelCode(request.getLabelCode());
-        if (box == null) {
-            throw new NotFoundException("라벨 코드에 해당하는 박스를 찾을 수 없습니다: " + request.getLabelCode());
-        }
+        OrderBox box = orderBoxRepository.findByLabelCode(request.getLabelCode())
+            .orElseThrow(() -> new NotFoundException("라벨 코드에 해당하는 박스를 찾을 수 없습니다: " + request.getLabelCode()));
         
-        // 2. 창고 정보 조회
-        Map<String, Object> warehouse = warehouseMapper.findWarehouseById(request.getWarehouseId());
+        // 2. 창고 정보 조회 (Mock)
+        Map<String, Object> warehouse = getWarehouseData(request.getWarehouseId());
         if (warehouse == null) {
             throw new NotFoundException("창고를 찾을 수 없습니다: " + request.getWarehouseId());
         }
         
         // 3. 상태 전환 검증
-        String previousStatus = box.getStatus();
+        String previousStatus = box.getStatus().name();
         String newStatus = determineNewStatus(request.getScanType(), previousStatus);
         
         if (!isValidStatusTransition(previousStatus, newStatus)) {
@@ -54,18 +60,21 @@ public class WarehouseService {
         }
         
         // 4. 박스 상태 업데이트
-        int updated = warehouseMapper.updateBoxStatus(request.getLabelCode(), newStatus, 
-                                                     request.getWarehouseId(), request.getLocation());
-        if (updated == 0) {
-            throw new BadRequestException("박스 상태 업데이트에 실패했습니다.");
+        try {
+            box.setStatus(OrderBox.BoxStatus.valueOf(newStatus.toUpperCase()));
+            box.setWarehouseId(request.getWarehouseId());
+            box.setWarehouseLocation(request.getLocation());
+            orderBoxRepository.save(box);
+        } catch (Exception e) {
+            throw new BadRequestException("박스 상태 업데이트에 실패했습니다: " + e.getMessage());
         }
         
         // 5. 재고 관리 업데이트
         updateInventory(request.getScanType(), box.getId(), request.getWarehouseId(), 
                        request.getLocation(), newStatus);
         
-        // 6. 스캔 이벤트 기록
-        warehouseMapper.insertScanEvent(
+        // 6. 스캔 이벤트 기록 (Mock)
+        recordScanEvent(
             request.getScanType().toUpperCase(),
             box.getId(),
             request.getWarehouseId(),
@@ -98,10 +107,10 @@ public class WarehouseService {
     @Transactional
     public BatchProcessResponse batchProcess(BatchProcessRequest request) {
         UserPrincipal currentUser = getCurrentUser();
-        String batchId = warehouseMapper.generateBatchId();
+        String batchId = "BATCH-" + System.currentTimeMillis();
         
         // 1. 박스 정보 조회
-        List<OrderBox> boxes = warehouseMapper.findBoxesByLabelCodes(request.getLabelCodes());
+        List<OrderBox> boxes = orderBoxRepository.findByLabelCodeIn(request.getLabelCodes());
         
         if (boxes.size() != request.getLabelCodes().size()) {
             List<String> foundCodes = boxes.stream()
@@ -121,7 +130,7 @@ public class WarehouseService {
         
         for (OrderBox box : boxes) {
             try {
-                String previousStatus = box.getStatus();
+                String previousStatus = box.getStatus().name();
                 String newStatus = determineNewStatus(request.getAction(), previousStatus);
                 
                 if (!isValidStatusTransition(previousStatus, newStatus)) {
@@ -135,16 +144,17 @@ public class WarehouseService {
                 }
                 
                 // 상태 업데이트
-                int updated = warehouseMapper.updateBoxStatus(box.getLabelCode(), newStatus,
-                                                             request.getWarehouseId(), request.getLocation());
-                
-                if (updated > 0) {
+                try {
+                    box.setStatus(OrderBox.BoxStatus.valueOf(newStatus.toUpperCase()));
+                    box.setWarehouseId(request.getWarehouseId());
+                    box.setWarehouseLocation(request.getLocation());
+                    orderBoxRepository.save(box);
                     // 재고 업데이트
                     updateInventory(request.getAction(), box.getId(), request.getWarehouseId(),
                                    request.getLocation(), newStatus);
                     
-                    // 스캔 이벤트 기록
-                    warehouseMapper.insertScanEvent(
+                    // 스캔 이벤트 기록 (Mock)
+                    recordScanEvent(
                         request.getAction().toUpperCase(),
                         box.getId(),
                         request.getWarehouseId(),
@@ -166,11 +176,11 @@ public class WarehouseService {
                         .build());
                     
                     processed++;
-                } else {
+                } catch (Exception updateException) {
                     results.add(BatchProcessResponse.ProcessResult.builder()
                         .labelCode(box.getLabelCode())
                         .status("failed")
-                        .reason("Database update failed")
+                        .reason("Database update failed: " + updateException.getMessage())
                         .previousStatus(previousStatus)
                         .build());
                     failed++;
@@ -203,35 +213,40 @@ public class WarehouseService {
     }
 
     public PageResponse<InventoryResponse> getInventory(Long warehouseId, String status, Pageable pageable) {
-        int offset = pageable.getPageNumber() * pageable.getPageSize();
-        List<Map<String, Object>> inventoryData = warehouseMapper.findInventory(
-            warehouseId, status, pageable.getPageSize(), offset);
+        // Mock inventory data - in real implementation, query from inventory table
+        List<InventoryResponse> mockData = generateMockInventory(warehouseId, status);
         
-        long total = warehouseMapper.countInventory(warehouseId, status);
+        int start = pageable.getPageNumber() * pageable.getPageSize();
+        int end = Math.min(start + pageable.getPageSize(), mockData.size());
         
-        List<InventoryResponse> responses = inventoryData.stream()
-            .map(this::mapToInventoryResponse)
-            .collect(Collectors.toList());
+        List<InventoryResponse> pageContent = mockData.subList(start, end);
         
-        return PageResponse.of(responses, pageable.getPageNumber(), pageable.getPageSize(), total);
+        return PageResponse.<InventoryResponse>builder()
+            .content(pageContent)
+            .page(pageable.getPageNumber())
+            .size(pageable.getPageSize())
+            .totalElements((long) mockData.size())
+            .totalPages((int) Math.ceil((double) mockData.size() / pageable.getPageSize()))
+            .first(pageable.getPageNumber() == 0)
+            .last(end >= mockData.size())
+            .build();
     }
 
     @Transactional
     public BoxResponse holdBox(Long boxId, String reason) {
-        OrderBox box = orderMapper.findOrderBoxByLabelCode(boxId.toString()); // TODO: findById 메서드 필요
-        if (box == null) {
-            throw new NotFoundException("박스를 찾을 수 없습니다: " + boxId);
-        }
+        OrderBox box = orderBoxRepository.findById(boxId)
+            .orElseThrow(() -> new NotFoundException("박스를 찾을 수 없습니다: " + boxId));
         
         UserPrincipal currentUser = getCurrentUser();
-        String previousStatus = box.getStatus();
+        String previousStatus = box.getStatus().name();
         String newStatus = "hold";
         
         // 상태 업데이트
-        warehouseMapper.updateBoxStatusOnly(box.getLabelCode(), newStatus);
+        box.setStatus(OrderBox.BoxStatus.valueOf(newStatus.toUpperCase()));
+        orderBoxRepository.save(box);
         
-        // 스캔 이벤트 기록
-        warehouseMapper.insertScanEvent(
+        // 스캔 이벤트 기록 (Mock)
+        recordScanEvent(
             "HOLD",
             box.getId(),
             box.getWarehouseId(),
@@ -271,17 +286,23 @@ public class WarehouseService {
 
     public PageResponse<ScanEventResponse> getScanHistory(String labelCode, String startDate, 
                                                          String endDate, Pageable pageable) {
-        int offset = pageable.getPageNumber() * pageable.getPageSize();
-        List<Map<String, Object>> events = warehouseMapper.findScanEvents(
-            labelCode, startDate, endDate, pageable.getPageSize(), offset);
+        // Mock scan history data
+        List<ScanEventResponse> mockEvents = generateMockScanHistory(labelCode, startDate, endDate);
         
-        long total = warehouseMapper.countScanEvents(labelCode, startDate, endDate);
+        int start = pageable.getPageNumber() * pageable.getPageSize();
+        int end = Math.min(start + pageable.getPageSize(), mockEvents.size());
         
-        List<ScanEventResponse> responses = events.stream()
-            .map(this::mapToScanEventResponse)
-            .collect(Collectors.toList());
+        List<ScanEventResponse> pageContent = mockEvents.subList(start, end);
         
-        return PageResponse.of(responses, pageable.getPageNumber(), pageable.getPageSize(), total);
+        return PageResponse.<ScanEventResponse>builder()
+            .content(pageContent)
+            .page(pageable.getPageNumber())
+            .size(pageable.getPageSize())
+            .totalElements((long) mockEvents.size())
+            .totalPages((int) Math.ceil((double) mockEvents.size() / pageable.getPageSize()))
+            .first(pageable.getPageNumber() == 0)
+            .last(end >= mockEvents.size())
+            .build();
     }
 
     public LabelResponse generateLabel(Long boxId) {
@@ -289,7 +310,11 @@ public class WarehouseService {
         String qrCodeUrl = qrCodeService.generateQrCode(boxId);
         
         // 박스 정보에 QR 코드 URL 업데이트
-        warehouseMapper.updateBoxQrCode(boxId, qrCodeUrl);
+        OrderBox box = orderBoxRepository.findById(boxId).orElse(null);
+        if (box != null) {
+            box.setQrCodeUrl(qrCodeUrl);
+            orderBoxRepository.save(box);
+        }
         
         return LabelResponse.builder()
             .boxId(boxId)
@@ -333,10 +358,11 @@ public class WarehouseService {
     }
 
     private void updateInventory(String scanType, Long boxId, Long warehouseId, String location, String newStatus) {
+        // Mock inventory update - in real implementation, update inventory table
         switch (scanType.toLowerCase()) {
-            case "inbound" -> warehouseMapper.upsertInventory(warehouseId, boxId, location, "stored");
-            case "outbound" -> warehouseMapper.updateInventoryStatus(warehouseId, boxId, "shipped");
-            case "hold" -> warehouseMapper.updateInventoryStatus(warehouseId, boxId, "hold");
+            case "inbound" -> log.info("Mock: Update inventory for inbound - boxId: {}, warehouseId: {}, location: {}", boxId, warehouseId, location);
+            case "outbound" -> log.info("Mock: Update inventory for outbound - boxId: {}, status: shipped", boxId);
+            case "hold" -> log.info("Mock: Update inventory for hold - boxId: {}, status: hold", boxId);
         }
     }
 
@@ -450,5 +476,97 @@ public class WarehouseService {
     private String getUserAgent() {
         // TODO: HTTP 요청에서 User-Agent 헤더 추출
         return "YCS-LMS-Scanner/1.0";
+    }
+    
+    // Mock helper methods
+    
+    private Map<String, Object> getWarehouseData(Long warehouseId) {
+        return warehouseData.computeIfAbsent(warehouseId, id -> {
+            Map<String, Object> warehouse = new HashMap<>();
+            warehouse.put("id", id);
+            warehouse.put("name", "Warehouse " + id);
+            warehouse.put("code", "WH" + String.format("%03d", id));
+            return warehouse;
+        });
+    }
+    
+    private void recordScanEvent(String eventType, Long boxId, Long warehouseId, Long userId,
+                                String previousStatus, String newStatus, String location,
+                                String batchId, String deviceInfo, String notes, LocalDateTime timestamp) {
+        Long eventId = scanEventIdCounter++;
+        Map<String, Object> event = new HashMap<>();
+        event.put("id", eventId);
+        event.put("event_type", eventType);
+        event.put("box_id", boxId);
+        event.put("warehouse_id", warehouseId);
+        event.put("user_id", userId);
+        event.put("previous_status", previousStatus);
+        event.put("new_status", newStatus);
+        event.put("location_code", location);
+        event.put("batch_id", batchId);
+        event.put("device_info", deviceInfo);
+        event.put("notes", notes);
+        event.put("scan_timestamp", timestamp);
+        
+        scanEventsData.put(eventId, event);
+        log.info("Scan event recorded: eventId={}, type={}, boxId={}", eventId, eventType, boxId);
+    }
+    
+    private List<InventoryResponse> generateMockInventory(Long warehouseId, String status) {
+        List<InventoryResponse> inventory = new ArrayList<>();
+        
+        for (int i = 1; i <= 10; i++) {
+            inventory.add(InventoryResponse.builder()
+                .boxId((long) i)
+                .labelCode("BOX-2024-00" + String.format("%03d", i) + "-01")
+                .orderId((long) i)
+                .orderCode("YCS-2024-00" + String.format("%03d", i))
+                .status(status != null ? status : "inbound_completed")
+                .location("A-" + (i % 3 + 1) + "-" + String.format("%02d", i % 10 + 1))
+                .inboundDate(LocalDateTime.now().minusDays(i))
+                .expectedOutboundDate(LocalDateTime.now().plusDays(7 - i))
+                .daysInWarehouse(i)
+                .cbm(BigDecimal.valueOf(0.5 + (i * 0.1)))
+                .weight(BigDecimal.valueOf(2.0 + (i * 0.5)))
+                .customer(InventoryResponse.CustomerInfo.builder()
+                    .name("Customer " + i)
+                    .memberCode("MEM" + String.format("%03d", i))
+                    .role("INDIVIDUAL")
+                    .build())
+                .build());
+        }
+        
+        return inventory;
+    }
+    
+    private List<ScanEventResponse> generateMockScanHistory(String labelCode, String startDate, String endDate) {
+        List<ScanEventResponse> events = new ArrayList<>();
+        
+        for (int i = 1; i <= 5; i++) {
+            events.add(ScanEventResponse.builder()
+                .eventId((long) i)
+                .eventType(i % 2 == 0 ? "INBOUND" : "OUTBOUND")
+                .labelCode(labelCode)
+                .orderId((long) (i % 3 + 1))
+                .orderCode("YCS-2024-00" + String.format("%03d", i % 3 + 1))
+                .previousStatus(i == 1 ? "created" : "inbound_completed")
+                .newStatus(i % 2 == 0 ? "inbound_completed" : "outbound_completed")
+                .location("A-" + (i % 3 + 1) + "-01")
+                .batchId(i % 3 == 0 ? "BATCH-" + (System.currentTimeMillis() - i * 1000) : null)
+                .deviceInfo("YCS-LMS-Scanner/1.0")
+                .notes("Mock scan event " + i)
+                .scanTimestamp(LocalDateTime.now().minusHours(i))
+                .scannedBy(ScanEventResponse.UserInfo.builder()
+                    .name("Warehouse Staff " + (i % 2 + 1))
+                    .role("WAREHOUSE")
+                    .build())
+                .warehouse(ScanEventResponse.WarehouseInfo.builder()
+                    .name("Main Warehouse")
+                    .code("WH001")
+                    .build())
+                .build());
+        }
+        
+        return events;
     }
 }
