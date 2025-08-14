@@ -509,7 +509,7 @@ const switchCamera = async () => {
   try {
     if (qrScanner.value) {
       await qrScanner.value.switchCamera()
-      showFeedback('카메라를 전환했습니다', 'success')
+      displayFeedback('카메라를 전환했습니다', 'success')
     }
   } catch (error) {
     console.error('Camera switch failed:', error)
@@ -535,7 +535,7 @@ const handleManualScan = () => {
 const processScan = async (code: string, source: 'camera' | 'manual') => {
   // 중복 체크 (일괄 모드)
   if (batchMode.value && scannedItems.value.some(item => item.labelCode === code)) {
-    showFeedback('이미 스캔된 코드입니다', 'error')
+    displayFeedback('이미 스캔된 코드입니다', 'error')
     return
   }
 
@@ -568,7 +568,7 @@ const processScan = async (code: string, source: 'camera' | 'manual') => {
     if (batchMode.value) {
       // 일괄 모드: 목록에 추가
       scannedItems.value.unshift(scanResult)
-      showFeedback(
+      displayFeedback(
         scanResult.success ? '항목이 추가되었습니다' : scanResult.error,
         scanResult.success ? 'success' : 'error'
       )
@@ -576,9 +576,9 @@ const processScan = async (code: string, source: 'camera' | 'manual') => {
       // 단일 모드: 결과 표시
       lastScanResult.value = scanResult
       if (scanResult.success) {
-        showFeedback('스캔 완료', 'success')
+        displayFeedback('스캔 완료', 'success')
       } else {
-        showFeedback(scanResult.error, 'error')
+        displayFeedback(scanResult.error, 'error')
       }
     }
 
@@ -600,7 +600,7 @@ const processScan = async (code: string, source: 'camera' | 'manual') => {
 
   } catch (error: any) {
     console.error('Scan processing error:', error)
-    showFeedback('스캔 처리 중 오류가 발생했습니다', 'error')
+    displayFeedback('스캔 처리 중 오류가 발생했습니다', 'error')
     
     scanStatus.value = {
       type: 'error',
@@ -617,7 +617,7 @@ const handleScanError = (error: any) => {
     type: 'error',
     message: '스캔 오류'
   }
-  showFeedback('스캐너 오류가 발생했습니다', 'error')
+  displayFeedback('스캐너 오류가 발생했습니다', 'error')
 }
 
 const clearManualInput = () => {
@@ -669,7 +669,7 @@ const closeProcessModal = () => {
 }
 
 // 피드백 및 유틸리티
-const showFeedback = (message: string, type: 'success' | 'error') => {
+const displayFeedback = (message: string, type: 'success' | 'error') => {
   feedbackMessage.value = message
   feedbackType.value = type
   showFeedback.value = true

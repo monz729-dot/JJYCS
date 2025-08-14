@@ -589,9 +589,18 @@ const router = createRouter({
   }
 })
 
-// 라우터 가드 (간소화)
+// 라우터 가드
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
+  
+  // 인증 상태 확인 (세션이 있는데 사용자 정보가 없으면 가져옴)
+  if (!authStore.user && !authStore.loading) {
+    try {
+      await authStore.fetchUserProfile()
+    } catch (error) {
+      console.log('No valid session found')
+    }
+  }
   
   const isAuthenticated = authStore.isAuthenticated
   const userType = authStore.userType
@@ -608,6 +617,17 @@ router.beforeEach(async (to, from, next) => {
       name: 'Login', 
       query: { redirect: to.fullPath } 
     })
+  }
+
+  // 역할 기반 접근 제어
+  if (to.meta.requiresRole && userType) {
+    const requiredRoles = Array.isArray(to.meta.requiresRole) 
+      ? to.meta.requiresRole 
+      : [to.meta.requiresRole]
+    
+    if (!requiredRoles.includes(userType)) {
+      return next({ name: 'Dashboard' })
+    }
   }
 
   // 페이지 제목 설정
@@ -680,14 +700,16 @@ export const isRouteAccessible = (routeName: string, role: string) => {
 
 export const getNavigationItems = (role: string) => {
   const items = [
-    { name: 'Dashboard', title: 'navigation.dashboard', icon: 'icon-dashboard' },
-    { name: 'OrderList', title: 'navigation.orders', icon: 'icon-orders', roles: ['general', 'corporate'] },
-    { name: 'WarehouseDashboard', title: 'navigation.warehouse', icon: 'icon-warehouse', roles: ['warehouse', 'admin'] },
-    { name: 'TrackingList', title: 'navigation.tracking', icon: 'icon-tracking' },
-    { name: 'EstimateList', title: 'navigation.estimates', icon: 'icon-estimates' },
-    { name: 'PaymentList', title: 'navigation.payments', icon: 'icon-payments' },
-    { name: 'PartnerDashboard', title: 'navigation.partner', icon: 'icon-partner', roles: ['partner'] },
-    { name: 'AdminDashboard', title: 'navigation.admin', icon: 'icon-admin', roles: ['admin'] }
+    { name: 'Dashboard', title: 'navigation.dashboard', icon: 'mdi-view-dashboard' },
+    { name: 'OrderList', title: 'navigation.orders', icon: 'mdi-package-variant', roles: ['general', 'corporate'] },
+    { name: 'WarehouseDashboard', title: 'navigation.warehouse', icon: 'mdi-warehouse', roles: ['warehouse', 'admin'] },
+    { name: 'TrackingList', title: 'navigation.tracking', icon: 'mdi-truck-delivery' },
+    { name: 'EstimateList', title: 'navigation.estimates', icon: 'mdi-calculator' },
+    { name: 'PaymentList', title: 'navigation.payments', icon: 'mdi-credit-card' },
+    { name: 'PartnerDashboard', title: 'navigation.partner', icon: 'mdi-handshake', roles: ['partner'] },
+    { name: 'AdminDashboard', title: 'navigation.admin', icon: 'mdi-shield-account', roles: ['admin'] },
+    { name: 'Profile', title: 'navigation.profile', icon: 'mdi-account' },
+    { name: 'Notifications', title: 'navigation.notifications', icon: 'mdi-bell' }
   ]
 
   return items.filter(item => {

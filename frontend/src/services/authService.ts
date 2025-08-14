@@ -540,6 +540,68 @@ export class AuthService {
     }
   }
 
+  // 사용자 프로필 업데이트 (Auth Store에서 사용)
+  static async updateUserProfile(updates: Partial<UserProfile>): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        throw new Error('로그인된 사용자가 없습니다.')
+      }
+
+      const { error } = await supabase
+        .from('user_profiles')
+        .update(updates)
+        .eq('id', user.id)
+
+      if (error) {
+        throw new Error(error.message)
+      }
+
+      return { success: true }
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : '프로필 업데이트 중 오류가 발생했습니다.' 
+      }
+    }
+  }
+
+  // 이메일 인증 재발송 (Auth Store에서 사용)
+  static async resendEmailVerification(): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user || !user.email) {
+        throw new Error('로그인된 사용자 정보를 찾을 수 없습니다.')
+      }
+
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: user.email
+      })
+
+      if (error) {
+        throw new Error(error.message)
+      }
+
+      return { success: true }
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : '이메일 인증 재발송에 실패했습니다.' 
+      }
+    }
+  }
+
+  // 인증 상태 변경 구독
+  static onAuthStateChange(callback: (user: any) => void) {
+    return supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state change:', event, session?.user?.id)
+      callback(session?.user || null)
+    })
+  }
+
   // 파일 업로드 (Supabase Storage)
   static async uploadFile(file: File, bucket: string = 'business-licenses'): Promise<{ success: boolean; url?: string; error?: string }> {
     try {

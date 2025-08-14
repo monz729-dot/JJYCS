@@ -13,6 +13,9 @@ import { useAuthStore } from '@/stores/auth'
 const authStore = useAuthStore()
 
 onMounted(async () => {
+  // Initialize auth state listener first
+  authStore.initializeAuth()
+  
   // Check authentication status on app mount
   try {
     await authStore.fetchUserProfile()

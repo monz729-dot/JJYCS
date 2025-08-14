@@ -1,630 +1,389 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <!-- Welcome Header -->
-      <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">
-          {{ $t('dashboard.welcome', { name: authStore.user?.name || 'User' }) }}
-        </h1>
-        <p class="mt-1 text-sm text-gray-600">
-          {{ $t('dashboard.subtitle') }}
-        </p>
-      </div>
+  <div>
+    <!-- Welcome Header -->
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-gray-900">
+        안녕하세요, {{ authStore.user?.name || '사용자' }}님! 👋
+      </h1>
+      <p class="mt-1 text-sm text-gray-500">
+        오늘의 물류 현황을 한눈에 확인하세요
+      </p>
+    </div>
 
-      <!-- Account Status Alert (for pending users) -->
-      <div v-if="authStore.isPending" class="mb-6 rounded-md bg-yellow-50 p-4 border border-yellow-200">
-        <div class="flex">
-          <div class="flex-shrink-0">
-            <ClockIcon class="h-5 w-5 text-yellow-400" />
-          </div>
-          <div class="ml-3">
-            <h3 class="text-sm font-medium text-yellow-800">
-              {{ $t('dashboard.account_pending_title') }}
-            </h3>
-            <div class="mt-2 text-sm text-yellow-700">
-              <p>{{ $t('dashboard.account_pending_message') }}</p>
-            </div>
-            <div class="mt-3">
-              <div class="-mx-2 -my-1.5 flex">
-                <router-link
-                  to="/profile"
-                  class="bg-yellow-50 px-2 py-1.5 rounded-md text-sm font-medium text-yellow-800 hover:bg-yellow-100"
-                >
-                  {{ $t('dashboard.complete_profile') }}
-                </router-link>
-              </div>
-            </div>
+    <!-- Account Status Alert (for pending users) -->
+    <Card v-if="authStore.isPending" class="mb-6 border-yellow-200 bg-yellow-50">
+      <div class="flex items-start gap-3">
+        <div class="w-10 h-10 rounded-lg bg-yellow-100 flex items-center justify-center">
+          <span class="mdi mdi-clock-outline text-yellow-600 text-xl" />
+        </div>
+        <div class="flex-1">
+          <h3 class="font-medium text-yellow-800">
+            계정 승인 대기 중
+          </h3>
+          <p class="mt-1 text-sm text-yellow-700">
+            관리자의 승인을 기다리고 있습니다. 평일 1-2일 내에 처리됩니다.
+          </p>
+          <div class="mt-3">
+            <Button variant="warning" size="sm" text="프로필 완성하기" @click="router.push('/app/profile')" />
           </div>
         </div>
       </div>
+    </Card>
 
-      <!-- Member Code Warning -->
-      <div v-if="!authStore.user?.memberCode && authStore.isActive" class="mb-6 rounded-md bg-orange-50 p-4 border border-orange-200">
-        <div class="flex">
-          <div class="flex-shrink-0">
-            <ExclamationTriangleIcon class="h-5 w-5 text-orange-400" />
-          </div>
-          <div class="ml-3">
-            <h3 class="text-sm font-medium text-orange-800">
-              {{ $t('dashboard.no_member_code_title') }}
-            </h3>
-            <div class="mt-2 text-sm text-orange-700">
-              <p>{{ $t('dashboard.no_member_code_message') }}</p>
-            </div>
-            <div class="mt-3">
-              <div class="-mx-2 -my-1.5 flex">
-                <router-link
-                  to="/profile"
-                  class="bg-orange-50 px-2 py-1.5 rounded-md text-sm font-medium text-orange-800 hover:bg-orange-100"
-                >
-                  {{ $t('dashboard.register_member_code') }}
-                </router-link>
-              </div>
-            </div>
+    <!-- Member Code Warning -->
+    <Card v-if="!authStore.user?.memberCode && authStore.isApproved" class="mb-6 border-orange-200 bg-orange-50">
+      <div class="flex items-start gap-3">
+        <div class="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
+          <span class="mdi mdi-alert-outline text-orange-600 text-xl" />
+        </div>
+        <div class="flex-1">
+          <h3 class="font-medium text-orange-800">
+            회원 코드 미등록
+          </h3>
+          <p class="mt-1 text-sm text-orange-700">
+            원활한 배송을 위해 회원 코드를 등록해주세요. 미등록 시 배송이 지연될 수 있습니다.
+          </p>
+          <div class="mt-3">
+            <Button variant="warning" size="sm" text="회원 코드 등록하기" @click="router.push('/app/profile')" />
           </div>
         </div>
       </div>
+    </Card>
 
-      <!-- Admin Quick Access -->
-      <div v-if="authStore.user?.role === 'admin'" class="mb-8">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4">🔐 관리자 메뉴</h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <router-link
-            :to="{ name: 'AdminDashboard' }"
-            class="bg-gradient-to-br from-red-50 to-red-100 p-6 rounded-lg border border-red-200 hover:shadow-md transition-all duration-200 group"
-          >
-            <div class="flex items-center">
-              <div class="w-12 h-12 bg-red-200 rounded-lg flex items-center justify-center mr-4 group-hover:bg-red-300 transition-colors">
-                📊
-              </div>
-              <div>
-                <h3 class="text-lg font-semibold text-gray-900">관리자 대시보드</h3>
-                <p class="text-sm text-gray-600">시스템 전체 현황</p>
-              </div>
-            </div>
-          </router-link>
-          
-          <router-link
-            :to="{ name: 'AdminUsers' }"
-            class="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-lg border border-blue-200 hover:shadow-md transition-all duration-200 group"
-          >
-            <div class="flex items-center">
-              <div class="w-12 h-12 bg-blue-200 rounded-lg flex items-center justify-center mr-4 group-hover:bg-blue-300 transition-colors">
-                👥
-              </div>
-              <div>
-                <h3 class="text-lg font-semibold text-gray-900">사용자 관리</h3>
-                <p class="text-sm text-gray-600">전체 계정 관리</p>
-              </div>
-            </div>
-          </router-link>
-          
-          <router-link
-            :to="{ name: 'AdminApprovals' }"
-            class="bg-gradient-to-br from-orange-50 to-orange-100 p-6 rounded-lg border border-orange-200 hover:shadow-md transition-all duration-200 group relative"
-          >
-            <div class="flex items-center">
-              <div class="w-12 h-12 bg-orange-200 rounded-lg flex items-center justify-center mr-4 group-hover:bg-orange-300 transition-colors">
-                ✅
-              </div>
-              <div>
-                <h3 class="text-lg font-semibold text-gray-900">계정 승인</h3>
-                <p class="text-sm text-gray-600">승인 대기 관리</p>
-              </div>
-            </div>
-            <div class="absolute -top-2 -right-2">
-              <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-200 text-orange-800">
-                8개 대기
-              </span>
-            </div>
-          </router-link>
-        </div>
-      </div>
-
-      <!-- Quick Actions -->
-      <div v-if="authStore.isActive" class="mb-8">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <router-link
-            v-if="authStore.canCreateOrder"
-            :to="{ name: 'OrderCreate' }"
-            class="relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-blue-500 rounded-lg shadow hover:shadow-md transition-shadow"
-          >
-            <div>
-              <span class="rounded-lg inline-flex p-3 bg-blue-50 text-blue-700 ring-4 ring-white">
-                <PlusIcon class="h-6 w-6" />
-              </span>
-            </div>
-            <div class="mt-4">
-              <h3 class="text-lg font-medium">
-                <span class="absolute inset-0" />
-                {{ $t('dashboard.create_order') }}
-              </h3>
-              <p class="mt-2 text-sm text-gray-500">
-                {{ $t('dashboard.create_order_desc') }}
-              </p>
-            </div>
-          </router-link>
-
-          <router-link
-            :to="{ name: 'OrderList' }"
-            class="relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-blue-500 rounded-lg shadow hover:shadow-md transition-shadow"
-          >
-            <div>
-              <span class="rounded-lg inline-flex p-3 bg-green-50 text-green-700 ring-4 ring-white">
-                <DocumentTextIcon class="h-6 w-6" />
-              </span>
-            </div>
-            <div class="mt-4">
-              <h3 class="text-lg font-medium">
-                <span class="absolute inset-0" />
-                {{ $t('dashboard.view_orders') }}
-              </h3>
-              <p class="mt-2 text-sm text-gray-500">
-                {{ $t('dashboard.view_orders_desc') }}
-              </p>
-            </div>
-          </router-link>
-
-          <router-link
-            to="/tracking"
-            class="relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-blue-500 rounded-lg shadow hover:shadow-md transition-shadow"
-          >
-            <div>
-              <span class="rounded-lg inline-flex p-3 bg-purple-50 text-purple-700 ring-4 ring-white">
-                <MapPinIcon class="h-6 w-6" />
-              </span>
-            </div>
-            <div class="mt-4">
-              <h3 class="text-lg font-medium">
-                <span class="absolute inset-0" />
-                {{ $t('dashboard.track_shipment') }}
-              </h3>
-              <p class="mt-2 text-sm text-gray-500">
-                {{ $t('dashboard.track_shipment_desc') }}
-              </p>
-            </div>
-          </router-link>
-
-          <router-link
-            v-if="authStore.hasRole(['WAREHOUSE', 'ADMIN'])"
-            :to="{ name: 'WarehouseScan' }"
-            class="relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-blue-500 rounded-lg shadow hover:shadow-md transition-shadow"
-          >
-            <div>
-              <span class="rounded-lg inline-flex p-3 bg-orange-50 text-orange-700 ring-4 ring-white">
-                <QrCodeIcon class="h-6 w-6" />
-              </span>
-            </div>
-            <div class="mt-4">
-              <h3 class="text-lg font-medium">
-                <span class="absolute inset-0" />
-                {{ $t('dashboard.warehouse_scan') }}
-              </h3>
-              <p class="mt-2 text-sm text-gray-500">
-                {{ $t('dashboard.warehouse_scan_desc') }}
-              </p>
-            </div>
-          </router-link>
-        </div>
-      </div>
-
-      <!-- Stats Overview -->
-      <div v-if="authStore.isActive" class="mb-8">
-        <h2 class="text-lg font-medium text-gray-900 mb-4">{{ $t('dashboard.overview') }}</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <!-- Total Orders -->
-          <div class="bg-white overflow-hidden shadow rounded-lg">
-            <div class="p-5">
-              <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <DocumentTextIcon class="h-6 w-6 text-gray-400" />
-                </div>
-                <div class="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt class="text-sm font-medium text-gray-500 truncate">
-                      {{ $t('dashboard.total_orders') }}
-                    </dt>
-                    <dd class="flex items-baseline">
-                      <div class="text-2xl font-semibold text-gray-900">
-                        {{ stats.totalOrders }}
-                      </div>
-                      <div v-if="stats.ordersTrend !== 0" class="ml-2 flex items-baseline text-sm font-semibold" :class="{
-                        'text-green-600': stats.ordersTrend > 0,
-                        'text-red-600': stats.ordersTrend < 0
-                      }">
-                        <ArrowUpIcon v-if="stats.ordersTrend > 0" class="self-center flex-shrink-0 h-4 w-4" />
-                        <ArrowDownIcon v-else class="self-center flex-shrink-0 h-4 w-4" />
-                        {{ Math.abs(stats.ordersTrend) }}%
-                      </div>
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-            <div class="bg-gray-50 px-5 py-3">
-              <div class="text-sm">
-                <router-link :to="{ name: 'OrderList' }" class="font-medium text-blue-700 hover:text-blue-900">
-                  {{ $t('dashboard.view_all') }}
-                </router-link>
-              </div>
-            </div>
-          </div>
-
-          <!-- Pending Orders -->
-          <div class="bg-white overflow-hidden shadow rounded-lg">
-            <div class="p-5">
-              <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <ClockIcon class="h-6 w-6 text-yellow-400" />
-                </div>
-                <div class="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt class="text-sm font-medium text-gray-500 truncate">
-                      {{ $t('dashboard.pending_orders') }}
-                    </dt>
-                    <dd class="flex items-baseline">
-                      <div class="text-2xl font-semibold text-gray-900">
-                        {{ stats.pendingOrders }}
-                      </div>
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-            <div class="bg-gray-50 px-5 py-3">
-              <div class="text-sm">
-                <router-link :to="{ name: 'OrderList', query: { status: 'pending' } }" class="font-medium text-yellow-700 hover:text-yellow-900">
-                  {{ $t('dashboard.review_pending') }}
-                </router-link>
-              </div>
-            </div>
-          </div>
-
-          <!-- In Transit -->
-          <div class="bg-white overflow-hidden shadow rounded-lg">
-            <div class="p-5">
-              <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <TruckIcon class="h-6 w-6 text-blue-400" />
-                </div>
-                <div class="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt class="text-sm font-medium text-gray-500 truncate">
-                      {{ $t('dashboard.in_transit') }}
-                    </dt>
-                    <dd class="flex items-baseline">
-                      <div class="text-2xl font-semibold text-gray-900">
-                        {{ stats.inTransitOrders }}
-                      </div>
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-            <div class="bg-gray-50 px-5 py-3">
-              <div class="text-sm">
-                <router-link to="/tracking" class="font-medium text-blue-700 hover:text-blue-900">
-                  {{ $t('dashboard.track_shipments') }}
-                </router-link>
-              </div>
-            </div>
-          </div>
-
-          <!-- Total Spent -->
-          <div class="bg-white overflow-hidden shadow rounded-lg">
-            <div class="p-5">
-              <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <CurrencyDollarIcon class="h-6 w-6 text-green-400" />
-                </div>
-                <div class="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt class="text-sm font-medium text-gray-500 truncate">
-                      {{ $t('dashboard.total_spent') }}
-                    </dt>
-                    <dd class="flex items-baseline">
-                      <div class="text-2xl font-semibold text-gray-900">
-                        {{ formatCurrency(stats.totalSpent) }}
-                      </div>
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-            <div class="bg-gray-50 px-5 py-3">
-              <div class="text-sm">
-                <router-link :to="{ name: 'PaymentList' }" class="font-medium text-green-700 hover:text-green-900">
-                  {{ $t('dashboard.view_payments') }}
-                </router-link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Recent Orders -->
-      <div v-if="authStore.isActive && recentOrders.length > 0" class="mb-8">
-        <div class="bg-white shadow rounded-lg">
-          <div class="px-6 py-4 border-b border-gray-200">
-            <div class="flex items-center justify-between">
-              <h2 class="text-lg font-medium text-gray-900">{{ $t('dashboard.recent_orders') }}</h2>
-              <router-link
-                :to="{ name: 'OrderList' }"
-                class="text-sm font-medium text-blue-600 hover:text-blue-500"
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <Card 
+        v-for="stat in stats" 
+        :key="stat.title"
+        :hoverable="true"
+        class="relative overflow-hidden"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-500">{{ stat.title }}</p>
+            <p class="mt-2 text-3xl font-bold text-gray-900">{{ stat.value }}</p>
+            <div class="mt-2 flex items-center text-sm">
+              <span 
+                :class="[
+                  'font-medium',
+                  stat.trend === 'up' ? 'text-green-600' : 'text-red-600'
+                ]"
               >
-                {{ $t('dashboard.view_all_orders') }}
-              </router-link>
+                <span :class="stat.trend === 'up' ? 'mdi mdi-trending-up' : 'mdi mdi-trending-down'" />
+                {{ stat.change }}%
+              </span>
+              <span class="ml-2 text-gray-500">전일 대비</span>
             </div>
           </div>
-          <div class="overflow-hidden">
-            <table class="min-w-full divide-y divide-gray-200">
-              <thead class="bg-gray-50">
-                <tr>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {{ $t('dashboard.order') }}
-                  </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {{ $t('dashboard.recipient') }}
-                  </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {{ $t('dashboard.status') }}
-                  </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {{ $t('dashboard.amount') }}
-                  </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {{ $t('dashboard.date') }}
-                  </th>
-                </tr>
-              </thead>
-              <tbody class="bg-white divide-y divide-gray-200">
-                <tr
-                  v-for="order in recentOrders"
-                  :key="order.id"
-                  class="hover:bg-gray-50 cursor-pointer"
-                  @click="goToOrder(order.id)"
-                >
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="flex items-center">
-                      <div>
-                        <div class="text-sm font-medium text-gray-900">
-                          {{ order.orderCode }}
-                        </div>
-                        <div class="text-sm text-gray-500">
-                          {{ $t('dashboard.items_count', { count: order.items?.length || 0 }) }}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm text-gray-900">{{ order.recipientName }}</div>
-                    <div class="text-sm text-gray-500">{{ order.recipientCountry }}</div>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <span
-                      class="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
-                      :class="getStatusBadgeClass(order.status)"
-                    >
-                      {{ $t(`orders.status.${order.status}`) }}
-                    </span>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {{ formatCurrency(order.totalAmount, order.currency) }}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ formatDate(order.createdAt) }}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div :class="[
+            'p-3 rounded-lg',
+            stat.iconBg
+          ]">
+            <span :class="['mdi', stat.icon, 'text-2xl', stat.iconColor]" />
           </div>
         </div>
-      </div>
+      </Card>
+    </div>
 
-      <!-- Warehouse Dashboard (for warehouse users) -->
-      <div v-if="authStore.hasRole(['WAREHOUSE', 'ADMIN'])" class="mb-8">
-        <div class="bg-white shadow rounded-lg">
-          <div class="px-6 py-4 border-b border-gray-200">
-            <div class="flex items-center justify-between">
-              <h2 class="text-lg font-medium text-gray-900">{{ $t('dashboard.warehouse_overview') }}</h2>
-              <router-link
-                :to="{ name: 'WarehouseInventory' }"
-                class="text-sm font-medium text-blue-600 hover:text-blue-500"
-              >
-                {{ $t('dashboard.view_full_inventory') }}
-              </router-link>
-            </div>
+    <!-- Quick Actions -->
+    <div class="mb-6">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">빠른 작업</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card 
+          v-for="action in quickActions" 
+          :key="action.title"
+          :hoverable="true"
+          :clickable="true"
+          @click="handleQuickAction(action.route)"
+          class="text-center"
+        >
+          <div :class="[
+            'w-16 h-16 rounded-lg mx-auto mb-3 flex items-center justify-center',
+            action.bgColor
+          ]">
+            <span :class="['mdi', action.icon, 'text-2xl', action.iconColor]" />
           </div>
-          <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div class="text-center">
-                <div class="text-2xl font-bold text-blue-600">{{ warehouseStats.totalBoxes }}</div>
-                <div class="text-sm text-gray-600">{{ $t('dashboard.total_boxes') }}</div>
-              </div>
-              <div class="text-center">
-                <div class="text-2xl font-bold text-yellow-600">{{ warehouseStats.pendingInbound }}</div>
-                <div class="text-sm text-gray-600">{{ $t('dashboard.pending_inbound') }}</div>
-              </div>
-              <div class="text-center">
-                <div class="text-2xl font-bold text-green-600">{{ warehouseStats.readyForOutbound }}</div>
-                <div class="text-sm text-gray-600">{{ $t('dashboard.ready_outbound') }}</div>
-              </div>
-              <div class="text-center">
-                <div class="text-2xl font-bold text-red-600">{{ warehouseStats.onHold }}</div>
-                <div class="text-sm text-gray-600">{{ $t('dashboard.on_hold') }}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Admin Dashboard (for admin users) -->
-      <div v-if="authStore.hasRole('ADMIN')" class="mb-8">
-        <div class="bg-white shadow rounded-lg">
-          <div class="px-6 py-4 border-b border-gray-200">
-            <div class="flex items-center justify-between">
-              <h2 class="text-lg font-medium text-gray-900">{{ $t('dashboard.admin_overview') }}</h2>
-              <router-link
-                :to="{ name: 'AdminDashboard' }"
-                class="text-sm font-medium text-blue-600 hover:text-blue-500"
-              >
-                {{ $t('dashboard.admin_panel') }}
-              </router-link>
-            </div>
-          </div>
-          <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div class="text-center">
-                <div class="text-2xl font-bold text-yellow-600">{{ adminStats.pendingApprovals }}</div>
-                <div class="text-sm text-gray-600">{{ $t('dashboard.pending_approvals') }}</div>
-              </div>
-              <div class="text-center">
-                <div class="text-2xl font-bold text-blue-600">{{ adminStats.totalUsers }}</div>
-                <div class="text-sm text-gray-600">{{ $t('dashboard.total_users') }}</div>
-              </div>
-              <div class="text-center">
-                <div class="text-2xl font-bold text-green-600">{{ formatCurrency(adminStats.monthlyRevenue) }}</div>
-                <div class="text-sm text-gray-600">{{ $t('dashboard.monthly_revenue') }}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Quick Tips -->
-      <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
-        <div class="flex">
-          <div class="flex-shrink-0">
-            <LightBulbIcon class="h-5 w-5 text-blue-400" />
-          </div>
-          <div class="ml-3">
-            <h3 class="text-sm font-medium text-blue-800">
-              {{ $t('dashboard.tips_title') }}
-            </h3>
-            <div class="mt-2 text-sm text-blue-700">
-              <ul class="list-disc list-inside space-y-1">
-                <li>{{ $t('dashboard.tip_1') }}</li>
-                <li>{{ $t('dashboard.tip_2') }}</li>
-                <li>{{ $t('dashboard.tip_3') }}</li>
-              </ul>
-            </div>
-          </div>
-        </div>
+          <h3 class="font-medium text-gray-900">{{ action.title }}</h3>
+          <p class="text-xs text-gray-500 mt-1">{{ action.description }}</p>
+        </Card>
       </div>
     </div>
+
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <!-- Recent Orders -->
+      <div class="lg:col-span-2">
+        <Card title="최근 주문" subtitle="최근 7일간의 주문 내역">
+          <template #action>
+            <Button variant="ghost" size="sm" text="전체보기" icon="mdi-arrow-right" @click="router.push('/app/orders')" />
+          </template>
+          
+          <Table
+            :columns="orderColumns"
+            :data="recentOrdersData"
+            :hoverable="true"
+          >
+            <template #cell-status="{ value }">
+              <Badge :variant="getStatusVariant(value)" :text="getStatusLabel(value)" />
+            </template>
+            <template #cell-amount="{ value }">
+              <span class="font-medium">{{ formatCurrency(value) }}</span>
+            </template>
+            <template #actions="{ row }">
+              <Button variant="ghost" size="xs" icon="mdi-eye" @click="viewOrder(row)" />
+            </template>
+          </Table>
+        </Card>
+      </div>
+
+      <!-- Activity Feed -->
+      <div>
+        <Card title="최근 활동" subtitle="실시간 업데이트">
+          <div class="space-y-4">
+            <div v-for="activity in activities" :key="activity.id" class="flex gap-3">
+              <div :class="[
+                'w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0',
+                activity.iconBg
+              ]">
+                <span :class="['mdi', activity.icon, 'text-lg', activity.iconColor]" />
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm text-gray-900">{{ activity.title }}</p>
+                <p class="text-xs text-gray-500">{{ activity.description }}</p>
+                <p class="text-xs text-gray-400 mt-1">{{ activity.time }}</p>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Order Trends -->
+      <Card title="주문 추이" subtitle="최근 30일">
+        <template #action>
+          <select class="text-sm border-gray-300 rounded-lg">
+            <option>일별</option>
+            <option>주별</option>
+            <option>월별</option>
+          </select>
+        </template>
+        <div class="h-64 flex items-center justify-center text-gray-400">
+          <div class="text-center">
+            <span class="mdi mdi-chart-line text-4xl mb-2 block" />
+            <p>차트 컴포넌트 준비 중</p>
+          </div>
+        </div>
+      </Card>
+
+      <!-- Status Distribution -->
+      <Card title="상태별 분포" subtitle="전체 주문 기준">
+        <div class="h-64 flex items-center justify-center text-gray-400">
+          <div class="text-center">
+            <span class="mdi mdi-chart-donut text-4xl mb-2 block" />
+            <p>차트 컴포넌트 준비 중</p>
+          </div>
+        </div>
+      </Card>
+    </div>
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { useOrdersStore } from '@/stores/orders'
-import { useWarehouseStore } from '@/stores/warehouse'
-import {
-  PlusIcon,
-  DocumentTextIcon,
-  MapPinIcon,
-  QrCodeIcon,
-  ClockIcon,
-  ExclamationTriangleIcon,
-  TruckIcon,
-  CurrencyDollarIcon,
-  ArrowUpIcon,
-  ArrowDownIcon,
-  LightBulbIcon
-} from '@heroicons/vue/24/outline'
+import Card from '@/components/ui/Card.vue'
+import Button from '@/components/ui/Button.vue'
+import Badge from '@/components/ui/Badge.vue'
+import Table from '@/components/ui/Table.vue'
 
-// Composables
 const router = useRouter()
 const authStore = useAuthStore()
-const ordersStore = useOrdersStore()
-const warehouseStore = useWarehouseStore()
 
-// State
-const loading = ref(false)
+// Dashboard stats
+const stats = ref([
+  {
+    title: '신규 주문',
+    value: '24',
+    change: 12,
+    trend: 'up',
+    icon: 'mdi-package-variant',
+    iconBg: 'bg-blue-50',
+    iconColor: 'text-blue-600'
+  },
+  {
+    title: '처리 대기',
+    value: '8',
+    change: 5,
+    trend: 'down',
+    icon: 'mdi-clock-outline',
+    iconBg: 'bg-yellow-50',
+    iconColor: 'text-yellow-600'
+  },
+  {
+    title: '배송 중',
+    value: '156',
+    change: 8,
+    trend: 'up',
+    icon: 'mdi-truck-delivery',
+    iconBg: 'bg-green-50',
+    iconColor: 'text-green-600'
+  },
+  {
+    title: '완료',
+    value: '1,247',
+    change: 15,
+    trend: 'up',
+    icon: 'mdi-check-circle',
+    iconBg: 'bg-purple-50',
+    iconColor: 'text-purple-600'
+  }
+])
 
-// Computed
-const recentOrders = computed(() => {
-  return ordersStore.recentOrders
+// Recent orders table
+const orderColumns = [
+  { key: 'orderNo', label: '주문번호', width: '120px' },
+  { key: 'customer', label: '고객명' },
+  { key: 'status', label: '상태' },
+  { key: 'amount', label: '금액', align: 'right' as const },
+  { key: 'date', label: '주문일' }
+]
+
+const recentOrdersData = ref([
+  { id: 1, orderNo: 'ORD-2024-001', customer: '김철수', status: 'pending', amount: 125000, date: '2024-01-15' },
+  { id: 2, orderNo: 'ORD-2024-002', customer: '이영희', status: 'processing', amount: 89000, date: '2024-01-15' },
+  { id: 3, orderNo: 'ORD-2024-003', customer: '박민수', status: 'shipped', amount: 234000, date: '2024-01-14' },
+  { id: 4, orderNo: 'ORD-2024-004', customer: '최지은', status: 'delivered', amount: 156000, date: '2024-01-14' },
+  { id: 5, orderNo: 'ORD-2024-005', customer: '정대호', status: 'pending', amount: 78000, date: '2024-01-13' }
+])
+
+// Activity feed
+const activities = ref([
+  {
+    id: 1,
+    title: '새 주문 접수',
+    description: 'ORD-2024-006 주문이 접수되었습니다',
+    time: '5분 전',
+    icon: 'mdi-package-variant',
+    iconBg: 'bg-blue-50',
+    iconColor: 'text-blue-600'
+  },
+  {
+    id: 2,
+    title: '배송 완료',
+    description: 'ORD-2024-003 배송이 완료되었습니다',
+    time: '30분 전',
+    icon: 'mdi-check-circle',
+    iconBg: 'bg-green-50',
+    iconColor: 'text-green-600'
+  },
+  {
+    id: 3,
+    title: '재고 부족 알림',
+    description: 'SKU-12345 재고가 10개 이하입니다',
+    time: '1시간 전',
+    icon: 'mdi-alert',
+    iconBg: 'bg-yellow-50',
+    iconColor: 'text-yellow-600'
+  },
+  {
+    id: 4,
+    title: '견적 요청',
+    description: '김철수님이 견적을 요청했습니다',
+    time: '2시간 전',
+    icon: 'mdi-calculator',
+    iconBg: 'bg-purple-50',
+    iconColor: 'text-purple-600'
+  }
+])
+
+// Quick actions
+const quickActions = computed(() => {
+  const userType = authStore.userType || 'general'
+  const actions = []
+
+  if (['general', 'corporate'].includes(userType)) {
+    actions.push({
+      title: '새 주문',
+      description: '주문 접수하기',
+      icon: 'mdi-plus-circle',
+      bgColor: 'bg-blue-50',
+      iconColor: 'text-blue-600',
+      route: '/app/orders/create'
+    })
+  }
+
+  if (['warehouse', 'admin'].includes(userType)) {
+    actions.push({
+      title: 'QR 스캔',
+      description: '상품 스캔하기',
+      icon: 'mdi-qrcode-scan',
+      bgColor: 'bg-green-50',
+      iconColor: 'text-green-600',
+      route: '/app/warehouse/scan'
+    })
+  }
+
+  actions.push(
+    {
+      title: '배송 추적',
+      description: '배송 상태 확인',
+      icon: 'mdi-truck-fast',
+      bgColor: 'bg-purple-50',
+      iconColor: 'text-purple-600',
+      route: '/app/tracking'
+    },
+    {
+      title: '견적 확인',
+      description: '견적서 조회',
+      icon: 'mdi-file-document',
+      bgColor: 'bg-yellow-50',
+      iconColor: 'text-yellow-600',
+      route: '/app/estimates'
+    }
+  )
+
+  return actions
 })
-
-const stats = computed(() => {
-  return ordersStore.dashboardStats
-})
-
-const warehouseStats = computed(() => ({
-  totalBoxes: 156,
-  pendingInbound: 23,
-  readyForOutbound: 45,
-  onHold: 8
-}))
-
-const adminStats = computed(() => ({
-  pendingApprovals: 12,
-  totalUsers: 1247,
-  monthlyRevenue: 2450000
-}))
 
 // Methods
-const loadDashboardData = async () => {
-  loading.value = true
-  
-  try {
-    // Load recent orders for active users
-    if (authStore.isActive) {
-      await ordersStore.fetchOrders({ page: 0, size: 5 })
-    }
-    
-    // Load warehouse data for warehouse users
-    if (authStore.hasRole(['WAREHOUSE', 'ADMIN'])) {
-      // await warehouseStore.fetchInventory(1) // Mock warehouse ID
-    }
-  } catch (error) {
-    console.error('Failed to load dashboard data:', error)
-  } finally {
-    loading.value = false
+const getStatusVariant = (status: string) => {
+  const variants: Record<string, any> = {
+    pending: 'warning',
+    processing: 'info',
+    shipped: 'primary',
+    delivered: 'success'
   }
+  return variants[status] || 'default'
 }
 
-const goToOrder = (orderId: string) => {
-  router.push({ name: 'OrderDetail', params: { id: orderId } })
-}
-
-const getStatusBadgeClass = (status: string) => {
-  const classes = {
-    requested: 'bg-yellow-100 text-yellow-800',
-    confirmed: 'bg-blue-100 text-blue-800',
-    in_progress: 'bg-purple-100 text-purple-800',
-    shipped: 'bg-orange-100 text-orange-800',
-    delivered: 'bg-green-100 text-green-800',
-    cancelled: 'bg-red-100 text-red-800'
+const getStatusLabel = (status: string) => {
+  const labels: Record<string, string> = {
+    pending: '대기중',
+    processing: '처리중',
+    shipped: '배송중',
+    delivered: '완료'
   }
-  return classes[status] || 'bg-gray-100 text-gray-800'
+  return labels[status] || status
 }
 
-const formatCurrency = (amount: number, currency: string = 'THB') => {
-  return new Intl.NumberFormat('th-TH', {
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('ko-KR', {
     style: 'currency',
-    currency: currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
+    currency: 'KRW'
   }).format(amount)
 }
 
-const formatDate = (dateString: string) => {
-  return new Intl.DateTimeFormat('ko-KR', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(new Date(dateString))
+const viewOrder = (order: any) => {
+  router.push(`/app/orders/${order.id}`)
 }
 
-// Lifecycle
-onMounted(() => {
-  loadDashboardData()
-})
+const handleQuickAction = (route: string) => {
+  router.push(route)
+}
 </script>
 
 <style scoped>
