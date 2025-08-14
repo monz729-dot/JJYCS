@@ -20,43 +20,46 @@
       </div>
     </div>
 
-    <!-- Filters -->
+    <!-- Filters - PC Optimized -->
     <div class="bg-white rounded-lg shadow p-6">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div>
+      <div class="grid grid-cols-1 lg:grid-cols-6 gap-4">
+        <div class="lg:col-span-2">
           <label class="block text-sm font-medium text-gray-700 mb-2">검색</label>
           <div class="relative">
             <MagnifyingGlassIcon class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input v-model="filters.search" 
                    type="text" 
-                   placeholder="이름, 이메일 검색..."
+                   placeholder="이름, 이메일, 아이디로 검색..."
                    class="pl-10 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500" />
           </div>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">역할</label>
+          <label class="block text-sm font-medium text-gray-700 mb-2">사용자 유형</label>
           <select v-model="filters.role" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500">
             <option value="">전체</option>
-            <option value="individual">일반 사용자</option>
-            <option value="enterprise">기업 사용자</option>
+            <option value="general">일반 사용자</option>
+            <option value="corporate">기업 사용자</option>
             <option value="partner">파트너</option>
-            <option value="warehouse">창고</option>
             <option value="admin">관리자</option>
           </select>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">상태</label>
+          <label class="block text-sm font-medium text-gray-700 mb-2">승인 상태</label>
           <select v-model="filters.status" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500">
             <option value="">전체</option>
-            <option value="active">활성</option>
-            <option value="pending_approval">승인 대기</option>
-            <option value="suspended">정지</option>
+            <option value="approved">승인됨</option>
+            <option value="pending">승인 대기</option>
+            <option value="rejected">승인 거절</option>
           </select>
         </div>
-        <div class="flex items-end">
+        <div class="flex items-end space-x-2">
           <button @click="resetFilters" 
-                  class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                  class="flex-1 px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
             초기화
+          </button>
+          <button @click="applyFilters" 
+                  class="flex-1 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+            적용
           </button>
         </div>
       </div>
@@ -81,36 +84,37 @@
         </div>
       </div>
 
+      <!-- PC Optimized Table -->
       <div class="overflow-x-auto">
         <table class="w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th scope="col" class="px-6 py-3 text-left">
+              <th scope="col" class="px-6 py-4 text-left">
                 <input type="checkbox" 
                        :checked="allSelected" 
                        @change="toggleSelectAll"
                        class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
               </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                사용자
+              <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                사용자 정보
               </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                역할
+              <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                사용자 유형
               </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 담당자 정보
               </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                회사/단체
+              <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                회사/단체 정보
               </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                상태
+              <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                승인 상태
               </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                가입일
+              <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                가입일시
               </th>
-              <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                작업
+              <th scope="col" class="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                관리 작업
               </th>
             </tr>
           </thead>
@@ -124,54 +128,56 @@
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex items-center">
-                  <div class="h-10 w-10 flex-shrink-0">
-                    <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                      <UserIcon class="h-6 w-6 text-gray-500" />
+                  <div class="h-12 w-12 flex-shrink-0">
+                    <div class="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                      <UserIcon class="h-6 w-6 text-white" />
                     </div>
                   </div>
                   <div class="ml-4">
-                    <div class="text-sm font-medium text-gray-900">{{ user.name }}</div>
-                    <div class="text-sm text-gray-500">{{ user.email }}</div>
+                    <div class="text-sm font-semibold text-gray-900">{{ user.name }}</div>
+                    <div class="text-sm text-gray-600">{{ user.email }}</div>
+                    <div class="text-xs text-gray-500">ID: {{ user.username || '-' }}</div>
                   </div>
                 </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full"
+                <span class="inline-flex px-3 py-1 text-xs font-medium rounded-full"
                       :class="getRoleClass(user.role)">
                   {{ getRoleText(user.role) }}
                 </span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                <div v-if="user.role !== 'individual' && user.role !== 'admin'">
-                  <div class="font-medium">{{ user.manager_name || '-' }}</div>
-                  <div class="text-gray-500">{{ user.manager_contact || '-' }}</div>
+                <div v-if="user.role !== 'general' && user.role !== 'admin'">
+                  <div class="font-medium text-gray-900">{{ user.manager_name || '-' }}</div>
+                  <div class="text-sm text-gray-600">{{ user.manager_contact || '-' }}</div>
                 </div>
-                <div v-else class="text-gray-400">-</div>
+                <div v-else class="text-gray-400 text-sm">-</div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                <div v-if="user.role !== 'individual' && user.role !== 'admin'">
-                  <div class="font-medium">{{ user.company_name || '-' }}</div>
-                  <div v-if="user.business_number" class="text-gray-500">{{ user.business_number }}</div>
+                <div v-if="user.role !== 'general' && user.role !== 'admin'">
+                  <div class="font-medium text-gray-900">{{ user.company_name || '-' }}</div>
+                  <div v-if="user.business_number" class="text-sm text-gray-600">사업자번호: {{ user.business_number }}</div>
                 </div>
-                <div v-else class="text-gray-400">-</div>
+                <div v-else class="text-gray-400 text-sm">-</div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full"
+                <span class="inline-flex px-3 py-1 text-xs font-medium rounded-full"
                       :class="getStatusClass(user.status)">
                   {{ getStatusText(user.status) }}
                 </span>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {{ formatDate(user.createdAt) }}
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                <div>{{ formatDate(user.createdAt) }}</div>
+                <div class="text-xs text-gray-400">{{ formatTime(user.createdAt) }}</div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <div class="flex items-center justify-end space-x-2">
+                <div class="flex items-center justify-end space-x-3">
                   <router-link :to="`/admin/users/${user.id}`"
-                               class="text-blue-600 hover:text-blue-900">
+                               class="text-blue-600 hover:text-blue-800 font-medium">
                     상세보기
                   </router-link>
                   <button @click="editUser(user)" 
-                          class="text-indigo-600 hover:text-indigo-900">
+                          class="text-indigo-600 hover:text-indigo-800 font-medium">
                     수정
                   </button>
                   <button @click="deleteUser(user)" 
@@ -558,12 +564,22 @@ const formatDate = (date: string) => {
   return new Date(date).toLocaleDateString('ko-KR')
 }
 
+const applyFilters = () => {
+  currentPage.value = 1
+}
+
+const formatTime = (date: string) => {
+  return new Date(date).toLocaleTimeString('ko-KR', { 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  })
+}
+
 const getRoleClass = (role: string) => {
   const classes = {
-    'individual': 'bg-gray-100 text-gray-800',
-    'enterprise': 'bg-blue-100 text-blue-800',
+    'general': 'bg-gray-100 text-gray-800',
+    'corporate': 'bg-blue-100 text-blue-800',
     'partner': 'bg-green-100 text-green-800',
-    'warehouse': 'bg-purple-100 text-purple-800',
     'admin': 'bg-red-100 text-red-800'
   }
   return classes[role as keyof typeof classes] || 'bg-gray-100 text-gray-800'
@@ -571,10 +587,9 @@ const getRoleClass = (role: string) => {
 
 const getRoleText = (role: string) => {
   const texts = {
-    'individual': '일반',
-    'enterprise': '기업',
+    'general': '일반 사용자',
+    'corporate': '기업 사용자',
     'partner': '파트너',
-    'warehouse': '창고',
     'admin': '관리자'
   }
   return texts[role as keyof typeof texts] || '알수없음'
@@ -582,18 +597,18 @@ const getRoleText = (role: string) => {
 
 const getStatusClass = (status: string) => {
   const classes = {
-    'active': 'bg-green-100 text-green-800',
-    'pending_approval': 'bg-yellow-100 text-yellow-800',
-    'suspended': 'bg-red-100 text-red-800'
+    'approved': 'bg-green-100 text-green-800',
+    'pending': 'bg-yellow-100 text-yellow-800',
+    'rejected': 'bg-red-100 text-red-800'
   }
   return classes[status as keyof typeof classes] || 'bg-gray-100 text-gray-800'
 }
 
 const getStatusText = (status: string) => {
   const texts = {
-    'active': '활성',
-    'pending_approval': '승인 대기',
-    'suspended': '정지'
+    'approved': '승인됨',
+    'pending': '승인 대기',
+    'rejected': '승인 거절'
   }
   return texts[status as keyof typeof texts] || '알수없음'
 }

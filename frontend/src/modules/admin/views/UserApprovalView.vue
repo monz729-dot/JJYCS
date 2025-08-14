@@ -1,85 +1,127 @@
 <template>
   <div class="user-approval-page">
-    <!-- Header -->
-    <div class="page-header">
-      <h1 class="page-title">{{ $t('admin.user_approval.title') }}</h1>
-      <p class="page-subtitle">{{ $t('admin.user_approval.subtitle') }}</p>
+    <!-- Header - PC Optimized -->
+    <div class="space-y-6">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">사용자 승인 관리</h1>
+          <p class="text-lg text-gray-600 mt-2">기업 및 파트너 사용자의 승인을 관리합니다</p>
+        </div>
+        <div class="mt-4 lg:mt-0 flex space-x-3">
+          <button @click="bulkApprove" 
+                  class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700">
+            <CheckIcon class="h-4 w-4 mr-2" />
+            일괄 승인
+          </button>
+          <button @click="bulkReject" 
+                  class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700">
+            <XMarkIcon class="h-4 w-4 mr-2" />
+            일괄 거절
+          </button>
+        </div>
+      </div>
       
-      <!-- Stats -->
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-icon pending">
-            <ClockIcon class="icon" />
-          </div>
-          <div class="stat-info">
-            <div class="stat-number">{{ stats.pending }}</div>
-            <div class="stat-label">{{ $t('admin.user_approval.pending') }}</div>
-          </div>
-        </div>
-        
-        <div class="stat-card">
-          <div class="stat-icon approved">
-            <CheckCircleIcon class="icon" />
-          </div>
-          <div class="stat-info">
-            <div class="stat-number">{{ stats.approved }}</div>
-            <div class="stat-label">{{ $t('admin.user_approval.approved') }}</div>
+      <!-- Stats Cards - PC Optimized -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="bg-white rounded-lg shadow p-6 border-l-4 border-yellow-500">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <ClockIcon class="h-8 w-8 text-yellow-600" />
+            </div>
+            <div class="ml-5 w-0 flex-1">
+              <dl>
+                <dt class="text-sm font-medium text-gray-500 truncate">승인 대기</dt>
+                <dd class="text-3xl font-bold text-gray-900">{{ stats.pending }}</dd>
+              </dl>
+            </div>
           </div>
         </div>
         
-        <div class="stat-card">
-          <div class="stat-icon rejected">
-            <XCircleIcon class="icon" />
+        <div class="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <CheckCircleIcon class="h-8 w-8 text-green-600" />
+            </div>
+            <div class="ml-5 w-0 flex-1">
+              <dl>
+                <dt class="text-sm font-medium text-gray-500 truncate">승인 완료</dt>
+                <dd class="text-3xl font-bold text-gray-900">{{ stats.approved }}</dd>
+              </dl>
+            </div>
           </div>
-          <div class="stat-info">
-            <div class="stat-number">{{ stats.rejected }}</div>
-            <div class="stat-label">{{ $t('admin.user_approval.rejected') }}</div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <XCircleIcon class="h-8 w-8 text-red-600" />
+            </div>
+            <div class="ml-5 w-0 flex-1">
+              <dl>
+                <dt class="text-sm font-medium text-gray-500 truncate">승인 거절</dt>
+                <dd class="text-3xl font-bold text-gray-900">{{ stats.rejected }}</dd>
+              </dl>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Filters -->
-    <div class="filter-section">
-      <div class="filter-controls">
-        <select v-model="selectedRole" class="filter-select">
-          <option value="">{{ $t('admin.user_approval.all_roles') }}</option>
-          <option value="enterprise">{{ $t('roles.enterprise') }}</option>
-          <option value="partner">{{ $t('roles.partner') }}</option>
-          <option value="warehouse">{{ $t('roles.warehouse') }}</option>
-        </select>
-        
-        <select v-model="selectedStatus" class="filter-select">
-          <option value="">{{ $t('admin.user_approval.all_statuses') }}</option>
-          <option value="pending">{{ $t('admin.user_approval.pending') }}</option>
-          <option value="approved">{{ $t('admin.user_approval.approved') }}</option>
-          <option value="rejected">{{ $t('admin.user_approval.rejected') }}</option>
-        </select>
-        
-        <div class="search-box">
-          <MagnifyingGlassIcon class="search-icon" />
-          <input
-            v-model="searchQuery"
-            type="text"
-            class="search-input"
-            :placeholder="$t('admin.user_approval.search_placeholder')"
-          />
+    <!-- Filters - PC Optimized -->
+    <div class="bg-white rounded-lg shadow p-6">
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">검색</label>
+          <div class="relative">
+            <MagnifyingGlassIcon class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input v-model="searchQuery" 
+                   type="text" 
+                   placeholder="이름, 이메일, 회사명으로 검색..."
+                   class="pl-10 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">사용자 유형</label>
+          <select v-model="selectedRole" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500">
+            <option value="">전체</option>
+            <option value="corporate">기업 사용자</option>
+            <option value="partner">파트너</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">승인 상태</label>
+          <select v-model="selectedStatus" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500">
+            <option value="">전체</option>
+            <option value="pending">승인 대기</option>
+            <option value="approved">승인 완료</option>
+            <option value="rejected">승인 거절</option>
+          </select>
+        </div>
+        <div class="flex items-end space-x-2">
+          <button @click="resetFilters" 
+                  class="flex-1 px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+            초기화
+          </button>
+          <button @click="applyFilters" 
+                  class="flex-1 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+            적용
+          </button>
         </div>
       </div>
     </div>
 
     <!-- User List -->
     <div class="user-list">
-      <div v-if="loading" class="loading-state">
-        <LoadingSpinner />
-        <p>{{ $t('admin.user_approval.loading') }}</p>
-      </div>
-      
-      <div v-else-if="filteredUsers.length === 0" class="empty-state">
-        <UserGroupIcon class="empty-icon" />
-        <h3 class="empty-title">{{ $t('admin.user_approval.no_users') }}</h3>
-        <p class="empty-description">{{ $t('admin.user_approval.no_users_desc') }}</p>
-      </div>
+             <div v-if="loading" class="loading-state">
+         <LoadingSpinner />
+         <p>사용자 목록을 불러오는 중...</p>
+       </div>
+       
+       <div v-else-if="filteredUsers.length === 0" class="empty-state">
+         <UserGroupIcon class="empty-icon" />
+         <h3 class="empty-title">승인 대기 사용자가 없습니다</h3>
+         <p class="empty-description">현재 승인 대기 중인 사용자가 없습니다.</p>
+       </div>
       
       <div v-else class="user-cards">
         <div
@@ -97,17 +139,17 @@
               <div class="user-details">
                 <h3 class="user-name">{{ user.name }}</h3>
                 <p class="user-email">{{ user.email }}</p>
-                <div class="user-role-badge" :class="`role-${user.role}`">
-                  {{ $t(`roles.${user.role}`) }}
-                </div>
+                                 <div class="user-role-badge" :class="`role-${user.role}`">
+                   {{ getRoleText(user.role) }}
+                 </div>
               </div>
             </div>
             
             <div class="user-status">
-              <div class="status-badge" :class="`status-${user.approvalStatus}`">
-                <component :is="getStatusIcon(user.approvalStatus)" class="status-icon" />
-                {{ $t(`admin.user_approval.${user.approvalStatus}`) }}
-              </div>
+                             <div class="status-badge" :class="`status-${user.approvalStatus}`">
+                 <component :is="getStatusIcon(user.approvalStatus)" class="status-icon" />
+                 {{ getStatusText(user.approvalStatus) }}
+               </div>
               <div class="registration-date">
                 {{ formatDate(user.registeredAt) }}
               </div>
@@ -117,71 +159,71 @@
           <!-- User Details -->
           <div class="user-content">
             <div class="detail-grid">
-              <div class="detail-item">
-                <label>{{ $t('admin.user_approval.phone') }}:</label>
-                <span>{{ user.phone || '-' }}</span>
-              </div>
-              
-              <div v-if="user.role === 'enterprise'" class="detail-item">
-                <label>{{ $t('admin.user_approval.company_name') }}:</label>
-                <span>{{ user.enterpriseProfile?.companyName || '-' }}</span>
-              </div>
-              
-              <div v-if="user.role === 'enterprise'" class="detail-item">
-                <label>{{ $t('admin.user_approval.business_number') }}:</label>
-                <span>{{ user.enterpriseProfile?.businessNumber || '-' }}</span>
-              </div>
-              
-              <div v-if="user.role === 'partner'" class="detail-item">
-                <label>{{ $t('admin.user_approval.partner_type') }}:</label>
-                <span>{{ user.partnerProfile?.partnerType ? $t(`partner.types.${user.partnerProfile.partnerType}`) : '-' }}</span>
-              </div>
-              
-              <div v-if="user.role === 'warehouse'" class="detail-item">
-                <label>{{ $t('admin.user_approval.warehouse_name') }}:</label>
-                <span>{{ user.warehouseProfile?.warehouseName || '-' }}</span>
-              </div>
+                             <div class="detail-item">
+                 <label>전화번호:</label>
+                 <span>{{ user.phone || '-' }}</span>
+               </div>
+               
+               <div v-if="user.role === 'enterprise'" class="detail-item">
+                 <label>회사명:</label>
+                 <span>{{ user.enterpriseProfile?.companyName || '-' }}</span>
+               </div>
+               
+               <div v-if="user.role === 'enterprise'" class="detail-item">
+                 <label>사업자번호:</label>
+                 <span>{{ user.enterpriseProfile?.businessNumber || '-' }}</span>
+               </div>
+               
+               <div v-if="user.role === 'partner'" class="detail-item">
+                 <label>파트너 유형:</label>
+                 <span>{{ user.partnerProfile?.partnerType ? getPartnerTypeText(user.partnerProfile.partnerType) : '-' }}</span>
+               </div>
+               
+               <div v-if="user.role === 'warehouse'" class="detail-item">
+                 <label>창고명:</label>
+                 <span>{{ user.warehouseProfile?.warehouseName || '-' }}</span>
+               </div>
             </div>
             
-            <!-- Approval Notes -->
-            <div v-if="user.approvalNotes" class="approval-notes">
-              <h4 class="notes-title">{{ $t('admin.user_approval.notes') }}</h4>
-              <p class="notes-content">{{ user.approvalNotes }}</p>
-            </div>
+                         <!-- Approval Notes -->
+             <div v-if="user.approvalNotes" class="approval-notes">
+               <h4 class="notes-title">승인 메모</h4>
+               <p class="notes-content">{{ user.approvalNotes }}</p>
+             </div>
           </div>
 
           <!-- Actions -->
           <div v-if="user.approvalStatus === 'pending'" class="user-actions">
-            <button
-              type="button"
-              class="action-btn reject-btn"
-              @click="openRejectModal(user)"
-            >
-              <XCircleIcon class="btn-icon" />
-              {{ $t('admin.user_approval.reject') }}
-            </button>
-            
-            <button
-              type="button"
-              class="action-btn approve-btn"
-              @click="approveUser(user)"
-              :disabled="processing === user.id"
-            >
-              <LoadingSpinner v-if="processing === user.id" size="small" />
-              <CheckCircleIcon v-else class="btn-icon" />
-              {{ $t('admin.user_approval.approve') }}
-            </button>
+                         <button
+               type="button"
+               class="action-btn reject-btn"
+               @click="openRejectModal(user)"
+             >
+               <XCircleIcon class="btn-icon" />
+               거절
+             </button>
+             
+             <button
+               type="button"
+               class="action-btn approve-btn"
+               @click="approveUser(user)"
+               :disabled="processing === user.id"
+             >
+               <LoadingSpinner v-if="processing === user.id" size="small" />
+               <CheckCircleIcon v-else class="btn-icon" />
+               승인
+             </button>
           </div>
           
           <div v-else class="approval-history">
-            <div class="approval-meta">
-              <span class="approved-by">
-                {{ $t('admin.user_approval.processed_by') }}: {{ user.approvedBy || 'System' }}
-              </span>
-              <span class="approved-at">
-                {{ formatDate(user.approvedAt || '') }}
-              </span>
-            </div>
+                       <div class="approval-meta">
+             <span class="approved-by">
+               처리자: {{ user.approvedBy || 'System' }}
+             </span>
+             <span class="approved-at">
+               {{ formatDate(user.approvedAt || '') }}
+             </span>
+           </div>
           </div>
         </div>
       </div>
@@ -190,43 +232,43 @@
     <!-- Reject Modal -->
     <div v-if="showRejectModal" class="modal-overlay" @click.self="closeRejectModal">
       <div class="modal-container">
-        <div class="modal-header">
-          <h3 class="modal-title">{{ $t('admin.user_approval.reject_user') }}</h3>
-          <button type="button" class="modal-close" @click="closeRejectModal">
-            <XMarkIcon class="close-icon" />
-          </button>
-        </div>
-        
-        <div class="modal-body">
-          <p class="reject-confirmation">
-            {{ $t('admin.user_approval.reject_confirmation', { name: selectedUser?.name }) }}
-          </p>
-          
-          <div class="form-group">
-            <label class="form-label">{{ $t('admin.user_approval.reject_reason') }}</label>
-            <textarea
-              v-model="rejectReason"
-              class="form-textarea"
-              rows="4"
-              :placeholder="$t('admin.user_approval.reject_reason_placeholder')"
-            ></textarea>
-          </div>
-        </div>
-        
-        <div class="modal-footer">
-          <button type="button" class="btn-cancel" @click="closeRejectModal">
-            {{ $t('common.cancel') }}
-          </button>
-          <button
-            type="button"
-            class="btn-reject"
-            @click="rejectUser"
-            :disabled="!rejectReason.trim() || !!processing"
-          >
-            <LoadingSpinner v-if="processing" size="small" />
-            {{ $t('admin.user_approval.reject') }}
-          </button>
-        </div>
+                 <div class="modal-header">
+           <h3 class="modal-title">사용자 거절</h3>
+           <button type="button" class="modal-close" @click="closeRejectModal">
+             <XMarkIcon class="close-icon" />
+           </button>
+         </div>
+         
+         <div class="modal-body">
+           <p class="reject-confirmation">
+             {{ selectedUser?.name }}님의 가입을 거절하시겠습니까?
+           </p>
+           
+           <div class="form-group">
+             <label class="form-label">거절 사유</label>
+             <textarea
+               v-model="rejectReason"
+               class="form-textarea"
+               rows="4"
+               placeholder="거절 사유를 입력해주세요..."
+             ></textarea>
+           </div>
+         </div>
+         
+         <div class="modal-footer">
+           <button type="button" class="btn-cancel" @click="closeRejectModal">
+             취소
+           </button>
+           <button
+             type="button"
+             class="btn-reject"
+             @click="rejectUser"
+             :disabled="!rejectReason.trim() || !!processing"
+           >
+             <LoadingSpinner v-if="processing" size="small" />
+             거절
+           </button>
+         </div>
       </div>
     </div>
   </div>
@@ -474,6 +516,56 @@ const formatDate = (dateString: string) => {
     hour: '2-digit',
     minute: '2-digit'
   })
+}
+
+// Helper functions
+const getRoleText = (role: string) => {
+  const texts = {
+    'enterprise': '기업 사용자',
+    'partner': '파트너',
+    'warehouse': '창고',
+    'individual': '일반 사용자'
+  }
+  return texts[role as keyof typeof texts] || '알수없음'
+}
+
+const getStatusText = (status: string) => {
+  const texts = {
+    'pending': '승인 대기',
+    'approved': '승인 완료',
+    'rejected': '승인 거절'
+  }
+  return texts[status as keyof typeof texts] || '알수없음'
+}
+
+const getPartnerTypeText = (type: string) => {
+  const texts = {
+    'affiliate': '제휴 파트너',
+    'referral': '추천 파트너',
+    'corporate': '기업 파트너'
+  }
+  return texts[type as keyof typeof texts] || '알수없음'
+}
+
+const bulkApprove = () => {
+  // 일괄 승인 로직
+  console.log('일괄 승인')
+}
+
+const bulkReject = () => {
+  // 일괄 거절 로직
+  console.log('일괄 거절')
+}
+
+const resetFilters = () => {
+  selectedRole.value = ''
+  selectedStatus.value = 'pending'
+  searchQuery.value = ''
+}
+
+const applyFilters = () => {
+  // 필터 적용 로직
+  console.log('필터 적용')
 }
 
 // Lifecycle
