@@ -27,7 +27,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'register',
         name: 'Register', 
-        component: () => import('@/modules/auth/views/RegisterView.vue'),
+        component: () => import('@/modules/auth/views/PublicSignupView.vue'),
         meta: { 
           title: 'auth.register.title',
           requiresGuest: true 
@@ -77,6 +77,14 @@ const routes: RouteRecordRaw[] = [
           title: 'auth.two_factor.title',
           requiresAuth: true 
         }
+      },
+      {
+        path: 'callback',
+        name: 'AuthCallback',
+        component: () => import('@/modules/auth/views/AuthCallbackView.vue'),
+        meta: { 
+          title: '이메일 인증 완료'
+        }
       }
     ]
   },
@@ -84,7 +92,18 @@ const routes: RouteRecordRaw[] = [
   // 루트 경로를 로그인으로 리다이렉트
   {
     path: '/',
-    redirect: '/login'
+    redirect: '/auth/login'
+  },
+
+  // 회원가입 페이지 직접 접근
+  {
+    path: '/signup',
+    name: 'Signup',
+    component: () => import('@/modules/auth/views/PublicSignupView.vue'),
+    meta: { 
+      title: '회원가입',
+      requiresGuest: true 
+    }
   },
 
   // 메인 애플리케이션 라우트
@@ -112,7 +131,7 @@ const routes: RouteRecordRaw[] = [
         meta: { 
           title: 'navigation.orders',
           icon: 'icon-orders',
-          requiresRole: ['individual', 'enterprise']
+          requiresRole: ['general', 'corporate']
         },
         children: [
           {
@@ -495,7 +514,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/signup',
     name: 'PublicSignup',
-    component: () => import('@/modules/auth/components/SignUpForm.vue'),
+    component: () => import('@/modules/auth/views/PublicSignupView.vue'),
     meta: { 
       title: 'auth.register.title',
       requiresGuest: true 
@@ -504,11 +523,37 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/login',
     name: 'PublicLogin',
-    component: () => import('@/modules/auth/components/LoginForm.vue'),
+    component: () => import('@/modules/auth/views/LoginView.vue'),
     meta: { 
       title: 'auth.login.title',
       requiresGuest: true 
     }
+  },
+  {
+    path: '/email-verification',
+    name: 'EmailVerification',
+    component: () => import('@/modules/auth/views/EmailVerificationView.vue'),
+    meta: { 
+      title: 'auth.email_verification.title',
+      requiresAuth: true 
+    }
+  },
+  {
+    path: '/approval',
+    name: 'Approval',
+    component: () => import('@/modules/auth/views/ApprovalView.vue'),
+    meta: { 
+      title: 'auth.approval.title',
+      requiresAuth: true 
+    }
+  },
+
+  // 테스트 페이지
+  {
+    path: '/test-login',
+    name: 'TestLogin',
+    component: () => import('@/views/TestLoginView.vue'),
+    meta: { title: '역할별 테스트 로그인' }
   },
 
   // 에러 페이지
@@ -636,7 +681,7 @@ export const isRouteAccessible = (routeName: string, role: string) => {
 export const getNavigationItems = (role: string) => {
   const items = [
     { name: 'Dashboard', title: 'navigation.dashboard', icon: 'icon-dashboard' },
-    { name: 'OrderList', title: 'navigation.orders', icon: 'icon-orders', roles: ['individual', 'enterprise'] },
+    { name: 'OrderList', title: 'navigation.orders', icon: 'icon-orders', roles: ['general', 'corporate'] },
     { name: 'WarehouseDashboard', title: 'navigation.warehouse', icon: 'icon-warehouse', roles: ['warehouse', 'admin'] },
     { name: 'TrackingList', title: 'navigation.tracking', icon: 'icon-tracking' },
     { name: 'EstimateList', title: 'navigation.estimates', icon: 'icon-estimates' },

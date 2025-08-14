@@ -375,7 +375,7 @@ import {
   ChevronRightIcon,
   BanknotesIcon,
   DevicePhoneMobileIcon,
-  CurrencyBitcoinIcon
+  CurrencyDollarIcon
 } from '@heroicons/vue/24/outline'
 
 interface Payment {
@@ -636,7 +636,7 @@ const getMethodIcon = (method: string) => {
     bank_transfer: BanknotesIcon,
     credit_card: CreditCardIcon,
     mobile_payment: DevicePhoneMobileIcon,
-    crypto: CurrencyBitcoinIcon
+    crypto: CurrencyDollarIcon
   }
   return icons[method as keyof typeof icons] || CreditCardIcon
 }

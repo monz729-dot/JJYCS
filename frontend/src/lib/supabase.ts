@@ -22,7 +22,7 @@ export interface UserProfile {
   email?: string
   phone?: string
   address?: string
-  user_type: 'general' | 'corporate' | 'partner'
+  user_type: 'general' | 'corporate' | 'partner' | 'warehouse' | 'admin'
   manager_name?: string
   manager_contact?: string
   company_name?: string
@@ -43,7 +43,7 @@ export interface SignUpData {
   name: string
   phone?: string
   address?: string
-  user_type: 'general' | 'corporate' | 'partner'
+  user_type: 'general' | 'corporate' | 'partner' | 'warehouse' | 'admin'
   manager_name?: string
   manager_contact?: string
   company_name?: string

@@ -1,235 +1,315 @@
 <template>
-  <div class="partner-dashboard">
+  <div class="partner-dashboard min-h-screen bg-gray-50">
     <!-- 헤더 -->
-    <div class="dashboard-header">
-      <div class="header-info">
-        <h1>파트너 대시보드</h1>
-        <p class="current-time">{{ currentDateTime }}</p>
-      </div>
-      <div class="header-actions">
-        <button @click="refreshData" class="btn-refresh" :disabled="loading">
-          <svg v-if="loading" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-          </svg>
-          새로고침
-        </button>
-      </div>
-    </div>
-
-    <!-- 통계 카드 그리드 -->
-    <div class="stats-grid">
-      <div class="stat-card total-referrals">
-        <div class="stat-icon">
-          <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-          </svg>
+    <div class="bg-white shadow-sm border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+        <div class="flex-1">
+          <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">파트너 대시보드</h1>
+          <p class="mt-1 text-sm text-gray-600">{{ currentDateTime }}</p>
         </div>
-        <div class="stat-content">
-          <div class="stat-value">{{ stats.totalReferrals.toLocaleString() }}</div>
-          <div class="stat-label">총 추천 고객</div>
-          <div class="stat-change positive" v-if="stats.thisMonthReferrals > 0">
-            이번달 +{{ stats.thisMonthReferrals }}
-          </div>
-        </div>
-      </div>
-
-      <div class="stat-card active-customers">
-        <div class="stat-icon">
-          <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-        </div>
-        <div class="stat-content">
-          <div class="stat-value">{{ stats.activeCustomers.toLocaleString() }}</div>
-          <div class="stat-label">활성 고객</div>
-          <div class="stat-change positive">
-            전환율 {{ stats.conversionRate.toFixed(1) }}%
-          </div>
-        </div>
-      </div>
-
-      <div class="stat-card total-commission">
-        <div class="stat-icon">
-          <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-          </svg>
-        </div>
-        <div class="stat-content">
-          <div class="stat-value">₩{{ stats.totalCommission.toLocaleString() }}</div>
-          <div class="stat-label">총 수수료</div>
-          <div class="stat-change positive">
-            이번달 ₩{{ stats.thisMonthCommission.toLocaleString() }}
-          </div>
-        </div>
-      </div>
-
-      <div class="stat-card pending-payment">
-        <div class="stat-icon">
-          <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-        </div>
-        <div class="stat-content">
-          <div class="stat-value">₩{{ stats.pendingPayment.toLocaleString() }}</div>
-          <div class="stat-label">정산 대기</div>
-          <div class="stat-change neutral">
-            {{ pendingCommissions.length }}건 대기 중
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 성과 차트 섹션 -->
-    <div class="dashboard-section">
-      <div class="section-header">
-        <h2>월별 성과</h2>
-        <div class="period-selector">
-          <select v-model="selectedPeriod" class="select-period">
-            <option value="6months">최근 6개월</option>
-            <option value="3months">최근 3개월</option>
-            <option value="1month">이번 달</option>
-          </select>
-        </div>
-      </div>
-      
-      <div class="chart-container">
-        <div class="chart-placeholder">
-          <svg class="chart-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-          </svg>
-          <p>성과 차트 (차트 라이브러리 연동 예정)</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="dashboard-row">
-      <!-- 최근 추천 고객 -->
-      <div class="dashboard-section recent-referrals">
-        <div class="section-header">
-          <h2>최근 추천 고객</h2>
-          <router-link to="/partner/referrals" class="view-all-link">
-            전체 보기
-            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        <div class="flex-shrink-0">
+          <button 
+            @click="refreshData" 
+            class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            :disabled="loading"
+          >
+            <svg v-if="loading" class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-          </router-link>
+            <svg v-else class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+            새로고침
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <!-- 통계 카드 그리드 -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+          <div class="p-4 sm:p-5">
+            <div class="flex items-center">
+              <div class="flex-shrink-0">
+                <div class="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
+                  <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                  </svg>
+                </div>
+              </div>
+              <div class="ml-4 flex-1">
+                <div class="text-2xl font-bold text-gray-900">{{ stats.totalReferrals.toLocaleString() }}</div>
+                <div class="text-sm font-medium text-gray-500">총 추천 고객</div>
+                <div class="text-xs text-green-600 mt-1" v-if="stats.thisMonthReferrals > 0">
+                  이번달 +{{ stats.thisMonthReferrals }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+          <div class="p-4 sm:p-5">
+            <div class="flex items-center">
+              <div class="flex-shrink-0">
+                <div class="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
+                  <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                </div>
+              </div>
+              <div class="ml-4 flex-1">
+                <div class="text-2xl font-bold text-gray-900">{{ stats.activeCustomers.toLocaleString() }}</div>
+                <div class="text-sm font-medium text-gray-500">활성 고객</div>
+                <div class="text-xs text-green-600 mt-1">
+                  전환율 {{ stats.conversionRate.toFixed(1) }}%
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+          <div class="p-4 sm:p-5">
+            <div class="flex items-center">
+              <div class="flex-shrink-0">
+                <div class="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
+                  <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                  </svg>
+                </div>
+              </div>
+              <div class="ml-4 flex-1">
+                <div class="text-2xl font-bold text-gray-900">₩{{ stats.totalCommission.toLocaleString() }}</div>
+                <div class="text-sm font-medium text-gray-500">총 수수료</div>
+                <div class="text-xs text-green-600 mt-1">
+                  이번달 ₩{{ stats.thisMonthCommission.toLocaleString() }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+          <div class="p-4 sm:p-5">
+            <div class="flex items-center">
+              <div class="flex-shrink-0">
+                <div class="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
+                  <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                </div>
+              </div>
+              <div class="ml-4 flex-1">
+                <div class="text-2xl font-bold text-gray-900">₩{{ stats.pendingPayment.toLocaleString() }}</div>
+                <div class="text-sm font-medium text-gray-500">정산 대기</div>
+                <div class="text-xs text-gray-600 mt-1">
+                  {{ pendingCommissions.length }}건 대기 중
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 성과 차트 섹션 -->
+      <div class="bg-white shadow rounded-lg mb-8">
+        <div class="px-4 sm:px-6 py-4 sm:py-6 border-b border-gray-200">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+            <h2 class="text-lg sm:text-xl font-semibold text-gray-900">월별 성과</h2>
+            <div class="flex-shrink-0">
+              <select 
+                v-model="selectedPeriod" 
+                class="block w-full sm:w-auto border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              >
+                <option value="6months">최근 6개월</option>
+                <option value="3months">최근 3개월</option>
+                <option value="1month">이번 달</option>
+              </select>
+            </div>
+          </div>
         </div>
         
-        <div class="referrals-list">
-          <div v-for="referral in recentReferrals" :key="referral.id" class="referral-item">
-            <div class="referral-avatar">
-              <span>{{ referral.customerName.charAt(0) }}</span>
-            </div>
-            <div class="referral-info">
-              <div class="referral-name">{{ referral.customerName }}</div>
-              <div class="referral-date">{{ formatDate(referral.signupDate) }}</div>
-            </div>
-            <div class="referral-stats">
-              <div class="referral-orders">{{ referral.ordersCount }}건</div>
-              <div class="referral-commission">₩{{ referral.commissionEarned.toLocaleString() }}</div>
-            </div>
-            <div class="referral-status">
-              <span :class="['status-badge', `status-${referral.status}`]">
-                {{ getStatusText(referral.status) }}
-              </span>
+        <div class="p-4 sm:p-6">
+          <div class="h-64 sm:h-80 bg-gray-50 rounded-lg flex items-center justify-center">
+            <div class="text-center">
+              <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+              </svg>
+              <p class="mt-2 text-sm text-gray-500">차트가 여기에 표시됩니다</p>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 최근 수수료 -->
-      <div class="dashboard-section recent-commissions">
-        <div class="section-header">
-          <h2>최근 수수료</h2>
-          <router-link to="/partner/commissions" class="view-all-link">
-            전체 보기
-            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-            </svg>
-          </router-link>
+      <!-- 최근 추천 고객 섹션 -->
+      <div class="bg-white shadow rounded-lg mb-8">
+        <div class="px-4 sm:px-6 py-4 sm:py-6 border-b border-gray-200">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg sm:text-xl font-semibold text-gray-900">최근 추천 고객</h2>
+            <router-link 
+              to="/partner/referrals" 
+              class="text-sm font-medium text-blue-600 hover:text-blue-500"
+            >
+              전체보기 →
+            </router-link>
+          </div>
         </div>
         
-        <div class="commissions-list">
-          <div v-for="commission in recentCommissions" :key="commission.id" class="commission-item">
-            <div class="commission-order">
-              <div class="order-id">{{ commission.orderId }}</div>
-              <div class="order-customer">{{ commission.customerName }}</div>
-            </div>
-            <div class="commission-amount">
-              <div class="order-amount">₩{{ commission.orderAmount.toLocaleString() }}</div>
-              <div class="commission-rate">{{ commission.commissionRate }}%</div>
-            </div>
-            <div class="commission-earned">
-              ₩{{ commission.commissionAmount.toLocaleString() }}
-            </div>
-            <div class="commission-status">
-              <span :class="['status-badge', `status-${commission.status}`]">
-                {{ getCommissionStatusText(commission.status) }}
-              </span>
+        <div class="overflow-hidden">
+          <!-- Desktop Table -->
+          <div class="hidden lg:block">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">고객명</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">가입일</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">수수료</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">액션</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <tr v-for="referral in recentReferrals" :key="referral.id">
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex items-center">
+                      <div class="flex-shrink-0 h-10 w-10">
+                        <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                          <span class="text-sm font-medium text-gray-700">{{ referral.name.charAt(0) }}</span>
+                        </div>
+                      </div>
+                      <div class="ml-4">
+                        <div class="text-sm font-medium text-gray-900">{{ referral.name }}</div>
+                        <div class="text-sm text-gray-500">{{ referral.email }}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ formatDate(referral.createdAt) }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full" :class="getStatusClass(referral.status)">
+                      {{ getStatusText(referral.status) }}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">₩{{ referral.commission.toLocaleString() }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <button class="text-blue-600 hover:text-blue-900">상세보기</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Mobile Cards -->
+          <div class="lg:hidden">
+            <div class="divide-y divide-gray-200">
+              <div v-for="referral in recentReferrals" :key="referral.id" class="p-4">
+                <div class="flex items-start justify-between">
+                  <div class="flex items-center space-x-3">
+                    <div class="flex-shrink-0 h-10 w-10">
+                      <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                        <span class="text-sm font-medium text-gray-700">{{ referral.name.charAt(0) }}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <div class="text-sm font-medium text-gray-900">{{ referral.name }}</div>
+                      <div class="text-sm text-gray-500">{{ referral.email }}</div>
+                      <div class="text-xs text-gray-500 mt-1">{{ formatDate(referral.createdAt) }}</div>
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full mb-2" :class="getStatusClass(referral.status)">
+                      {{ getStatusText(referral.status) }}
+                    </span>
+                    <div class="text-sm font-semibold text-gray-900">₩{{ referral.commission.toLocaleString() }}</div>
+                  </div>
+                </div>
+                <div class="mt-3 pt-3 border-t border-gray-100">
+                  <button class="text-sm text-blue-600 hover:text-blue-900 font-medium">상세보기</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- 빠른 작업 -->
-    <div class="dashboard-section quick-actions">
-      <div class="section-header">
-        <h2>빠른 작업</h2>
-      </div>
-      
-      <div class="quick-actions-grid">
-        <router-link to="/partner/links" class="quick-action-card">
-          <div class="action-icon">
-            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
-            </svg>
+      <!-- 정산 대기 내역 섹션 -->
+      <div class="bg-white shadow rounded-lg">
+        <div class="px-4 sm:px-6 py-4 sm:py-6 border-b border-gray-200">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg sm:text-xl font-semibold text-gray-900">정산 대기 내역</h2>
+            <router-link 
+              to="/partner/commissions" 
+              class="text-sm font-medium text-blue-600 hover:text-blue-500"
+            >
+              전체보기 →
+            </router-link>
           </div>
-          <div class="action-content">
-            <div class="action-title">추천 링크 생성</div>
-            <div class="action-desc">새로운 추천 링크를 만들어 공유하세요</div>
+        </div>
+        
+        <div class="overflow-hidden">
+          <!-- Desktop Table -->
+          <div class="hidden lg:block">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">주문번호</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">고객명</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">주문금액</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">수수료율</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">수수료</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <tr v-for="commission in pendingCommissions" :key="commission.id">
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ commission.orderNumber }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ commission.customerName }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">₩{{ commission.orderAmount.toLocaleString() }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ commission.rate }}%</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">₩{{ commission.amount.toLocaleString() }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                      정산 대기
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-        </router-link>
 
-        <router-link to="/partner/settlements" class="quick-action-card">
-          <div class="action-icon">
-            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-            </svg>
+          <!-- Mobile Cards -->
+          <div class="lg:hidden">
+            <div class="divide-y divide-gray-200">
+              <div v-for="commission in pendingCommissions" :key="commission.id" class="p-4">
+                <div class="flex items-start justify-between mb-3">
+                  <div>
+                    <div class="text-sm font-medium text-gray-900">{{ commission.orderNumber }}</div>
+                    <div class="text-sm text-gray-500">{{ commission.customerName }}</div>
+                  </div>
+                  <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                    정산 대기
+                  </span>
+                </div>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <div class="text-gray-500">주문금액</div>
+                    <div class="font-medium text-gray-900">₩{{ commission.orderAmount.toLocaleString() }}</div>
+                  </div>
+                  <div>
+                    <div class="text-gray-500">수수료율</div>
+                    <div class="font-medium text-gray-900">{{ commission.rate }}%</div>
+                  </div>
+                  <div class="col-span-2">
+                    <div class="text-gray-500">수수료</div>
+                    <div class="font-semibold text-lg text-gray-900">₩{{ commission.amount.toLocaleString() }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="action-content">
-            <div class="action-title">정산 요청</div>
-            <div class="action-desc">수수료 정산을 요청하세요</div>
-          </div>
-        </router-link>
-
-        <a href="#" @click.prevent="downloadMarketingKit" class="quick-action-card">
-          <div class="action-icon">
-            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-            </svg>
-          </div>
-          <div class="action-content">
-            <div class="action-title">마케팅 키트</div>
-            <div class="action-desc">배너, 이메일 템플릿 다운로드</div>
-          </div>
-        </a>
-
-        <a href="#" @click.prevent="shareReferralLink" class="quick-action-card">
-          <div class="action-icon">
-            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"></path>
-            </svg>
-          </div>
-          <div class="action-content">
-            <div class="action-title">소셜 공유</div>
-            <div class="action-desc">SNS에 추천 링크를 공유하세요</div>
-          </div>
-        </a>
+        </div>
       </div>
     </div>
   </div>
@@ -298,6 +378,19 @@ const getCommissionStatusText = (status: string) => {
     'paid': '지급완료'
   }
   return statusMap[status as keyof typeof statusMap] || status
+}
+
+const getStatusClass = (status: string) => {
+  switch (status) {
+    case 'pending':
+      return 'bg-yellow-100 text-yellow-800'
+    case 'active':
+      return 'bg-green-100 text-green-800'
+    case 'inactive':
+      return 'bg-red-100 text-red-800'
+    default:
+      return 'bg-gray-100 text-gray-800'
+  }
 }
 
 const downloadMarketingKit = () => {
@@ -718,3 +811,130 @@ onMounted(() => {
   }
 }
 </style>
+
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { formatCurrency, formatDate } from '@/utils/helpers'
+
+// 상태
+const loading = ref(false)
+const currentDateTime = ref('')
+
+// 통계 데이터
+const stats = ref({
+  totalReferrals: 12,
+  thisMonthReferrals: 3,
+  totalCommission: 2840000,
+  thisMonthCommission: 450000,
+  totalOrders: 47,
+  thisMonthOrders: 8,
+  conversionRate: 68.5
+})
+
+// 최근 추천 고객
+const recentReferrals = ref([
+  {
+    id: 1,
+    name: '김철수',
+    email: 'kim@example.com',
+    status: 'active',
+    commission: 180000,
+    createdAt: '2024-01-10T14:30:00Z'
+  },
+  {
+    id: 2,
+    name: '이영희',
+    email: 'lee@example.com',
+    status: 'pending',
+    commission: 95000,
+    createdAt: '2024-01-08T09:15:00Z'
+  },
+  {
+    id: 3,
+    name: '박민수',
+    email: 'park@example.com',
+    status: 'active',
+    commission: 340000,
+    createdAt: '2024-01-05T16:45:00Z'
+  }
+])
+
+// 정산 대기 수수료
+const pendingCommissions = ref([
+  {
+    id: 1,
+    orderNumber: 'TEST-REF-001',
+    customerName: '김철수',
+    orderAmount: 320000,
+    rate: 5,
+    amount: 16000
+  },
+  {
+    id: 2,
+    orderNumber: 'TEST-REF-002',
+    customerName: '이영희',
+    orderAmount: 180000,
+    rate: 5,
+    amount: 9000
+  }
+])
+
+// 계산된 속성
+const totalPendingCommission = computed(() => {
+  return pendingCommissions.value.reduce((sum, commission) => sum + commission.amount, 0)
+})
+
+// 메서드
+const refreshData = async () => {
+  loading.value = true
+  try {
+    // 실제 데이터 새로고침 로직
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    console.log('파트너 데이터 새로고침 완료')
+  } catch (error) {
+    console.error('데이터 새로고침 실패:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+const getStatusClass = (status: string) => {
+  const classes: Record<string, string> = {
+    'active': 'bg-green-100 text-green-800',
+    'pending': 'bg-yellow-100 text-yellow-800',
+    'inactive': 'bg-gray-100 text-gray-800'
+  }
+  return classes[status] || 'bg-gray-100 text-gray-800'
+}
+
+const getStatusText = (status: string) => {
+  const texts: Record<string, string> = {
+    'active': '활성',
+    'pending': '대기',
+    'inactive': '비활성'
+  }
+  return texts[status] || status
+}
+
+const updateDateTime = () => {
+  const now = new Date()
+  currentDateTime.value = now.toLocaleString('ko-KR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    weekday: 'long'
+  })
+}
+
+// 라이프사이클
+onMounted(() => {
+  updateDateTime()
+  // 1분마다 시간 업데이트
+  setInterval(updateDateTime, 60000)
+  
+  // 초기 데이터 로드
+  refreshData()
+})
+</script>

@@ -11,9 +11,6 @@
         <h1 class="text-4xl font-extrabold text-gray-900 mb-2">
           YCS LMS에 오신 것을 환영합니다
         </h1>
-        <p class="text-xl text-gray-600 mb-8">
-          글로벌 물류관리 시스템으로 비즈니스를 성장시키세요
-        </p>
         
         <!-- Referral Info -->
         <div v-if="referralInfo" class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
@@ -45,78 +42,29 @@
 
       <!-- Registration Form -->
       <div class="bg-white shadow-xl rounded-lg p-8">
-        <h2 class="text-2xl font-bold text-center text-gray-900 mb-6">무료 계정 만들기</h2>
-        
         <form @submit.prevent="handleSubmit" class="space-y-6">
-          <!-- Basic Info -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">이름</label>
-              <input
-                v-model="form.name"
-                type="text"
-                required
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="홍길동"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">이메일</label>
-              <input
-                v-model="form.email"
-                type="email"
-                required
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="hong@example.com"
-              />
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">전화번호</label>
-              <input
-                v-model="form.phone"
-                type="tel"
-                required
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="010-1234-5678"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">비밀번호</label>
-              <input
-                v-model="form.password"
-                type="password"
-                required
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="8자 이상"
-              />
-            </div>
-          </div>
-
           <!-- Account Type -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-4">계정 유형</label>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <label class="block text-sm font-medium text-gray-700 mb-4">계정 유형 *</label>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div
                 class="border rounded-lg p-4 cursor-pointer transition-all"
                 :class="{
-                  'border-blue-500 bg-blue-50': form.role === 'individual',
-                  'border-gray-300 hover:border-gray-400': form.role !== 'individual'
+                  'border-blue-500 bg-blue-50': form.user_type === 'general',
+                  'border-gray-300 hover:border-gray-400': form.user_type !== 'general'
                 }"
-                @click="form.role = 'individual'"
+                @click="form.user_type = 'general'"
               >
                 <input
-                  v-model="form.role"
-                  value="individual"
+                  v-model="form.user_type"
+                  value="general"
                   type="radio"
                   class="sr-only"
                 />
                 <div class="flex items-center">
                   <UserIcon class="w-6 h-6 text-blue-600 mr-3" />
                   <div>
-                    <h3 class="font-medium">개인</h3>
+                    <h3 class="font-medium">일반회원</h3>
                     <p class="text-sm text-gray-600">개인 수입/수출</p>
                   </div>
                 </div>
@@ -125,38 +73,209 @@
               <div
                 class="border rounded-lg p-4 cursor-pointer transition-all"
                 :class="{
-                  'border-blue-500 bg-blue-50': form.role === 'enterprise',
-                  'border-gray-300 hover:border-gray-400': form.role !== 'enterprise'
+                  'border-blue-500 bg-blue-50': form.user_type === 'corporate',
+                  'border-gray-300 hover:border-gray-400': form.user_type !== 'corporate'
                 }"
-                @click="form.role = 'enterprise'"
+                @click="form.user_type = 'corporate'"
               >
                 <input
-                  v-model="form.role"
-                  value="enterprise"
+                  v-model="form.user_type"
+                  value="corporate"
                   type="radio"
                   class="sr-only"
                 />
                 <div class="flex items-center">
                   <BuildingOfficeIcon class="w-6 h-6 text-green-600 mr-3" />
                   <div>
-                    <h3 class="font-medium">기업</h3>
+                    <h3 class="font-medium">기업회원</h3>
                     <p class="text-sm text-gray-600">법인사업자</p>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                class="border rounded-lg p-4 cursor-pointer transition-all"
+                :class="{
+                  'border-blue-500 bg-blue-50': form.user_type === 'partner',
+                  'border-gray-300 hover:border-gray-400': form.user_type !== 'partner'
+                }"
+                @click="form.user_type = 'partner'"
+              >
+                <input
+                  v-model="form.user_type"
+                  value="partner"
+                  type="radio"
+                  class="sr-only"
+                />
+                <div class="flex items-center">
+                  <UserGroupIcon class="w-6 h-6 text-purple-600 mr-3" />
+                  <div>
+                    <h3 class="font-medium">파트너회원</h3>
+                    <p class="text-sm text-gray-600">파트너사</p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Enterprise Info -->
-          <div v-if="form.role === 'enterprise'" class="space-y-4 bg-gray-50 p-6 rounded-lg">
-            <h3 class="font-medium text-gray-900">기업 정보</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- 아이디 -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">아이디 *</label>
+            <div class="space-y-2">
+              <input
+                v-model="form.username"
+                type="text"
+                required
+                :disabled="checkingUsername"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="사용할 아이디"
+                @blur="checkUsername"
+              />
+              <button
+                type="button"
+                @click="checkUsername"
+                :disabled="checkingUsername || !form.username"
+                class="w-full sm:w-auto px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap text-sm font-medium"
+              >
+                {{ checkingUsername ? '확인중...' : '중복확인' }}
+              </button>
+            </div>
+            <div v-if="usernameMessage" class="mt-1 text-sm" :class="usernameAvailable ? 'text-green-600' : 'text-red-600'">
+              {{ usernameMessage }}
+            </div>
+          </div>
+
+          <!-- 비밀번호 -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">비밀번호 *</label>
+            <input
+              v-model="form.password"
+              type="password"
+              required
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="8자 이상"
+            />
+          </div>
+
+          <!-- 이름 -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">이름 *</label>
+            <input
+              v-model="form.name"
+              type="text"
+              required
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="홍길동"
+            />
+          </div>
+
+          <!-- 전화번호 -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">전화번호 *</label>
+            <input
+              v-model="form.phone"
+              type="tel"
+              required
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="010-1234-5678"
+            />
+          </div>
+
+          <!-- 이메일 -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">이메일 *</label>
+            <input
+              v-model="form.email"
+              type="email"
+              required
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="hong@example.com"
+            />
+            <div class="mt-1 text-sm text-gray-500">
+              회원가입 시 인증 메일이 자동으로 발송됩니다.
+            </div>
+          </div>
+
+                     <!-- 이메일 인증 토큰 입력 -->
+           <div v-if="registrationCompleted" class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+             <div class="flex items-start">
+               <div class="flex-shrink-0">
+                 <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                   <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                 </svg>
+               </div>
+               <div class="ml-3 w-full">
+                 <h3 class="text-sm font-medium text-blue-800 mb-3">
+                   이메일 인증 토큰을 입력해주세요
+                 </h3>
+                 <div class="space-y-3">
+                                       <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-2">인증 토큰 *</label>
+                      <input
+                        v-model="verificationToken"
+                        type="text"
+                        required
+                        maxlength="6"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center text-lg font-mono tracking-widest"
+                        placeholder="000000"
+                        @input="formatToken"
+                      />
+                      <button
+                        type="button"
+                        @click="verifyToken"
+                        :disabled="verifyingToken || !verificationToken || verificationToken.length !== 6"
+                        class="w-full mt-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                      >
+                        {{ verifyingToken ? '확인중...' : '인증하기' }}
+                      </button>
+                    </div>
+                   <div class="text-sm text-blue-700">
+                     <p>{{ form.email }}로 인증 토큰을 발송했습니다.</p>
+                     <p class="mt-1">이메일을 확인하여 6자리 토큰을 입력해주세요.</p>
+                   </div>
+                   <div class="flex justify-between items-center">
+                     <button
+                       type="button"
+                       @click="resendVerificationToken"
+                       :disabled="resendCooldown > 0"
+                       class="text-sm font-medium text-blue-800 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                     >
+                       <span v-if="resendCooldown > 0">{{ resendCooldown }}초 후 재발송</span>
+                       <span v-else>토큰 재발송</span>
+                     </button>
+                     <div v-if="tokenVerified" class="flex items-center text-green-600">
+                       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                       </svg>
+                       <span class="text-sm font-medium">인증 완료</span>
+                     </div>
+                   </div>
+                 </div>
+               </div>
+             </div>
+           </div>
+
+          <!-- 주소 -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">주소</label>
+            <input
+              v-model="form.address"
+              type="text"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="서울시 강남구 테헤란로 123"
+            />
+          </div>
+
+          <!-- Enterprise/Partner Info -->
+          <div v-if="form.user_type === 'corporate' || form.user_type === 'partner'" class="space-y-4 bg-gray-50 p-6 rounded-lg">
+            <h3 class="font-medium text-gray-900">{{ form.user_type === 'corporate' ? '기업' : '파트너' }} 정보</h3>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">회사명</label>
+                <label class="block text-sm font-medium text-gray-700 mb-2">회사명 *</label>
                 <input
-                  v-model="form.companyName"
+                  v-model="form.company_name"
                   type="text"
-                  :required="form.role === 'enterprise'"
+                  :required="form.user_type === 'corporate' || form.user_type === 'partner'"
                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="(주)글로벌무역"
                 />
@@ -164,23 +283,61 @@
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">사업자번호</label>
                 <input
-                  v-model="form.businessNumber"
+                  v-model="form.business_number"
                   type="text"
-                  :required="form.role === 'enterprise'"
                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="123-45-67890"
                 />
               </div>
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">사업장 주소</label>
-              <input
-                v-model="form.businessAddress"
-                type="text"
-                :required="form.role === 'enterprise'"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="서울시 강남구 테헤란로 123"
-              />
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">담당자명</label>
+                <input
+                  v-model="form.manager_name"
+                  type="text"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="담당자 이름"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">담당자 연락처</label>
+                <input
+                  v-model="form.manager_contact"
+                  type="tel"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="010-1234-5678"
+                />
+              </div>
+            </div>
+            <div v-if="form.user_type === 'corporate'">
+              <label class="block text-sm font-medium text-gray-700 mb-2">사업자등록증 *</label>
+              <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg">
+                <div class="space-y-1 text-center">
+                  <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                  <div class="flex text-sm text-gray-600">
+                    <label for="file-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                      <span>파일 업로드</span>
+                      <input
+                        id="file-upload"
+                        ref="fileInput"
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        class="sr-only"
+                        @change="handleFileUpload"
+                        required
+                      />
+                    </label>
+                    <p class="pl-1">또는 드래그 앤 드롭</p>
+                  </div>
+                  <p class="text-xs text-gray-500">PDF, JPG, PNG 파일 (최대 10MB)</p>
+                </div>
+              </div>
+              <div v-if="selectedFile" class="mt-2 text-sm text-gray-600">
+                선택된 파일: {{ selectedFile.name }}
+              </div>
             </div>
           </div>
 
@@ -188,38 +345,39 @@
           <div class="space-y-4">
             <label class="flex items-start">
               <input
-                v-model="form.agreeTerms"
+                v-model="form.terms_agreed"
                 type="checkbox"
                 required
                 class="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
               <span class="ml-2 text-sm text-gray-600">
-                <router-link to="/terms" class="text-blue-600 hover:text-blue-500">이용약관</router-link> 및 
-                <router-link to="/privacy" class="text-blue-600 hover:text-blue-500">개인정보처리방침</router-link>에 동의합니다.
+                <router-link to="/terms" class="text-blue-600 hover:text-blue-500">이용약관</router-link>에 동의합니다. *
               </span>
             </label>
             
             <label class="flex items-start">
               <input
-                v-model="form.agreeMarketing"
+                v-model="form.privacy_agreed"
                 type="checkbox"
+                required
                 class="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
               <span class="ml-2 text-sm text-gray-600">
-                마케팅 정보 수신에 동의합니다. (선택)
+                <router-link to="/privacy" class="text-blue-600 hover:text-blue-500">개인정보 수집 및 이용</router-link>에 동의합니다. *
               </span>
             </label>
           </div>
 
-          <!-- Submit Button -->
-          <button
-            type="submit"
-            :disabled="loading || !form.agreeTerms"
-            class="w-full py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <span v-if="loading">가입 처리 중...</span>
-            <span v-else>무료로 시작하기</span>
-          </button>
+                     <!-- Submit Button -->
+           <button
+             type="submit"
+             :disabled="loading || !form.terms_agreed || !form.privacy_agreed || !usernameAvailable || (registrationCompleted && !tokenVerified)"
+             class="w-full py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+           >
+             <span v-if="loading">가입 처리 중...</span>
+             <span v-else-if="registrationCompleted && !tokenVerified">토큰 인증 후 회원가입</span>
+             <span v-else>무료로 시작하기</span>
+           </button>
 
           <!-- Login Link -->
           <div class="text-center">
@@ -235,49 +393,21 @@
           </div>
         </form>
       </div>
-
-      <!-- Features Section -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
-        <div class="text-center">
-          <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-            <TruckIcon class="w-6 h-6 text-blue-600" />
-          </div>
-          <h3 class="font-semibold text-gray-900 mb-2">빠른 배송</h3>
-          <p class="text-sm text-gray-600">항공/해상 운송으로 최적의 배송 솔루션</p>
-        </div>
-        
-        <div class="text-center">
-          <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-            <CurrencyDollarIcon class="w-6 h-6 text-green-600" />
-          </div>
-          <h3 class="font-semibold text-gray-900 mb-2">투명한 요금</h3>
-          <p class="text-sm text-gray-600">숨겨진 비용 없는 명확한 가격 체계</p>
-        </div>
-        
-        <div class="text-center">
-          <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-            <ChatBubbleLeftRightIcon class="w-6 h-6 text-purple-600" />
-          </div>
-          <h3 class="font-semibold text-gray-900 mb-2">24/7 지원</h3>
-          <p class="text-sm text-gray-600">언제든지 도움받을 수 있는 고객 지원</p>
-        </div>
-      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { useToast } from 'vue-toastification'
+import { useToast } from '@/composables/useToast'
 import {
   UserIcon,
   BuildingOfficeIcon,
-  TruckIcon,
-  CurrencyDollarIcon,
-  ChatBubbleLeftRightIcon
+  UserGroupIcon
 } from '@heroicons/vue/24/outline'
+import { AuthService } from '@/services/authService'
 
 const route = useRoute()
 const router = useRouter()
@@ -286,23 +416,39 @@ const toast = useToast()
 
 // State
 const loading = ref(false)
+const checkingUsername = ref(false)
+const usernameAvailable = ref(false)
+const usernameMessage = ref('')
+const selectedFile = ref<File | null>(null)
 const referralInfo = ref<{
   partnerName: string
   partnerCode: string
 } | null>(null)
 
+// 이메일 인증 관련 상태
+const registrationCompleted = ref(false)
+const resendCooldown = ref(0)
+const verificationToken = ref('')
+const verifyingToken = ref(false)
+const tokenVerified = ref(false)
+let cooldownTimer: NodeJS.Timeout | null = null
+
 const form = reactive({
+  username: '',
   name: '',
   email: '',
   phone: '',
   password: '',
-  role: 'individual' as 'individual' | 'enterprise',
-  companyName: '',
-  businessNumber: '',
-  businessAddress: '',
-  referralCode: '',
-  agreeTerms: false,
-  agreeMarketing: false
+  address: '',
+  user_type: 'general' as 'general' | 'corporate' | 'partner',
+  company_name: '',
+  business_number: '',
+  manager_name: '',
+  manager_contact: '',
+  business_license_file: null as File | null,
+  terms_agreed: false,
+  privacy_agreed: false,
+  referralCode: ''
 })
 
 // Methods
@@ -323,25 +469,173 @@ const loadReferralInfo = async () => {
   }
 }
 
+const checkUsername = async () => {
+  if (!form.username) {
+    usernameMessage.value = ''
+    usernameAvailable.value = false
+    return
+  }
+
+  checkingUsername.value = true
+  usernameMessage.value = ''
+
+  try {
+    const result = await authStore.checkUsernameAvailability(form.username)
+    usernameAvailable.value = result.available
+    usernameMessage.value = result.available 
+      ? '사용 가능한 아이디입니다.' 
+      : result.error || '이미 사용 중인 아이디입니다.'
+  } catch (error) {
+    usernameAvailable.value = false
+    usernameMessage.value = '아이디 확인 중 오류가 발생했습니다.'
+  } finally {
+    checkingUsername.value = false
+  }
+}
+
+const handleFileUpload = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (target.files && target.files[0]) {
+    const file = target.files[0]
+    if (file.size > 10 * 1024 * 1024) { // 10MB 제한
+      toast.error('파일 크기는 10MB 이하여야 합니다.')
+      return
+    }
+    selectedFile.value = file
+    form.business_license_file = file
+  }
+}
+
+// 토큰 포맷팅 (숫자만 입력 가능)
+const formatToken = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  let value = target.value.replace(/\D/g, '') // 숫자만 허용
+  value = value.substring(0, 6) // 최대 6자리
+  verificationToken.value = value
+}
+
+// 토큰 인증
+const verifyToken = async () => {
+  if (!verificationToken.value || verificationToken.value.length !== 6) {
+    toast.error('6자리 토큰을 입력해주세요.')
+    return
+  }
+
+  verifyingToken.value = true
+
+  try {
+    const result = await AuthService.verifyEmail(form.email, verificationToken.value)
+    
+    if (result.success) {
+      tokenVerified.value = true
+      toast.success('이메일 인증이 완료되었습니다!')
+    } else {
+      toast.error(result.error || '토큰 인증에 실패했습니다.')
+    }
+  } catch (error) {
+    toast.error('토큰 인증에 실패했습니다.')
+  } finally {
+    verifyingToken.value = false
+  }
+}
+
+// 토큰 재발송
+const resendVerificationToken = async () => {
+  if (!form.email) {
+    toast.error('이메일 주소를 입력해주세요.')
+    return
+  }
+
+  try {
+    const result = await AuthService.resendVerificationToken(form.email)
+    
+    if (result.success) {
+      // 재발송 쿨다운 시작
+      resendCooldown.value = 60
+      startCooldown()
+      
+      toast.success('인증 토큰을 재발송했습니다.')
+    } else {
+      toast.error(result.error || '인증 토큰 재발송에 실패했습니다.')
+    }
+  } catch (error) {
+    toast.error('인증 토큰 재발송에 실패했습니다.')
+  }
+}
+
+// 쿨다운 타이머 시작
+const startCooldown = () => {
+  cooldownTimer = setInterval(() => {
+    resendCooldown.value--
+    if (resendCooldown.value <= 0) {
+      if (cooldownTimer) {
+        clearInterval(cooldownTimer)
+        cooldownTimer = null
+      }
+    }
+  }, 1000)
+}
+
 const handleSubmit = async () => {
   try {
     loading.value = true
 
-    const registrationData = {
-      ...form,
-      partnerType: undefined // Not needed for public signup
+    // 파일 업로드 처리 (실제 구현에서는 Supabase Storage 사용)
+    let business_license_url = ''
+    if (form.business_license_file) {
+      // TODO: Supabase Storage에 파일 업로드
+      business_license_url = 'mock_url_' + Date.now()
     }
 
-    const response = await authStore.register(registrationData)
+    const registrationData = {
+      username: form.username,
+      name: form.name,
+      email: form.email,
+      phone: form.phone,
+      password: form.password,
+      address: form.address,
+      user_type: form.user_type,
+      company_name: form.company_name,
+      business_number: form.business_number,
+      manager_name: form.manager_name,
+      manager_contact: form.manager_contact,
+      business_license_url,
+      terms_agreed: form.terms_agreed,
+      privacy_agreed: form.privacy_agreed
+    }
+
+    // 토큰 인증이 완료된 경우, 바로 프로필 생성
+    if (tokenVerified.value) {
+      const completeResponse = await AuthService.completeSignUp(registrationData)
+      if (completeResponse.success) {
+        toast.success('회원가입이 완료되었습니다!')
+        router.push({ name: 'Login' })
+      } else {
+        toast.error(completeResponse.error || '회원가입 완료에 실패했습니다.')
+      }
+      return
+    }
+
+    // 첫 번째 회원가입 시도 (이메일 인증 토큰 발송)
+    const response = await authStore.signUp(registrationData)
     
     if (response.success) {
-      if (form.role === 'enterprise') {
-        toast.success('기업 계정이 생성되었습니다. 승인을 위해 평일 1-2일이 소요됩니다.')
-        router.push({ name: 'Approval' })
+      if (response.requiresEmailVerification) {
+        // 이메일 인증이 필요한 경우
+        registrationCompleted.value = true
+        toast.success('이메일 인증 토큰을 발송했습니다. 이메일을 확인하여 6자리 토큰을 입력해주세요.')
       } else {
-        toast.success('계정이 성공적으로 생성되었습니다!')
-        router.push({ name: 'Dashboard' })
+        // 이메일 인증이 완료된 경우, 프로필 생성 시도
+        const completeResponse = await AuthService.completeSignUp(registrationData)
+        if (completeResponse.success) {
+          toast.success('회원가입이 완료되었습니다!')
+          router.push({ name: 'Login' })
+        } else {
+          toast.error(completeResponse.error || '회원가입 완료에 실패했습니다.')
+        }
       }
+    } else {
+      toast.error(response.error || '회원가입 중 오류가 발생했습니다.')
     }
   } catch (error: any) {
     toast.error('회원가입 중 오류가 발생했습니다.')
@@ -352,8 +646,29 @@ const handleSubmit = async () => {
 }
 
 // Lifecycle
-onMounted(() => {
+onMounted(async () => {
+  // 회원가입 페이지 진입 시 기존 세션 클리어
+  await authStore.signOut()
   loadReferralInfo()
+  
+  // URL 쿼리 파라미터 확인 (이메일 인증 완료 후 리다이렉트)
+  const urlParams = new URLSearchParams(window.location.search)
+  const emailVerified = urlParams.get('emailVerified')
+  const message = urlParams.get('message')
+  
+  if (emailVerified === 'true') {
+    // 이메일 인증이 완료된 상태
+    registrationCompleted.value = true
+    if (message) {
+      toast.success(message)
+    }
+  }
+})
+
+onUnmounted(() => {
+  if (cooldownTimer) {
+    clearInterval(cooldownTimer)
+  }
 })
 </script>
 

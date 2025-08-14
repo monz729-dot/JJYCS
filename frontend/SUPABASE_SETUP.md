@@ -255,3 +255,4 @@ console.log(supabase.from('user_profiles').select('*'))
 - [Supabase 문서](https://supabase.com/docs)
 - [Vue.js + Supabase 가이드](https://supabase.com/docs/guides/getting-started/tutorials/with-vue-3)
 - [RLS 정책 가이드](https://supabase.com/docs/guides/auth/row-level-security)
+

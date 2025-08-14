@@ -16,6 +16,15 @@ export const useAuthStore = defineStore('auth', () => {
   const isPending = computed(() => user.value?.approval_status === 'pending')
   const isRejected = computed(() => user.value?.approval_status === 'rejected')
   const userType = computed(() => user.value?.user_type)
+  
+  // 역할 확인 함수
+  const hasRole = (role: string) => {
+    return user.value?.user_type === role
+  }
+  
+  const hasAnyRole = (roles: string[]) => {
+    return user.value?.user_type && roles.includes(user.value.user_type)
+  }
 
   // 액션
   const signUp = async (data: SignUpData) => {
@@ -27,7 +36,15 @@ export const useAuthStore = defineStore('auth', () => {
       
       if (result.success) {
         // 회원가입 성공 시 이메일 인증 안내
-        return { success: true, message: '회원가입이 완료되었습니다. 이메일을 확인하여 인증을 완료해주세요.' }
+        const userTypeText = data.user_type === 'general' ? '일반회원' : 
+                           data.user_type === 'corporate' ? '기업회원' : '파트너회원'
+        
+        return { 
+          success: true, 
+          requiresEmailVerification: result.requiresEmailVerification,
+          userType: result.userType,
+          message: `${userTypeText} 회원가입이 완료되었습니다. 이메일을 확인하여 인증을 완료해주세요.` 
+        }
       } else {
         error.value = result.error || '회원가입에 실패했습니다.'
         return { success: false, error: error.value }
@@ -198,6 +215,28 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  const handleEmailVerification = async () => {
+    loading.value = true
+    error.value = null
+    
+    try {
+      const result = await AuthService.handleEmailVerification()
+      
+      if (result.success) {
+        await fetchUserProfile() // 사용자 정보 다시 가져오기
+        return { success: true, message: '이메일 인증이 완료되었습니다.' }
+      } else {
+        error.value = result.error || '이메일 인증 처리에 실패했습니다.'
+        return { success: false, error: error.value }
+      }
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '이메일 인증 처리 중 오류가 발생했습니다.'
+      return { success: false, error: error.value }
+    } finally {
+      loading.value = false
+    }
+  }
+
   const clearError = () => {
     error.value = null
   }
@@ -227,6 +266,10 @@ export const useAuthStore = defineStore('auth', () => {
     isRejected,
     userType,
     
+    // 역할 확인 함수
+    hasRole,
+    hasAnyRole,
+    
     // 액션
     signUp,
     signIn,
@@ -237,6 +280,7 @@ export const useAuthStore = defineStore('auth', () => {
     resendEmailVerification,
     sendPasswordResetEmail,
     resetPassword,
+    handleEmailVerification,
     clearError,
     initializeAuth
   }

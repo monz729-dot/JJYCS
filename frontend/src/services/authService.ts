@@ -1,17 +1,103 @@
 import { supabase, type UserProfile, type SignUpData, type LoginData } from '@/lib/supabase'
 
 export class AuthService {
-  // 회원가입
-  static async signUp(data: SignUpData): Promise<{ success: boolean; error?: string }> {
+  // 회원가입 (이메일 인증 후 완료)
+  static async signUp(data: SignUpData): Promise<{ success: boolean; error?: string; requiresEmailVerification?: boolean; userType?: string }> {
     try {
+      console.log('=== 회원가입 디버깅 시작 ===')
       console.log('회원가입 시도:', data)
+      console.log('현재 URL:', window.location.origin)
+      console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL)
+      console.log('Supabase Anon Key:', import.meta.env.VITE_SUPABASE_ANON_KEY ? '설정됨' : '설정되지 않음')
       
-      // 현재는 임시로 로컬 저장소에 사용자 데이터 저장 (실제 구현에서는 Supabase 사용)
-      const existingUsers = JSON.parse(localStorage.getItem('users') || '[]')
+      // Supabase 연결 테스트
+      try {
+        const { data, error } = await supabase.auth.getSession()
+        console.log('Supabase 연결 테스트 - data:', data)
+        console.log('Supabase 연결 테스트 - error:', error)
+      } catch (testError) {
+        console.error('Supabase 연결 테스트 실패:', testError)
+      }
       
-      // 새 사용자 데이터 생성
-      const newUser = {
-        id: Date.now().toString(),
+      // 이메일 발송 테스트
+      console.log('이메일 발송 테스트 시작...')
+      
+      // 기존 세션 완전 클리어
+      await supabase.auth.signOut()
+      console.log('기존 세션 클리어 완료')
+      
+      // 새로운 회원가입 시도 (Supabase가 내부적으로 중복 이메일 처리)
+      const signUpOptions = {
+        email: data.email,
+        password: data.password,
+        options: {
+          data: {
+            username: data.username,
+            name: data.name,
+            user_type: data.user_type,
+            terms_agreed: data.terms_agreed,
+            privacy_agreed: data.privacy_agreed
+          },
+          emailRedirectTo: `${window.location.origin}/auth/callback`
+        }
+      }
+      
+      console.log('signUp 호출 옵션:', signUpOptions)
+      
+      const { data: authData, error: authError } = await supabase.auth.signUp(signUpOptions)
+
+      console.log('Supabase 응답 - data:', authData)
+      console.log('Supabase 응답 - error:', authError)
+
+      if (authError) {
+        console.error('Supabase Auth 에러:', authError)
+        // 이메일 중복 에러인 경우에도 계속 진행
+        if (authError.message.includes('already registered') || authError.message.includes('already exists')) {
+          console.log('이메일이 이미 존재하지만 계속 진행:', authError.message)
+          return { 
+            success: true,
+            requiresEmailVerification: true,
+            userType: data.user_type 
+          }
+        }
+        throw new Error(authError.message)
+      }
+
+      if (authData.user) {
+        console.log('이메일 인증 요청 완료:', authData.user)
+        console.log('사용자 이메일 확인 상태:', authData.user.email_confirmed_at)
+        console.log('사용자 메타데이터:', authData.user.user_metadata)
+        return { 
+          success: true,
+          requiresEmailVerification: true,
+          userType: data.user_type 
+        }
+      }
+
+      console.log('=== 회원가입 디버깅 완료 ===')
+      return { success: false, error: '회원가입에 실패했습니다.' }
+    } catch (error) {
+      console.error('회원가입 실패:', error)
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : '회원가입 중 오류가 발생했습니다.' 
+      }
+    }
+  }
+
+  // 이메일 인증 완료 후 프로필 생성
+  static async completeSignUp(data: SignUpData): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user || !user.email_confirmed_at) {
+        throw new Error('이메일 인증이 완료되지 않았습니다.')
+      }
+
+      // 프로필 업데이트 (트리거가 이미 생성했으므로)
+      console.log('=== 프로필 업데이트 시작 ===')
+      console.log('사용자 ID:', user.id)
+      console.log('프로필 데이터:', {
         username: data.username,
         name: data.name,
         email: data.email,
@@ -26,25 +112,174 @@ export class AuthService {
         terms_agreed: data.terms_agreed,
         privacy_agreed: data.privacy_agreed,
         approval_status: data.user_type === 'general' ? 'approved' : 'pending',
-        email_verified: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        role: data.user_type === 'general' ? 'individual' : data.user_type, // 어드민 호환성
-        status: data.user_type === 'general' ? 'active' : 'pending_approval' // 어드민 호환성
+        email_verified: true
+      })
+      
+      const { data: profileData, error: profileError } = await supabase
+        .from('user_profiles')
+        .update({
+          username: data.username,
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          address: data.address,
+          user_type: data.user_type,
+          manager_name: data.manager_name,
+          manager_contact: data.manager_contact,
+          company_name: data.company_name,
+          business_number: data.business_number,
+          business_license_url: data.business_license_url,
+          terms_agreed: data.terms_agreed,
+          privacy_agreed: data.privacy_agreed,
+          approval_status: data.user_type === 'general' ? 'approved' : 'pending',
+          email_verified: true
+        })
+        .eq('id', user.id)
+        .select()
+
+      console.log('프로필 업데이트 응답 - data:', profileData)
+      console.log('프로필 업데이트 응답 - error:', profileError)
+
+      if (profileError) {
+        console.error('프로필 업데이트 실패 상세:', {
+          message: profileError.message,
+          details: profileError.details,
+          hint: profileError.hint,
+          code: profileError.code
+        })
+        throw new Error(`프로필 업데이트에 실패했습니다: ${profileError.message}`)
       }
-      
-      // 사용자 목록에 추가
-      existingUsers.push(newUser)
-      localStorage.setItem('users', JSON.stringify(existingUsers))
-      
-      console.log('회원가입 성공:', newUser)
-      
+
+      console.log('회원가입 완료:', user)
       return { success: true }
     } catch (error) {
-      console.error('회원가입 실패:', error)
+      console.error('회원가입 완료 실패:', error)
       return { 
         success: false, 
-        error: error instanceof Error ? error.message : '회원가입 중 오류가 발생했습니다.' 
+        error: error instanceof Error ? error.message : '회원가입 완료에 실패했습니다.' 
+      }
+    }
+  }
+
+  // 이메일 인증 메일 재발송 (기존 사용자용)
+  static async sendVerificationEmail(email: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      // 이메일 인증 재발송
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email
+      })
+
+      if (error) {
+        throw new Error(error.message)
+      }
+
+      return { success: true }
+    } catch (error) {
+      console.error('이메일 인증 발송 실패:', error)
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : '이메일 인증 발송에 실패했습니다.' 
+      }
+    }
+  }
+
+  // 이메일 인증 확인 (토큰 방식)
+  static async verifyEmail(email: string, token: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email: email,
+        token: token,
+        type: 'signup'
+      })
+
+      if (error) {
+        throw new Error(error.message)
+      }
+
+      return { success: true }
+    } catch (error) {
+      console.error('이메일 인증 확인 실패:', error)
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : '이메일 인증 확인에 실패했습니다.' 
+      }
+    }
+  }
+
+  // 이메일 인증 토큰 재발송
+  static async resendVerificationToken(email: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      console.log('=== 토큰 재발송 디버깅 시작 ===')
+      console.log('재발송 요청 이메일:', email)
+      
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email
+      })
+
+      console.log('재발송 응답 - error:', error)
+
+      if (error) {
+        console.error('재발송 에러:', error)
+        throw new Error(error.message)
+      }
+
+      console.log('=== 토큰 재발송 디버깅 완료 ===')
+      return { success: true }
+    } catch (error) {
+      console.error('인증 토큰 재발송 실패:', error)
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : '인증 토큰 재발송에 실패했습니다.' 
+      }
+    }
+  }
+
+  // 이메일 인증 상태 확인 및 처리
+  static async handleEmailVerification(): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        throw new Error('로그인된 사용자가 없습니다.')
+      }
+
+      // 이메일 인증 상태 확인
+      if (user.email_confirmed_at) {
+        // 이메일 인증이 완료된 경우, 프로필 업데이트
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('user_type')
+          .eq('id', user.id)
+          .single()
+
+        if (profile) {
+          // 사용자 유형에 따라 승인 상태 설정
+          const approvalStatus = profile.user_type === 'general' ? 'approved' : 'pending'
+          
+          const { error: updateError } = await supabase
+            .from('user_profiles')
+            .update({
+              email_verified: true,
+              approval_status: approvalStatus
+            })
+            .eq('id', user.id)
+
+          if (updateError) {
+            throw new Error(updateError.message)
+          }
+        }
+
+        return { success: true }
+      } else {
+        throw new Error('이메일 인증이 완료되지 않았습니다.')
+      }
+    } catch (error) {
+      console.error('이메일 인증 처리 실패:', error)
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : '이메일 인증 처리에 실패했습니다.' 
       }
     }
   }
@@ -52,8 +287,16 @@ export class AuthService {
   // 어드민에서 사용할 사용자 목록 조회
   static async getAllUsers(): Promise<any[]> {
     try {
-      const users = JSON.parse(localStorage.getItem('users') || '[]')
-      return users
+      const { data: users, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        throw new Error(error.message)
+      }
+
+      return users || []
     } catch (error) {
       console.error('사용자 목록 조회 실패:', error)
       return []
@@ -63,36 +306,101 @@ export class AuthService {
   // 로그인
   static async signIn(data: LoginData): Promise<{ success: boolean; error?: string }> {
     try {
+      console.log('=== 로그인 디버깅 시작 ===')
+      console.log('로그인 시도:', { email: data.email, password: '***' })
+      
+      // 이메일 또는 아이디로 로그인 처리
+      let email = data.email
+      
+      // 아이디로 로그인 시도하는 경우, 아이디로 이메일 찾기
+      if (!data.email.includes('@')) {
+        console.log('아이디로 로그인 시도:', data.email)
+        
+        try {
+          const { data: userProfile, error: profileError } = await supabase
+            .from('user_profiles')
+            .select('email')
+            .eq('username', data.email)
+            .single()
+          
+          console.log('프로필 조회 결과:', { userProfile, profileError })
+          
+          if (profileError) {
+            console.error('프로필 조회 에러:', profileError)
+            throw new Error('사용자 정보를 찾을 수 없습니다.')
+          }
+          
+          if (userProfile) {
+            email = userProfile.email
+            console.log('이메일 찾음:', email)
+          } else {
+            throw new Error('존재하지 않는 아이디입니다.')
+          }
+        } catch (profileError) {
+          console.error('프로필 조회 실패:', profileError)
+          throw new Error('사용자 정보를 찾을 수 없습니다.')
+        }
+      }
+
+      console.log('최종 로그인 이메일:', email)
+      
       const { data: authData, error } = await supabase.auth.signInWithPassword({
-        email: data.email,
+        email: email,
         password: data.password
       })
 
+      console.log('로그인 응답:', { authData, error })
+
       if (error) {
+        console.error('로그인 에러:', error)
         throw new Error(error.message)
       }
 
-      // 승인 상태 확인 (기업/파트너 회원)
+      // 승인 상태 확인
       if (authData.user) {
-        const { data: profile } = await supabase
-          .from('user_profiles')
-          .select('approval_status, user_type')
-          .eq('id', authData.user.id)
-          .single()
+        console.log('사용자 인증 성공:', authData.user.id)
+        
+        try {
+          const { data: profile, error: profileError } = await supabase
+            .from('user_profiles')
+            .select('approval_status, user_type, email_verified')
+            .eq('id', authData.user.id)
+            .single()
 
-        if (profile && profile.user_type !== 'general' && profile.approval_status === 'rejected') {
-          await supabase.auth.signOut()
-          throw new Error('승인이 거절된 계정입니다.')
-        }
+          console.log('프로필 상태 확인:', { profile, profileError })
 
-        if (profile && profile.user_type !== 'general' && profile.approval_status === 'pending') {
-          await supabase.auth.signOut()
-          throw new Error('승인 대기 중인 계정입니다. 관리자 승인 후 로그인 가능합니다.')
+          if (profileError) {
+            console.error('프로필 상태 확인 에러:', profileError)
+            // 프로필이 없어도 로그인은 허용 (나중에 생성될 수 있음)
+            console.log('프로필이 없지만 로그인 허용')
+          } else if (profile) {
+            // 모든 사용자 유형에 대해 이메일 인증 확인
+            if (!profile.email_verified) {
+              await supabase.auth.signOut()
+              throw new Error('이메일 인증이 필요합니다. 이메일을 확인해주세요.')
+            }
+
+            // 승인 상태 확인 (모든 사용자 유형)
+            if (profile.approval_status === 'rejected') {
+              await supabase.auth.signOut()
+              throw new Error('승인이 거절된 계정입니다. 고객센터에 문의해주세요.')
+            }
+
+            if (profile.approval_status === 'pending') {
+              await supabase.auth.signOut()
+              throw new Error('승인 대기 중인 계정입니다. 관리자 승인 후 로그인 가능합니다.')
+            }
+          }
+        } catch (profileError) {
+          console.error('프로필 상태 확인 실패:', profileError)
+          // 프로필 확인 실패해도 로그인은 허용
         }
       }
 
+      console.log('=== 로그인 디버깅 완료 ===')
       return { success: true }
     } catch (error) {
+      console.error('로그인 실패:', error)
       return { 
         success: false, 
         error: error instanceof Error ? error.message : '로그인 중 오류가 발생했습니다.' 
@@ -138,13 +446,35 @@ export class AuthService {
       return { data: profile }
     } catch (error) {
       return { 
-        error: error instanceof Error ? error.message : '사용자 정보 조회 중 오류가 발생했습니다.' 
+        error: error instanceof Error ? error.message : '프로필 조회 중 오류가 발생했습니다.' 
       }
     }
   }
 
-  // 사용자 프로필 업데이트
-  static async updateUserProfile(updates: Partial<UserProfile>): Promise<{ success: boolean; error?: string }> {
+  // 사용자명 중복 확인
+  static async checkUsernameAvailability(username: string): Promise<{ available: boolean; error?: string }> {
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('username')
+        .eq('username', username)
+        .single()
+
+      if (error && error.code !== 'PGRST116') { // PGRST116는 결과가 없는 경우
+        throw new Error(error.message)
+      }
+
+      return { available: !data }
+    } catch (error) {
+      return { 
+        available: false, 
+        error: error instanceof Error ? error.message : '사용자명 확인 중 오류가 발생했습니다.' 
+      }
+    }
+  }
+
+  // 프로필 업데이트
+  static async updateProfile(profileData: Partial<UserProfile>): Promise<{ success: boolean; error?: string }> {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       
@@ -154,7 +484,7 @@ export class AuthService {
 
       const { error } = await supabase
         .from('user_profiles')
-        .update(updates)
+        .update(profileData)
         .eq('id', user.id)
 
       if (error) {
@@ -166,58 +496,6 @@ export class AuthService {
       return { 
         success: false, 
         error: error instanceof Error ? error.message : '프로필 업데이트 중 오류가 발생했습니다.' 
-      }
-    }
-  }
-
-  // 아이디 중복 체크
-  static async checkUsername(username: string): Promise<{ available: boolean; error?: string }> {
-    try {
-      // 네트워크 지연 시뮬레이션
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      // 로컬스토리지에서 기존 사용자들 확인
-      const existingUsers = JSON.parse(localStorage.getItem('users') || '[]')
-      const usedUsernames = existingUsers.map((user: any) => user.username ? user.username.toLowerCase() : '')
-      
-      // 기본적으로 사용 불가능한 아이디들
-      const reservedUsernames = ['admin', 'test', 'user', 'demo', 'root', 'administrator']
-      const allUsedUsernames = [...usedUsernames, ...reservedUsernames]
-      
-      const available = !allUsedUsernames.includes(username.toLowerCase())
-      
-      return { available }
-    } catch (error) {
-      return { 
-        available: false, 
-        error: error instanceof Error ? error.message : '사용자명 확인 중 오류가 발생했습니다.' 
-      }
-    }
-  }
-
-  // 실제 DB에서 아이디 중복 체크 (향후 Supabase 연동시 활성화)
-  static async checkUsernameAvailability(username: string): Promise<{ available: boolean; error?: string }> {
-    // 현재는 mock 구현 사용
-    return this.checkUsername(username)
-  }
-
-  // 이메일 인증 재발송
-  static async resendEmailVerification(): Promise<{ success: boolean; error?: string }> {
-    try {
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: (await supabase.auth.getUser()).data.user?.email || ''
-      })
-
-      if (error) {
-        throw new Error(error.message)
-      }
-
-      return { success: true }
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : '이메일 인증 재발송 중 오류가 발생했습니다.' 
       }
     }
   }
@@ -237,7 +515,7 @@ export class AuthService {
     } catch (error) {
       return { 
         success: false, 
-        error: error instanceof Error ? error.message : '비밀번호 재설정 이메일 발송 중 오류가 발생했습니다.' 
+        error: error instanceof Error ? error.message : '비밀번호 재설정 이메일 발송에 실패했습니다.' 
       }
     }
   }
@@ -257,15 +535,42 @@ export class AuthService {
     } catch (error) {
       return { 
         success: false, 
-        error: error instanceof Error ? error.message : '비밀번호 재설정 중 오류가 발생했습니다.' 
+        error: error instanceof Error ? error.message : '비밀번호 재설정에 실패했습니다.' 
       }
     }
   }
 
-  // 인증 상태 구독
-  static onAuthStateChange(callback: (user: any) => void) {
-    return supabase.auth.onAuthStateChange((event, session) => {
-      callback(session?.user || null)
-    })
+  // 파일 업로드 (Supabase Storage)
+  static async uploadFile(file: File, bucket: string = 'business-licenses'): Promise<{ success: boolean; url?: string; error?: string }> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        throw new Error('로그인된 사용자가 없습니다.')
+      }
+
+      const fileName = `${user.id}/${Date.now()}_${file.name}`
+      
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .upload(fileName, file)
+
+      if (error) {
+        throw new Error(error.message)
+      }
+
+      // 파일 URL 생성
+      const { data: urlData } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(fileName)
+
+      return { success: true, url: urlData.publicUrl }
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : '파일 업로드에 실패했습니다.' 
+      }
+    }
   }
 }
+

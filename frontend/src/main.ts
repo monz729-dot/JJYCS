@@ -15,6 +15,7 @@ import 'primevue/resources/primevue.css'
 import 'primeicons/primeicons.css'
 import 'vue-toastification/dist/index.css'
 import './assets/main.css'
+import './style.css'
 
 const app = createApp(App)
 const pinia = createPinia()

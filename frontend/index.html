@@ -14,8 +14,14 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind CSS - Development Only -->
+    <script>
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.tailwindcss.com';
+        document.head.appendChild(script);
+      }
+    </script>
     
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#3b82f6" />

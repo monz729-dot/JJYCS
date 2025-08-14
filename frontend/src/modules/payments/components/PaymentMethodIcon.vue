@@ -16,7 +16,7 @@ import {
   CreditCardIcon,
   BanknotesIcon,
   DevicePhoneMobileIcon,
-  CurrencyBitcoinIcon,
+  CurrencyDollarIcon,
   QuestionMarkCircleIcon
 } from '@heroicons/vue/24/outline'
 
@@ -36,13 +36,13 @@ const getMethodIcon = (method: string) => {
     credit_card: CreditCardIcon,
     bank_transfer: BanknotesIcon,
     mobile_payment: DevicePhoneMobileIcon,
-    crypto: CurrencyBitcoinIcon,
+    crypto: CurrencyDollarIcon,
     kakaopay: DevicePhoneMobileIcon,
     naverpay: DevicePhoneMobileIcon,
     payco: DevicePhoneMobileIcon,
-    bitcoin: CurrencyBitcoinIcon,
-    ethereum: CurrencyBitcoinIcon,
-    tether: CurrencyBitcoinIcon
+    bitcoin: CurrencyDollarIcon,
+    ethereum: CurrencyDollarIcon,
+    tether: CurrencyDollarIcon
   }
   return icons[method as keyof typeof icons] || QuestionMarkCircleIcon
 }

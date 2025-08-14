@@ -45,13 +45,14 @@ export const useOrderStore = defineStore('orders', () => {
   })
 
   // Actions
-  const fetchOrders = async (page = 0) => {
+  const fetchOrders = async (page = 0, userId?: string) => {
     loading.value = true
     error.value = null
     
     try {
       const response = await ordersApi.getOrders({
         page,
+        userId, // 사용자별 필터링
         size: pageSize.value,
         status: statusFilter.value || undefined,
         type: typeFilter.value || undefined,

@@ -160,7 +160,7 @@ const navigationItems = computed(() => {
 // Methods
 const logout = async () => {
   try {
-    await authStore.logout()
+    await authStore.signOut()
     router.push({ name: 'Login' })
   } catch (error) {
     console.error('Logout error:', error)

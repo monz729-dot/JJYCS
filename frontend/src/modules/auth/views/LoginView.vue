@@ -1,70 +1,53 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-    <!-- Background Pattern -->
-    <div class="absolute inset-0 bg-white/50 backdrop-blur-[2px]"></div>
-    <div class="absolute top-0 left-0 w-full h-full">
-      <div class="absolute top-10 left-10 w-72 h-72 bg-blue-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
-      <div class="absolute top-10 right-10 w-72 h-72 bg-purple-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
-      <div class="absolute bottom-10 left-20 w-72 h-72 bg-pink-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
-    </div>
-    
-    <!-- Login Card -->
-    <div class="relative max-w-md w-full">
-      <div class="bg-white/80 backdrop-blur-md rounded-2xl shadow-2xl border border-white/50 p-8">
-        <!-- Logo & Title -->
-        <div class="text-center mb-8">
-          <div class="mx-auto w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
-            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-            </svg>
-          </div>
-          <h1 class="text-2xl font-bold text-gray-900 mb-2">YCS 물류관리</h1>
-          <p class="text-gray-600 text-sm">안전하고 빠른 글로벌 배송 서비스</p>
+  <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+      <!-- Header -->
+      <div class="text-center">
+        <div class="mx-auto h-16 w-16 bg-blue-600 rounded-lg flex items-center justify-center mb-6">
+          <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" />
+          </svg>
         </div>
+        <h1 class="text-3xl font-extrabold text-gray-900 mb-2">
+          로그인
+        </h1>
+        <p class="text-gray-600">
+          YCS 물류관리 시스템에 로그인하세요
+        </p>
+      </div>
 
-        <!-- Login Form -->
+      <!-- Login Form -->
+      <div class="bg-white shadow-xl rounded-lg p-8">
         <form @submit.prevent="handleSubmit" class="space-y-6">
           <!-- Email Field -->
-          <div class="space-y-2">
-            <label for="email" class="text-sm font-medium text-gray-700 block">이메일 또는 아이디</label>
-            <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
-                </svg>
-              </div>
-              <input
-                id="email"
-                v-model="form.email"
-                type="text"
-                required
-                class="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                placeholder="이메일 또는 아이디를 입력하세요"
-              />
-            </div>
+          <div>
+            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">이메일 또는 아이디</label>
+            <input
+              id="email"
+              v-model="form.email"
+              type="text"
+              required
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="이메일 또는 아이디를 입력하세요"
+            />
           </div>
 
           <!-- Password Field -->
-          <div class="space-y-2">
-            <label for="password" class="text-sm font-medium text-gray-700 block">비밀번호</label>
+          <div>
+            <label for="password" class="block text-sm font-medium text-gray-700 mb-2">비밀번호</label>
             <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-              </div>
               <input
                 id="password"
                 v-model="form.password"
                 :type="showPassword ? 'text' : 'password'"
                 required
-                class="block w-full pl-10 pr-12 py-3 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                class="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="비밀번호를 입력하세요"
               />
               <button
                 type="button"
                 @click="showPassword = !showPassword"
-                class="absolute inset-y-0 right-0 pr-3 flex items-center hover:text-blue-600 transition-colors"
+                class="absolute inset-y-0 right-0 pr-3 flex items-center"
               >
                 <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path v-if="!showPassword" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -81,21 +64,21 @@
               <input
                 v-model="rememberMe"
                 type="checkbox"
-                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-colors"
+                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
               <span class="ml-2 text-sm text-gray-600">로그인 상태 유지</span>
             </label>
             <button
               type="button"
               @click="showForgotPassword = true"
-              class="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
+              class="text-sm text-blue-600 hover:text-blue-700 font-medium"
             >
               비밀번호 찾기
             </button>
           </div>
 
           <!-- Error Message -->
-          <div v-if="error" class="p-4 rounded-xl bg-red-50 border border-red-200">
+          <div v-if="error" class="p-4 rounded-lg bg-red-50 border border-red-200">
             <div class="flex">
               <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
@@ -110,40 +93,25 @@
           <button
             type="submit"
             :disabled="loading"
-            class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg"
+            class="w-full py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <div class="flex items-center justify-center">
-              <svg v-if="loading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              {{ loading ? '로그인 중...' : '로그인' }}
-            </div>
+            <span v-if="loading">로그인 중...</span>
+            <span v-else>로그인</span>
           </button>
 
-          <!-- Divider -->
-          <div class="relative">
-            <div class="absolute inset-0 flex items-center">
-              <div class="w-full border-t border-gray-200"></div>
-            </div>
-            <div class="relative flex justify-center text-sm">
-              <span class="px-3 bg-white text-gray-500">또는</span>
-            </div>
-          </div>
-
           <!-- Quick Actions -->
-          <div class="flex space-x-3 text-sm">
+          <div class="flex space-x-4 text-sm">
             <button
               type="button"
               @click="showEmailFind = true"
-              class="flex-1 text-gray-600 hover:text-blue-600 transition-colors"
+              class="flex-1 text-gray-600 hover:text-blue-600"
             >
               이메일 찾기
             </button>
             <button
               type="button"
               @click="showForgotPassword = true"
-              class="flex-1 text-gray-600 hover:text-blue-600 transition-colors"
+              class="flex-1 text-gray-600 hover:text-blue-600"
             >
               비밀번호 찾기
             </button>
@@ -154,7 +122,7 @@
         <div class="mt-6 text-center">
           <p class="text-gray-600 text-sm">
             계정이 없으신가요?
-            <router-link to="/signup" class="font-medium text-blue-600 hover:text-blue-700 transition-colors">
+            <router-link to="/signup" class="font-medium text-blue-600 hover:text-blue-700">
               회원가입하기
             </router-link>
           </p>
@@ -163,7 +131,7 @@
       
       <!-- Forgot Password Modal -->
       <div v-if="showForgotPassword" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click.self="showForgotPassword = false">
-        <div class="bg-white rounded-2xl p-6 max-w-md w-full">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full">
           <h3 class="text-lg font-semibold text-gray-900 mb-4">비밀번호 재설정</h3>
           <form @submit.prevent="handleForgotPassword" class="space-y-4">
             <div>
@@ -172,28 +140,28 @@
                 v-model="forgotPasswordEmail"
                 type="email"
                 required
-                class="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="가입 시 사용한 이메일을 입력하세요"
               />
             </div>
             <div v-if="forgotPasswordError" class="text-red-600 text-sm">
               {{ forgotPasswordError }}
             </div>
-            <div v-if="forgotPasswordSuccess" class="text-green-600 text-sm bg-green-50 p-3 rounded-xl">
+            <div v-if="forgotPasswordSuccess" class="text-green-600 text-sm bg-green-50 p-3 rounded-lg">
               {{ forgotPasswordSuccess }}
             </div>
             <div class="flex gap-3">
               <button
                 type="submit"
                 :disabled="forgotPasswordLoading"
-                class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50"
+                class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
               >
                 {{ forgotPasswordLoading ? '발송 중...' : '재설정 이메일 발송' }}
               </button>
               <button
                 type="button"
                 @click="showForgotPassword = false"
-                class="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-xl hover:bg-gray-200 transition-colors"
+                class="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 취소
               </button>
@@ -204,7 +172,7 @@
       
       <!-- Email Find Modal -->
       <div v-if="showEmailFind" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click.self="showEmailFind = false">
-        <div class="bg-white rounded-2xl p-6 max-w-md w-full">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full">
           <h3 class="text-lg font-semibold text-gray-900 mb-4">이메일 찾기</h3>
           <form @submit.prevent="handleEmailFind" class="space-y-4">
             <div>
@@ -213,7 +181,7 @@
                 v-model="emailFindForm.name"
                 type="text"
                 required
-                class="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="가입 시 입력한 이름을 입력하세요"
               />
             </div>
@@ -223,28 +191,28 @@
                 v-model="emailFindForm.phone"
                 type="tel"
                 required
-                class="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="가입 시 입력한 연락처를 입력하세요"
               />
             </div>
             <div v-if="emailFindError" class="text-red-600 text-sm">
               {{ emailFindError }}
             </div>
-            <div v-if="emailFindSuccess" class="text-green-600 text-sm bg-green-50 p-3 rounded-xl">
+            <div v-if="emailFindSuccess" class="text-green-600 text-sm bg-green-50 p-3 rounded-lg">
               {{ emailFindSuccess }}
             </div>
             <div class="flex gap-3">
               <button
                 type="submit"
                 :disabled="emailFindLoading"
-                class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50"
+                class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
               >
                 {{ emailFindLoading ? '확인 중...' : '확인' }}
               </button>
               <button
                 type="button"
                 @click="showEmailFind = false"
-                class="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-xl hover:bg-gray-200 transition-colors"
+                class="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 취소
               </button>
@@ -254,18 +222,16 @@
       </div>
     </div>
   </div>
-
-    </div>
-  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useToast } from 'vue-toastification'
+import { ref, reactive } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useToast } from '@/composables/useToast'
 import { AuthService } from '@/services/authService'
 
 const router = useRouter()
+const route = useRoute()
 const toast = useToast()
 
 // 상태
@@ -315,7 +281,52 @@ const handleSubmit = async () => {
 
     if (result.success) {
       toast.success('로그인되었습니다.')
-      router.push('/app/dashboard')
+      
+      // 리다이렉트 쿼리 파라미터가 있으면 해당 페이지로, 없으면 대시보드로
+      const redirect = route.query.redirect as string
+      if (redirect) {
+        router.push(redirect)
+      } else {
+                  // 사용자 유형에 따른 기본 리다이렉트
+          try {
+            const userProfile = await AuthService.getCurrentUserProfile()
+            console.log('로그인 후 프로필 조회:', userProfile)
+            
+            if (userProfile.data) {
+              switch(userProfile.data.user_type) {
+                case 'general':
+                  // 일반회원: 주문 관리 페이지
+                  router.push('/app/orders')
+                  break
+                case 'corporate':
+                  // 기업회원: 주문 관리 페이지 (대량 주문 기능 포함)
+                  router.push('/app/orders')
+                  break
+                case 'partner':
+                  // 파트너: 파트너 대시보드
+                  router.push('/app/partner')
+                  break
+                case 'warehouse':
+                  // 현장관리자: 창고 대시보드 (모바일 스캔/입고)
+                  router.push('/app/warehouse')
+                  break
+                case 'admin':
+                  // 관리자: 어드민 대시보드
+                  router.push('/app/admin')
+                  break
+                default:
+                  // 기본: 일반 대시보드
+                  router.push('/app/dashboard')
+              }
+            } else {
+              console.log('프로필이 없어서 기본 대시보드로 이동')
+              router.push('/app/dashboard')
+            }
+          } catch (profileError) {
+            console.error('프로필 조회 실패, 기본 대시보드로 이동:', profileError)
+            router.push('/app/dashboard')
+          }
+      }
     } else {
       error.value = result.error || '로그인에 실패했습니다.'
     }
@@ -378,34 +389,8 @@ const handleEmailFind = async () => {
     emailFindLoading.value = false
   }
 }
-
 </script>
 
 <style scoped>
-@keyframes blob {
-  0% {
-    transform: translate(0px, 0px) scale(1);
-  }
-  33% {
-    transform: translate(30px, -50px) scale(1.1);
-  }
-  66% {
-    transform: translate(-20px, 20px) scale(0.9);
-  }
-  100% {
-    transform: translate(0px, 0px) scale(1);
-  }
-}
-
-.animate-blob {
-  animation: blob 7s infinite;
-}
-
-.animation-delay-2000 {
-  animation-delay: 2s;
-}
-
-.animation-delay-4000 {
-  animation-delay: 4s;
-}
+/* Custom styles */
 </style>

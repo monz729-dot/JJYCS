@@ -1,17 +1,17 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-8">
+  <div class="min-h-screen bg-gray-50 py-4 sm:py-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <!-- Header -->
-      <div class="mb-8">
-        <div class="flex items-center justify-between">
+      <div class="mb-6 sm:mb-8">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
           <div>
-            <h1 class="text-3xl font-bold text-gray-900">{{ $t('orders.list.title') }}</h1>
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">{{ $t('orders.list.title') }}</h1>
             <p class="mt-1 text-sm text-gray-600">{{ $t('orders.list.subtitle') }}</p>
           </div>
-          <div class="flex space-x-3">
+          <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
             <button
               type="button"
-              class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
               @click="refreshOrders"
               :disabled="isLoading"
             >
@@ -20,7 +20,7 @@
             </button>
             <router-link
               :to="{ name: 'OrderCreate' }"
-              class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+              class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
             >
               <PlusIcon class="h-4 w-4 mr-2" />
               {{ $t('orders.list.create_order') }}
@@ -30,8 +30,26 @@
       </div>
 
       <!-- Filters -->
-      <div class="bg-white shadow rounded-lg mb-6 p-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="bg-white shadow rounded-lg mb-6 p-4 sm:p-6">
+        <!-- Mobile Filter Toggle -->
+        <div class="sm:hidden mb-4">
+          <button
+            @click="showMobileFilters = !showMobileFilters"
+            class="w-full flex items-center justify-between px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+          >
+            <span>{{ $t('orders.list.filters') }}</span>
+            <ChevronDownIcon class="h-4 w-4" :class="{ 'rotate-180': showMobileFilters }" />
+          </button>
+        </div>
+
+        <!-- Filter Grid -->
+        <div 
+          class="grid grid-cols-1 gap-4"
+          :class="{
+            'sm:grid-cols-2 lg:grid-cols-4': true,
+            'hidden sm:grid': !showMobileFilters
+          }"
+        >
           <!-- Search -->
           <div>
             <label for="search" class="block text-sm font-medium text-gray-700 mb-1">
@@ -111,27 +129,27 @@
         </div>
 
         <!-- Quick Stats -->
-        <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div class="text-center">
-            <div class="text-2xl font-bold text-blue-600">{{ stats.total }}</div>
-            <div class="text-sm text-gray-600">{{ $t('orders.list.total_orders') }}</div>
+        <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          <div class="text-center p-3 bg-blue-50 rounded-lg">
+            <div class="text-xl sm:text-2xl font-bold text-blue-600">{{ stats.total }}</div>
+            <div class="text-xs sm:text-sm text-gray-600">{{ $t('orders.list.total_orders') }}</div>
           </div>
-          <div class="text-center">
-            <div class="text-2xl font-bold text-yellow-600">{{ stats.pending }}</div>
-            <div class="text-sm text-gray-600">{{ $t('orders.list.pending_orders') }}</div>
+          <div class="text-center p-3 bg-yellow-50 rounded-lg">
+            <div class="text-xl sm:text-2xl font-bold text-yellow-600">{{ stats.pending }}</div>
+            <div class="text-xs sm:text-sm text-gray-600">{{ $t('orders.list.pending_orders') }}</div>
           </div>
-          <div class="text-center">
-            <div class="text-2xl font-bold text-green-600">{{ stats.delivered }}</div>
-            <div class="text-sm text-gray-600">{{ $t('orders.list.delivered_orders') }}</div>
+          <div class="text-center p-3 bg-green-50 rounded-lg">
+            <div class="text-xl sm:text-2xl font-bold text-green-600">{{ stats.delivered }}</div>
+            <div class="text-xs sm:text-sm text-gray-600">{{ $t('orders.list.delivered_orders') }}</div>
           </div>
-          <div class="text-center">
-            <div class="text-2xl font-bold text-purple-600">{{ formatCurrency(stats.totalValue) }}</div>
-            <div class="text-sm text-gray-600">{{ $t('orders.list.total_value') }}</div>
+          <div class="text-center p-3 bg-purple-50 rounded-lg">
+            <div class="text-lg sm:text-2xl font-bold text-purple-600">{{ formatCurrency(stats.totalValue) }}</div>
+            <div class="text-xs sm:text-sm text-gray-600">{{ $t('orders.list.total_value') }}</div>
           </div>
         </div>
       </div>
 
-      <!-- Orders Table -->
+      <!-- Orders List -->
       <div class="bg-white shadow rounded-lg overflow-hidden">
         <!-- Loading State -->
         <div v-if="isLoading && orders.length === 0" class="flex justify-center items-center py-12">
@@ -160,8 +178,8 @@
           </div>
         </div>
 
-        <!-- Orders Table -->
-        <div v-else class="overflow-x-auto">
+        <!-- Desktop Table -->
+        <div v-else class="hidden lg:block overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>
@@ -281,8 +299,97 @@
           </table>
         </div>
 
+        <!-- Mobile Cards -->
+        <div v-else class="lg:hidden">
+          <div class="divide-y divide-gray-200">
+            <div
+              v-for="order in orders"
+              :key="order.id"
+              class="p-4 hover:bg-gray-50 cursor-pointer"
+              @click="goToOrder(order.id)"
+            >
+              <!-- Order Header -->
+              <div class="flex items-start justify-between mb-3">
+                <div class="flex-1">
+                  <div class="flex items-center space-x-2">
+                    <h3 class="text-lg font-semibold text-gray-900">{{ order.orderCode }}</h3>
+                    <span
+                      class="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
+                      :class="getStatusBadgeClass(order.status)"
+                    >
+                      {{ $t(`orders.status.${order.status}`) }}
+                    </span>
+                  </div>
+                  <p class="text-sm text-gray-500 mt-1">
+                    {{ $t('orders.list.items_count', { count: order.items?.length || 0 }) }}
+                  </p>
+                </div>
+                <div class="text-right">
+                  <div class="text-lg font-semibold text-gray-900">
+                    {{ formatCurrency(order.totalAmount, order.currency) }}
+                  </div>
+                  <div class="text-sm text-gray-500">
+                    {{ formatDate(order.createdAt) }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Order Details -->
+              <div class="space-y-2">
+                <!-- Recipient -->
+                <div class="flex items-center space-x-2">
+                  <UserIcon class="h-4 w-4 text-gray-400" />
+                  <div>
+                    <div class="text-sm font-medium text-gray-900">{{ order.recipientName }}</div>
+                    <div class="text-sm text-gray-500">{{ order.recipientCountry }}</div>
+                  </div>
+                </div>
+
+                <!-- Shipping -->
+                <div class="flex items-center space-x-2">
+                  <TruckIcon v-if="order.orderType === 'sea'" class="h-4 w-4 text-blue-500" />
+                  <PaperAirplaneIcon v-else class="h-4 w-4 text-purple-500" />
+                  <div>
+                    <div class="text-sm font-medium text-gray-900">
+                      {{ order.orderType === 'sea' ? $t('orders.shipping.sea') : $t('orders.shipping.air') }}
+                    </div>
+                    <div v-if="order.cbm" class="text-sm text-gray-500">
+                      {{ order.cbm.toFixed(3) }} m³
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Extra Info Required -->
+                <div v-if="order.requiresExtraRecipientInfo" class="flex items-center space-x-2">
+                  <ExclamationTriangleIcon class="h-4 w-4 text-yellow-500" />
+                  <span class="text-sm text-yellow-700">{{ $t('orders.list.extra_info_required') }}</span>
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div class="flex items-center justify-end space-x-3 mt-4 pt-3 border-t border-gray-100">
+                <button
+                  type="button"
+                  class="text-blue-600 hover:text-blue-900 text-sm font-medium"
+                  @click.stop="goToOrder(order.id)"
+                >
+                  {{ $t('common.view') }}
+                </button>
+                <button
+                  v-if="canCancelOrder(order)"
+                  type="button"
+                  class="text-red-600 hover:text-red-900 text-sm font-medium"
+                  @click.stop="showCancelModal(order)"
+                >
+                  {{ $t('common.cancel') }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Pagination -->
-        <div v-if="totalPages > 1" class="bg-white px-6 py-3 border-t border-gray-200">
+        <div v-if="totalPages > 1" class="bg-white px-4 sm:px-6 py-3 border-t border-gray-200">
           <div class="flex items-center justify-between">
             <div class="flex-1 flex justify-between sm:hidden">
               <button
@@ -305,21 +412,24 @@
             <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
                 <p class="text-sm text-gray-700">
-                  {{ $t('orders.list.showing_results', {
-                    from: currentPage * pageSize + 1,
-                    to: Math.min((currentPage + 1) * pageSize, totalElements),
-                    total: totalElements
-                  }) }}
+                  {{ $t('common.showing') }}
+                  <span class="font-medium">{{ (currentPage * pageSize) + 1 }}</span>
+                  {{ $t('common.to') }}
+                  <span class="font-medium">{{ Math.min((currentPage + 1) * pageSize, totalItems) }}</span>
+                  {{ $t('common.of') }}
+                  <span class="font-medium">{{ totalItems }}</span>
+                  {{ $t('common.results') }}
                 </p>
               </div>
               <div>
-                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                   <button
                     type="button"
                     class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
                     :disabled="currentPage === 0"
                     @click="previousPage"
                   >
+                    <span class="sr-only">{{ $t('common.previous') }}</span>
                     <ChevronLeftIcon class="h-5 w-5" />
                   </button>
                   <button
@@ -327,13 +437,10 @@
                     :key="page"
                     type="button"
                     class="relative inline-flex items-center px-4 py-2 border text-sm font-medium"
-                    :class="{
-                      'z-10 bg-blue-50 border-blue-500 text-blue-600': page - 1 === currentPage,
-                      'bg-white border-gray-300 text-gray-500 hover:bg-gray-50': page - 1 !== currentPage
-                    }"
-                    @click="goToPage(page - 1)"
+                    :class="page === currentPage ? 'z-10 bg-blue-50 border-blue-500 text-blue-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'"
+                    @click="goToPage(page)"
                   >
-                    {{ page }}
+                    {{ page + 1 }}
                   </button>
                   <button
                     type="button"
@@ -341,6 +448,7 @@
                     :disabled="currentPage >= totalPages - 1"
                     @click="nextPage"
                   >
+                    <span class="sr-only">{{ $t('common.next') }}</span>
                     <ChevronRightIcon class="h-5 w-5" />
                   </button>
                 </nav>
@@ -349,83 +457,48 @@
           </div>
         </div>
       </div>
-
-      <!-- Cancel Order Modal -->
-      <div v-if="showingCancelModal" class="fixed inset-0 z-50 overflow-y-auto">
-        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-          <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="closeCancelModal"></div>
-          <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
-          <div class="relative inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
-            <div>
-              <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-                <ExclamationTriangleIcon class="h-6 w-6 text-red-600" />
-              </div>
-              <div class="mt-3 text-center sm:mt-5">
-                <h3 class="text-lg leading-6 font-medium text-gray-900">
-                  {{ $t('orders.list.cancel_order_title') }}
-                </h3>
-                <div class="mt-2">
-                  <p class="text-sm text-gray-500">
-                    {{ $t('orders.list.cancel_order_message', { orderCode: cancellingOrder?.orderCode }) }}
-                  </p>
-                </div>
-                <div class="mt-4">
-                  <textarea
-                    v-model="cancelReason"
-                    class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                    rows="3"
-                    :placeholder="$t('orders.list.cancel_reason_placeholder')"
-                  />
-                </div>
-              </div>
-            </div>
-            <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
-              <button
-                type="button"
-                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:col-start-2 sm:text-sm"
-                :disabled="isCancelling"
-                @click="confirmCancelOrder"
-              >
-                {{ isCancelling ? $t('orders.list.cancelling') : $t('orders.list.confirm_cancel') }}
-              </button>
-              <button
-                type="button"
-                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:col-start-1 sm:text-sm"
-                @click="closeCancelModal"
-              >
-                {{ $t('common.cancel') }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
+
+    <!-- Cancel Order Modal -->
+    <CancelOrderModal
+      v-if="showCancelModalFlag"
+      :order="selectedOrder"
+      @close="closeCancelModal"
+      @confirm="cancelOrder"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useOrdersStore } from '@/stores/orders'
-import { useNotificationStore } from '@/stores/notification'
+import { useI18n } from 'vue-i18n'
 import {
-  PlusIcon,
   ArrowPathIcon,
+  PlusIcon,
   MagnifyingGlassIcon,
   InboxIcon,
   TruckIcon,
   PaperAirplaneIcon,
+  ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  UserIcon,
   ExclamationTriangleIcon
 } from '@heroicons/vue/24/outline'
+import CancelOrderModal from '../components/CancelOrderModal.vue'
+import { useOrderStore } from '../stores/orderStore'
+import { useAuthStore } from '@/stores/auth'
+import { formatCurrency, formatDate } from '@/utils/helpers'
 
 // Composables
 const router = useRouter()
-const ordersStore = useOrdersStore()
-const notificationStore = useNotificationStore()
+const { t } = useI18n()
+const ordersStore = useOrderStore()
+const authStore = useAuthStore()
 
 // State
+const showMobileFilters = ref(false)
 const filters = ref({
   search: '',
   status: '',
@@ -433,8 +506,8 @@ const filters = ref({
   dateRange: ''
 })
 
-const showingCancelModal = ref(false)
-const cancellingOrder = ref(null)
+const showCancelModalFlag = ref(false)
+const selectedOrder = ref(null)
 const cancelReason = ref('')
 const isCancelling = ref(false)
 const searchTimeout = ref(null)
@@ -444,12 +517,12 @@ const orders = computed(() => ordersStore.orders)
 const isLoading = computed(() => ordersStore.isLoading)
 const currentPage = computed(() => ordersStore.currentPage)
 const totalPages = computed(() => ordersStore.totalPages)
-const totalElements = computed(() => ordersStore.totalElements)
+const totalItems = computed(() => ordersStore.totalElements)
 const pageSize = computed(() => ordersStore.pageSize)
 
 const stats = computed(() => {
   return {
-    total: totalElements.value,
+    total: totalItems.value,
     pending: orders.value.filter(o => o.status === 'requested').length,
     delivered: orders.value.filter(o => o.status === 'delivered').length,
     totalValue: orders.value.reduce((sum, o) => sum + (o.totalAmount || 0), 0)
@@ -458,8 +531,8 @@ const stats = computed(() => {
 
 const visiblePages = computed(() => {
   const pages = []
-  const start = Math.max(1, currentPage.value - 2)
-  const end = Math.min(totalPages.value, start + 4)
+  const start = Math.max(0, currentPage.value - 2)
+  const end = Math.min(totalPages.value - 1, start + 4)
   
   for (let i = start; i <= end; i++) {
     pages.push(i)
@@ -476,7 +549,7 @@ const loadOrders = async () => {
       ...filters.value
     })
   } catch (error) {
-    notificationStore.error('오류', '주문 목록을 불러오는데 실패했습니다.')
+    console.error('Failed to load orders:', error)
   }
 }
 
@@ -521,39 +594,32 @@ const previousPage = () => {
   }
 }
 
-const canCancelOrder = (order) => {
+const canCancelOrder = (order: any) => {
   return ['requested', 'confirmed'].includes(order.status)
 }
 
-const showCancelModal = (order) => {
-  cancellingOrder.value = order
+const showCancelModal = (order: any) => {
+  selectedOrder.value = order
   cancelReason.value = ''
-  showingCancelModal.value = true
+  showCancelModalFlag.value = true
 }
 
 const closeCancelModal = () => {
-  showingCancelModal.value = false
-  cancellingOrder.value = null
+  showCancelModalFlag.value = false
+  selectedOrder.value = null
   cancelReason.value = ''
 }
 
-const confirmCancelOrder = async () => {
-  if (!cancellingOrder.value) return
-
-  isCancelling.value = true
+const cancelOrder = async () => {
+  if (!selectedOrder.value || !cancelReason.value.trim()) return
   
+  isCancelling.value = true
   try {
-    await ordersStore.cancelOrder(cancellingOrder.value.id, cancelReason.value)
-    
-    notificationStore.success(
-      '주문 취소 완료',
-      `주문 ${cancellingOrder.value.orderCode}가 취소되었습니다.`
-    )
-    
+    await ordersStore.cancelOrder(selectedOrder.value.id, cancelReason.value)
     closeCancelModal()
-    refreshOrders()
+    loadOrders()
   } catch (error) {
-    notificationStore.error('오류', '주문 취소에 실패했습니다.')
+    console.error('Failed to cancel order:', error)
   } finally {
     isCancelling.value = false
   }
@@ -571,33 +637,15 @@ const getStatusBadgeClass = (status: string) => {
   return classes[status] || 'bg-gray-100 text-gray-800'
 }
 
-const formatCurrency = (amount: number, currency: string = 'THB') => {
-  return new Intl.NumberFormat('th-TH', {
-    style: 'currency',
-    currency: currency,
-    minimumFractionDigits: 2
-  }).format(amount)
-}
-
-const formatDate = (dateString: string) => {
-  return new Intl.DateTimeFormat('ko-KR', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(new Date(dateString))
-}
-
-// Watchers
-watch(() => filters.value, (newFilters) => {
-  ordersStore.setFilters(newFilters)
-}, { deep: true })
-
 // Lifecycle
 onMounted(() => {
   loadOrders()
 })
+
+// Watchers
+watch(filters, () => {
+  applyFilters()
+}, { deep: true })
 </script>
 
 <style scoped>

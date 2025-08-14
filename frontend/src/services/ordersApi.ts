@@ -1,153 +1,342 @@
-// Mock Orders API service
-export interface Order {
-  id: string
-  orderCode: string
-  status: 'pending' | 'approved' | 'in_transit' | 'delivered' | 'cancelled' | 'delayed'
-  orderType: 'sea' | 'air'
-  recipient: {
-    name: string
-    phone: string
-    address: string
-    email?: string
-    idNumber?: string
-  }
-  items: OrderItem[]
-  boxes: OrderBox[]
-  totalAmount: number
-  totalCBM: number
-  requiresExtraRecipientInfo: boolean
-  specialInstructions?: string
-  createdAt: string
-  updatedAt: string
-}
-
-export interface OrderItem {
-  id: string
-  name: string
-  quantity: number
-  unitPrice: number
-  totalPrice: number
-  emsCode: string
-  hsCode: string
-}
-
-export interface OrderBox {
-  id: string
-  boxNumber: string
-  widthCm: number
-  heightCm: number
-  depthCm: number
-  weightKg: number
-  cbmM3: number
-  labelCode?: string
-}
-
-export interface OrderCreateRequest {
-  recipient: {
-    name: string
-    phone: string
-    address: string
-    email?: string
-    idNumber?: string
-  }
-  items: Omit<OrderItem, 'id' | 'totalPrice'>[]
-  boxes: Omit<OrderBox, 'id' | 'cbmM3' | 'labelCode'>[]
-  orderType?: 'sea' | 'air'
-  specialInstructions?: string
-}
-
-// Mock data
-const mockOrders: Order[] = [
-  {
-    id: '1',
-    orderCode: 'ORD-2024-001',
-    status: 'pending',
-    orderType: 'sea',
-    recipient: {
-      name: '김철수',
-      phone: '010-1234-5678',
-      address: '서울시 강남구 테헤란로 123'
-    },
-    items: [{
-      id: '1',
-      name: '전자제품',
-      quantity: 2,
-      unitPrice: 500000,
-      totalPrice: 1000000,
-      emsCode: 'EMS001',
-      hsCode: 'HS001'
-    }],
-    boxes: [{
-      id: '1',
-      boxNumber: 'BOX001',
-      widthCm: 50,
-      heightCm: 40,
-      depthCm: 30,
-      weightKg: 5,
-      cbmM3: 0.06,
-      labelCode: 'LBL001'
-    }],
-    totalAmount: 1000000,
-    totalCBM: 0.06,
-    requiresExtraRecipientInfo: false,
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z'
-  }
-]
-
-const delay = (ms: number = 300) => new Promise(resolve => setTimeout(resolve, ms))
+import { supabase } from '@/lib/supabase'
+import type { Order } from '@/types/orders'
 
 export const ordersApi = {
-  async getOrders() {
-    await delay()
-    return {
-      success: true,
-      data: mockOrders
+  // 주문 목록 조회 (사용자별 필터링 포함)
+  async getOrders(params: {
+    page?: number
+    size?: number
+    status?: string
+    type?: string
+    startDate?: string
+    endDate?: string
+    userId?: string
+  } = {}) {
+    try {
+      console.log('주문 목록 조회 시작:', params)
+      
+      let query = supabase
+        .from('orders')
+        .select(`
+          *,
+          user_profiles!orders_user_id_fkey(username, name, email),
+          order_items(*),
+          order_boxes(*),
+          estimates(*)
+        `)
+        .order('created_at', { ascending: false })
+
+      // 사용자 필터링 (일반/기업회원은 본인 주문만)
+      if (params.userId) {
+        query = query.eq('user_id', params.userId)
+      }
+
+      // 상태 필터
+      if (params.status) {
+        query = query.eq('status', params.status)
+      }
+
+      // 배송 타입 필터
+      if (params.type) {
+        query = query.eq('order_type', params.type)
+      }
+
+      // 날짜 필터
+      if (params.startDate) {
+        query = query.gte('created_at', params.startDate)
+      }
+
+      if (params.endDate) {
+        query = query.lte('created_at', params.endDate)
+      }
+
+      // 페이징
+      const page = params.page || 0
+      const size = params.size || 20
+      const from = page * size
+      const to = from + size - 1
+
+      const { data, error, count } = await query.range(from, to)
+
+      console.log('주문 목록 조회 결과:', { data, error, count })
+
+      if (error) {
+        console.error('주문 목록 조회 에러:', error)
+        throw new Error(error.message)
+      }
+
+      return {
+        success: true,
+        data: data || [],
+        pagination: {
+          page,
+          size,
+          totalElements: count || 0,
+          totalPages: Math.ceil((count || 0) / size)
+        }
+      }
+    } catch (error) {
+      console.error('주문 목록 조회 실패:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '주문 목록 조회에 실패했습니다.',
+        data: [],
+        pagination: {
+          page: 0,
+          size: 20,
+          totalElements: 0,
+          totalPages: 0
+        }
+      }
     }
   },
 
+  // 주문 상세 조회
   async getOrder(id: string) {
-    await delay()
-    const order = mockOrders.find(o => o.id === id)
-    return {
-      success: !!order,
-      data: order
+    try {
+      console.log('주문 상세 조회:', id)
+      
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          user_profiles!orders_user_id_fkey(username, name, email, phone),
+          order_items(*),
+          order_boxes(*),
+          shipment_tracking(*),
+          estimates(*),
+          payments(*)
+        `)
+        .eq('id', id)
+        .single()
+
+      console.log('주문 상세 조회 결과:', { data, error })
+
+      if (error) {
+        console.error('주문 상세 조회 에러:', error)
+        throw new Error(error.message)
+      }
+
+      return {
+        success: true,
+        data
+      }
+    } catch (error) {
+      console.error('주문 상세 조회 실패:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '주문 조회에 실패했습니다.',
+        data: null
+      }
     }
   },
 
-  async createOrder(orderData: OrderCreateRequest) {
-    await delay()
-    
-    const newOrder: Order = {
-      id: String(mockOrders.length + 1),
-      orderCode: `ORD-2024-${String(mockOrders.length + 1).padStart(3, '0')}`,
-      status: 'pending',
-      orderType: orderData.orderType || 'sea',
-      recipient: orderData.recipient,
-      items: orderData.items.map((item, index) => ({
-        ...item,
-        id: String(index + 1),
-        totalPrice: item.quantity * item.unitPrice
-      })),
-      boxes: orderData.boxes.map((box, index) => ({
-        ...box,
-        id: String(index + 1),
-        cbmM3: (box.widthCm * box.heightCm * box.depthCm) / 1000000,
-        labelCode: `LBL${String(index + 1).padStart(3, '0')}`
-      })),
-      totalAmount: orderData.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0),
-      totalCBM: orderData.boxes.reduce((sum, box) => sum + ((box.widthCm * box.heightCm * box.depthCm) / 1000000), 0),
-      requiresExtraRecipientInfo: false,
-      specialInstructions: orderData.specialInstructions,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
+  // 주문 생성
+  async createOrder(orderData: any) {
+    try {
+      console.log('주문 생성 시작:', orderData)
+      
+      const { data, error } = await supabase
+        .from('orders')
+        .insert([orderData])
+        .select(`
+          *,
+          user_profiles!orders_user_id_fkey(username, name)
+        `)
+        .single()
 
-    mockOrders.push(newOrder)
-    
-    return {
-      success: true,
-      data: newOrder
+      console.log('주문 생성 결과:', { data, error })
+
+      if (error) {
+        console.error('주문 생성 에러:', error)
+        throw new Error(error.message)
+      }
+
+      return {
+        success: true,
+        data
+      }
+    } catch (error) {
+      console.error('주문 생성 실패:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '주문 생성에 실패했습니다.',
+        data: null
+      }
+    }
+  },
+
+  // 주문 취소
+  async cancelOrder(id: string, reason: string, details?: string) {
+    try {
+      console.log('주문 취소 시작:', { id, reason, details })
+      
+      const { data, error } = await supabase
+        .from('orders')
+        .update({
+          status: 'cancelled',
+          cancel_reason: reason,
+          cancel_details: details,
+          cancelled_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select(`
+          *,
+          user_profiles!orders_user_id_fkey(username, name)
+        `)
+        .single()
+
+      console.log('주문 취소 결과:', { data, error })
+
+      if (error) {
+        console.error('주문 취소 에러:', error)
+        throw new Error(error.message)
+      }
+
+      return {
+        success: true,
+        data
+      }
+    } catch (error) {
+      console.error('주문 취소 실패:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '주문 취소에 실패했습니다.',
+        data: null
+      }
+    }
+  },
+
+  // 주문 상태 변경 (어드민/창고 관리자용)
+  async updateOrderStatus(id: string, status: string) {
+    try {
+      console.log('주문 상태 변경:', { id, status })
+      
+      const { data, error } = await supabase
+        .from('orders')
+        .update({ 
+          status,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select(`
+          *,
+          user_profiles!orders_user_id_fkey(username, name)
+        `)
+        .single()
+
+      console.log('주문 상태 변경 결과:', { data, error })
+
+      if (error) {
+        console.error('주문 상태 변경 에러:', error)
+        throw new Error(error.message)
+      }
+
+      return {
+        success: true,
+        data
+      }
+    } catch (error) {
+      console.error('주문 상태 변경 실패:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '주문 상태 변경에 실패했습니다.',
+        data: null
+      }
+    }
+  },
+
+  // 일괄 상태 업데이트
+  async batchUpdateOrders(orderIds: string[], updates: Partial<Order>) {
+    try {
+      console.log('일괄 주문 업데이트:', { orderIds, updates })
+      
+      const { data, error } = await supabase
+        .from('orders')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
+        .in('id', orderIds)
+        .select(`
+          *,
+          user_profiles!orders_user_id_fkey(username, name)
+        `)
+
+      console.log('일괄 주문 업데이트 결과:', { data, error })
+
+      if (error) {
+        console.error('일괄 주문 업데이트 에러:', error)
+        throw new Error(error.message)
+      }
+
+      return {
+        success: true,
+        data
+      }
+    } catch (error) {
+      console.error('일괄 주문 업데이트 실패:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '일괄 업데이트에 실패했습니다.',
+        data: []
+      }
+    }
+  },
+
+  // 주문 통계 (대시보드용)
+  async getOrderStats(userId?: string) {
+    try {
+      console.log('주문 통계 조회:', userId)
+      
+      let query = supabase.from('orders').select('status')
+      
+      if (userId) {
+        query = query.eq('user_id', userId)
+      }
+
+      const { data, error } = await query
+
+      if (error) {
+        console.error('주문 통계 조회 에러:', error)
+        throw new Error(error.message)
+      }
+
+      // 상태별 집계
+      const stats = {
+        total: data?.length || 0,
+        pending: data?.filter(o => o.status === 'pending').length || 0,
+        confirmed: data?.filter(o => o.status === 'confirmed').length || 0,
+        processing: data?.filter(o => o.status === 'processing').length || 0,
+        shipped: data?.filter(o => o.status === 'shipped').length || 0,
+        delivered: data?.filter(o => o.status === 'delivered').length || 0,
+        cancelled: data?.filter(o => o.status === 'cancelled').length || 0,
+        delayed: data?.filter(o => o.status === 'delayed').length || 0
+      }
+
+      console.log('주문 통계 결과:', stats)
+
+      return {
+        success: true,
+        data: stats
+      }
+    } catch (error) {
+      console.error('주문 통계 조회 실패:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '통계 조회에 실패했습니다.',
+        data: {
+          total: 0,
+          pending: 0,
+          confirmed: 0,
+          processing: 0,
+          shipped: 0,
+          delivered: 0,
+          cancelled: 0,
+          delayed: 0
+        }
+      }
     }
   }
 }

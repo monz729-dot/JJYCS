@@ -432,7 +432,7 @@ import {
   CreditCardIcon,
   BanknotesIcon,
   DevicePhoneMobileIcon,
-  CurrencyBitcoinIcon,
+  CurrencyDollarIcon,
   InformationCircleIcon,
   ChevronLeftIcon,
   ChevronRightIcon
@@ -513,7 +513,7 @@ const paymentMethods: PaymentMethod[] = [
     id: 'crypto',
     name: '암호화폐',
     description: 'Bitcoin, Ethereum',
-    icon: CurrencyBitcoinIcon
+    icon: CurrencyDollarIcon
   }
 ]
 

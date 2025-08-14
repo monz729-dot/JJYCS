@@ -345,7 +345,7 @@ import {
   CreditCardIcon,
   BanknotesIcon,
   DevicePhoneMobileIcon,
-  CurrencyBitcoinIcon,
+  CurrencyDollarIcon,
   ShieldCheckIcon,
   LockClosedIcon,
   PlayIcon,
@@ -513,7 +513,7 @@ const getMethodIcon = (method: string) => {
     bank_transfer: BanknotesIcon,
     credit_card: CreditCardIcon,
     mobile_payment: DevicePhoneMobileIcon,
-    crypto: CurrencyBitcoinIcon
+    crypto: CurrencyDollarIcon
   }
   return icons[method as keyof typeof icons] || CreditCardIcon
 }
