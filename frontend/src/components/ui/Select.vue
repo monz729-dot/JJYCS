@@ -15,6 +15,7 @@
           'block w-full rounded-lg border-gray-300 shadow-sm transition-colors duration-200',
           'focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
           'disabled:bg-gray-50 disabled:text-gray-500',
+          'appearance-none pr-10',
           error ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : '',
           sizeClasses,
           className

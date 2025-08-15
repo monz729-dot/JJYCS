@@ -127,7 +127,7 @@
                 type="text"
                 required
                 :disabled="checkingUsername"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                class="form-input form-input-md"
                 placeholder="사용할 아이디"
                 @blur="checkUsername"
               />
@@ -135,7 +135,7 @@
                 type="button"
                 @click="checkUsername"
                 :disabled="checkingUsername || !form.username"
-                class="w-full sm:w-auto px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap text-sm font-medium"
+                class="btn btn-md btn-primary"
               >
                 {{ checkingUsername ? '확인중...' : '중복확인' }}
               </button>
@@ -152,7 +152,7 @@
               v-model="form.password"
               type="password"
               required
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              class="form-input form-input-md"
               placeholder="8자 이상, 영문/숫자/특수문자 포함"
             />
             <div v-if="form.password && form.password.length < 8" class="mt-1 text-sm text-amber-600">
@@ -186,7 +186,7 @@
               v-model="form.name"
               type="text"
               required
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              class="form-input form-input-md"
               placeholder="홍길동"
             />
           </div>
@@ -198,7 +198,7 @@
               v-model="form.phone"
               type="tel"
               required
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              class="form-input form-input-md"
               placeholder="010-1234-5678"
             />
           </div>
@@ -210,7 +210,7 @@
               v-model="form.email"
               type="email"
               required
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              class="form-input form-input-md"
               placeholder="hong@example.com"
             />
             <div class="mt-1 text-sm text-gray-500">
@@ -246,7 +246,7 @@
                         type="button"
                         @click="verifyToken"
                         :disabled="verifyingToken || !verificationToken || verificationToken.length !== 6"
-                        class="w-full mt-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                        class="btn btn-md btn-primary w-full mt-2"
                       >
                         {{ verifyingToken ? '확인중...' : '인증하기' }}
                       </button>
@@ -283,7 +283,7 @@
             <input
               v-model="form.address"
               type="text"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              class="form-input form-input-md"
               placeholder="서울시 강남구 테헤란로 123"
             />
           </div>
@@ -298,7 +298,7 @@
                   v-model="form.company_name"
                   type="text"
                   :required="form.user_type === 'corporate' || form.user_type === 'partner'"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  class="form-input form-input-md"
                   placeholder="(주)글로벌무역"
                 />
               </div>
@@ -307,7 +307,7 @@
                 <input
                   v-model="form.business_number"
                   type="text"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  class="form-input form-input-md"
                   placeholder="123-45-67890"
                 />
               </div>
@@ -318,7 +318,7 @@
                 <input
                   v-model="form.manager_name"
                   type="text"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  class="form-input form-input-md"
                   placeholder="담당자 이름"
                 />
               </div>
@@ -327,7 +327,7 @@
                 <input
                   v-model="form.manager_contact"
                   type="tel"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  class="form-input form-input-md"
                   placeholder="010-1234-5678"
                 />
               </div>
@@ -394,7 +394,7 @@
            <button
              type="submit"
              :disabled="loading || !form.terms_agreed || !form.privacy_agreed || !usernameAvailable || passwordMismatch || form.password.length < 8 || form.password !== form.passwordConfirm || (registrationCompleted && !tokenVerified)"
-             class="w-full py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+             class="btn btn-lg btn-primary w-full"
            >
              <span v-if="loading">가입 처리 중...</span>
              <span v-else-if="registrationCompleted && !tokenVerified">토큰 인증 후 회원가입</span>
@@ -436,10 +436,10 @@
         </div>
         
         <div class="flex justify-end gap-3 p-6 border-t">
-          <button @click="closeModal" class="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
+          <button @click="closeModal" class="btn btn-md btn-secondary">
             확인
           </button>
-          <button v-if="!getConsentValue()" @click="agreeAndClose" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+          <button v-if="!getConsentValue()" @click="agreeAndClose" class="btn btn-md btn-primary">
             동의하고 닫기
           </button>
         </div>

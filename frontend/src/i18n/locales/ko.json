@@ -17,7 +17,9 @@
     "date": "날짜",
     "amount": "금액",
     "yes": "예",
-    "no": "아니오"
+    "no": "아니오",
+    "select_country": "국가를 선택하세요",
+    "remove": "제거"
   },
   "auth": {
     "login": {
@@ -182,7 +184,17 @@
       "address_placeholder": "수취인 주소를 입력하세요",
       "country": "국가",
       "zip_code": "우편번호",
-      "zip_placeholder": "우편번호를 입력하세요"
+      "zip_placeholder": "우편번호를 입력하세요",
+      "state_province": "시/도",
+      "state_placeholder": "예: 서울특별시, 경기도, Bangkok",
+      "city_district": "구/군/시",
+      "city_placeholder": "예: 강남구, 성남시, Pathum Wan",
+      "street_address": "도로명 주소",
+      "street_placeholder": "예: 테헤란로 123, 123 Sukhumvit Rd",
+      "address_line2": "상세 주소",
+      "address2_placeholder": "아파트, 동호수, 건물명 등",
+      "search_address": "주소 검색",
+      "address_search_coming_soon": "주소 검색 기능은 준비 중입니다"
     },
     "items": {
       "add_item": "상품 추가",
@@ -673,5 +685,18 @@
       "reject_reason": "거절 사유",
       "reject_reason_placeholder": "거절 사유를 입력하세요 (필수)"
     }
+  },
+
+  "countries": {
+    "TH": "태국",
+    "VN": "베트남", 
+    "CN": "중국",
+    "KR": "한국",
+    "JP": "일본",
+    "SG": "싱가포르",
+    "MY": "말레이시아",
+    "ID": "인도네시아",
+    "PH": "필리핀",
+    "US": "미국"
   }
 }

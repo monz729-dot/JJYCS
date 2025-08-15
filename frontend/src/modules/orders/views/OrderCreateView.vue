@@ -36,7 +36,7 @@
             type="text"
             :placeholder="$t('orders.recipient.name_placeholder')"
             required
-            class="form-input"
+            class="form-input form-input-md"
           />
         </div>
 
@@ -47,48 +47,97 @@
             v-model="formData.recipient.phone"
             type="tel"
             :placeholder="$t('orders.recipient.phone_placeholder')"
-            class="form-input"
+            class="form-input form-input-md"
           />
         </div>
 
+        <!-- 국가 선택 먼저 (주소 형식 결정) -->
         <div class="form-group">
-          <label for="recipientAddress" class="required">{{ $t('orders.recipient.address') }}</label>
-          <textarea
-            id="recipientAddress"
-            v-model="formData.recipient.address"
-            :placeholder="$t('orders.recipient.address_placeholder')"
+          <label for="recipientCountry" class="required">{{ $t('orders.recipient.country') }}</label>
+          <Select
+            id="recipientCountry"
+            v-model="formData.recipient.country"
+            :options="countryOptions"
+            :placeholder="$t('common.select_country')"
             required
-            rows="3"
-            class="form-textarea"
-          ></textarea>
+          />
         </div>
 
+        <!-- 우편번호와 주소 검색 -->
         <div class="form-row">
           <div class="form-group">
-            <label for="recipientCountry" class="required">{{ $t('orders.recipient.country') }}</label>
-            <select
-              id="recipientCountry"
-              v-model="formData.recipient.country"
+            <label for="recipientZipCode">{{ $t('orders.recipient.zip_code') }}</label>
+            <div class="flex gap-2">
+              <input
+                id="recipientZipCode"
+                v-model="formData.recipient.zipCode"
+                type="text"
+                :placeholder="$t('orders.recipient.zip_placeholder')"
+                class="form-input form-input-md flex-1"
+                maxlength="10"
+              />
+              <button
+                type="button"
+                class="btn btn-md btn-secondary"
+                @click="searchAddress"
+                v-if="formData.recipient.country === 'KR'"
+              >
+                {{ $t('orders.recipient.search_address') }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 기본 주소 (시/도, 구/군) -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="recipientState" class="required">{{ $t('orders.recipient.state_province') }}</label>
+            <input
+              id="recipientState"
+              v-model="formData.recipient.state"
+              type="text"
+              :placeholder="$t('orders.recipient.state_placeholder')"
               required
-              class="form-select"
-            >
-              <option value="">{{ $t('common.select_country') }}</option>
-              <option value="TH">{{ $t('countries.TH') }}</option>
-              <option value="VN">{{ $t('countries.VN') }}</option>
-              <option value="CN">{{ $t('countries.CN') }}</option>
-            </select>
+              class="form-input form-input-md"
+            />
           </div>
 
           <div class="form-group">
-            <label for="recipientZipCode">{{ $t('orders.recipient.zip_code') }}</label>
+            <label for="recipientCity" class="required">{{ $t('orders.recipient.city_district') }}</label>
             <input
-              id="recipientZipCode"
-              v-model="formData.recipient.zipCode"
+              id="recipientCity"
+              v-model="formData.recipient.city"
               type="text"
-              :placeholder="$t('orders.recipient.zip_placeholder')"
-              class="form-input"
+              :placeholder="$t('orders.recipient.city_placeholder')"
+              required
+              class="form-input form-input-md"
             />
           </div>
+        </div>
+
+        <!-- 상세 주소 -->
+        <div class="form-group">
+          <label for="recipientStreet" class="required">{{ $t('orders.recipient.street_address') }}</label>
+          <input
+            id="recipientStreet"
+            v-model="formData.recipient.streetAddress"
+            type="text"
+            :placeholder="$t('orders.recipient.street_placeholder')"
+            required
+            class="form-input form-input-md"
+          />
+        </div>
+
+        <!-- 상세 주소 2 (아파트, 동호수 등) -->
+        <div class="form-group">
+          <label for="recipientAddress2">{{ $t('orders.recipient.address_line2') }}</label>
+          <input
+            id="recipientAddress2"
+            v-model="formData.recipient.addressLine2"
+            type="text"
+            :placeholder="$t('orders.recipient.address2_placeholder')"
+            class="form-input form-input-md"
+          />
         </div>
       </div>
 
@@ -96,7 +145,7 @@
       <div v-if="currentStep === 1" class="form-step">
         <div class="step-header">
           <h2>{{ $t('orders.create.items_info') }}</h2>
-          <button type="button" @click="addItem" class="btn-add">
+          <button type="button" @click="addItem" class="btn btn-md btn-success">
             {{ $t('orders.items.add_item') }}
           </button>
         </div>
@@ -112,7 +161,7 @@
               v-if="formData.items.length > 1"
               type="button" 
               @click="removeItem(index)"
-              class="btn-remove"
+              class="btn btn-sm btn-error"
             >
               {{ $t('common.remove') }}
             </button>
@@ -127,7 +176,7 @@
                 type="text"
                 :placeholder="$t('orders.items.name_placeholder')"
                 required
-                class="form-input"
+                class="form-input form-input-md"
               />
             </div>
 
@@ -139,7 +188,7 @@
                 type="number"
                 min="1"
                 required
-                class="form-input"
+                class="form-input form-input-md"
               />
             </div>
           </div>
@@ -154,7 +203,7 @@
                 step="0.1"
                 min="0"
                 :placeholder="$t('orders.items.weight_placeholder')"
-                class="form-input"
+                class="form-input form-input-md"
               />
             </div>
 
@@ -167,22 +216,18 @@
                 step="0.01"
                 min="0"
                 required
-                class="form-input"
+                class="form-input form-input-md"
               />
             </div>
 
             <div class="form-group">
               <label :for="`itemCurrency-${index}`" class="required">{{ $t('orders.items.currency') }}</label>
-              <select
+              <Select
                 :id="`itemCurrency-${index}`"
                 v-model="item.currency"
+                :options="currencyOptions"
                 required
-                class="form-select"
-              >
-                <option value="THB">THB</option>
-                <option value="KRW">KRW</option>
-                <option value="USD">USD</option>
-              </select>
+              />
             </div>
           </div>
 
@@ -193,7 +238,7 @@
               v-model="item.hsCode"
               type="text"
               :placeholder="$t('orders.items.hs_code_placeholder')"
-              class="form-input"
+              class="form-input form-input-md"
               @blur="validateHSCode(item, index)"
             />
             <div v-if="hsCodeValidation[index]?.message" class="validation-message">
@@ -215,7 +260,7 @@
       <div v-if="currentStep === 2" class="form-step">
         <div class="step-header">
           <h2>{{ $t('orders.create.boxes_info') }}</h2>
-          <button type="button" @click="addBox" class="btn-add">
+          <button type="button" @click="addBox" class="btn btn-md btn-success">
             {{ $t('orders.boxes.add_box') }}
           </button>
         </div>
@@ -231,7 +276,7 @@
               v-if="formData.boxes.length > 1"
               type="button" 
               @click="removeBox(index)"
-              class="btn-remove"
+              class="btn btn-sm btn-error"
             >
               {{ $t('common.remove') }}
             </button>
@@ -249,7 +294,7 @@
                 step="0.1"
                 min="0.1"
                 required
-                class="form-input"
+                class="form-input form-input-md"
                 @input="calculateCBM"
               />
             </div>
@@ -265,7 +310,7 @@
                 step="0.1"
                 min="0.1"
                 required
-                class="form-input"
+                class="form-input form-input-md"
                 @input="calculateCBM"
               />
             </div>
@@ -281,7 +326,7 @@
                 step="0.1"
                 min="0.1"
                 required
-                class="form-input"
+                class="form-input form-input-md"
                 @input="calculateCBM"
               />
             </div>
@@ -297,7 +342,7 @@
                 step="0.1"
                 min="0"
                 :placeholder="$t('orders.boxes.weight_placeholder')"
-                class="form-input"
+                class="form-input form-input-md"
               />
             </div>
 
@@ -392,7 +437,7 @@
             v-model="formData.shipping.specialInstructions"
             :placeholder="$t('orders.shipping.instructions_placeholder')"
             rows="3"
-            class="form-textarea"
+            class="form-input form-textarea-md"
           ></textarea>
         </div>
       </div>
@@ -403,7 +448,7 @@
           v-if="currentStep > 0"
           type="button" 
           @click="prevStep"
-          class="btn btn-secondary"
+          class="btn btn-md btn-secondary"
         >
           {{ $t('common.previous') }}
         </button>
@@ -412,7 +457,7 @@
           v-if="currentStep < steps.length - 1"
           type="button" 
           @click="nextStep"
-          class="btn btn-primary"
+          class="btn btn-md btn-primary"
           :disabled="!canProceedToNext"
         >
           {{ $t('common.next') }}
@@ -421,7 +466,7 @@
         <button 
           v-if="currentStep === steps.length - 1"
           type="submit"
-          class="btn btn-primary"
+          class="btn btn-md btn-primary"
           :disabled="loading || !canSubmit"
         >
           <LoadingSpinner v-if="loading" size="small" />
@@ -447,6 +492,7 @@ import { useI18n } from 'vue-i18n'
 import { useOrdersApiStore } from '@/stores/ordersApiStore'
 import { useToast } from '@/composables/useToast'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
+import Select from '@/components/ui/Select.vue'
 import CBMWarning from '../components/CBMWarning.vue'
 import WarningModal from '../components/WarningModal.vue'
 import type { BusinessWarning } from '@/stores/ordersApiStore'
@@ -469,14 +515,34 @@ const loading = ref(false)
 const hsCodeValidation = ref<Record<number, { valid: boolean; message: string }>>({})
 const showWarnings = ref<BusinessWarning[]>([])
 
+// 선택 옵션들
+const countryOptions = [
+  { label: t('countries.TH'), value: 'TH' },
+  { label: t('countries.VN'), value: 'VN' },
+  { label: t('countries.CN'), value: 'CN' },
+  { label: t('countries.KR'), value: 'KR' },
+  { label: t('countries.JP'), value: 'JP' }
+]
+
+const currencyOptions = [
+  { label: 'THB', value: 'THB' },
+  { label: 'KRW', value: 'KRW' },
+  { label: 'USD', value: 'USD' },
+  { label: 'JPY', value: 'JPY' }
+]
+
 // 폼 데이터
 const formData = ref({
   recipient: {
     name: '',
     phone: '',
-    address: '',
+    country: '',
     zipCode: '',
-    country: ''
+    state: '',
+    city: '',
+    streetAddress: '',
+    addressLine2: '',
+    address: '' // 전체 주소 (백엔드 호환용)
   },
   items: [{
     name: '',
@@ -520,8 +586,10 @@ const canProceedToNext = computed(() => {
   switch (currentStep.value) {
     case 0: // 수취인 정보
       return formData.value.recipient.name && 
-             formData.value.recipient.address && 
-             formData.value.recipient.country
+             formData.value.recipient.country &&
+             formData.value.recipient.state &&
+             formData.value.recipient.city &&
+             formData.value.recipient.streetAddress
     case 1: // 상품 정보
       return formData.value.items.every(item => 
         item.name && item.quantity > 0 && item.amount > 0 && item.currency)
@@ -632,9 +700,33 @@ const handleShippingMethodChange = (method: string) => {
   formData.value.shipping.preferredType = method
 }
 
+// 주소 검색 (한국 주소만)
+const searchAddress = () => {
+  // TODO: 카카오 주소 API 또는 다음 주소 API 연동
+  // 임시로 alert 표시
+  showToast(t('orders.recipient.address_search_coming_soon'), 'info')
+}
+
+// 주소 필드들을 결합하여 전체 주소 생성
+const updateFullAddress = () => {
+  const parts = [
+    formData.value.recipient.streetAddress,
+    formData.value.recipient.addressLine2,
+    formData.value.recipient.city,
+    formData.value.recipient.state,
+    formData.value.recipient.country,
+    formData.value.recipient.zipCode
+  ].filter(Boolean)
+  
+  formData.value.recipient.address = parts.join(', ')
+}
+
 // 폼 제출
 const handleSubmit = async () => {
   if (!canSubmit.value) return
+
+  // 주소 필드들을 결합하여 전체 주소 생성
+  updateFullAddress()
 
   loading.value = true
 
@@ -701,6 +793,18 @@ const formatCBM = (cbm: number): string => {
 // CBM 변경 감지
 watch(totalCBM, (newCBM) => {
   calculateCBM()
+})
+
+// 주소 필드 변경 감지
+watch([
+  () => formData.value.recipient.streetAddress,
+  () => formData.value.recipient.addressLine2,
+  () => formData.value.recipient.city,
+  () => formData.value.recipient.state,
+  () => formData.value.recipient.country,
+  () => formData.value.recipient.zipCode
+], () => {
+  updateFullAddress()
 })
 </script>
 
@@ -816,20 +920,6 @@ watch(totalCBM, (newCBM) => {
   margin-bottom: 20px;
 }
 
-.btn-add {
-  background: #10b981;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.btn-add:hover {
-  background: #059669;
-}
-
 .item-card, .box-card {
   border: 1px solid #e5e7eb;
   border-radius: 8px;
@@ -848,14 +938,6 @@ watch(totalCBM, (newCBM) => {
   font-size: 16px;
   font-weight: 500;
   color: #1f2937;
-}
-
-.btn-remove {
-  color: #ef4444;
-  background: none;
-  border: none;
-  font-size: 14px;
-  cursor: pointer;
 }
 
 .form-group {
@@ -888,21 +970,6 @@ watch(totalCBM, (newCBM) => {
 .form-group label.required::after {
   content: ' *';
   color: #ef4444;
-}
-
-.form-input, .form-select, .form-textarea {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 14px;
-  transition: border-color 0.15s ease;
-}
-
-.form-input:focus, .form-select:focus, .form-textarea:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .radio-group {
@@ -983,43 +1050,19 @@ watch(totalCBM, (newCBM) => {
   border-top: 1px solid #e5e7eb;
 }
 
-.btn {
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease;
+/* 주소 검색 버튼과 입력 필드 */
+.flex {
   display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
-.btn-primary {
-  background: #3b82f6;
-  color: white;
-  border: 1px solid #3b82f6;
+.gap-2 {
+  gap: 0.5rem;
 }
 
-.btn-primary:hover:not(:disabled) {
-  background: #2563eb;
-  border-color: #2563eb;
+.flex-1 {
+  flex: 1;
 }
 
-.btn-secondary {
-  background: white;
-  color: #374151;
-  border: 1px solid #d1d5db;
-}
-
-.btn-secondary:hover {
-  background: #f9fafb;
-}
-
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
 
 /* 모바일 반응형 */
 @media (max-width: 768px) {
