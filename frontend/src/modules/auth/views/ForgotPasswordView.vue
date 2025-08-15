@@ -114,7 +114,7 @@ const handleSubmit = async () => {
     await new Promise(resolve => setTimeout(resolve, 2000))
     
     // TODO: Implement actual forgot password API call
-    console.log('Sending password reset email to:', email.value)
+    
     
     emailSent.value = true
     toast.success('비밀번호 재설정 이메일을 발송했습니다.')
@@ -140,7 +140,7 @@ const resendEmail = async () => {
     await new Promise(resolve => setTimeout(resolve, 1000))
     
     // TODO: Implement actual resend API call
-    console.log('Resending password reset email to:', email.value)
+    
     
     toast.success('이메일을 다시 발송했습니다.')
     startResendCooldown()

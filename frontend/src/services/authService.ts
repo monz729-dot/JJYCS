@@ -4,27 +4,27 @@ export class AuthService {
   // 회원가입 (이메일 인증 후 완료)
   static async signUp(data: SignUpData): Promise<{ success: boolean; error?: string; requiresEmailVerification?: boolean; userType?: string }> {
     try {
-      console.log('=== 회원가입 디버깅 시작 ===')
-      console.log('회원가입 시도:', data)
-      console.log('현재 URL:', window.location.origin)
-      console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL)
-      console.log('Supabase Anon Key:', import.meta.env.VITE_SUPABASE_ANON_KEY ? '설정됨' : '설정되지 않음')
+      
+      
+      
+      
+      
       
       // Supabase 연결 테스트
       try {
         const { data, error } = await supabase.auth.getSession()
-        console.log('Supabase 연결 테스트 - data:', data)
-        console.log('Supabase 연결 테스트 - error:', error)
+        
+        
       } catch (testError) {
         console.error('Supabase 연결 테스트 실패:', testError)
       }
       
       // 이메일 발송 테스트
-      console.log('이메일 발송 테스트 시작...')
+      
       
       // 기존 세션 완전 클리어
       await supabase.auth.signOut()
-      console.log('기존 세션 클리어 완료')
+      
       
       // 새로운 회원가입 시도 (Supabase가 내부적으로 중복 이메일 처리)
       const signUpOptions = {
@@ -42,18 +42,18 @@ export class AuthService {
         }
       }
       
-      console.log('signUp 호출 옵션:', signUpOptions)
+      
       
       const { data: authData, error: authError } = await supabase.auth.signUp(signUpOptions)
 
-      console.log('Supabase 응답 - data:', authData)
-      console.log('Supabase 응답 - error:', authError)
+      
+      
 
       if (authError) {
         console.error('Supabase Auth 에러:', authError)
         // 이메일 중복 에러인 경우에도 계속 진행
         if (authError.message.includes('already registered') || authError.message.includes('already exists')) {
-          console.log('이메일이 이미 존재하지만 계속 진행:', authError.message)
+          
           return { 
             success: true,
             requiresEmailVerification: true,
@@ -64,9 +64,9 @@ export class AuthService {
       }
 
       if (authData.user) {
-        console.log('이메일 인증 요청 완료:', authData.user)
-        console.log('사용자 이메일 확인 상태:', authData.user.email_confirmed_at)
-        console.log('사용자 메타데이터:', authData.user.user_metadata)
+        
+        
+        
         return { 
           success: true,
           requiresEmailVerification: true,
@@ -74,7 +74,7 @@ export class AuthService {
         }
       }
 
-      console.log('=== 회원가입 디버깅 완료 ===')
+      
       return { success: false, error: '회원가입에 실패했습니다.' }
     } catch (error) {
       console.error('회원가입 실패:', error)
@@ -95,8 +95,8 @@ export class AuthService {
       }
 
       // 프로필 업데이트 (트리거가 이미 생성했으므로)
-      console.log('=== 프로필 업데이트 시작 ===')
-      console.log('사용자 ID:', user.id)
+      
+      
       console.log('프로필 데이터:', {
         username: data.username,
         name: data.name,
@@ -137,8 +137,8 @@ export class AuthService {
         .eq('id', user.id)
         .select()
 
-      console.log('프로필 업데이트 응답 - data:', profileData)
-      console.log('프로필 업데이트 응답 - error:', profileError)
+      
+      
 
       if (profileError) {
         console.error('프로필 업데이트 실패 상세:', {
@@ -150,7 +150,7 @@ export class AuthService {
         throw new Error(`프로필 업데이트에 실패했습니다: ${profileError.message}`)
       }
 
-      console.log('회원가입 완료:', user)
+      
       return { success: true }
     } catch (error) {
       console.error('회원가입 완료 실패:', error)
@@ -210,22 +210,22 @@ export class AuthService {
   // 이메일 인증 토큰 재발송
   static async resendVerificationToken(email: string): Promise<{ success: boolean; error?: string }> {
     try {
-      console.log('=== 토큰 재발송 디버깅 시작 ===')
-      console.log('재발송 요청 이메일:', email)
+      
+      
       
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email: email
       })
 
-      console.log('재발송 응답 - error:', error)
+      
 
       if (error) {
         console.error('재발송 에러:', error)
         throw new Error(error.message)
       }
 
-      console.log('=== 토큰 재발송 디버깅 완료 ===')
+      
       return { success: true }
     } catch (error) {
       console.error('인증 토큰 재발송 실패:', error)
@@ -306,15 +306,15 @@ export class AuthService {
   // 로그인
   static async signIn(data: LoginData): Promise<{ success: boolean; error?: string }> {
     try {
-      console.log('=== 로그인 디버깅 시작 ===')
-      console.log('로그인 시도:', { email: data.email, password: '***' })
+      
+      
       
       // 이메일 또는 아이디로 로그인 처리
       let email = data.email
       
       // 아이디로 로그인 시도하는 경우, 아이디로 이메일 찾기
       if (!data.email.includes('@')) {
-        console.log('아이디로 로그인 시도:', data.email)
+        
         
         try {
           const { data: userProfile, error: profileError } = await supabase
@@ -323,7 +323,7 @@ export class AuthService {
             .eq('username', data.email)
             .single()
           
-          console.log('프로필 조회 결과:', { userProfile, profileError })
+          
           
           if (profileError) {
             console.error('프로필 조회 에러:', profileError)
@@ -332,7 +332,7 @@ export class AuthService {
           
           if (userProfile) {
             email = userProfile.email
-            console.log('이메일 찾음:', email)
+            
           } else {
             throw new Error('존재하지 않는 아이디입니다.')
           }
@@ -342,14 +342,14 @@ export class AuthService {
         }
       }
 
-      console.log('최종 로그인 이메일:', email)
+      
       
       const { data: authData, error } = await supabase.auth.signInWithPassword({
         email: email,
         password: data.password
       })
 
-      console.log('로그인 응답:', { authData, error })
+      
 
       if (error) {
         console.error('로그인 에러:', error)
@@ -358,7 +358,7 @@ export class AuthService {
 
       // 승인 상태 확인
       if (authData.user) {
-        console.log('사용자 인증 성공:', authData.user.id)
+        
         
         try {
           const { data: profile, error: profileError } = await supabase
@@ -367,12 +367,12 @@ export class AuthService {
             .eq('id', authData.user.id)
             .single()
 
-          console.log('프로필 상태 확인:', { profile, profileError })
+          
 
           if (profileError) {
             console.error('프로필 상태 확인 에러:', profileError)
             // 프로필이 없어도 로그인은 허용 (나중에 생성될 수 있음)
-            console.log('프로필이 없지만 로그인 허용')
+            
           } else if (profile) {
             // 모든 사용자 유형에 대해 이메일 인증 확인
             if (!profile.email_verified) {
@@ -397,7 +397,7 @@ export class AuthService {
         }
       }
 
-      console.log('=== 로그인 디버깅 완료 ===')
+      
       return { success: true }
     } catch (error) {
       console.error('로그인 실패:', error)
@@ -597,7 +597,7 @@ export class AuthService {
   // 인증 상태 변경 구독
   static onAuthStateChange(callback: (user: any) => void) {
     return supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state change:', event, session?.user?.id)
+      
       callback(session?.user || null)
     })
   }

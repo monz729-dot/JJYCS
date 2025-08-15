@@ -369,7 +369,7 @@ const activateUser = (userId: string) => {
 }
 
 onMounted(() => {
-  console.log('관리자 사용자 관리 화면 로드됨')
+  
 })
 </script>
 

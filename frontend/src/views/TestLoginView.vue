@@ -230,7 +230,7 @@ const testLogin = async (account: any) => {
   
   try {
     // Mock 로그인 (실제 Supabase 없이 테스트)
-    console.log('테스트 로그인 시도:', account.email)
+    
     
     // 실제 테스트 사용자 ID 매핑
     const userIdMap: Record<string, string> = {

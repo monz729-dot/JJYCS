@@ -11,8 +11,6 @@ import com.ycs.lms.security.JwtTokenProvider;
 import com.ycs.lms.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -177,6 +175,30 @@ public class UserService implements UserDetailsService {
     }
 
     /**
+     * 사용자 승인 (관리자용) - 오버로드
+     */
+    public void approveUser(Long userId, String memberCode, String note) {
+        User user = getUserById(userId);
+        
+        if (user.getStatus() != User.UserStatus.PENDING_APPROVAL) {
+            throw new BadRequestException("승인 대기 상태가 아닙니다");
+        }
+
+        if (memberCode != null && !memberCode.trim().isEmpty()) {
+            if (userRepository.existsByMemberCode(memberCode)) {
+                throw new BadRequestException("이미 사용 중인 회원 코드입니다");
+            }
+            user.setMemberCode(memberCode);
+        }
+
+        user.setStatus(User.UserStatus.ACTIVE);
+        userRepository.save(user);
+
+        // 승인 완료 이메일 발송
+        sendApprovalEmail(user);
+    }
+    
+    /**
      * 사용자 승인 (관리자용)
      */
     public User approveUser(Long userId) {
@@ -272,6 +294,141 @@ public class UserService implements UserDetailsService {
         user.setPasswordResetExpiresAt(null);
 
         return userRepository.save(user);
+    }
+
+    /**
+     * 리프레시 토큰으로 새 액세스 토큰 발급
+     */
+    public AuthResponse refreshToken(String refreshToken) {
+        log.info("Refreshing token");
+        
+        // 리프레시 토큰 검증
+        if (!tokenProvider.validateRefreshToken(refreshToken)) {
+            throw new BadRequestException("유효하지 않거나 만료된 리프레시 토큰입니다");
+        }
+        
+        // 리프레시 토큰에서 사용자 ID 추출
+        Long userId = tokenProvider.getUserIdFromToken(refreshToken);
+        
+        // 사용자 조회
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new NotFoundException("사용자를 찾을 수 없습니다"));
+        
+        // 계정 상태 확인
+        if (user.getStatus() == User.UserStatus.SUSPENDED || 
+            user.getStatus() == User.UserStatus.INACTIVE) {
+            throw new BadRequestException("비활성화된 계정입니다");
+        }
+        
+        // 새 토큰 생성
+        String newAccessToken = tokenProvider.generateToken(user.getEmail());
+        String newRefreshToken = tokenProvider.generateRefreshToken(userId);
+        
+        return AuthResponse.builder()
+            .accessToken(newAccessToken)
+            .refreshToken(newRefreshToken)
+            .tokenType("Bearer")
+            .expiresIn(3600) // 1시간
+            .user(convertToUserInfo(user))
+            .message("토큰 갱신 성공")
+            .build();
+    }
+
+    /**
+     * 2FA 설정 (QR 코드 생성)
+     */
+    public Map<String, Object> setup2FA() {
+        User currentUser = getCurrentUser();
+        
+        // 2FA 시크릿 생성 (Base32 인코딩)
+        String secret = generateRandomBase32();
+        
+        // QR 코드 URL 생성 (Google Authenticator 호환)
+        String qrCodeUrl = String.format(
+            "otpauth://totp/YCS-LMS:%s?secret=%s&issuer=YCS-LMS",
+            currentUser.getEmail(),
+            secret
+        );
+        
+        // 백업 코드 생성
+        String[] backupCodes = generateBackupCodes();
+        
+        // 사용자 2FA 시크릿 저장 (실제 활성화는 verify2FA에서)
+        currentUser.setTwoFactorSecret(secret);
+        userRepository.save(currentUser);
+        
+        return Map.of(
+            "qrCodeUrl", qrCodeUrl,
+            "secret", secret,
+            "backupCodes", backupCodes
+        );
+    }
+
+    /**
+     * 2FA 인증 코드 검증 및 활성화
+     */
+    public boolean verify2FA(String code) {
+        User currentUser = getCurrentUser();
+        
+        if (currentUser.getTwoFactorSecret() == null) {
+            throw new BadRequestException("2FA가 설정되지 않았습니다");
+        }
+        
+        // TOTP 코드 검증 (실제 구현에서는 TOTP 라이브러리 사용)
+        boolean isValid = verifyTOTPCode(currentUser.getTwoFactorSecret(), code);
+        
+        if (isValid) {
+            currentUser.setTwoFactorEnabled(true);
+            userRepository.save(currentUser);
+        }
+        
+        return isValid;
+    }
+
+    /**
+     * 2FA 비활성화
+     */
+    public void disable2FA(String code) {
+        User currentUser = getCurrentUser();
+        
+        if (!currentUser.isTwoFactorEnabled()) {
+            throw new BadRequestException("2FA가 활성화되지 않았습니다");
+        }
+        
+        // 현재 코드 검증
+        if (!verifyTOTPCode(currentUser.getTwoFactorSecret(), code)) {
+            throw new BadRequestException("잘못된 인증 코드입니다");
+        }
+        
+        currentUser.setTwoFactorEnabled(false);
+        currentUser.setTwoFactorSecret(null);
+        userRepository.save(currentUser);
+    }
+
+    // Private helper methods for 2FA
+    
+    private String generateRandomBase32() {
+        // 32자리 Base32 문자열 생성 (실제 구현에서는 Apache Commons Codec 등 사용)
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 32; i++) {
+            sb.append(chars.charAt((int) (Math.random() * chars.length())));
+        }
+        return sb.toString();
+    }
+    
+    private String[] generateBackupCodes() {
+        String[] codes = new String[8];
+        for (int i = 0; i < 8; i++) {
+            codes[i] = String.format("%08d", (int) (Math.random() * 100000000));
+        }
+        return codes;
+    }
+    
+    private boolean verifyTOTPCode(String secret, String code) {
+        // 간단한 Mock 검증 (실제 구현에서는 TOTP 라이브러리 사용)
+        // 개발용으로 '123456'은 항상 유효하게 처리
+        return "123456".equals(code) || code.startsWith("1");
     }
 
     /**

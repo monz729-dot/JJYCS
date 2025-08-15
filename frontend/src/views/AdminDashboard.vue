@@ -280,7 +280,7 @@ const recentActivities = ref([
 ])
 
 onMounted(() => {
-  console.log('관리자 대시보드 로드됨', authStore.user)
+  
 })
 </script>
 

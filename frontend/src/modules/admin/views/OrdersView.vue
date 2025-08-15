@@ -534,15 +534,15 @@ const bulkAction = async (action: string) => {
 }
 
 const bulkExport = () => {
-  console.log('Exporting selected orders:', selectedOrders.value)
+  
 }
 
 const exportOrders = () => {
-  console.log('Exporting all orders...')
+  
 }
 
 const refreshOrders = () => {
-  console.log('Refreshing orders...')
+  
 }
 
 const toggleActionMenu = (orderId: number) => {
@@ -554,7 +554,7 @@ const viewOrder = (order: Order) => {
 }
 
 const editOrder = (order: Order) => {
-  console.log('Edit order:', order.id)
+  
 }
 
 const processOrder = (order: Order) => {
@@ -563,12 +563,12 @@ const processOrder = (order: Order) => {
 }
 
 const generateLabel = (order: Order) => {
-  console.log('Generate label for order:', order.id)
+  
   showActionMenu.value = null
 }
 
 const sendNotification = (order: Order) => {
-  console.log('Send notification for order:', order.id)
+  
   showActionMenu.value = null
 }
 

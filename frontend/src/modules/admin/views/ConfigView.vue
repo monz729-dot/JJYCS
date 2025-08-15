@@ -636,7 +636,7 @@ const saveAllConfig = async () => {
   try {
     // Mock save - replace with actual API call
     await new Promise(resolve => setTimeout(resolve, 1000))
-    console.log('Configuration saved:', config.value)
+    
     alert('설정이 성공적으로 저장되었습니다.')
   } catch (error) {
     console.error('Error saving configuration:', error)
@@ -649,7 +649,7 @@ const saveAllConfig = async () => {
 const resetToDefaults = () => {
   if (confirm('모든 설정을 기본값으로 복원하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
     // Reset to default values
-    console.log('Resetting to defaults...')
+    
     alert('기본값으로 복원되었습니다.')
   }
 }

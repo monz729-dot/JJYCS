@@ -517,7 +517,7 @@ const saveAllSettings = async () => {
   try {
     // Mock save - replace with actual API call
     await new Promise(resolve => setTimeout(resolve, 1000))
-    console.log('Settings saved:', settings.value)
+    
     // Show success message
   } catch (error) {
     console.error('Error saving settings:', error)
@@ -528,7 +528,7 @@ const saveAllSettings = async () => {
 }
 
 const testApi = async (apiType: string) => {
-  console.log(`Testing ${apiType} API...`)
+  
   
   try {
     // Mock API test

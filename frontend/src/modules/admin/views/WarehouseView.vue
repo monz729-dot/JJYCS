@@ -585,27 +585,27 @@ const submitWarehouse = async () => {
 }
 
 const exportData = () => {
-  console.log('Exporting warehouse data...')
+  
 }
 
 const refreshWarehouses = () => {
-  console.log('Refreshing warehouse data...')
+  
 }
 
 const viewWarehouse = (warehouse: Warehouse) => {
-  console.log('View warehouse:', warehouse.id)
+  
 }
 
 const editWarehouse = (warehouse: Warehouse) => {
-  console.log('Edit warehouse:', warehouse.id)
+  
 }
 
 const manageInventory = (warehouse: Warehouse) => {
-  console.log('Manage inventory for warehouse:', warehouse.id)
+  
 }
 
 const resolveAlert = (alert: any) => {
-  console.log('Resolve alert:', alert.id)
+  
   const index = inventoryAlerts.value.findIndex(a => a.id === alert.id)
   if (index !== -1) {
     inventoryAlerts.value.splice(index, 1)

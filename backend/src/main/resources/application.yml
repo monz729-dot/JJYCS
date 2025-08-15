@@ -68,10 +68,10 @@ spring:
       ddl-auto: create-drop
       naming:
         physical-strategy: org.hibernate.boot.model.naming.SnakeCasePhysicalNamingStrategy
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
     defer-datasource-initialization: true
     
   sql:
@@ -110,9 +110,9 @@ management:
 logging:
   level:
     root: INFO
-    com.ycs.lms: DEBUG
-    org.springframework.web: DEBUG
-    org.mybatis: DEBUG
+    com.ycs.lms: INFO
+    org.springframework.web: WARN
+    org.mybatis: WARN
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
@@ -122,9 +122,14 @@ logging:
 # Application specific properties
 app:
   jwt:
-    secret: ${JWT_SECRET:ycs-lms-secret-key-for-jwt-token-generation-2024}
-    expiration: 3600000 # 1 hour
-    refresh-expiration: 604800000 # 7 days
+    # 환경변수에서 강력한 Base64 인코딩된 비밀키 사용 (최소 512비트)
+    secret: ${JWT_SECRET:}
+    expiration: ${JWT_EXPIRATION:3600000} # 1 hour (기본값)
+    refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000} # 7 days (기본값)
+    # JWT 발급자 정보
+    issuer: ${JWT_ISSUER:ycs-lms}
+    # 허용되는 클럭 스큐 (초)
+    clock-skew: ${JWT_CLOCK_SKEW:300}
     
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:3000,http://localhost:5173}

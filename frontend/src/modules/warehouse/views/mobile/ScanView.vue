@@ -813,7 +813,7 @@ const closeDetailModal = () => {
 }
 
 const handleScanAction = (action: string, data?: any) => {
-  console.log('Scan action:', action, data)
+  
   closeDetailModal()
 }
 

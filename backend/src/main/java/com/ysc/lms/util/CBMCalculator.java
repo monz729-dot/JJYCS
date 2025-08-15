@@ -44,7 +44,6 @@ public class CBMCalculator {
         BigDecimal volumeCm3 = widthCm.multiply(heightCm).multiply(depthCm);
         BigDecimal cbmM3 = volumeCm3.divide(CBM_CONVERSION_FACTOR, CBM_SCALE, RoundingMode.HALF_UP);
         
-        log.debug("CBM 계산: {}×{}×{} cm = {} cm³ = {} m³", 
                  widthCm, heightCm, depthCm, volumeCm3, cbmM3);
         
         return cbmM3;
@@ -65,7 +64,6 @@ public class CBMCalculator {
                 .map(box -> calculateCBM(box.getWidth(), box.getHeight(), box.getDepth()))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         
-        log.debug("총 CBM 계산: {} 개 박스 = {} m³", boxes.size(), totalCBM);
         
         return totalCBM;
     }
@@ -82,7 +80,6 @@ public class CBMCalculator {
             log.info("CBM {} m³이 임계값 {} m³을 초과하여 항공 배송 추천", totalCBM, threshold);
             return "air";
         } else {
-            log.debug("CBM {} m³이 임계값 이하이므로 해상 배송 추천", totalCBM);
             return "sea";
         }
     }

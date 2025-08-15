@@ -28,9 +28,29 @@ public class JwtTokenProvider {
     @Value("${app.jwt.refresh-expiration}")
     private long refreshExpiration;
 
+    @Value("${app.jwt.issuer}")
+    private String issuer;
+
+    @Value("${app.jwt.clock-skew}")
+    private long clockSkew;
+
     private Key getSigningKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
-        return Keys.hmacShaKeyFor(keyBytes);
+        if (jwtSecret == null || jwtSecret.trim().isEmpty()) {
+            throw new IllegalStateException("JWT secret key is not configured. Please set JWT_SECRET environment variable.");
+        }
+        
+        try {
+            byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
+            
+            // HMAC-SHA512를 위해 최소 512비트(64바이트) 키 길이 검증
+            if (keyBytes.length < 64) {
+                throw new IllegalStateException("JWT secret key must be at least 512 bits (64 bytes) for HMAC-SHA512");
+            }
+            
+            return Keys.hmacShaKeyFor(keyBytes);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalStateException("JWT secret key must be a valid Base64 encoded string", e);
+        }
     }
 
     public String generateToken(Authentication authentication) {
@@ -52,8 +72,10 @@ public class JwtTokenProvider {
         return Jwts.builder()
             .setClaims(claims)
             .setSubject(Long.toString(userPrincipal.getId()))
+            .setIssuer(issuer)
             .setIssuedAt(now)
             .setExpiration(expiryDate)
+            .setAudience("ycs-lms-client")
             .signWith(getSigningKey(), SignatureAlgorithm.HS512)
             .compact();
     }
@@ -64,8 +86,10 @@ public class JwtTokenProvider {
         
         return Jwts.builder()
             .setSubject(Long.toString(userId))
+            .setIssuer(issuer)
             .setIssuedAt(now)
             .setExpiration(expiryDate)
+            .setAudience("ycs-lms-refresh")
             .signWith(getSigningKey(), SignatureAlgorithm.HS512)
             .compact();
     }
@@ -94,19 +118,24 @@ public class JwtTokenProvider {
         try {
             Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
+                .requireIssuer(issuer)
+                .requireAudience("ycs-lms-client")
+                .setAllowedClockSkewSeconds(clockSkew)
                 .build()
                 .parseClaimsJws(authToken);
             return true;
         } catch (SecurityException ex) {
-            log.error("Invalid JWT signature");
+            log.error("Invalid JWT signature: {}", ex.getMessage());
         } catch (MalformedJwtException ex) {
-            log.error("Invalid JWT token");
+            log.error("Invalid JWT token: {}", ex.getMessage());
         } catch (ExpiredJwtException ex) {
-            log.error("Expired JWT token");
+            log.error("Expired JWT token: {}", ex.getMessage());
         } catch (UnsupportedJwtException ex) {
-            log.error("Unsupported JWT token");
+            log.error("Unsupported JWT token: {}", ex.getMessage());
         } catch (IllegalArgumentException ex) {
-            log.error("JWT claims string is empty");
+            log.error("JWT claims string is empty: {}", ex.getMessage());
+        } catch (Exception ex) {
+            log.error("JWT validation failed: {}", ex.getMessage());
         }
         return false;
     }
@@ -114,8 +143,29 @@ public class JwtTokenProvider {
     public Claims getClaimsFromToken(String token) {
         return Jwts.parserBuilder()
             .setSigningKey(getSigningKey())
+            .requireIssuer(issuer)
+            .setAllowedClockSkewSeconds(clockSkew)
             .build()
             .parseClaimsJws(token)
             .getBody();
+    }
+    
+    /**
+     * 리프레시 토큰 검증
+     */
+    public boolean validateRefreshToken(String refreshToken) {
+        try {
+            Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .requireIssuer(issuer)
+                .requireAudience("ycs-lms-refresh")
+                .setAllowedClockSkewSeconds(clockSkew)
+                .build()
+                .parseClaimsJws(refreshToken);
+            return true;
+        } catch (Exception ex) {
+            log.error("Refresh token validation failed: {}", ex.getMessage());
+            return false;
+        }
     }
 }

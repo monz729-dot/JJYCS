@@ -622,15 +622,15 @@ const errorLogs = ref([
 
 // Methods
 const loadReports = () => {
-  console.log('Loading reports for period:', selectedPeriod.value)
+  
 }
 
 const exportAllReports = () => {
-  console.log('Exporting all reports...')
+  
 }
 
 const exportReport = (type: string) => {
-  console.log(`Exporting ${type} report...`)
+  
 }
 
 const formatDate = (date: string) => {

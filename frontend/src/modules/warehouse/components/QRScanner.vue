@@ -356,7 +356,6 @@ const stopScanning = async () => {
 }
 
 const onScanSuccess = (decodedText: string) => {
-  console.log('QR Code scanned:', decodedText)
   
   // Store recent scan
   recentScan.value = {

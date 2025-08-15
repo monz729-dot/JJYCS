@@ -54,11 +54,60 @@ public interface OrderMapper {
         @Result(property = "estimatedCost", column = "estimated_cost"),
         @Result(property = "actualCost", column = "actual_cost"),
         @Result(property = "createdAt", column = "created_at"),
-        @Result(property = "updatedAt", column = "updated_at"),
-        @Result(property = "items", column = "id", many = @Many(select = "findOrderItemsByOrderId")),
-        @Result(property = "boxes", column = "id", many = @Many(select = "findOrderBoxesByOrderId"))
+        @Result(property = "updatedAt", column = "updated_at")
     })
     Order findOrderById(Long orderId);
+
+    /**
+     * N+1 문제 해결을 위한 최적화된 주문 조회 (items와 boxes 포함)
+     */
+    @Select("""
+        SELECT 
+            o.*, 
+            u.name as user_name, u.email as user_email, u.member_code as user_member_code, u.role as user_role,
+            oi.id as item_id, oi.item_order, oi.name as item_name, oi.description as item_description,
+            oi.category, oi.quantity, oi.unit_weight, oi.unit_price, oi.total_amount as item_total_amount,
+            oi.currency as item_currency, oi.hs_code, oi.ems_code, oi.country_of_origin, oi.brand, oi.model,
+            oi.restriction_note, oi.created_at as item_created_at, oi.updated_at as item_updated_at,
+            ob.id as box_id, ob.box_number, ob.label_code, ob.qr_code_url, 
+            ob.width_cm, ob.height_cm, ob.depth_cm, ob.cbm_m3, ob.weight_kg,
+            ob.warehouse_id, ob.warehouse_location, ob.inbound_date, ob.outbound_date,
+            ob.tracking_number, ob.shipped_date, ob.status as box_status, ob.item_ids,
+            ob.created_at as box_created_at, ob.updated_at as box_updated_at
+        FROM orders o
+        JOIN users u ON o.user_id = u.id
+        LEFT JOIN order_items oi ON o.id = oi.order_id
+        LEFT JOIN order_boxes ob ON o.id = ob.order_id
+        WHERE o.id = #{orderId}
+        ORDER BY oi.item_order, ob.box_number
+    """)
+    @Results({
+        @Result(property = "id", column = "id"),
+        @Result(property = "orderCode", column = "order_code"),
+        @Result(property = "userId", column = "user_id"),
+        @Result(property = "orderType", column = "order_type"),
+        @Result(property = "recipientName", column = "recipient_name"),
+        @Result(property = "recipientPhone", column = "recipient_phone"),
+        @Result(property = "recipientAddress", column = "recipient_address"),
+        @Result(property = "recipientZipCode", column = "recipient_zip_code"),
+        @Result(property = "recipientCountry", column = "recipient_country"),
+        @Result(property = "needsRepacking", column = "needs_repacking"),
+        @Result(property = "specialInstructions", column = "special_instructions"),
+        @Result(property = "totalAmount", column = "total_amount"),
+        @Result(property = "totalCbmM3", column = "total_cbm_m3"),
+        @Result(property = "requiresExtraRecipient", column = "requires_extra_recipient"),
+        @Result(property = "estimatedDeliveryDate", column = "estimated_delivery_date"),
+        @Result(property = "actualDeliveryDate", column = "actual_delivery_date"),
+        @Result(property = "paymentMethod", column = "payment_method"),
+        @Result(property = "paymentStatus", column = "payment_status"),
+        @Result(property = "createdBy", column = "created_by"),
+        @Result(property = "assignedWarehouseId", column = "assigned_warehouse_id"),
+        @Result(property = "estimatedCost", column = "estimated_cost"),
+        @Result(property = "actualCost", column = "actual_cost"),
+        @Result(property = "createdAt", column = "created_at"),
+        @Result(property = "updatedAt", column = "updated_at")
+    })
+    Order findOrderByIdWithDetails(Long orderId);
 
     @Select("""
         <script>

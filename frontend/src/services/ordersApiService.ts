@@ -137,12 +137,12 @@ export class SpringBootOrdersService {
   // 주문 생성
   static async createOrder(orderData: OrderCreateRequest): Promise<{ success: boolean; data?: OrderResponse; error?: string }> {
     try {
-      console.log('=== 주문 생성 시작 ===')
-      console.log('주문 데이터:', orderData)
+      
+      
       
       const response = await apiClient.post<OrderResponse>('/orders', orderData)
       
-      console.log('주문 생성 응답:', response.data)
+      
       
       return { 
         success: true, 
@@ -160,8 +160,8 @@ export class SpringBootOrdersService {
   // 주문 목록 조회
   static async getOrders(params: OrderListParams = {}): Promise<{ success: boolean; data?: PageResponse<OrderResponse>; error?: string }> {
     try {
-      console.log('=== 주문 목록 조회 시작 ===')
-      console.log('조회 파라미터:', params)
+      
+      
       
       // 쿼리 파라미터 구성
       const queryParams = new URLSearchParams()
@@ -176,7 +176,7 @@ export class SpringBootOrdersService {
       
       const response = await apiClient.get<PageResponse<OrderResponse>>(`/orders?${queryParams}`)
       
-      console.log('주문 목록 응답:', response.data)
+      
       
       return { 
         success: true, 
@@ -194,12 +194,12 @@ export class SpringBootOrdersService {
   // 주문 상세 조회
   static async getOrder(orderId: number): Promise<{ success: boolean; data?: OrderResponse; error?: string }> {
     try {
-      console.log('=== 주문 상세 조회 시작 ===')
-      console.log('주문 ID:', orderId)
+      
+      
       
       const response = await apiClient.get<OrderResponse>(`/orders/${orderId}`)
       
-      console.log('주문 상세 응답:', response.data)
+      
       
       return { 
         success: true, 
@@ -217,12 +217,12 @@ export class SpringBootOrdersService {
   // 주문 상태 업데이트
   static async updateOrderStatus(orderId: number, status: string): Promise<{ success: boolean; data?: OrderResponse; error?: string }> {
     try {
-      console.log('=== 주문 상태 업데이트 시작 ===')
-      console.log('주문 ID:', orderId, '상태:', status)
+      
+      
       
       const response = await apiClient.put<OrderResponse>(`/orders/${orderId}/status`, { status })
       
-      console.log('상태 업데이트 응답:', response.data)
+      
       
       return { 
         success: true, 
@@ -240,12 +240,12 @@ export class SpringBootOrdersService {
   // 주문 취소
   static async cancelOrder(orderId: number, reason: string): Promise<{ success: boolean; data?: OrderResponse; error?: string }> {
     try {
-      console.log('=== 주문 취소 시작 ===')
-      console.log('주문 ID:', orderId, '취소 사유:', reason)
+      
+      
       
       const response = await apiClient.put<OrderResponse>(`/orders/${orderId}/cancel`, { reason })
       
-      console.log('주문 취소 응답:', response.data)
+      
       
       return { 
         success: true, 
@@ -263,13 +263,13 @@ export class SpringBootOrdersService {
   // 사용자별 주문 통계 조회
   static async getUserOrderStats(userId?: number): Promise<{ success: boolean; data?: OrderStatsResponse; error?: string }> {
     try {
-      console.log('=== 주문 통계 조회 시작 ===')
-      console.log('사용자 ID:', userId)
+      
+      
       
       const url = userId ? `/orders/stats?userId=${userId}` : '/orders/stats'
       const response = await apiClient.get<OrderStatsResponse>(url)
       
-      console.log('주문 통계 응답:', response.data)
+      
       
       return { 
         success: true, 
@@ -287,8 +287,8 @@ export class SpringBootOrdersService {
   // 최근 주문 조회
   static async getRecentOrders(userId?: number, limit: number = 5): Promise<{ success: boolean; data?: OrderResponse[]; error?: string }> {
     try {
-      console.log('=== 최근 주문 조회 시작 ===')
-      console.log('사용자 ID:', userId, '개수:', limit)
+      
+      
       
       const params = new URLSearchParams()
       if (userId) params.append('userId', userId.toString())
@@ -296,7 +296,7 @@ export class SpringBootOrdersService {
       
       const response = await apiClient.get<OrderResponse[]>(`/orders/recent?${params}`)
       
-      console.log('최근 주문 응답:', response.data)
+      
       
       return { 
         success: true, 

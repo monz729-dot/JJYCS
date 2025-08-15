@@ -13,7 +13,7 @@ export const ordersApi = {
     userId?: string
   } = {}) {
     try {
-      console.log('주문 목록 조회 시작:', params)
+      
       
       let query = supabase
         .from('orders')
@@ -58,7 +58,7 @@ export const ordersApi = {
 
       const { data, error, count } = await query.range(from, to)
 
-      console.log('주문 목록 조회 결과:', { data, error, count })
+      
 
       if (error) {
         console.error('주문 목록 조회 에러:', error)
@@ -94,7 +94,7 @@ export const ordersApi = {
   // 주문 상세 조회
   async getOrder(id: string) {
     try {
-      console.log('주문 상세 조회:', id)
+      
       
       const { data, error } = await supabase
         .from('orders')
@@ -110,7 +110,7 @@ export const ordersApi = {
         .eq('id', id)
         .single()
 
-      console.log('주문 상세 조회 결과:', { data, error })
+      
 
       if (error) {
         console.error('주문 상세 조회 에러:', error)
@@ -134,7 +134,7 @@ export const ordersApi = {
   // 주문 생성
   async createOrder(orderData: any) {
     try {
-      console.log('주문 생성 시작:', orderData)
+      
       
       const { data, error } = await supabase
         .from('orders')
@@ -145,7 +145,7 @@ export const ordersApi = {
         `)
         .single()
 
-      console.log('주문 생성 결과:', { data, error })
+      
 
       if (error) {
         console.error('주문 생성 에러:', error)
@@ -169,7 +169,7 @@ export const ordersApi = {
   // 주문 취소
   async cancelOrder(id: string, reason: string, details?: string) {
     try {
-      console.log('주문 취소 시작:', { id, reason, details })
+      
       
       const { data, error } = await supabase
         .from('orders')
@@ -187,7 +187,7 @@ export const ordersApi = {
         `)
         .single()
 
-      console.log('주문 취소 결과:', { data, error })
+      
 
       if (error) {
         console.error('주문 취소 에러:', error)
@@ -211,7 +211,7 @@ export const ordersApi = {
   // 주문 상태 변경 (어드민/창고 관리자용)
   async updateOrderStatus(id: string, status: string) {
     try {
-      console.log('주문 상태 변경:', { id, status })
+      
       
       const { data, error } = await supabase
         .from('orders')
@@ -226,7 +226,7 @@ export const ordersApi = {
         `)
         .single()
 
-      console.log('주문 상태 변경 결과:', { data, error })
+      
 
       if (error) {
         console.error('주문 상태 변경 에러:', error)
@@ -250,7 +250,7 @@ export const ordersApi = {
   // 일괄 상태 업데이트
   async batchUpdateOrders(orderIds: string[], updates: Partial<Order>) {
     try {
-      console.log('일괄 주문 업데이트:', { orderIds, updates })
+      
       
       const { data, error } = await supabase
         .from('orders')
@@ -264,7 +264,7 @@ export const ordersApi = {
           user_profiles!orders_user_id_fkey(username, name)
         `)
 
-      console.log('일괄 주문 업데이트 결과:', { data, error })
+      
 
       if (error) {
         console.error('일괄 주문 업데이트 에러:', error)
@@ -288,7 +288,7 @@ export const ordersApi = {
   // 주문 통계 (대시보드용)
   async getOrderStats(userId?: string) {
     try {
-      console.log('주문 통계 조회:', userId)
+      
       
       let query = supabase.from('orders').select('status')
       
@@ -315,7 +315,7 @@ export const ordersApi = {
         delayed: data?.filter(o => o.status === 'delayed').length || 0
       }
 
-      console.log('주문 통계 결과:', stats)
+      
 
       return {
         success: true,

@@ -91,12 +91,12 @@ export class SpringBootAuthService {
   // 회원가입
   static async signUp(data: SignUpRequest): Promise<{ success: boolean; data?: AuthResponse; error?: string }> {
     try {
-      console.log('=== Spring Boot 회원가입 시작 ===')
-      console.log('회원가입 데이터:', data)
+      
+      
       
       const response = await apiClient.post<AuthResponse>('/auth/signup', data)
       
-      console.log('회원가입 응답:', response.data)
+      
       
       // JWT 토큰 저장
       if (response.data.accessToken) {
@@ -120,12 +120,12 @@ export class SpringBootAuthService {
   // 로그인
   static async signIn(data: LoginRequest): Promise<{ success: boolean; data?: AuthResponse; error?: string }> {
     try {
-      console.log('=== Spring Boot 로그인 시작 ===')
-      console.log('로그인 데이터:', { email: data.email, password: '***' })
+      
+      
       
       const response = await apiClient.post<AuthResponse>('/auth/login', data)
       
-      console.log('로그인 응답:', response.data)
+      
       
       // JWT 토큰 저장
       if (response.data.accessToken) {

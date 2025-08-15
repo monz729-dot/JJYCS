@@ -191,8 +191,8 @@ export class SpringBootWarehouseService {
   // QR 스캔 처리
   static async scanBox(scanData: ScanRequest): Promise<{ success: boolean; data?: ScanResponse; error?: string }> {
     try {
-      console.log('=== QR 스캔 시작 ===')
-      console.log('스캔 데이터:', scanData)
+      
+      
       
       // FormData 사용 (사진 업로드 가능)
       const formData = new FormData()
@@ -215,7 +215,7 @@ export class SpringBootWarehouseService {
         }
       })
       
-      console.log('스캔 응답:', response.data)
+      
       
       return { 
         success: true, 
@@ -233,12 +233,12 @@ export class SpringBootWarehouseService {
   // 일괄 처리
   static async batchProcess(batchData: BatchProcessRequest): Promise<{ success: boolean; data?: BatchProcessResponse; error?: string }> {
     try {
-      console.log('=== 일괄 처리 시작 ===')
-      console.log('일괄 처리 데이터:', batchData)
+      
+      
       
       const response = await apiClient.post<BatchProcessResponse>('/warehouse/batch-process', batchData)
       
-      console.log('일괄 처리 응답:', response.data)
+      
       
       return { 
         success: true, 
@@ -256,8 +256,8 @@ export class SpringBootWarehouseService {
   // 재고 조회
   static async getInventory(warehouseId?: number, status?: string, page: number = 0, size: number = 20): Promise<{ success: boolean; data?: PageResponse<InventoryResponse>; error?: string }> {
     try {
-      console.log('=== 재고 조회 시작 ===')
-      console.log('파라미터:', { warehouseId, status, page, size })
+      
+      
       
       const params = new URLSearchParams()
       if (warehouseId) params.append('warehouseId', warehouseId.toString())
@@ -267,7 +267,7 @@ export class SpringBootWarehouseService {
       
       const response = await apiClient.get<PageResponse<InventoryResponse>>(`/warehouse/inventory?${params}`)
       
-      console.log('재고 조회 응답:', response.data)
+      
       
       return { 
         success: true, 
@@ -285,12 +285,12 @@ export class SpringBootWarehouseService {
   // 박스 보류 처리
   static async holdBox(boxId: number, reason: string): Promise<{ success: boolean; data?: BoxResponse; error?: string }> {
     try {
-      console.log('=== 박스 보류 시작 ===')
-      console.log('박스 ID:', boxId, '사유:', reason)
+      
+      
       
       const response = await apiClient.post<BoxResponse>(`/warehouse/boxes/${boxId}/hold`, { reason })
       
-      console.log('박스 보류 응답:', response.data)
+      
       
       return { 
         success: true, 
@@ -308,12 +308,12 @@ export class SpringBootWarehouseService {
   // 믹스박스 생성
   static async createMixbox(mixboxData: MixboxRequest): Promise<{ success: boolean; data?: MixboxResponse; error?: string }> {
     try {
-      console.log('=== 믹스박스 생성 시작 ===')
-      console.log('믹스박스 데이터:', mixboxData)
+      
+      
       
       const response = await apiClient.post<MixboxResponse>('/warehouse/mixbox', mixboxData)
       
-      console.log('믹스박스 생성 응답:', response.data)
+      
       
       return { 
         success: true, 
@@ -331,8 +331,8 @@ export class SpringBootWarehouseService {
   // 스캔 이력 조회
   static async getScanHistory(labelCode?: string, startDate?: string, endDate?: string, page: number = 0, size: number = 20): Promise<{ success: boolean; data?: PageResponse<ScanEventResponse>; error?: string }> {
     try {
-      console.log('=== 스캔 이력 조회 시작 ===')
-      console.log('파라미터:', { labelCode, startDate, endDate, page, size })
+      
+      
       
       const params = new URLSearchParams()
       if (labelCode) params.append('labelCode', labelCode)
@@ -343,7 +343,7 @@ export class SpringBootWarehouseService {
       
       const response = await apiClient.get<PageResponse<ScanEventResponse>>(`/warehouse/scan-history?${params}`)
       
-      console.log('스캔 이력 응답:', response.data)
+      
       
       return { 
         success: true, 
@@ -361,12 +361,12 @@ export class SpringBootWarehouseService {
   // 라벨 생성
   static async generateLabel(boxId: number): Promise<{ success: boolean; data?: LabelResponse; error?: string }> {
     try {
-      console.log('=== 라벨 생성 시작 ===')
-      console.log('박스 ID:', boxId)
+      
+      
       
       const response = await apiClient.post<LabelResponse>(`/warehouse/labels/${boxId}`)
       
-      console.log('라벨 생성 응답:', response.data)
+      
       
       return { 
         success: true, 
@@ -384,12 +384,12 @@ export class SpringBootWarehouseService {
   // 라벨 인쇄
   static async printLabel(boxId: number): Promise<{ success: boolean; error?: string }> {
     try {
-      console.log('=== 라벨 인쇄 시작 ===')
-      console.log('박스 ID:', boxId)
+      
+      
       
       await apiClient.post(`/warehouse/labels/${boxId}/print`)
       
-      console.log('라벨 인쇄 요청 완료')
+      
       
       return { 
         success: true
@@ -406,7 +406,7 @@ export class SpringBootWarehouseService {
   // QR 코드 스캔 (카메라/파일 업로드)
   static async scanQRCode(file: File): Promise<{ success: boolean; data?: string; error?: string }> {
     try {
-      console.log('=== QR 코드 스캔 시작 ===')
+      
       
       const formData = new FormData()
       formData.append('qrImage', file)
@@ -417,7 +417,7 @@ export class SpringBootWarehouseService {
         }
       })
       
-      console.log('QR 코드 스캔 응답:', response.data)
+      
       
       return { 
         success: true, 
@@ -435,13 +435,13 @@ export class SpringBootWarehouseService {
   // 창고 대시보드 통계
   static async getWarehouseStats(warehouseId?: number): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
-      console.log('=== 창고 통계 조회 시작 ===')
-      console.log('창고 ID:', warehouseId)
+      
+      
       
       const url = warehouseId ? `/warehouse/stats?warehouseId=${warehouseId}` : '/warehouse/stats'
       const response = await apiClient.get(url)
       
-      console.log('창고 통계 응답:', response.data)
+      
       
       return { 
         success: true, 

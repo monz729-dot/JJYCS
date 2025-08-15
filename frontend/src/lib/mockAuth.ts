@@ -280,11 +280,11 @@ export const mockSupabase = {
       })
     }),
     insert: async (data: any) => {
-      console.log(`Mock insert to ${table}:`, data)
+      
       return { data, error: null }
     },
     update: async (data: any) => {
-      console.log(`Mock update to ${table}:`, data)
+      
       return { data, error: null }
     }
   })

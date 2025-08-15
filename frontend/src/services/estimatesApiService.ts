@@ -88,12 +88,12 @@ export class SpringBootEstimatesService {
   // 견적 생성
   static async createEstimate(orderId: number, estimateData: EstimateCreateRequest): Promise<{ success: boolean; data?: EstimateResponse; error?: string }> {
     try {
-      console.log('=== 견적 생성 시작 ===')
-      console.log('주문 ID:', orderId, '견적 데이터:', estimateData)
+      
+      
       
       const response = await apiClient.post<EstimateResponse>(`/orders/${orderId}/estimates`, estimateData)
       
-      console.log('견적 생성 응답:', response.data)
+      
       
       return { 
         success: true, 
@@ -111,12 +111,12 @@ export class SpringBootEstimatesService {
   // 주문별 견적 목록 조회
   static async getEstimates(orderId: number): Promise<{ success: boolean; data?: EstimateResponse[]; error?: string }> {
     try {
-      console.log('=== 견적 목록 조회 시작 ===')
-      console.log('주문 ID:', orderId)
+      
+      
       
       const response = await apiClient.get<EstimateResponse[]>(`/orders/${orderId}/estimates`)
       
-      console.log('견적 목록 응답:', response.data)
+      
       
       return { 
         success: true, 
@@ -134,12 +134,12 @@ export class SpringBootEstimatesService {
   // 견적 상세 조회
   static async getEstimate(estimateId: number): Promise<{ success: boolean; data?: EstimateResponse; error?: string }> {
     try {
-      console.log('=== 견적 상세 조회 시작 ===')
-      console.log('견적 ID:', estimateId)
+      
+      
       
       const response = await apiClient.get<EstimateResponse>(`/estimates/${estimateId}`)
       
-      console.log('견적 상세 응답:', response.data)
+      
       
       return { 
         success: true, 
@@ -157,12 +157,12 @@ export class SpringBootEstimatesService {
   // 견적 응답 (승인/거부)
   static async respondToEstimate(estimateId: number, responseData: EstimateResponseRequest): Promise<{ success: boolean; data?: EstimateResponse; error?: string }> {
     try {
-      console.log('=== 견적 응답 시작 ===')
-      console.log('견적 ID:', estimateId, '응답 데이터:', responseData)
+      
+      
       
       const response = await apiClient.post<EstimateResponse>(`/estimates/${estimateId}/respond`, responseData)
       
-      console.log('견적 응답 결과:', response.data)
+      
       
       return { 
         success: true, 
@@ -180,12 +180,12 @@ export class SpringBootEstimatesService {
   // 견적 수정
   static async updateEstimate(estimateId: number, estimateData: EstimateCreateRequest): Promise<{ success: boolean; data?: EstimateResponse; error?: string }> {
     try {
-      console.log('=== 견적 수정 시작 ===')
-      console.log('견적 ID:', estimateId, '견적 데이터:', estimateData)
+      
+      
       
       const response = await apiClient.put<EstimateResponse>(`/estimates/${estimateId}`, estimateData)
       
-      console.log('견적 수정 응답:', response.data)
+      
       
       return { 
         success: true, 
@@ -203,12 +203,12 @@ export class SpringBootEstimatesService {
   // 2차 견적 생성
   static async createSecondEstimate(firstEstimateId: number, estimateData: EstimateCreateRequest): Promise<{ success: boolean; data?: EstimateResponse; error?: string }> {
     try {
-      console.log('=== 2차 견적 생성 시작 ===')
-      console.log('1차 견적 ID:', firstEstimateId, '견적 데이터:', estimateData)
+      
+      
       
       const response = await apiClient.post<EstimateResponse>(`/estimates/${firstEstimateId}/second-estimate`, estimateData)
       
-      console.log('2차 견적 생성 응답:', response.data)
+      
       
       return { 
         success: true, 
@@ -226,8 +226,8 @@ export class SpringBootEstimatesService {
   // 견적 자동 계산 (시뮬레이션)
   static async calculateEstimate(orderId: number, shippingMethod: string, carrier?: string, serviceLevel?: string): Promise<{ success: boolean; data?: EstimateCalculationResponse; error?: string }> {
     try {
-      console.log('=== 견적 계산 시작 ===')
-      console.log('파라미터:', { orderId, shippingMethod, carrier, serviceLevel })
+      
+      
       
       const params = new URLSearchParams()
       params.append('shippingMethod', shippingMethod)
@@ -236,7 +236,7 @@ export class SpringBootEstimatesService {
       
       const response = await apiClient.get<EstimateCalculationResponse>(`/orders/${orderId}/estimate-calculation?${params}`)
       
-      console.log('견적 계산 응답:', response.data)
+      
       
       return { 
         success: true, 
@@ -254,12 +254,12 @@ export class SpringBootEstimatesService {
   // 견적 취소
   static async cancelEstimate(estimateId: number): Promise<{ success: boolean; error?: string }> {
     try {
-      console.log('=== 견적 취소 시작 ===')
-      console.log('견적 ID:', estimateId)
+      
+      
       
       await apiClient.delete(`/estimates/${estimateId}`)
       
-      console.log('견적 취소 완료')
+      
       
       return { 
         success: true
@@ -276,11 +276,11 @@ export class SpringBootEstimatesService {
   // 견적 상태별 통계
   static async getEstimateStats(): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
-      console.log('=== 견적 통계 조회 시작 ===')
+      
       
       const response = await apiClient.get('/estimates/stats')
       
-      console.log('견적 통계 응답:', response.data)
+      
       
       return { 
         success: true, 

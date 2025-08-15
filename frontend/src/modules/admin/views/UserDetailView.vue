@@ -470,12 +470,12 @@ const saveUser = async () => {
 const resetPassword = () => {
   if (confirm('비밀번호를 재설정하시겠습니까? 새 비밀번호가 사용자에게 이메일로 전송됩니다.')) {
     // Mock password reset
-    console.log('Password reset for user:', user.value?.id)
+    
   }
 }
 
 const sendNotification = () => {
-  console.log('Sending notification to user:', user.value?.id)
+  
 }
 
 const viewOrders = () => {
@@ -483,7 +483,7 @@ const viewOrders = () => {
 }
 
 const exportUserData = () => {
-  console.log('Exporting user data for:', user.value?.id)
+  
 }
 
 const suspendUser = () => {

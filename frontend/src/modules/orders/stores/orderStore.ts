@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { ordersApi } from '@/services/ordersApi'
 import type { Order, OrderCreateRequest, BusinessRuleValidation } from '@/types/orders'
+import { validateOrderBusinessRules, calculateTotalCBM } from '@/utils/businessRules'
 
 export const useOrderStore = defineStore('orders', () => {
   // State
@@ -198,39 +199,22 @@ export const useOrderStore = defineStore('orders', () => {
   }
 
   const validateBusinessRules = async (orderData: OrderCreateRequest): Promise<BusinessRuleValidation> => {
-    // CBM 계산
-    const totalCBM = orderData.boxes.reduce((sum, box) => {
-      return sum + (box.width * box.height * box.depth) / 1_000_000
-    }, 0)
+    // 공통 비즈니스 룰 유틸리티 사용 (중복 로직 제거)
+    const boxes = orderData.boxes.map(box => ({
+      width: box.width,
+      height: box.height,
+      depth: box.depth
+    }))
     
-    // THB 총액 계산
-    const totalTHB = orderData.items
-      .filter(item => item.currency === 'THB')
-      .reduce((sum, item) => sum + item.amount, 0)
+    const items = orderData.items.map(item => ({
+      amount: item.amount,
+      currency: item.currency
+    }))
     
-    // 검증 결과
-    const validation: BusinessRuleValidation = {
-      cbmExceedsLimit: totalCBM > 29,
-      amountExceedsThb1500: totalTHB > 1500,
-      requiresExtraRecipient: totalTHB > 1500,
-      memberCodeMissing: false, // This should come from user info
-      warnings: []
-    }
+    // TODO: 사용자 정보에서 회원코드 가져오기
+    const memberCode = undefined // 실제 구현 시 현재 사용자의 회원코드
     
-    // 경고 메시지 추가
-    if (validation.cbmExceedsLimit) {
-      validation.warnings.push(
-        `총 CBM ${totalCBM.toFixed(3)} m³가 임계값 29 m³를 초과하여 항공배송으로 자동 전환됩니다.`
-      )
-    }
-    
-    if (validation.amountExceedsThb1500) {
-      validation.warnings.push(
-        `THB 총액 ${totalTHB.toLocaleString()}이 임계값 1,500을 초과합니다. 수취인 추가 정보를 입력해주세요.`
-      )
-    }
-    
-    return validation
+    return validateOrderBusinessRules(boxes, items, memberCode)
   }
 
   const requestEstimate = async (orderId: string) => {
@@ -317,11 +301,9 @@ export const useOrderStore = defineStore('orders', () => {
     }
   }
 
-  // Utility functions
+  // Utility functions - 공통 유틸리티 사용
   const calculateCBM = (boxes: Array<{width: number, height: number, depth: number}>) => {
-    return boxes.reduce((sum, box) => {
-      return sum + (box.width * box.height * box.depth) / 1_000_000
-    }, 0)
+    return calculateTotalCBM(boxes).cbm
   }
   
   const calculateTotalAmount = (items: Array<{amount: number}>) => {

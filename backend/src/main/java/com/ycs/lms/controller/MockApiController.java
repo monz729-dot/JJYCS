@@ -20,8 +20,6 @@ public class MockApiController {
      */
     @GetMapping("/ems/validate/{code}")
     public ResponseEntity<Map<String, Object>> validateEMS(@PathVariable String code) {
-        log.info("Mock EMS validation request for code: {}", code);
-        
         Map<String, Object> response = new HashMap<>();
         
         // 인위적인 지연 시뮬레이션
@@ -53,7 +51,6 @@ public class MockApiController {
             response.put("message", "EMS 코드를 찾을 수 없거나 비활성 상태입니다.");
         }
         
-        log.info("Mock EMS validation response: valid={}, code={}", valid, code);
         return ResponseEntity.ok(response);
     }
 
@@ -62,8 +59,6 @@ public class MockApiController {
      */
     @GetMapping("/hs/lookup/{code}")
     public ResponseEntity<Map<String, Object>> lookupHS(@PathVariable String code) {
-        log.info("Mock HS code lookup request for code: {}", code);
-        
         Map<String, Object> response = new HashMap<>();
         
         // 인위적인 지연 시뮬레이션
@@ -120,7 +115,6 @@ public class MockApiController {
             response.put("message", "HS 코드를 찾을 수 없습니다.");
         }
         
-        log.info("Mock HS code lookup response: valid={}, code={}", valid, code);
         return ResponseEntity.ok(response);
     }
 
@@ -131,8 +125,6 @@ public class MockApiController {
     public ResponseEntity<Map<String, Object>> getExchangeRate(
             @RequestParam String from, 
             @RequestParam String to) {
-        
-        log.info("Mock exchange rate request: {} -> {}", from, to);
         
         Map<String, Object> response = new HashMap<>();
         
@@ -156,7 +148,6 @@ public class MockApiController {
         response.put("source", "mock-api");
         response.put("lastUpdated", LocalDateTime.now().toString());
         
-        log.info("Mock exchange rate response: {} -> {} = {}", from, to, finalRate);
         return ResponseEntity.ok(response);
     }
 
@@ -165,7 +156,6 @@ public class MockApiController {
      */
     @GetMapping("/tracking/{trackingNumber}")
     public ResponseEntity<Map<String, Object>> trackShipment(@PathVariable String trackingNumber) {
-        log.info("Mock tracking request for: {}", trackingNumber);
         
         Map<String, Object> response = new HashMap<>();
         
@@ -200,7 +190,6 @@ public class MockApiController {
         response.put("events", events);
         response.put("lastUpdated", LocalDateTime.now().toString());
         
-        log.info("Mock tracking response: {} -> {}", trackingNumber, currentStatus);
         return ResponseEntity.ok(response);
     }
 
@@ -209,7 +198,6 @@ public class MockApiController {
      */
     @PostMapping("/notifications/send")
     public ResponseEntity<Map<String, Object>> sendNotification(@RequestBody Map<String, Object> request) {
-        log.info("Mock notification send request: {}", request);
         
         Map<String, Object> response = new HashMap<>();
         
@@ -232,7 +220,6 @@ public class MockApiController {
             response.put("message", "알림 전송에 실패했습니다. 잠시 후 다시 시도해주세요.");
         }
         
-        log.info("Mock notification response: success={}", success);
         return ResponseEntity.ok(response);
     }
 
@@ -241,7 +228,6 @@ public class MockApiController {
      */
     @PostMapping("/payment/verify")
     public ResponseEntity<Map<String, Object>> verifyPayment(@RequestBody Map<String, Object> request) {
-        log.info("Mock payment verification request: {}", request.get("transactionId"));
         
         Map<String, Object> response = new HashMap<>();
         
@@ -272,7 +258,6 @@ public class MockApiController {
             response.put("message", "결제 확인에 실패했습니다. 거래 정보를 다시 확인해주세요.");
         }
         
-        log.info("Mock payment verification response: verified={}, id={}", success, transactionId);
         return ResponseEntity.ok(response);
     }
 

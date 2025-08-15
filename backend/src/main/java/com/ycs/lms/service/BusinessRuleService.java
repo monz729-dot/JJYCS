@@ -1,9 +1,5 @@
 package com.ycs.lms.service;
 
-import com.ycs.lms.dto.OrderCreateRequest;
-import com.ycs.lms.entity.Order;
-import com.ycs.lms.entity.OrderItem;
-import com.ycs.lms.entity.User;
 import com.ycs.lms.util.CBMCalculator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,9 +7,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -35,16 +28,15 @@ public class BusinessRuleService {
     private final CBMCalculator cbmCalculator;
 
     /**
-     * CBM 계산: (폭 × 높이 × 깊이) / 1,000,000
+     * CBM 계산: CBMCalculator 위임 (중복 제거)
      */
     public BigDecimal calculateCBM(BigDecimal widthCm, BigDecimal heightCm, BigDecimal depthCm) {
         if (widthCm == null || heightCm == null || depthCm == null) {
             return BigDecimal.ZERO;
         }
         
-        return widthCm.multiply(heightCm)
-                     .multiply(depthCm)
-                     .divide(BigDecimal.valueOf(1_000_000), 6, BigDecimal.ROUND_HALF_UP);
+        CBMCalculator.BoxDimensions dimensions = new CBMCalculator.BoxDimensions(widthCm, heightCm, depthCm);
+        return cbmCalculator.calculateCBM(dimensions).cbm;
     }
 
     /**

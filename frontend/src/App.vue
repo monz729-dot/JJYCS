@@ -18,7 +18,7 @@ onMounted(async () => {
   try {
     await authStore.fetchUserProfile()
   } catch (error) {
-    console.log('No user session found')
+    // No user session found
   }
 })
 </script>

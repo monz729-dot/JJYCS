@@ -94,7 +94,6 @@ public class ExternalApiService {
 
     private EmsValidationResult validateEmsCode(String emsCode) {
         if (emsApiUrl.isEmpty() || emsApiKey.isEmpty()) {
-            log.debug("EMS API not configured, using fallback validation for: {}", emsCode);
             return validateEmsCodeOffline(emsCode);
         }
 
@@ -118,7 +117,6 @@ public class ExternalApiService {
 
     private HsCodeValidationResult validateHsCode(String hsCode) {
         if (hsCodeApiUrl.isEmpty() || hsCodeApiKey.isEmpty()) {
-            log.debug("HS code API not configured, using fallback validation for: {}", hsCode);
             return validateHsCodeOffline(hsCode);
         }
 
@@ -142,7 +140,6 @@ public class ExternalApiService {
 
     private ExchangeRateResult getExchangeRate(String from, String to) {
         if (exchangeRateApiUrl.isEmpty() || exchangeRateApiKey.isEmpty()) {
-            log.debug("Exchange rate API not configured, using default rate for {}->{}", from, to);
             return ExchangeRateResult.success(from, to, getDefaultExchangeRate(from, to), false);
         }
 

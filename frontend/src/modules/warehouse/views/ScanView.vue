@@ -537,7 +537,7 @@ const clearHistory = () => {
 // 스캔 결과 처리
 const handleScanAction = (action: string, data?: any) => {
   // TODO: 스캔 후 추가 액션 처리 (라벨 출력, 사진 업로드 등)
-  console.log('Scan action:', action, data)
+  
   closeResultModal()
 }
 

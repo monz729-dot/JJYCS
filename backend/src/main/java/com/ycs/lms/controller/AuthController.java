@@ -61,14 +61,27 @@ public class AuthController {
     @Operation(summary = "토큰 갱신", description = "리프레시 토큰으로 액세스 토큰 갱신")
     public ResponseEntity<ApiResponse<Map<String, String>>> refreshToken(@RequestBody Map<String, String> request) {
         String refreshToken = request.get("refreshToken");
-        // TODO: 리프레시 토큰 검증 및 새 액세스 토큰 발급
         
-        Map<String, String> tokens = Map.of(
-            "accessToken", "new-access-token",
-            "refreshToken", refreshToken
-        );
+        if (refreshToken == null || refreshToken.trim().isEmpty()) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error("리프레시 토큰이 필요합니다."));
+        }
         
-        return ResponseEntity.ok(ApiResponse.success(tokens, "토큰이 갱신되었습니다."));
+        try {
+            AuthResponse response = userService.refreshToken(refreshToken);
+            
+            Map<String, String> tokens = Map.of(
+                "accessToken", response.getAccessToken(),
+                "refreshToken", response.getRefreshToken(),
+                "expiresIn", String.valueOf(response.getExpiresIn())
+            );
+            
+            return ResponseEntity.ok(ApiResponse.success(tokens, "토큰이 갱신되었습니다."));
+        } catch (Exception e) {
+            log.error("Token refresh failed", e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error("토큰 갱신에 실패했습니다. 다시 로그인해주세요."));
+        }
     }
 
     @PostMapping("/verify-email")
@@ -86,9 +99,19 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Void>> forgotPassword(@RequestParam String email) {
         log.info("Password reset request: email={}", email);
         
-        // TODO: 비밀번호 재설정 이메일 발송
+        if (email == null || email.trim().isEmpty()) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error("이메일이 필요합니다."));
+        }
         
-        return ResponseEntity.ok(ApiResponse.success(null, "비밀번호 재설정 이메일을 발송했습니다."));
+        try {
+            userService.requestPasswordReset(email);
+            return ResponseEntity.ok(ApiResponse.success(null, "비밀번호 재설정 이메일을 발송했습니다."));
+        } catch (Exception e) {
+            log.error("Password reset request failed", e);
+            // 보안상 항상 성공 메시지 반환
+            return ResponseEntity.ok(ApiResponse.success(null, "비밀번호 재설정 이메일을 발송했습니다."));
+        }
     }
 
     @PostMapping("/reset-password")
@@ -98,23 +121,37 @@ public class AuthController {
             @RequestParam String newPassword) {
         log.info("Password reset attempt: token={}", token.substring(0, 8) + "...");
         
-        // TODO: 비밀번호 재설정 처리
+        if (token == null || token.trim().isEmpty()) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error("재설정 토큰이 필요합니다."));
+        }
         
-        return ResponseEntity.ok(ApiResponse.success(null, "비밀번호가 재설정되었습니다."));
+        if (newPassword == null || newPassword.length() < 8) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error("비밀번호는 최소 8자 이상이어야 합니다."));
+        }
+        
+        try {
+            userService.resetPassword(token, newPassword);
+            return ResponseEntity.ok(ApiResponse.success(null, "비밀번호가 재설정되었습니다."));
+        } catch (Exception e) {
+            log.error("Password reset failed", e);
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error(e.getMessage()));
+        }
     }
 
     @PostMapping("/2fa/setup")
     @Operation(summary = "2FA 설정", description = "2단계 인증 설정")
     public ResponseEntity<ApiResponse<Map<String, Object>>> setup2FA() {
-        // TODO: 2FA QR 코드 및 백업 코드 생성
-        
-        Map<String, Object> setup = Map.of(
-            "qrCodeUrl", "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...",
-            "secret", "JBSWY3DPEHPK3PXP",
-            "backupCodes", new String[]{"12345678", "87654321", "13579246"}
-        );
-        
-        return ResponseEntity.ok(ApiResponse.success(setup, "2FA 설정 정보가 생성되었습니다."));
+        try {
+            Map<String, Object> setup = userService.setup2FA();
+            return ResponseEntity.ok(ApiResponse.success(setup, "2FA 설정 정보가 생성되었습니다."));
+        } catch (Exception e) {
+            log.error("2FA setup failed", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("2FA 설정에 실패했습니다."));
+        }
     }
 
     @PostMapping("/approve/{userId}")

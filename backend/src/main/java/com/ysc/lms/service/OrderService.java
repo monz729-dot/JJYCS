@@ -177,7 +177,6 @@ public class OrderService {
                 boxRequest.getDepth()
             );
             
-            log.debug("Box {} CBM: {} m³", i + 1, cbm);
             
             orderBoxes.add(orderBox);
         }

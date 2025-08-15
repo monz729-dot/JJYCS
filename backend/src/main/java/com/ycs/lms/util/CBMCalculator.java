@@ -66,8 +66,6 @@ public class CBMCalculator {
         
         boolean exceedsThreshold = cbm.compareTo(CBM_THRESHOLD) > 0;
         
-        log.debug("CBM 계산: {}cm × {}cm × {}cm = {} m³ (임계값: {} m³, 초과: {})", 
-                dimensions.width, dimensions.height, dimensions.depth, cbm, CBM_THRESHOLD, exceedsThreshold);
         
         return new CBMResult(cbm, exceedsThreshold);
     }

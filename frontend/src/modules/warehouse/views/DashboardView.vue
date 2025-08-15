@@ -416,7 +416,7 @@ const loadDashboardData = async () => {
       recentActivities.value = activitiesResult.data
     }
     
-    console.log('대시보드 데이터 로드 완료')
+    
   } catch (error: any) {
     console.error('Dashboard data loading error:', error)
     // 토스트 메시지는 전역 이벤트로 처리

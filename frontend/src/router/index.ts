@@ -598,7 +598,7 @@ router.beforeEach(async (to, from, next) => {
     try {
       await authStore.fetchUserProfile()
     } catch (error) {
-      console.log('No valid session found')
+      
     }
   }
   

@@ -124,7 +124,7 @@ const verifyEmail = async () => {
     }
     
     // TODO: Implement actual email verification API call
-    console.log('Verifying email with token:', token)
+    
     
     verified.value = true
     toast.success('이메일 인증이 완료되었습니다.')

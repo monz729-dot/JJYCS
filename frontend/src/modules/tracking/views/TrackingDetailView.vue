@@ -323,7 +323,7 @@ const shareTracking = async () => {
         url: url
       })
     } catch (err) {
-      console.log('Share cancelled')
+      
     }
   } else {
     try {

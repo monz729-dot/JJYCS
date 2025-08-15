@@ -694,7 +694,7 @@ const exportSelected = () => {
     payments.value.find(p => p.id === id)
   ).filter(Boolean)
   
-  console.log('Exporting payments:', data)
+  
   
   window.dispatchEvent(new CustomEvent('payment-success', {
     detail: { count: data.length, type: 'export' }

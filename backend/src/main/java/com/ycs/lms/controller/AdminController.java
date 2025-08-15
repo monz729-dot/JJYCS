@@ -35,9 +35,6 @@ public class AdminController {
             response.put("approvedBy", "admin@ycs.com");
             
             // In real implementation, this would update the database
-            System.out.println("✅ User approved: " + userId);
-            System.out.println("📧 Sending approval notification email...");
-            System.out.println("⏱️ Processing time: 평일 1~2일 내 완료");
             
             return ResponseEntity.ok(response);
             
@@ -71,9 +68,6 @@ public class AdminController {
             response.put("rejectedBy", "admin@ycs.com");
             response.put("reason", reason);
             
-            System.out.println("❌ User rejected: " + userId);
-            System.out.println("📧 Sending rejection notification email...");
-            System.out.println("📝 Reason: " + reason);
             
             return ResponseEntity.ok(response);
             

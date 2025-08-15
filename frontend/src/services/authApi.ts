@@ -240,6 +240,16 @@ export const authApi = {
     }
 
     const token = generateMockToken(user.id)
+    const expiresIn = 24 * 60 * 60 // 24 hours in seconds
+
+    // 새로운 토큰 저장 방식 사용
+    const { saveTokens } = await import('@/utils/tokenStorage')
+    saveTokens({
+      accessToken: token,
+      refreshToken: generateMockToken(user.id + '_refresh'),
+      expiresAt: Date.now() + (expiresIn * 1000),
+      tokenType: 'Bearer'
+    })
 
     return {
       success: true,
@@ -247,7 +257,7 @@ export const authApi = {
       data: {
         token,
         user,
-        expiresIn: 24 * 60 * 60 // 24 hours in seconds
+        expiresIn
       }
     }
   },
@@ -297,6 +307,16 @@ export const authApi = {
 
     mockUsers.push(newUser)
     const token = generateMockToken(newUser.id)
+    const expiresIn = 24 * 60 * 60
+
+    // 새로운 토큰 저장 방식 사용
+    const { saveTokens } = await import('@/utils/tokenStorage')
+    saveTokens({
+      accessToken: token,
+      refreshToken: generateMockToken(newUser.id + '_refresh'),
+      expiresAt: Date.now() + (expiresIn * 1000),
+      tokenType: 'Bearer'
+    })
 
     return {
       success: true,
@@ -304,13 +324,17 @@ export const authApi = {
       data: {
         token,
         user: newUser,
-        expiresIn: 24 * 60 * 60
+        expiresIn
       }
     }
   },
 
   async logout(): Promise<ApiResponse> {
     await delay(200)
+    
+    // 새로운 토큰 저장 방식으로 모든 토큰 삭제
+    const { clearTokens } = await import('@/utils/tokenStorage')
+    clearTokens()
     
     return {
       success: true,
@@ -321,10 +345,14 @@ export const authApi = {
   async getCurrentUser(): Promise<ApiResponse<User>> {
     await delay()
     
-    // In real implementation, this would validate the token and return user data
-    // For mock, we'll use localStorage to get the current user
-    const token = localStorage.getItem('auth_token')
-    const currentUserId = localStorage.getItem('current_user_id')
+    // 새로운 토큰 저장 방식 사용
+    const { getAccessToken, getTokenInfo, migrateLegacyTokens } = await import('@/utils/tokenStorage')
+    
+    // 레거시 토큰 마이그레이션
+    migrateLegacyTokens()
+    
+    const token = getAccessToken()
+    const currentUserId = localStorage.getItem('current_user_id') // 임시로 유지
     
     if (!token) {
       return {

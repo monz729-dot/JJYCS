@@ -541,7 +541,7 @@ const bulkAction = async (action: string) => {
 
 const exportUsers = () => {
   // Mock export functionality
-  console.log('Exporting users...')
+  
 }
 
 const previousPage = () => {

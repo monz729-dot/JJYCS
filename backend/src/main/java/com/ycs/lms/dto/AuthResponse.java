@@ -16,6 +16,9 @@ public class AuthResponse {
     private long expiresIn;
     private UserInfo user;
     private boolean requiresTwoFactor;
+    private boolean requiresEmailVerification;
+    private boolean requiresApproval;
+    private String message;
     
     @Data
     @Builder
@@ -27,8 +30,10 @@ public class AuthResponse {
         private String name;
         private String role;
         private String status;
+        private String phone;
         private String memberCode;
         private boolean emailVerified;
         private boolean twoFactorEnabled;
+        private java.time.LocalDateTime createdAt;
     }
 }

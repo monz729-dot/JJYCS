@@ -107,10 +107,10 @@ export async function createTestData() {
       if (userError) {
         console.error('❌ 사용자 생성 실패:', userError)
       } else {
-        console.log('✅ 테스트 사용자 생성 완료')
+        
       }
     } else {
-      console.log('ℹ️ 테스트 사용자가 이미 존재합니다')
+      
     }
 
     // 2. 테스트 주문 데이터 생성
@@ -240,10 +240,10 @@ export async function createTestData() {
       if (orderError) {
         console.error('❌ 주문 생성 실패:', orderError)
       } else {
-        console.log('✅ 테스트 주문 생성 완료')
+        
       }
     } else {
-      console.log('ℹ️ 테스트 주문이 이미 존재합니다')
+      
     }
 
     console.log('🎉 테스트 데이터 생성 완료!')

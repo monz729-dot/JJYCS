@@ -455,7 +455,7 @@ const confirmAction = () => {
 }
 
 onMounted(() => {
-  console.log('관리자 승인 관리 화면 로드됨')
+  
 })
 </script>
 

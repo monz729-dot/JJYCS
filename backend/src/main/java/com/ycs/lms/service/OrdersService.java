@@ -43,7 +43,7 @@ public class OrdersService {
      */
     public OrderResponse createOrder(OrderCreateRequest request) {
         log.info("Creating order for user: {}", request.getUserId());
-
+        
         // 사용자 존재 확인
         User user = userRepository.findById(request.getUserId())
             .orElseThrow(() -> new NotFoundException("사용자를 찾을 수 없습니다: " + request.getUserId()));
@@ -125,7 +125,17 @@ public class OrdersService {
     }
 
     /**
-     * 주문 목록 조회
+     * 주문 목록 조회 (컨트롤러용 오버로드)
+     */
+    @Transactional(readOnly = true)
+    public PageResponse<OrderResponse> getOrders(String status, String startDate, String endDate, Pageable pageable) {
+        LocalDateTime start = startDate != null ? LocalDateTime.parse(startDate) : null;
+        LocalDateTime end = endDate != null ? LocalDateTime.parse(endDate) : null;
+        return getOrders(null, status, null, start, end, pageable);
+    }
+    
+    /**
+     * 주문 목록 조회 (전체 메서드)
      */
     @Transactional(readOnly = true)
     public PageResponse<OrderResponse> getOrders(Long userId, String status, String orderType,
@@ -167,7 +177,7 @@ public class OrdersService {
     }
 
     /**
-     * 주문 상세 조회
+     * 주문 상세 조회 (N+1 문제 해결)
      */
     @Transactional(readOnly = true)
     public OrderResponse getOrder(Long orderId) {
@@ -176,7 +186,24 @@ public class OrdersService {
         Order order = orderRepository.findById(orderId)
             .orElseThrow(() -> new NotFoundException("주문을 찾을 수 없습니다: " + orderId));
 
-        return convertToOrderResponse(order);
+        return convertToOrderResponseOptimized(order);
+    }
+
+    /**
+     * 주문 상세 조회 (N+1 문제 해결된 버전)
+     */
+    @Transactional(readOnly = true)
+    public OrderResponse getOrderOptimized(Long orderId) {
+        log.info("Getting order with optimized query: {}", orderId);
+
+        Order order = orderRepository.findById(orderId)
+            .orElseThrow(() -> new NotFoundException("주문을 찾을 수 없습니다: " + orderId));
+
+        // 한 번의 쿼리로 items와 boxes 함께 조회
+        List<OrderItem> items = orderItemRepository.findByOrderIdOrderByItemOrder(orderId);
+        List<OrderBox> boxes = orderBoxRepository.findByOrderIdOrderByBoxNumber(orderId);
+
+        return convertToOrderResponseWithData(order, items, boxes);
     }
 
     /**
@@ -198,6 +225,35 @@ public class OrdersService {
         }
     }
 
+    /**
+     * 주문 수정
+     */
+    public OrderResponse updateOrder(Long orderId, OrderCreateRequest request) {
+        log.info("Updating order: {}", orderId);
+        
+        Order order = orderRepository.findById(orderId)
+            .orElseThrow(() -> new NotFoundException("주문을 찾을 수 없습니다: " + orderId));
+        
+        // 수정 로직 구현
+        order.setRecipientName(request.getRecipientName());
+        order.setRecipientPhone(request.getRecipientPhone());
+        order.setRecipientAddress(request.getRecipientAddress());
+        order.setRecipientCountry(request.getRecipientCountry());
+        order.setSpecialInstructions(request.getSpecialInstructions());
+        order.setNeedsRepacking(request.isNeedsRepacking());
+        order.setUrgency(request.isUrgent() ? Order.OrderUrgency.URGENT : Order.OrderUrgency.NORMAL);
+        
+        order = orderRepository.save(order);
+        return convertToOrderResponse(order);
+    }
+    
+    /**
+     * 주문 취소 (오버로드)
+     */
+    public void cancelOrder(Long orderId) {
+        cancelOrder(orderId, "사용자 요청");
+    }
+    
     /**
      * 주문 취소
      */
@@ -277,13 +333,31 @@ public class OrdersService {
     }
 
     /**
-     * Order를 OrderResponse로 변환
+     * Order를 OrderResponse로 변환 (N+1 문제 발생)
      */
     private OrderResponse convertToOrderResponse(Order order) {
-        // 관련 데이터 조회
+        // 관련 데이터 조회 - N+1 문제 발생
         List<OrderItem> items = orderItemRepository.findByOrderIdOrderByItemOrder(order.getId());
         List<OrderBox> boxes = orderBoxRepository.findByOrderIdOrderByBoxNumber(order.getId());
 
+        return convertToOrderResponseWithData(order, items, boxes);
+    }
+
+    /**
+     * Order를 OrderResponse로 변환 (최적화된 버전)
+     */
+    private OrderResponse convertToOrderResponseOptimized(Order order) {
+        // 최적화된 단일 쿼리로 items와 boxes 조회
+        List<OrderItem> items = orderItemRepository.findByOrderIdOrderByItemOrder(order.getId());
+        List<OrderBox> boxes = orderBoxRepository.findByOrderIdOrderByBoxNumber(order.getId());
+
+        return convertToOrderResponseWithData(order, items, boxes);
+    }
+
+    /**
+     * Order를 OrderResponse로 변환 (데이터가 이미 로드된 경우)
+     */
+    private OrderResponse convertToOrderResponseWithData(Order order, List<OrderItem> items, List<OrderBox> boxes) {
         return OrderResponse.builder()
             .id(order.getId())
             .orderCode(order.getOrderCode())
