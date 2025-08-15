@@ -487,14 +487,14 @@ import {
   ExclamationTriangleIcon
 } from '@heroicons/vue/24/outline'
 import CancelOrderModal from '../components/CancelOrderModal.vue'
-import { useOrderStore } from '../stores/orderStore'
+import { useOrdersApiStore } from '@/stores/ordersApiStore'
 import { useAuthStore } from '@/stores/auth'
 import { formatCurrency, formatDate } from '@/utils/helpers'
 
 // Composables
 const router = useRouter()
 const { t } = useI18n()
-const ordersStore = useOrderStore()
+const ordersApiStore = useOrdersApiStore()
 const authStore = useAuthStore()
 
 // State
@@ -513,12 +513,12 @@ const isCancelling = ref(false)
 const searchTimeout = ref(null)
 
 // Computed
-const orders = computed(() => ordersStore.orders)
-const isLoading = computed(() => ordersStore.isLoading)
-const currentPage = computed(() => ordersStore.currentPage)
-const totalPages = computed(() => ordersStore.totalPages)
-const totalItems = computed(() => ordersStore.totalElements)
-const pageSize = computed(() => ordersStore.pageSize)
+const orders = computed(() => ordersApiStore.orders)
+const isLoading = computed(() => ordersApiStore.isLoading)
+const currentPage = computed(() => ordersApiStore.currentPage)
+const totalPages = computed(() => ordersApiStore.totalPages)
+const totalItems = computed(() => ordersApiStore.totalElements)
+const pageSize = computed(() => ordersApiStore.pageSize)
 
 const stats = computed(() => {
   return {
@@ -543,7 +543,7 @@ const visiblePages = computed(() => {
 // Methods
 const loadOrders = async () => {
   try {
-    await ordersStore.fetchOrders({
+    await ordersApiStore.fetchOrders({
       page: currentPage.value,
       size: pageSize.value,
       ...filters.value
@@ -567,7 +567,7 @@ const debounceSearch = () => {
 }
 
 const applyFilters = () => {
-  ordersStore.setPage(0) // Reset to first page
+  ordersApiStore.setPage(0) // Reset to first page
   loadOrders()
 }
 
@@ -576,20 +576,20 @@ const goToOrder = (orderId: string) => {
 }
 
 const goToPage = (page: number) => {
-  ordersStore.setPage(page)
+  ordersApiStore.setPage(page)
   loadOrders()
 }
 
 const nextPage = () => {
   if (currentPage.value < totalPages.value - 1) {
-    ordersStore.nextPage()
+    ordersApiStore.nextPage()
     loadOrders()
   }
 }
 
 const previousPage = () => {
   if (currentPage.value > 0) {
-    ordersStore.prevPage()
+    ordersApiStore.prevPage()
     loadOrders()
   }
 }
@@ -615,7 +615,7 @@ const cancelOrder = async () => {
   
   isCancelling.value = true
   try {
-    await ordersStore.cancelOrder(selectedOrder.value.id, cancelReason.value)
+    await ordersApiStore.cancelOrder(selectedOrder.value.id, cancelReason.value)
     closeCancelModal()
     loadOrders()
   } catch (error) {

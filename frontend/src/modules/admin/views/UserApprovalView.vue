@@ -276,7 +276,9 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useToast } from 'vue-toastification'
+import { useToast } from '@/composables/useToast'
+import SpringBootAdminService from '@/services/adminApiService'
+import type { AdminUserResponse, AdminUserApprovalRequest, UserApprovalStats } from '@/services/adminApiService'
 import {
   ClockIcon,
   CheckCircleIcon,
@@ -327,7 +329,7 @@ const showRejectModal = ref(false)
 const selectedUser = ref<User | null>(null)
 const rejectReason = ref('')
 
-const toast = useToast()
+const { showToast } = useToast()
 
 // Computed
 const stats = computed(() => {
@@ -368,88 +370,141 @@ const filteredUsers = computed(() => {
 const loadUsers = async () => {
   try {
     loading.value = true
-    // Mock data for demonstration
-    users.value = [
-      {
-        id: '1',
-        name: '김기업',
-        email: 'kim.enterprise@company.com',
-        phone: '010-1234-5678',
-        role: 'enterprise',
-        approvalStatus: 'pending',
-        registeredAt: '2025-08-12T10:30:00Z',
-        enterpriseProfile: {
-          companyName: '(주)글로벌무역',
-          businessNumber: '123-45-67890',
-          businessAddress: '서울시 강남구 테헤란로 123'
-        }
-      },
-      {
-        id: '2', 
-        name: '박파트너',
-        email: 'park.partner@affiliate.com',
-        phone: '010-9876-5432',
-        role: 'partner',
-        approvalStatus: 'pending',
-        registeredAt: '2025-08-12T09:15:00Z',
-        partnerProfile: {
-          partnerType: 'affiliate',
-          businessLicense: 'BL-2025-0001'
-        }
-      },
-      {
-        id: '3',
-        name: '최창고',
-        email: 'choi.warehouse@logistics.com',
-        phone: '010-5555-6666',
-        role: 'warehouse',
-        approvalStatus: 'approved',
-        registeredAt: '2025-08-11T14:20:00Z',
-        approvedAt: '2025-08-12T08:30:00Z',
-        approvedBy: 'admin@ycs.com',
-        warehouseProfile: {
-          warehouseName: 'YCS 방콕 창고',
-          location: '방콕 라차다피세크',
-          capacity: 1000
-        }
-      }
-    ]
-  } catch (error) {
-    toast.error('사용자 목록을 불러오는데 실패했습니다.')
+    
+    const result = await SpringBootAdminService.getPendingUsers({
+      page: 0,
+      size: 50,
+      status: selectedStatus.value || undefined,
+      role: selectedRole.value || undefined,
+      search: searchQuery.value || undefined
+    })
+    
+    if (result.success && result.data) {
+      users.value = result.data.content.map(user => ({
+        id: user.id.toString(),
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role.toLowerCase() as any,
+        approvalStatus: user.approvalStatus.toLowerCase() as any,
+        registeredAt: user.registeredAt,
+        approvedAt: user.approvedAt,
+        approvedBy: user.approvedBy,
+        approvalNotes: user.approvalNotes,
+        enterpriseProfile: user.enterpriseProfile ? {
+          companyName: user.enterpriseProfile.companyName,
+          businessNumber: user.enterpriseProfile.businessNumber,
+          businessAddress: user.enterpriseProfile.businessAddress
+        } : undefined,
+        partnerProfile: user.partnerProfile ? {
+          partnerType: user.partnerProfile.partnerType.toLowerCase() as any,
+          businessLicense: user.partnerProfile.businessLicense
+        } : undefined,
+        warehouseProfile: user.warehouseProfile ? {
+          warehouseName: user.warehouseProfile.warehouseName,
+          location: user.warehouseProfile.location,
+          capacity: user.warehouseProfile.capacity
+        } : undefined
+      }))
+    } else {
+      // Fallback to mock data
+      loadMockUsers()
+      showToast('사용자 목록을 불러오는데 실패했습니다. 목 데이터를 사용합니다.', 'warning')
+    }
+  } catch (error: any) {
     console.error('Load users error:', error)
+    loadMockUsers()
+    showToast('사용자 목록을 불러오는데 실패했습니다. 목 데이터를 사용합니다.', 'warning')
   } finally {
     loading.value = false
   }
+}
+
+const loadMockUsers = () => {
+  users.value = [
+    {
+      id: '1',
+      name: '김기업',
+      email: 'kim.enterprise@company.com',
+      phone: '010-1234-5678',
+      role: 'enterprise',
+      approvalStatus: 'pending',
+      registeredAt: '2025-08-12T10:30:00Z',
+      enterpriseProfile: {
+        companyName: '(주)글로벌무역',
+        businessNumber: '123-45-67890',
+        businessAddress: '서울시 강남구 테헤란로 123'
+      }
+    },
+    {
+      id: '2', 
+      name: '박파트너',
+      email: 'park.partner@affiliate.com',
+      phone: '010-9876-5432',
+      role: 'partner',
+      approvalStatus: 'pending',
+      registeredAt: '2025-08-12T09:15:00Z',
+      partnerProfile: {
+        partnerType: 'affiliate',
+        businessLicense: 'BL-2025-0001'
+      }
+    },
+    {
+      id: '3',
+      name: '최창고',
+      email: 'choi.warehouse@logistics.com',
+      phone: '010-5555-6666',
+      role: 'warehouse',
+      approvalStatus: 'approved',
+      registeredAt: '2025-08-11T14:20:00Z',
+      approvedAt: '2025-08-12T08:30:00Z',
+      approvedBy: 'admin@ycs.com',
+      warehouseProfile: {
+        warehouseName: 'YCS 방콕 창고',
+        location: '방콕 라차다피세크',
+        capacity: 1000
+      }
+    }
+  ]
 }
 
 const approveUser = async (user: User) => {
   try {
     processing.value = user.id
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    
-    // Update user status
-    const userIndex = users.value.findIndex(u => u.id === user.id)
-    if (userIndex !== -1) {
-      users.value[userIndex] = {
-        ...users.value[userIndex],
-        approvalStatus: 'approved',
-        approvedAt: new Date().toISOString(),
-        approvedBy: 'admin@ycs.com'
-      }
+    const request: AdminUserApprovalRequest = {
+      userId: Number(user.id),
+      action: 'approve',
+      notes: '관리자에 의한 승인'
     }
     
-    toast.success(`${user.name}님의 가입이 승인되었습니다.`)
+    const result = await SpringBootAdminService.processUserApproval(request)
     
-    // Show notification about 1-2 business days
-    setTimeout(() => {
-      toast.info('승인 완료 알림이 사용자에게 발송되었습니다. (평일 1~2일 내 처리)')
-    }, 1000)
-    
-  } catch (error) {
-    toast.error('승인 처리 중 오류가 발생했습니다.')
+    if (result.success && result.data) {
+      // Update user status
+      const userIndex = users.value.findIndex(u => u.id === user.id)
+      if (userIndex !== -1) {
+        users.value[userIndex] = {
+          ...users.value[userIndex],
+          approvalStatus: 'approved',
+          approvedAt: new Date().toISOString(),
+          approvedBy: 'admin@ycs.com'
+        }
+      }
+      
+      showToast(`${user.name}님의 가입이 승인되었습니다.`, 'success')
+      
+      // Send notification
+      setTimeout(async () => {
+        await SpringBootAdminService.sendApprovalNotification(Number(user.id), 'approved')
+        showToast('승인 완료 알림이 사용자에게 발송되었습니다. (평일 1~2일 내 처리)', 'info')
+      }, 1000)
+    } else {
+      throw new Error(result.error || '승인 처리에 실패했습니다')
+    }
+  } catch (error: any) {
     console.error('Approve user error:', error)
+    showToast(error.message || '승인 처리 중 오류가 발생했습니다.', 'error')
   } finally {
     processing.value = null
   }
@@ -473,27 +528,39 @@ const rejectUser = async () => {
   try {
     processing.value = selectedUser.value.id
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    
-    // Update user status
-    const userIndex = users.value.findIndex(u => u.id === selectedUser.value!.id)
-    if (userIndex !== -1) {
-      users.value[userIndex] = {
-        ...users.value[userIndex],
-        approvalStatus: 'rejected',
-        approvedAt: new Date().toISOString(),
-        approvedBy: 'admin@ycs.com',
-        approvalNotes: rejectReason.value
-      }
+    const request: AdminUserApprovalRequest = {
+      userId: Number(selectedUser.value.id),
+      action: 'reject',
+      notes: rejectReason.value
     }
     
-    toast.success(`${selectedUser.value.name}님의 가입이 거절되었습니다.`)
-    closeRejectModal()
+    const result = await SpringBootAdminService.processUserApproval(request)
     
-  } catch (error) {
-    toast.error('거절 처리 중 오류가 발생했습니다.')
+    if (result.success && result.data) {
+      // Update user status
+      const userIndex = users.value.findIndex(u => u.id === selectedUser.value!.id)
+      if (userIndex !== -1) {
+        users.value[userIndex] = {
+          ...users.value[userIndex],
+          approvalStatus: 'rejected',
+          approvedAt: new Date().toISOString(),
+          approvedBy: 'admin@ycs.com',
+          approvalNotes: rejectReason.value
+        }
+      }
+      
+      showToast(`${selectedUser.value.name}님의 가입이 거절되었습니다.`, 'success')
+      
+      // Send notification
+      await SpringBootAdminService.sendApprovalNotification(Number(selectedUser.value.id), 'rejected')
+      
+      closeRejectModal()
+    } else {
+      throw new Error(result.error || '거절 처리에 실패했습니다')
+    }
+  } catch (error: any) {
     console.error('Reject user error:', error)
+    showToast(error.message || '거절 처리 중 오류가 발생했습니다.', 'error')
   } finally {
     processing.value = null
   }
@@ -547,14 +614,59 @@ const getPartnerTypeText = (type: string) => {
   return texts[type as keyof typeof texts] || '알수없음'
 }
 
-const bulkApprove = () => {
-  // 일괄 승인 로직
-  console.log('일괄 승인')
+const bulkApprove = async () => {
+  const pendingUsers = users.value.filter(u => u.approvalStatus === 'pending')
+  if (pendingUsers.length === 0) {
+    showToast('승인 대기 중인 사용자가 없습니다.', 'warning')
+    return
+  }
+  
+  if (!confirm(`승인 대기 중인 ${pendingUsers.length}명을 모두 승인하시겠습니까?`)) {
+    return
+  }
+  
+  try {
+    const userIds = pendingUsers.map(u => Number(u.id))
+    const result = await SpringBootAdminService.bulkApproveUsers(userIds, '일괄 승인')
+    
+    if (result.success && result.data) {
+      showToast(`${result.data.successful}명 승인 완료, ${result.data.failed}명 실패`, result.data.failed > 0 ? 'warning' : 'success')
+      await loadUsers() // Refresh the list
+    } else {
+      throw new Error(result.error || '일괄 승인에 실패했습니다')
+    }
+  } catch (error: any) {
+    console.error('Bulk approve error:', error)
+    showToast(error.message || '일괄 승인 중 오류가 발생했습니다.', 'error')
+  }
 }
 
-const bulkReject = () => {
-  // 일괄 거절 로직
-  console.log('일괄 거절')
+const bulkReject = async () => {
+  const pendingUsers = users.value.filter(u => u.approvalStatus === 'pending')
+  if (pendingUsers.length === 0) {
+    showToast('승인 대기 중인 사용자가 없습니다.', 'warning')
+    return
+  }
+  
+  const reason = prompt(`승인 대기 중인 ${pendingUsers.length}명을 모두 거절하시겠습니까?\n거절 사유를 입력해주세요:`)
+  if (!reason?.trim()) {
+    return
+  }
+  
+  try {
+    const userIds = pendingUsers.map(u => Number(u.id))
+    const result = await SpringBootAdminService.bulkRejectUsers(userIds, reason)
+    
+    if (result.success && result.data) {
+      showToast(`${result.data.successful}명 거절 완료, ${result.data.failed}명 실패`, result.data.failed > 0 ? 'warning' : 'success')
+      await loadUsers() // Refresh the list
+    } else {
+      throw new Error(result.error || '일괄 거절에 실패했습니다')
+    }
+  } catch (error: any) {
+    console.error('Bulk reject error:', error)
+    showToast(error.message || '일괄 거절 중 오류가 발생했습니다.', 'error')
+  }
 }
 
 const resetFilters = () => {
@@ -564,8 +676,7 @@ const resetFilters = () => {
 }
 
 const applyFilters = () => {
-  // 필터 적용 로직
-  console.log('필터 적용')
+  loadUsers()
 }
 
 // Lifecycle

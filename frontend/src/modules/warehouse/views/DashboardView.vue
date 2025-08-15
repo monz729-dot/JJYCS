@@ -258,14 +258,11 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useWarehouseStore } from '../stores/warehouseStore'
-import { useToast } from '@/composables/useToast'
+import SpringBootWarehouseService from '@/services/warehouseApiService'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 
 const { t } = useI18n()
 const router = useRouter()
-const warehouseStore = useWarehouseStore()
-const { showToast } = useToast()
 
 // 반응형 데이터
 const loading = ref(false)
@@ -274,24 +271,24 @@ let timeInterval: number | null = null
 
 // 통계 데이터
 const stats = ref({
-  pendingInbound: 25,
-  pendingInboundChange: 5,
-  processing: 12,
-  processingChange: -2,
-  readyForOutbound: 38,
-  readyForOutboundChange: 8,
-  hold: 3,
-  holdChange: 1
+  pendingInbound: 0,
+  pendingInboundChange: 0,
+  processing: 0,
+  processingChange: 0,
+  readyForOutbound: 0,
+  readyForOutboundChange: 0,
+  hold: 0,
+  holdChange: 0
 })
 
-// 최근 활동 데이터
+// API에서 로드될 데이터
 const recentActivities = ref([
   {
     id: 1,
     type: 'scan',
-    title: 'QR 스캔 완료',
-    description: 'YCS240812001 - 입고 처리',
-    timestamp: new Date(Date.now() - 5 * 60 * 1000),
+    title: '박스 스캔',
+    description: 'YCS240812001 - 입고 스캔 완료',
+    timestamp: new Date(Date.now() - 10 * 60 * 1000),
     status: 'success'
   },
   {
@@ -398,14 +395,34 @@ const loadDashboardData = async () => {
   loading.value = true
   
   try {
-    // TODO: API 호출로 실제 데이터 가져오기
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // API 호출로 실제 데이터 가져오기
+    const statsResult = await SpringBootWarehouseService.getWarehouseStats()
+    if (statsResult.success && statsResult.data) {
+      stats.value = {
+        pendingInbound: statsResult.data.pendingInbound || 0,
+        pendingInboundChange: statsResult.data.pendingInboundChange || 0,
+        processing: statsResult.data.processing || 0,
+        processingChange: statsResult.data.processingChange || 0,
+        readyForOutbound: statsResult.data.readyForOutbound || 0,
+        readyForOutboundChange: statsResult.data.readyForOutboundChange || 0,
+        hold: statsResult.data.hold || 0,
+        holdChange: statsResult.data.holdChange || 0
+      }
+    }
     
-    // Mock data는 이미 위에서 설정됨
-    showToast('대시보드 데이터를 불러왔습니다', 'success')
+    // 최근 활동 로드
+    const activitiesResult = await SpringBootWarehouseService.getRecentActivities({ limit: 10 })
+    if (activitiesResult.success && activitiesResult.data) {
+      recentActivities.value = activitiesResult.data
+    }
+    
+    console.log('대시보드 데이터 로드 완료')
   } catch (error: any) {
     console.error('Dashboard data loading error:', error)
-    showToast('데이터를 불러오는 중 오류가 발생했습니다', 'error')
+    // 토스트 메시지는 전역 이벤트로 처리
+    window.dispatchEvent(new CustomEvent('warehouse-error', {
+      detail: { message: '데이터를 불러오는 중 오류가 발생했습니다' }
+    }))
   } finally {
     loading.value = false
   }
@@ -473,7 +490,9 @@ const dismissAlert = (alertId: number) => {
 
 const dismissAllAlerts = () => {
   alerts.value = []
-  showToast('모든 알림을 해제했습니다', 'info')
+  window.dispatchEvent(new CustomEvent('warehouse-success', {
+    detail: { message: '모든 알림을 해제했습니다' }
+  }))
 }
 </script>
 
@@ -1037,184 +1056,3 @@ const dismissAllAlerts = () => {
   }
 }
 </style>
-
-<script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { formatDate, formatNumber } from '@/utils/helpers'
-
-// 상태
-const loading = ref(false)
-const currentDateTime = ref('')
-
-// 통계 데이터
-const stats = ref({
-  pendingInbound: 24,
-  pendingInboundChange: 5,
-  processing: 18,
-  processingChange: -2,
-  readyForOutbound: 31,
-  readyForOutboundChange: 8,
-  onHold: 6,
-  onHoldChange: 1,
-  totalBoxes: 1247,
-  totalBoxesChange: 45,
-  dailyProcessed: 89,
-  dailyProcessedChange: 12
-})
-
-// 최근 활동
-const recentActivities = ref([
-  {
-    id: 1,
-    type: 'inbound',
-    description: 'TEST-GEN-001 입고 처리 완료',
-    user: '최창고',
-    timestamp: '2024-01-15T14:30:00Z',
-    status: 'completed'
-  },
-  {
-    id: 2,
-    type: 'scan',
-    description: 'YCS240815001-01 스캔 완료',
-    user: '최창고',
-    timestamp: '2024-01-15T14:25:00Z',
-    status: 'completed'
-  },
-  {
-    id: 3,
-    type: 'outbound',
-    description: 'TEST-COR-001 출고 처리',
-    user: '최창고',
-    timestamp: '2024-01-15T13:45:00Z',
-    status: 'completed'
-  },
-  {
-    id: 4,
-    type: 'hold',
-    description: 'TEST-DEL-001 보류 처리 (회원코드 누락)',
-    user: '최창고',
-    timestamp: '2024-01-15T13:20:00Z',
-    status: 'hold'
-  }
-])
-
-// 알림
-const alerts = ref([
-  {
-    id: 1,
-    type: 'warning',
-    title: '보류 박스 증가',
-    message: '회원코드 미기재로 보류된 박스가 6개 있습니다.',
-    timestamp: '2024-01-15T14:00:00Z',
-    urgent: true
-  },
-  {
-    id: 2,
-    type: 'info',
-    title: '일일 처리량 증가',
-    message: '오늘 처리량이 평균보다 15% 증가했습니다.',
-    timestamp: '2024-01-15T12:00:00Z',
-    urgent: false
-  }
-])
-
-// 성능 지표
-const metrics = ref({
-  dailyProcessingRate: 94.2,
-  averageProcessingTime: 12.5,
-  errorRate: 1.3,
-  customerSatisfaction: 98.7
-})
-
-// 계산된 속성
-const totalProcessingTasks = computed(() => {
-  return stats.value.pendingInbound + stats.value.processing + stats.value.readyForOutbound
-})
-
-const processingEfficiency = computed(() => {
-  const total = totalProcessingTasks.value
-  const completed = stats.value.dailyProcessed
-  return total > 0 ? Math.round((completed / (completed + total)) * 100) : 0
-})
-
-// 메서드
-const refreshData = async () => {
-  loading.value = true
-  try {
-    // 실제 데이터 새로고침 로직
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    console.log('창고 데이터 새로고침 완료')
-  } catch (error) {
-    console.error('데이터 새로고침 실패:', error)
-  } finally {
-    loading.value = false
-  }
-}
-
-const getActivityIcon = (type: string) => {
-  const icons: Record<string, string> = {
-    'inbound': 'icon-inbox',
-    'outbound': 'icon-outbox',
-    'scan': 'icon-scan',
-    'hold': 'icon-hold'
-  }
-  return icons[type] || 'icon-package'
-}
-
-const getActivityColor = (type: string) => {
-  const colors: Record<string, string> = {
-    'inbound': 'text-blue-600',
-    'outbound': 'text-green-600',
-    'scan': 'text-purple-600',
-    'hold': 'text-orange-600'
-  }
-  return colors[type] || 'text-gray-600'
-}
-
-const getAlertIcon = (type: string) => {
-  const icons: Record<string, string> = {
-    'warning': 'icon-warning',
-    'error': 'icon-error',
-    'info': 'icon-info'
-  }
-  return icons[type] || 'icon-info'
-}
-
-const getAlertColor = (type: string, urgent: boolean) => {
-  if (urgent) return 'text-red-600'
-  
-  const colors: Record<string, string> = {
-    'warning': 'text-orange-600',
-    'error': 'text-red-600',
-    'info': 'text-blue-600'
-  }
-  return colors[type] || 'text-gray-600'
-}
-
-const updateDateTime = () => {
-  const now = new Date()
-  currentDateTime.value = now.toLocaleString('ko-KR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    weekday: 'long'
-  })
-}
-
-const handleQuickAction = (action: string) => {
-  console.log('Quick action:', action)
-  // 실제 액션 처리 로직
-}
-
-// 라이프사이클
-onMounted(() => {
-  updateDateTime()
-  // 1분마다 시간 업데이트
-  setInterval(updateDateTime, 60000)
-  
-  // 초기 데이터 로드
-  refreshData()
-})
-</script>

@@ -333,6 +333,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import SpringBootPaymentService, { type PaymentResponse, type PaymentTransaction, type RefundRequest } from '@/services/paymentApiService'
 import {
   ExclamationTriangleIcon,
   ArrowUturnLeftIcon,
@@ -353,40 +354,9 @@ import {
   StopIcon
 } from '@heroicons/vue/24/outline'
 
-interface Payment {
-  id: string
-  paymentNumber: string
-  orderNumber: string
-  memberId: string
-  memberName: string
-  amount: number
-  currency: string
-  method: string
-  status: string
-  installments: number
-  description: string
-  gatewayTransactionId?: string
-  gatewayResponse?: string
-  failureReason?: string
-  refundReason?: string
-  refundable: boolean
-  securityInfo?: {
-    sslEncrypted: boolean
-    pciCompliant: boolean
-    threeDSecure: boolean
-  }
-  createdAt: string
-  updatedAt: string
-}
-
-interface Transaction {
-  id: string
-  type: 'created' | 'processed' | 'completed' | 'failed' | 'refunded'
-  description: string
-  details?: string
-  amount?: number
-  createdAt: string
-}
+// Use interfaces from the API service
+type Payment = PaymentResponse
+type Transaction = PaymentTransaction
 
 const route = useRoute()
 const router = useRouter()
@@ -400,57 +370,7 @@ const showRefundModal = ref(false)
 const showReceiptPreview = ref(false)
 const refundReason = ref('')
 
-const paymentId = computed(() => route.params.id as string)
-
-// Mock data
-const mockPayment: Payment = {
-  id: 'pay_001',
-  paymentNumber: 'PAY-2024-001',
-  orderNumber: 'ORD-2024-001',
-  memberId: 'user_001',
-  memberName: '김철수',
-  amount: 150000,
-  currency: 'KRW',
-  method: 'credit_card',
-  status: 'completed',
-  installments: 1,
-  description: '태국 배송료',
-  gatewayTransactionId: 'TXN-GW-2024-001',
-  gatewayResponse: '승인완료',
-  refundable: true,
-  securityInfo: {
-    sslEncrypted: true,
-    pciCompliant: true,
-    threeDSecure: true
-  },
-  createdAt: '2024-01-15T10:30:00Z',
-  updatedAt: '2024-01-15T10:35:00Z'
-}
-
-const mockTransactionHistory: Transaction[] = [
-  {
-    id: 'txn_001',
-    type: 'created',
-    description: '결제 요청이 생성되었습니다',
-    details: '사용자가 결제를 시작했습니다',
-    createdAt: '2024-01-15T10:30:00Z'
-  },
-  {
-    id: 'txn_002',
-    type: 'processed',
-    description: '결제 처리가 시작되었습니다',
-    details: '결제 게이트웨이로 전송됨',
-    createdAt: '2024-01-15T10:32:00Z'
-  },
-  {
-    id: 'txn_003',
-    type: 'completed',
-    description: '결제가 성공적으로 완료되었습니다',
-    details: '승인번호: 12345678',
-    amount: 150000,
-    createdAt: '2024-01-15T10:35:00Z'
-  }
-]
+const paymentId = computed(() => parseInt(route.params.id as string))
 
 // Helper functions
 const formatCurrency = (amount: number, currency: string): string => {
@@ -477,85 +397,90 @@ const formatDate = (dateString: string): string => {
 
 const getStatusClass = (status: string): string => {
   const classes = {
-    pending: 'bg-yellow-100 text-yellow-800',
-    processing: 'bg-blue-100 text-blue-800',
-    completed: 'bg-green-100 text-green-800',
-    failed: 'bg-red-100 text-red-800',
-    refunded: 'bg-gray-100 text-gray-800'
+    PENDING: 'bg-yellow-100 text-yellow-800',
+    PROCESSING: 'bg-blue-100 text-blue-800',
+    COMPLETED: 'bg-green-100 text-green-800',
+    FAILED: 'bg-red-100 text-red-800',
+    REFUNDED: 'bg-gray-100 text-gray-800',
+    CANCELLED: 'bg-red-100 text-red-800'
   }
   return classes[status as keyof typeof classes] || 'bg-gray-100 text-gray-800'
 }
 
 const getStatusText = (status: string): string => {
   const texts = {
-    pending: '결제 대기',
-    processing: '결제 처리중',
-    completed: '결제 완료',
-    failed: '결제 실패',
-    refunded: '환불 완료'
+    PENDING: '결제 대기',
+    PROCESSING: '결제 처리중',
+    COMPLETED: '결제 완료',
+    FAILED: '결제 실패',
+    REFUNDED: '환불 완료',
+    CANCELLED: '결제 취소'
   }
   return texts[status as keyof typeof texts] || status
 }
 
 const getStatusIcon = (status: string) => {
   const icons = {
-    pending: ClockIcon,
-    processing: ArrowPathIcon,
-    completed: CheckCircleIcon,
-    failed: XCircleIcon,
-    refunded: ArrowUturnLeftIcon
+    PENDING: ClockIcon,
+    PROCESSING: ArrowPathIcon,
+    COMPLETED: CheckCircleIcon,
+    FAILED: XCircleIcon,
+    REFUNDED: ArrowUturnLeftIcon,
+    CANCELLED: XCircleIcon
   }
   return icons[status as keyof typeof icons] || CheckCircleIcon
 }
 
 const getMethodIcon = (method: string) => {
   const icons = {
-    bank_transfer: BanknotesIcon,
-    credit_card: CreditCardIcon,
-    mobile_payment: DevicePhoneMobileIcon,
-    crypto: CurrencyDollarIcon
+    BANK_TRANSFER: BanknotesIcon,
+    CREDIT_CARD: CreditCardIcon,
+    MOBILE_PAYMENT: DevicePhoneMobileIcon,
+    CRYPTO: CurrencyDollarIcon
   }
   return icons[method as keyof typeof icons] || CreditCardIcon
 }
 
 const getMethodText = (method: string): string => {
   const texts = {
-    bank_transfer: '계좌이체',
-    credit_card: '신용카드',
-    mobile_payment: '모바일결제',
-    crypto: '암호화폐'
+    BANK_TRANSFER: '계좌이체',
+    CREDIT_CARD: '신용카드',
+    MOBILE_PAYMENT: '모바일결제',
+    CRYPTO: '암호화폐'
   }
   return texts[method as keyof typeof texts] || method
 }
 
 const getTransactionIcon = (type: string) => {
   const icons = {
-    created: PlayIcon,
-    processed: ArrowPathIcon,
-    completed: CheckCircleIcon,
-    failed: XCircleIcon,
-    refunded: ArrowUturnLeftIcon
+    CREATED: PlayIcon,
+    PROCESSING: ArrowPathIcon,
+    COMPLETED: CheckCircleIcon,
+    FAILED: XCircleIcon,
+    REFUNDED: ArrowUturnLeftIcon,
+    CANCELLED: XCircleIcon
   }
   return icons[type as keyof typeof icons] || CheckCircleIcon
 }
 
 const getTransactionIconClass = (type: string): string => {
   const classes = {
-    created: 'bg-blue-500',
-    processed: 'bg-yellow-500',
-    completed: 'bg-green-500',
-    failed: 'bg-red-500',
-    refunded: 'bg-gray-500'
+    CREATED: 'bg-blue-500',
+    PROCESSING: 'bg-yellow-500',
+    COMPLETED: 'bg-green-500',
+    FAILED: 'bg-red-500',
+    REFUNDED: 'bg-gray-500',
+    CANCELLED: 'bg-red-500'
   }
   return classes[type as keyof typeof classes] || 'bg-gray-500'
 }
 
 const canRefund = (payment: Payment): boolean => {
-  return payment.status === 'completed' && payment.refundable
+  return payment.status === 'COMPLETED' && payment.refundable
 }
 
 const canRetry = (payment: Payment): boolean => {
-  return payment.status === 'failed'
+  return payment.status === 'FAILED'
 }
 
 // Actions
@@ -564,13 +489,25 @@ const loadPayment = async () => {
   error.value = null
   
   try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    // Load mock data
-    payment.value = mockPayment
-    transactionHistory.value = mockTransactionHistory
+    // Load payment details
+    const paymentResult = await SpringBootPaymentService.getPayment(paymentId.value)
+    if (paymentResult.success && paymentResult.data) {
+      payment.value = paymentResult.data
+    } else {
+      error.value = paymentResult.error || '결제 정보를 불러올 수 없습니다.'
+      return
+    }
+
+    // Load transaction history
+    const transactionResult = await SpringBootPaymentService.getPaymentTransactions(paymentId.value)
+    if (transactionResult.success && transactionResult.data) {
+      transactionHistory.value = transactionResult.data
+    } else {
+      console.warn('Transaction history loading failed:', transactionResult.error)
+      transactionHistory.value = []
+    }
   } catch (err) {
+    console.error('Payment loading error:', err)
     error.value = '결제 정보를 불러오는 중 오류가 발생했습니다.'
   } finally {
     loading.value = false
@@ -595,36 +532,34 @@ const confirmRefund = async () => {
   processing.value = true
   
   try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    const refundRequest: RefundRequest = {
+      paymentId: payment.value.id,
+      reason: refundReason.value.trim()
+    }
+
+    const result = await SpringBootPaymentService.refundPayment(refundRequest)
     
-    // Update payment status
-    payment.value.status = 'refunded'
-    payment.value.refundable = false
-    payment.value.refundReason = refundReason.value
-    payment.value.updatedAt = new Date().toISOString()
-    
-    // Add refund transaction to history
-    transactionHistory.value.push({
-      id: `txn_refund_${Date.now()}`,
-      type: 'refunded',
-      description: '환불이 처리되었습니다',
-      details: `환불 사유: ${refundReason.value}`,
-      amount: payment.value.amount,
-      createdAt: new Date().toISOString()
-    })
-    
-    // Emit success event
-    window.dispatchEvent(new CustomEvent('payment-success', {
-      detail: { 
-        paymentId: payment.value.id, 
-        type: 'refund',
-        message: '환불이 성공적으로 처리되었습니다.'
-      }
-    }))
-    
-    closeRefundModal()
+    if (result.success) {
+      // Reload payment data to get updated status
+      await loadPayment()
+      
+      // Emit success event
+      window.dispatchEvent(new CustomEvent('payment-success', {
+        detail: { 
+          paymentId: payment.value.id, 
+          type: 'refund',
+          message: '환불이 성공적으로 처리되었습니다.'
+        }
+      }))
+      
+      closeRefundModal()
+    } else {
+      window.dispatchEvent(new CustomEvent('payment-error', {
+        detail: { message: result.error || '환불 처리 중 오류가 발생했습니다.' }
+      }))
+    }
   } catch (error) {
+    console.error('Refund error:', error)
     window.dispatchEvent(new CustomEvent('payment-error', {
       detail: { message: '환불 처리 중 오류가 발생했습니다.' }
     }))
@@ -639,30 +574,26 @@ const retryPayment = async () => {
   processing.value = true
   
   try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    const result = await SpringBootPaymentService.retryPayment(payment.value.id)
     
-    // Update payment status
-    payment.value.status = 'processing'
-    payment.value.updatedAt = new Date().toISOString()
-    
-    // Add retry transaction to history
-    transactionHistory.value.push({
-      id: `txn_retry_${Date.now()}`,
-      type: 'processed',
-      description: '결제 재시도가 시작되었습니다',
-      details: '이전 실패한 결제를 다시 처리합니다',
-      createdAt: new Date().toISOString()
-    })
-    
-    window.dispatchEvent(new CustomEvent('payment-success', {
-      detail: { 
-        paymentId: payment.value.id, 
-        type: 'retry',
-        message: '결제 재시도가 시작되었습니다.'
-      }
-    }))
+    if (result.success) {
+      // Reload payment data to get updated status
+      await loadPayment()
+      
+      window.dispatchEvent(new CustomEvent('payment-success', {
+        detail: { 
+          paymentId: payment.value.id, 
+          type: 'retry',
+          message: '결제 재시도가 시작되었습니다.'
+        }
+      }))
+    } else {
+      window.dispatchEvent(new CustomEvent('payment-error', {
+        detail: { message: result.error || '결제 재시도 중 오류가 발생했습니다.' }
+      }))
+    }
   } catch (error) {
+    console.error('Payment retry error:', error)
     window.dispatchEvent(new CustomEvent('payment-error', {
       detail: { message: '결제 재시도 중 오류가 발생했습니다.' }
     }))
@@ -671,19 +602,44 @@ const retryPayment = async () => {
   }
 }
 
-const downloadReceipt = () => {
-  showReceiptPreview.value = true
+const downloadReceipt = async () => {
+  if (!payment.value) return
   
-  // Simulate receipt download
-  setTimeout(() => {
-    window.dispatchEvent(new CustomEvent('payment-success', {
-      detail: { 
-        paymentId: payment.value?.id, 
-        type: 'receipt_download',
-        message: '영수증 다운로드가 완료되었습니다.'
-      }
+  try {
+    const result = await SpringBootPaymentService.downloadReceipt(payment.value.id, 'pdf')
+    
+    if (result.success && result.data) {
+      // Create download link
+      const url = window.URL.createObjectURL(result.data)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `payment-receipt-${payment.value.paymentNumber}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      
+      // Show preview as well
+      showReceiptPreview.value = true
+      
+      window.dispatchEvent(new CustomEvent('payment-success', {
+        detail: { 
+          paymentId: payment.value.id, 
+          type: 'receipt_download',
+          message: '영수증 다운로드가 완료되었습니다.'
+        }
+      }))
+    } else {
+      window.dispatchEvent(new CustomEvent('payment-error', {
+        detail: { message: '영수증 다운로드 중 오류가 발생했습니다.' }
+      }))
+    }
+  } catch (error) {
+    console.error('Receipt download error:', error)
+    window.dispatchEvent(new CustomEvent('payment-error', {
+      detail: { message: '영수증 다운로드 중 오류가 발생했습니다.' }
     }))
-  }, 1000)
+  }
 }
 
 onMounted(() => {

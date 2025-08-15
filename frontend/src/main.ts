@@ -1,8 +1,5 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import PrimeVue from 'primevue/config'
-import ToastService from 'primevue/toastservice'
-import ConfirmationService from 'primevue/confirmationservice'
 import Toast from 'vue-toastification'
 
 import App from './App.vue'
@@ -10,9 +7,6 @@ import router from './router'
 import i18n from './i18n'
 import { useAuthStore } from './stores/auth'
 
-import 'primevue/resources/themes/lara-light-blue/theme.css'
-import 'primevue/resources/primevue.css'
-import 'primeicons/primeicons.css'
 import 'vue-toastification/dist/index.css'
 import './assets/main.css'
 import './style.css'
@@ -23,9 +17,6 @@ const pinia = createPinia()
 app.use(pinia)
 app.use(router)
 app.use(i18n)
-app.use(PrimeVue)
-app.use(ToastService)
-app.use(ConfirmationService)
 app.use(Toast, {
   position: 'top-right',
   timeout: 3000,

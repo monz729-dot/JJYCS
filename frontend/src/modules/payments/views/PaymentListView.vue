@@ -30,11 +30,11 @@
                 class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm rounded-md"
               >
                 <option value="">모든 상태</option>
-                <option value="pending">대기중</option>
-                <option value="processing">처리중</option>
-                <option value="completed">완료</option>
-                <option value="failed">실패</option>
-                <option value="refunded">환불</option>
+                <option value="PENDING">대기중</option>
+                <option value="PROCESSING">처리중</option>
+                <option value="COMPLETED">완료</option>
+                <option value="FAILED">실패</option>
+                <option value="REFUNDED">환불</option>
               </select>
               
               <select
@@ -42,10 +42,10 @@
                 class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm rounded-md"
               >
                 <option value="">모든 결제수단</option>
-                <option value="bank_transfer">계좌이체</option>
-                <option value="credit_card">신용카드</option>
-                <option value="mobile_payment">모바일결제</option>
-                <option value="crypto">암호화폐</option>
+                <option value="BANK_TRANSFER">계좌이체</option>
+                <option value="CREDIT_CARD">신용카드</option>
+                <option value="MOBILE_PAYMENT">모바일결제</option>
+                <option value="CRYPTO">암호화폐</option>
               </select>
 
               <select
@@ -363,6 +363,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import SpringBootPaymentService, { type PaymentResponse, type RefundRequest } from '@/services/paymentApiService'
 import {
   MagnifyingGlassIcon,
   CreditCardIcon,
@@ -378,22 +379,8 @@ import {
   CurrencyDollarIcon
 } from '@heroicons/vue/24/outline'
 
-interface Payment {
-  id: string
-  paymentNumber: string
-  orderNumber: string
-  memberId: string
-  memberName: string
-  amount: number
-  currency: string
-  method: string
-  status: string
-  installments: number
-  description: string
-  createdAt: string
-  updatedAt: string
-  refundable: boolean
-}
+// Use PaymentResponse from API service
+type Payment = PaymentResponse
 
 const router = useRouter()
 const loading = ref(false)
@@ -413,132 +400,20 @@ const itemsPerPage = ref(10)
 
 // Modal states
 const showRefundModal = ref(false)
-const refundPaymentId = ref<string | null>(null)
+const refundPaymentId = ref<number | null>(null)
 
-// Mock data
-const payments = ref<Payment[]>([
-  {
-    id: 'pay_001',
-    paymentNumber: 'PAY-2024-001',
-    orderNumber: 'ORD-2024-001',
-    memberId: 'user_001',
-    memberName: '김철수',
-    amount: 150000,
-    currency: 'KRW',
-    method: 'credit_card',
-    status: 'completed',
-    installments: 1,
-    description: '태국 배송료',
-    createdAt: '2024-01-15T10:30:00Z',
-    updatedAt: '2024-01-15T10:35:00Z',
-    refundable: true
-  },
-  {
-    id: 'pay_002',
-    paymentNumber: 'PAY-2024-002',
-    orderNumber: 'ORD-2024-002',
-    memberId: 'user_002',
-    memberName: '박영희',
-    amount: 2500,
-    currency: 'THB',
-    method: 'bank_transfer',
-    status: 'pending',
-    installments: 1,
-    description: '현지 배송비',
-    createdAt: '2024-01-14T14:20:00Z',
-    updatedAt: '2024-01-14T14:20:00Z',
-    refundable: false
-  },
-  {
-    id: 'pay_003',
-    paymentNumber: 'PAY-2024-003',
-    orderNumber: 'ORD-2024-003',
-    memberId: 'user_003',
-    memberName: '이민수',
-    amount: 85.50,
-    currency: 'USD',
-    method: 'mobile_payment',
-    status: 'processing',
-    installments: 3,
-    description: '항공운임',
-    createdAt: '2024-01-13T09:15:00Z',
-    updatedAt: '2024-01-13T09:45:00Z',
-    refundable: true
-  },
-  {
-    id: 'pay_004',
-    paymentNumber: 'PAY-2024-004',
-    orderNumber: 'ORD-2024-004',
-    memberId: 'user_004',
-    memberName: '최지영',
-    amount: 0.025,
-    currency: 'BTC',
-    method: 'crypto',
-    status: 'failed',
-    installments: 1,
-    description: '보관료',
-    createdAt: '2024-01-12T16:40:00Z',
-    updatedAt: '2024-01-12T16:42:00Z',
-    refundable: false
-  },
-  {
-    id: 'pay_005',
-    paymentNumber: 'PAY-2024-005',
-    orderNumber: 'ORD-2024-005',
-    memberId: 'user_005',
-    memberName: '홍길동',
-    amount: 320000,
-    currency: 'KRW',
-    method: 'credit_card',
-    status: 'refunded',
-    installments: 6,
-    description: '대량 배송료',
-    createdAt: '2024-01-11T11:25:00Z',
-    updatedAt: '2024-01-11T15:10:00Z',
-    refundable: false
-  }
-])
+// Data
+const payments = ref<Payment[]>([])
+const totalElements = ref(0)
+const totalPages = ref(0)
 
-// Computed properties
+// Computed properties - now use server-side pagination
 const filteredPayments = computed(() => {
-  let result = payments.value
-
-  // Search filter
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    result = result.filter(payment =>
-      payment.paymentNumber.toLowerCase().includes(query) ||
-      payment.orderNumber.toLowerCase().includes(query) ||
-      payment.memberName.toLowerCase().includes(query)
-    )
-  }
-
-  // Status filter
-  if (selectedStatus.value) {
-    result = result.filter(payment => payment.status === selectedStatus.value)
-  }
-
-  // Method filter
-  if (selectedMethod.value) {
-    result = result.filter(payment => payment.method === selectedMethod.value)
-  }
-
-  // Currency filter
-  if (selectedCurrency.value) {
-    result = result.filter(payment => payment.currency === selectedCurrency.value)
-  }
-
-  return result
+  return payments.value
 })
 
 const paginatedPayments = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage.value
-  const end = start + itemsPerPage.value
-  return filteredPayments.value.slice(start, end)
-})
-
-const totalPages = computed(() => {
-  return Math.ceil(filteredPayments.value.length / itemsPerPage.value)
+  return payments.value
 })
 
 const startItem = computed(() => {
@@ -546,7 +421,7 @@ const startItem = computed(() => {
 })
 
 const endItem = computed(() => {
-  return Math.min(currentPage.value * itemsPerPage.value, filteredPayments.value.length)
+  return Math.min(currentPage.value * itemsPerPage.value, totalElements.value)
 })
 
 const visiblePages = computed(() => {
@@ -560,10 +435,10 @@ const visiblePages = computed(() => {
   return pages
 })
 
-// Statistics
+// Statistics - use actual API data
 const totalAmount = computed(() => {
   return payments.value
-    .filter(p => p.status === 'completed')
+    .filter(p => p.status === 'COMPLETED')
     .reduce((sum, payment) => {
       // Convert to KRW for total (simplified conversion)
       const rate = payment.currency === 'THB' ? 40 : payment.currency === 'USD' ? 1350 : 1
@@ -572,15 +447,15 @@ const totalAmount = computed(() => {
 })
 
 const completedPayments = computed(() => {
-  return payments.value.filter(p => p.status === 'completed').length
+  return payments.value.filter(p => p.status === 'COMPLETED').length
 })
 
 const pendingPayments = computed(() => {
-  return payments.value.filter(p => p.status === 'pending' || p.status === 'processing').length
+  return payments.value.filter(p => p.status === 'PENDING' || p.status === 'PROCESSING').length
 })
 
 const failedPayments = computed(() => {
-  return payments.value.filter(p => p.status === 'failed').length
+  return payments.value.filter(p => p.status === 'FAILED').length
 })
 
 // Helper functions
@@ -611,60 +486,94 @@ const formatDate = (dateString: string): string => {
 
 const getStatusClass = (status: string): string => {
   const classes = {
-    pending: 'bg-yellow-100 text-yellow-800',
-    processing: 'bg-blue-100 text-blue-800',
-    completed: 'bg-green-100 text-green-800',
-    failed: 'bg-red-100 text-red-800',
-    refunded: 'bg-gray-100 text-gray-800'
+    PENDING: 'bg-yellow-100 text-yellow-800',
+    PROCESSING: 'bg-blue-100 text-blue-800',
+    COMPLETED: 'bg-green-100 text-green-800',
+    FAILED: 'bg-red-100 text-red-800',
+    REFUNDED: 'bg-gray-100 text-gray-800',
+    CANCELLED: 'bg-red-100 text-red-800'
   }
   return classes[status as keyof typeof classes] || 'bg-gray-100 text-gray-800'
 }
 
 const getStatusText = (status: string): string => {
   const texts = {
-    pending: '대기중',
-    processing: '처리중',
-    completed: '완료',
-    failed: '실패',
-    refunded: '환불'
+    PENDING: '대기중',
+    PROCESSING: '처리중',
+    COMPLETED: '완료',
+    FAILED: '실패',
+    REFUNDED: '환불',
+    CANCELLED: '취소'
   }
   return texts[status as keyof typeof texts] || status
 }
 
 const getMethodIcon = (method: string) => {
   const icons = {
-    bank_transfer: BanknotesIcon,
-    credit_card: CreditCardIcon,
-    mobile_payment: DevicePhoneMobileIcon,
-    crypto: CurrencyDollarIcon
+    BANK_TRANSFER: BanknotesIcon,
+    CREDIT_CARD: CreditCardIcon,
+    MOBILE_PAYMENT: DevicePhoneMobileIcon,
+    CRYPTO: CurrencyDollarIcon
   }
   return icons[method as keyof typeof icons] || CreditCardIcon
 }
 
 const getMethodText = (method: string): string => {
   const texts = {
-    bank_transfer: '계좌이체',
-    credit_card: '신용카드',
-    mobile_payment: '모바일결제',
-    crypto: '암호화폐'
+    BANK_TRANSFER: '계좌이체',
+    CREDIT_CARD: '신용카드',
+    MOBILE_PAYMENT: '모바일결제',
+    CRYPTO: '암호화폐'
   }
   return texts[method as keyof typeof texts] || method
 }
 
 const canRefund = (payment: Payment): boolean => {
-  return payment.status === 'completed' && payment.refundable
+  return payment.status === 'COMPLETED' && payment.refundable
 }
 
 const canRetry = (payment: Payment): boolean => {
-  return payment.status === 'failed'
+  return payment.status === 'FAILED'
+}
+
+// Load payments from API
+const loadPayments = async () => {
+  try {
+    loading.value = true
+    
+    const result = await SpringBootPaymentService.getPayments({
+      page: currentPage.value - 1, // Spring Boot uses 0-based pages
+      size: itemsPerPage.value,
+      status: selectedStatus.value || undefined,
+      method: selectedMethod.value || undefined
+    })
+    
+    if (result.success && result.data) {
+      payments.value = result.data.content
+      totalElements.value = result.data.totalElements
+      totalPages.value = result.data.totalPages
+    } else {
+      console.error('Failed to load payments:', result.error)
+      window.dispatchEvent(new CustomEvent('payment-error', {
+        detail: { message: result.error || '결제 목록을 불러오는데 실패했습니다.' }
+      }))
+    }
+  } catch (error) {
+    console.error('Load payments error:', error)
+    window.dispatchEvent(new CustomEvent('payment-error', {
+      detail: { message: '결제 목록을 불러오는데 실패했습니다.' }
+    }))
+  } finally {
+    loading.value = false
+  }
 }
 
 // Actions
-const viewPayment = (paymentId: string) => {
-  router.push(`/payments/${paymentId}`)
+const viewPayment = (paymentId: number) => {
+  router.push(`/app/payments/${paymentId}`)
 }
 
-const initiateRefund = (paymentId: string) => {
+const initiateRefund = (paymentId: number) => {
   refundPaymentId.value = paymentId
   showRefundModal.value = true
 }
@@ -682,24 +591,33 @@ const confirmRefund = async () => {
   processing.value = true
   
   try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
-    // Update payment status
-    const payment = payments.value.find(p => p.id === refundPaymentId.value)
-    if (payment) {
-      payment.status = 'refunded'
-      payment.refundable = false
-      payment.updatedAt = new Date().toISOString()
+    const refundRequest: RefundRequest = {
+      paymentId: refundPaymentId.value,
+      reason: '사용자 요청에 의한 환불'
     }
+
+    const result = await SpringBootPaymentService.refundPayment(refundRequest)
     
-    // Emit success event
-    window.dispatchEvent(new CustomEvent('payment-success', {
-      detail: { paymentId: refundPaymentId.value, type: 'refund' }
-    }))
-    
-    closeRefundModal()
+    if (result.success) {
+      // Reload payments to get updated data
+      await loadPayments()
+      
+      window.dispatchEvent(new CustomEvent('payment-success', {
+        detail: { 
+          paymentId: refundPaymentId.value, 
+          type: 'refund',
+          message: '환불이 성공적으로 처리되었습니다.'
+        }
+      }))
+      
+      closeRefundModal()
+    } else {
+      window.dispatchEvent(new CustomEvent('payment-error', {
+        detail: { message: result.error || '환불 처리 중 오류가 발생했습니다.' }
+      }))
+    }
   } catch (error) {
+    console.error('Refund error:', error)
     window.dispatchEvent(new CustomEvent('payment-error', {
       detail: { message: '환불 처리 중 오류가 발생했습니다.' }
     }))
@@ -708,24 +626,30 @@ const confirmRefund = async () => {
   }
 }
 
-const retryPayment = async (paymentId: string) => {
+const retryPayment = async (paymentId: number) => {
   processing.value = true
   
   try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    const result = await SpringBootPaymentService.retryPayment(paymentId)
     
-    // Update payment status
-    const payment = payments.value.find(p => p.id === paymentId)
-    if (payment) {
-      payment.status = 'processing'
-      payment.updatedAt = new Date().toISOString()
+    if (result.success) {
+      // Reload payments to get updated data
+      await loadPayments()
+      
+      window.dispatchEvent(new CustomEvent('payment-success', {
+        detail: { 
+          paymentId, 
+          type: 'retry',
+          message: '결제 재시도가 시작되었습니다.'
+        }
+      }))
+    } else {
+      window.dispatchEvent(new CustomEvent('payment-error', {
+        detail: { message: result.error || '결제 재시도 중 오류가 발생했습니다.' }
+      }))
     }
-    
-    window.dispatchEvent(new CustomEvent('payment-success', {
-      detail: { paymentId, type: 'retry' }
-    }))
   } catch (error) {
+    console.error('Payment retry error:', error)
     window.dispatchEvent(new CustomEvent('payment-error', {
       detail: { message: '결제 재시도 중 오류가 발생했습니다.' }
     }))
@@ -781,29 +705,29 @@ const exportSelected = () => {
 const previousPage = () => {
   if (currentPage.value > 1) {
     currentPage.value--
+    loadPayments()
   }
 }
 
 const nextPage = () => {
   if (currentPage.value < totalPages.value) {
     currentPage.value++
+    loadPayments()
   }
 }
 
 const goToPage = (page: number) => {
   currentPage.value = page
+  loadPayments()
 }
 
-// Watch for filter changes to reset pagination
+// Watch for filter changes to reset pagination and reload
 watch([searchQuery, selectedStatus, selectedMethod, selectedCurrency], () => {
   currentPage.value = 1
+  loadPayments()
 })
 
 onMounted(() => {
-  // Load initial data
-  loading.value = true
-  setTimeout(() => {
-    loading.value = false
-  }, 1000)
+  loadPayments()
 })
 </script>

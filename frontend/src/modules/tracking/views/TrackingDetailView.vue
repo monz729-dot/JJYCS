@@ -41,7 +41,7 @@
           <div class="progress-timeline">
             <div
               v-for="(event, index) in trackingData.events"
-              :key="index"
+              :key="event.id"
               class="timeline-item"
               :class="{ 'current': index === 0 }"
             >
@@ -50,10 +50,10 @@
               </div>
               <div class="timeline-content">
                 <div class="event-header">
-                  <h3 class="event-title">{{ event.description }}</h3>
+                  <h3 class="event-title">{{ event.title }}</h3>
                   <span class="event-time">{{ formatDateTime(event.timestamp) }}</span>
                 </div>
-                <p class="event-description">{{ event.status }}</p>
+                <p class="event-description">{{ event.description }}</p>
                 <div v-if="event.location" class="event-location">
                   <MapPinIcon class="location-icon" />
                   <span>{{ event.location }}</span>
@@ -70,9 +70,9 @@
             <div class="info-card">
               <h3 class="info-title">발송지</h3>
               <div class="info-content">
-                <p class="info-name">YCS 물류센터</p>
-                <p class="info-address">{{ trackingData.origin }}</p>
-                <p class="info-contact">+82-32-123-4567</p>
+                <p class="info-name">{{ trackingData.sender.name }}</p>
+                <p class="info-address">{{ trackingData.sender.address }}</p>
+                <p class="info-contact">{{ trackingData.sender.phone }}</p>
               </div>
             </div>
 
@@ -158,7 +158,7 @@
             </button>
             
             <button 
-              v-if="trackingData.status === 'delivered'" 
+              v-if="trackingData.status === 'DELIVERED'" 
               type="button" 
               class="action-btn primary"
               @click="confirmDelivery"
@@ -186,8 +186,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { useTrackingStore } from '@/stores/tracking'
-import { useNotificationStore } from '@/stores/notification'
+import SpringBootTrackingService, { type TrackingResponse, type TrackingEvent, type DeliveryConfirmationRequest, type IssueReportRequest } from '@/services/trackingApiService'
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import {
   ArrowLeftIcon,
   ExclamationTriangleIcon,
@@ -201,23 +201,22 @@ import {
   CubeIcon,
   PaperAirplaneIcon
 } from '@heroicons/vue/24/outline'
-import type { TrackingInfo, TrackingEvent } from '@/types/tracking'
 
 // Composables
 const router = useRouter()
 const route = useRoute()
-const trackingStore = useTrackingStore()
-const notificationStore = useNotificationStore()
+
+// Reactive state
+const loading = ref(false)
+const error = ref<string | null>(null)
+const trackingData = ref<TrackingResponse | null>(null)
 
 // Computed
 const trackingNumber = computed(() => route.params.trackingNumber as string)
-const trackingData = computed(() => trackingStore.currentTracking)
-const loading = computed(() => trackingStore.isLoading)
-const error = computed(() => trackingStore.error)
 
 // Computed
 const canReportIssue = computed(() => {
-  return trackingData.value?.status !== 'delivered'
+  return trackingData.value?.status !== 'DELIVERED'
 })
 
 // Methods
@@ -226,75 +225,13 @@ const loadTrackingData = async () => {
     loading.value = true
     error.value = null
     
-    // Mock API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    const result = await SpringBootTrackingService.getTrackingByNumber(trackingNumber.value)
     
-    // Mock data
-    trackingData.value = {
-      id: '1',
-      orderCode: 'ORD-2025-001',
-      trackingNumber: props.trackingNumber,
-      status: 'in_transit',
-      sender: {
-        name: 'YCS 물류센터',
-        address: '인천광역시 중구 운서동 YCS 물류센터',
-        phone: '032-123-4567'
-      },
-      recipient: {
-        name: '김수취',
-        address: '태국 방콕시 수쿰윗 로드 123번지',
-        phone: '+66-2-123-4567'
-      },
-      shippingMethod: 'EMS 특송',
-      shippedAt: '2025-08-10T10:00:00Z',
-      estimatedDelivery: '2025-08-15T18:00:00Z',
-      weight: 2.5,
-      events: [
-        {
-          type: 'in_transit',
-          title: '배송 중',
-          description: '방콕 국제공항에 도착했습니다',
-          timestamp: '2025-08-12T14:30:00Z',
-          location: '방콕 국제공항'
-        },
-        {
-          type: 'customs',
-          title: '통관 처리',
-          description: '세관 검사를 통과했습니다',
-          timestamp: '2025-08-12T08:15:00Z',
-          location: '방콕 세관'
-        },
-        {
-          type: 'in_transit',
-          title: '국제 운송 중',
-          description: '항공편으로 운송 중입니다',
-          timestamp: '2025-08-11T22:00:00Z',
-          location: '인천국제공항'
-        },
-        {
-          type: 'shipped',
-          title: '발송',
-          description: '상품이 YCS 물류센터에서 발송되었습니다',
-          timestamp: '2025-08-10T10:00:00Z',
-          location: 'YCS 물류센터'
-        }
-      ],
-      packages: [
-        {
-          status: 'in_transit',
-          dimensions: { width: 30, height: 20, depth: 15 },
-          weight: 1.2,
-          cbm: 0.009
-        },
-        {
-          status: 'in_transit',
-          dimensions: { width: 25, height: 18, depth: 12 },
-          weight: 1.3,
-          cbm: 0.0054
-        }
-      ]
+    if (result.success && result.data) {
+      trackingData.value = result.data
+    } else {
+      error.value = result.error || '배송 정보를 불러오는데 실패했습니다.'
     }
-    
   } catch (err) {
     console.error('Load tracking data error:', err)
     error.value = '배송 정보를 불러오는데 실패했습니다.'
@@ -309,33 +246,44 @@ const goBack = () => {
 
 const getStatusIcon = (status?: string) => {
   const icons = {
-    shipped: TruckIcon,
-    in_transit: TruckIcon,
-    delivered: CheckCircleIcon,
-    issue: ExclamationTriangleIcon
+    PENDING: ClockIcon,
+    PROCESSING: ArrowPathIcon,
+    SHIPPED: TruckIcon,
+    IN_TRANSIT: TruckIcon,
+    CUSTOMS: BuildingStorefrontIcon,
+    OUT_FOR_DELIVERY: TruckIcon,
+    DELIVERED: CheckCircleIcon,
+    EXCEPTION: ExclamationTriangleIcon,
+    RETURNED: ArrowLeftIcon
   }
   return icons[status as keyof typeof icons] || ClockIcon
 }
 
 const getStatusText = (status?: string) => {
   const texts = {
-    shipped: '발송됨',
-    in_transit: '배송 중',
-    delivered: '배송 완료',
-    issue: '배송 문제'
+    PENDING: '대기 중',
+    PROCESSING: '처리 중',
+    SHIPPED: '발송됨',
+    IN_TRANSIT: '배송 중',
+    CUSTOMS: '통관 처리',
+    OUT_FOR_DELIVERY: '배송 준비',
+    DELIVERED: '배송 완료',
+    EXCEPTION: '배송 문제',
+    RETURNED: '반송됨'
   }
   return texts[status as keyof typeof texts] || '알 수 없음'
 }
 
-const getEventIcon = (type: string) => {
+const getEventIcon = (eventType: string) => {
   const icons = {
-    shipped: TruckIcon,
-    in_transit: TruckIcon,
-    customs: BuildingStorefrontIcon,
-    out_for_delivery: TruckIcon,
-    delivered: CheckCircleIcon
+    CREATED: ClockIcon,
+    PROCESSING: ArrowPathIcon,
+    COMPLETED: CheckCircleIcon,
+    FAILED: ExclamationTriangleIcon,
+    REFUNDED: ArrowLeftIcon,
+    CANCELLED: ExclamationTriangleIcon
   }
-  return icons[type as keyof typeof icons] || ClockIcon
+  return icons[eventType as keyof typeof icons] || ClockIcon
 }
 
 const formatDate = (dateString: string) => {
@@ -357,7 +305,11 @@ const formatDateTime = (dateString: string) => {
 
 const refreshData = async () => {
   await loadTrackingData()
-  toast.success('배송 정보가 업데이트되었습니다.')
+  
+  // Emit custom event for success notification
+  window.dispatchEvent(new CustomEvent('tracking-success', {
+    detail: { message: '배송 정보가 업데이트되었습니다.' }
+  }))
 }
 
 const shareTracking = async () => {
@@ -366,7 +318,7 @@ const shareTracking = async () => {
   if (navigator.share) {
     try {
       await navigator.share({
-        title: `배송 추적 - ${props.trackingNumber}`,
+        title: `배송 추적 - ${trackingNumber.value}`,
         text: '배송 상태를 확인해보세요',
         url: url
       })
@@ -376,21 +328,80 @@ const shareTracking = async () => {
   } else {
     try {
       await navigator.clipboard.writeText(url)
-      toast.success('링크가 클립보드에 복사되었습니다.')
+      window.dispatchEvent(new CustomEvent('tracking-success', {
+        detail: { message: '링크가 클립보드에 복사되었습니다.' }
+      }))
     } catch (err) {
-      toast.error('링크 복사에 실패했습니다.')
+      window.dispatchEvent(new CustomEvent('tracking-error', {
+        detail: { message: '링크 복사에 실패했습니다.' }
+      }))
     }
   }
 }
 
-const confirmDelivery = () => {
-  toast.success('배송 확인이 완료되었습니다.')
-  // API call to confirm delivery
+const confirmDelivery = async () => {
+  if (!trackingData.value) return
+  
+  try {
+    const request: DeliveryConfirmationRequest = {
+      trackingId: trackingData.value.id,
+      recipientName: trackingData.value.recipient.name,
+      notes: '사용자가 배송 완료를 확인했습니다.'
+    }
+
+    const result = await SpringBootTrackingService.confirmDelivery(request)
+    
+    if (result.success) {
+      // Reload tracking data
+      await loadTrackingData()
+      
+      window.dispatchEvent(new CustomEvent('tracking-success', {
+        detail: { message: '배송 확인이 완료되었습니다.' }
+      }))
+    } else {
+      window.dispatchEvent(new CustomEvent('tracking-error', {
+        detail: { message: result.error || '배송 확인 처리 중 오류가 발생했습니다.' }
+      }))
+    }
+  } catch (error) {
+    console.error('Delivery confirmation error:', error)
+    window.dispatchEvent(new CustomEvent('tracking-error', {
+      detail: { message: '배송 확인 처리 중 오류가 발생했습니다.' }
+    }))
+  }
 }
 
-const reportIssue = () => {
-  toast.info('문제 신고 기능을 준비 중입니다.')
-  // Navigate to issue reporting page
+const reportIssue = async () => {
+  if (!trackingData.value) return
+  
+  try {
+    const request: IssueReportRequest = {
+      trackingId: trackingData.value.id,
+      issueType: 'OTHER',
+      description: '사용자가 배송 문제를 신고했습니다.',
+      priority: 'MEDIUM',
+      contactMethod: 'EMAIL'
+    }
+
+    const result = await SpringBootTrackingService.reportIssue(request)
+    
+    if (result.success && result.data) {
+      window.dispatchEvent(new CustomEvent('tracking-success', {
+        detail: { 
+          message: `문제 신고가 접수되었습니다. 티켓 번호: ${result.data.ticketNumber}` 
+        }
+      }))
+    } else {
+      window.dispatchEvent(new CustomEvent('tracking-error', {
+        detail: { message: result.error || '문제 신고 처리 중 오류가 발생했습니다.' }
+      }))
+    }
+  } catch (error) {
+    console.error('Issue report error:', error)
+    window.dispatchEvent(new CustomEvent('tracking-error', {
+      detail: { message: '문제 신고 처리 중 오류가 발생했습니다.' }
+    }))
+  }
 }
 
 // Lifecycle

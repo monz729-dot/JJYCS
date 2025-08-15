@@ -44,7 +44,7 @@
               <div class="ml-5 w-0 flex-1">
                 <dl>
                   <dt class="text-sm font-medium text-gray-500 truncate">{{ $t('tracking.stats.total') }}</dt>
-                  <dd class="text-lg font-medium text-gray-900">{{ trackingStats.total }}</dd>
+                  <dd class="text-lg font-medium text-gray-900">{{ trackingStats.totalShipments }}</dd>
                 </dl>
               </div>
             </div>
@@ -237,10 +237,10 @@
                   <div class="flex items-center">
                     <div>
                       <div class="text-sm font-medium text-gray-900">
-                        {{ tracking.orderCode }}
+                        {{ tracking.orderNumber }}
                       </div>
                       <div class="text-sm text-gray-500">
-                        {{ tracking.recipient.name }}
+                        {{ tracking.recipientName }}
                       </div>
                     </div>
                   </div>
@@ -369,8 +369,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useTrackingStore } from '@/stores/tracking'
-import { useNotificationStore } from '@/stores/notification'
+import SpringBootTrackingService, { type TrackingListItem, type TrackingStats } from '@/services/trackingApiService'
 import {
   MagnifyingGlassIcon,
   TruckIcon,
@@ -383,8 +382,6 @@ import {
 } from '@heroicons/vue/24/outline'
 
 const router = useRouter()
-const trackingStore = useTrackingStore()
-const notificationStore = useNotificationStore()
 
 // State
 const searchQuery = ref('')
@@ -392,16 +389,22 @@ const listSearchQuery = ref('')
 const selectedStatus = ref('')
 const selectedShippingMethod = ref('')
 const searchTimeout = ref<NodeJS.Timeout | null>(null)
+const isLoading = ref(false)
+const trackingList = ref<TrackingListItem[]>([])
+const trackingStats = ref<TrackingStats>({
+  totalShipments: 0,
+  inTransit: 0,
+  delivered: 0,
+  exceptions: 0,
+  averageDeliveryTime: 0,
+  onTimeDeliveryRate: 0
+})
+const currentPage = ref(0)
+const totalPages = ref(0)
+const totalElements = ref(0)
+const pageSize = ref(20)
 
 // Computed
-const trackingList = computed(() => trackingStore.trackingList)
-const isLoading = computed(() => trackingStore.isLoading)
-const trackingStats = computed(() => trackingStore.trackingStats)
-const currentPage = computed(() => trackingStore.currentPage)
-const totalPages = computed(() => trackingStore.totalPages)
-const totalElements = computed(() => trackingStore.totalElements)
-const pageSize = computed(() => trackingStore.pageSize)
-
 const visiblePages = computed(() => {
   const pages = []
   const start = Math.max(1, currentPage.value - 2)
@@ -416,56 +419,83 @@ const visiblePages = computed(() => {
 // Methods
 const loadTrackingList = async () => {
   try {
-    await trackingStore.fetchTrackingList({
+    isLoading.value = true
+    
+    const result = await SpringBootTrackingService.getTrackingList({
       page: currentPage.value,
       size: pageSize.value,
-      filters: {
-        status: selectedStatus.value ? [selectedStatus.value as any] : undefined,
-        shippingMethod: selectedShippingMethod.value ? [selectedShippingMethod.value as any] : undefined,
-        search: listSearchQuery.value
-      }
+      status: selectedStatus.value || undefined,
+      shippingMethod: selectedShippingMethod.value || undefined,
+      recipientName: listSearchQuery.value || undefined
     })
+    
+    if (result.success && result.data) {
+      trackingList.value = result.data.content
+      totalPages.value = result.data.totalPages
+      totalElements.value = result.data.totalElements
+    } else {
+      console.error('Failed to load tracking list:', result.error)
+      window.dispatchEvent(new CustomEvent('tracking-error', {
+        detail: { message: result.error || '배송 추적 목록을 불러오는데 실패했습니다.' }
+      }))
+    }
   } catch (error) {
-    notificationStore.error('오류', '배송 추적 목록을 불러오는데 실패했습니다.')
+    console.error('Load tracking list error:', error)
+    window.dispatchEvent(new CustomEvent('tracking-error', {
+      detail: { message: '배송 추적 목록을 불러오는데 실패했습니다.' }
+    }))
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const loadTrackingStats = async () => {
+  try {
+    const result = await SpringBootTrackingService.getTrackingStats('month')
+    
+    if (result.success && result.data) {
+      trackingStats.value = result.data
+    }
+  } catch (error) {
+    console.error('Load tracking stats error:', error)
   }
 }
 
 const searchTracking = async () => {
   if (!searchQuery.value.trim()) {
-    notificationStore.warning('경고', '검색어를 입력해주세요.')
+    window.dispatchEvent(new CustomEvent('tracking-error', {
+      detail: { message: '검색어를 입력해주세요.' }
+    }))
     return
   }
   
   try {
-    const result = await trackingStore.searchTracking({
-      trackingNumber: searchQuery.value.trim(),
-      orderCode: searchQuery.value.trim()
-    })
+    // Try to get single tracking by number first
+    const result = await SpringBootTrackingService.getTrackingByNumber(searchQuery.value.trim())
     
     if (result.success && result.data) {
-      if (Array.isArray(result.data)) {
-        notificationStore.success('검색 완료', `${result.data.length}개의 결과를 찾았습니다.`)
-        // Update filters to show search results
-        listSearchQuery.value = searchQuery.value
-        applyFilters()
-      } else {
-        // Single tracking result, navigate to detail
-        router.push(`/tracking/${result.data.trackingNumber}`)
-      }
+      // Single tracking result, navigate to detail
+      router.push(`/tracking/${result.data.trackingNumber}`)
     } else {
-      notificationStore.warning('검색 결과 없음', '해당하는 배송 정보를 찾을 수 없습니다.')
+      // Search in the list
+      listSearchQuery.value = searchQuery.value
+      applyFilters()
     }
   } catch (error: any) {
-    notificationStore.error('검색 실패', error.message || '검색 중 오류가 발생했습니다.')
+    console.error('Search tracking error:', error)
+    window.dispatchEvent(new CustomEvent('tracking-error', {
+      detail: { message: error.message || '검색 중 오류가 발생했습니다.' }
+    }))
   }
 }
 
 const refreshTrackingList = () => {
   loadTrackingList()
+  loadTrackingStats()
 }
 
 const applyFilters = () => {
-  trackingStore.setPage(0) // Reset to first page
+  currentPage.value = 0 // Reset to first page
   loadTrackingList()
 }
 
@@ -473,7 +503,7 @@ const clearFilters = () => {
   selectedStatus.value = ''
   selectedShippingMethod.value = ''
   listSearchQuery.value = ''
-  trackingStore.clearFilters()
+  currentPage.value = 0
   loadTrackingList()
 }
 
@@ -491,35 +521,35 @@ const goToTrackingDetail = (trackingNumber: string) => {
 }
 
 const goToPage = (page: number) => {
-  trackingStore.setPage(page)
+  currentPage.value = page
   loadTrackingList()
 }
 
 const nextPage = () => {
   if (currentPage.value < totalPages.value - 1) {
-    trackingStore.nextPage()
+    currentPage.value++
     loadTrackingList()
   }
 }
 
 const previousPage = () => {
   if (currentPage.value > 0) {
-    trackingStore.prevPage()
+    currentPage.value--
     loadTrackingList()
   }
 }
 
 const getStatusBadgeClass = (status: string) => {
   const classes = {
-    created: 'bg-gray-100 text-gray-800',
-    picked_up: 'bg-blue-100 text-blue-800',
-    in_transit: 'bg-orange-100 text-orange-800',
-    customs_processing: 'bg-purple-100 text-purple-800',
-    customs_cleared: 'bg-indigo-100 text-indigo-800',
-    out_for_delivery: 'bg-yellow-100 text-yellow-800',
-    delivered: 'bg-green-100 text-green-800',
-    exception: 'bg-red-100 text-red-800',
-    returned: 'bg-gray-100 text-gray-800'
+    PENDING: 'bg-gray-100 text-gray-800',
+    PROCESSING: 'bg-blue-100 text-blue-800',
+    SHIPPED: 'bg-blue-100 text-blue-800',
+    IN_TRANSIT: 'bg-orange-100 text-orange-800',
+    CUSTOMS: 'bg-purple-100 text-purple-800',
+    OUT_FOR_DELIVERY: 'bg-yellow-100 text-yellow-800',
+    DELIVERED: 'bg-green-100 text-green-800',
+    EXCEPTION: 'bg-red-100 text-red-800',
+    RETURNED: 'bg-gray-100 text-gray-800'
   }
   return classes[status] || 'bg-gray-100 text-gray-800'
 }
@@ -532,16 +562,10 @@ const formatDate = (dateString: string) => {
   }).format(new Date(dateString))
 }
 
-// Watchers
-watch(() => trackingStore.filters, (newFilters) => {
-  selectedStatus.value = newFilters.status?.[0] || ''
-  selectedShippingMethod.value = newFilters.shippingMethod?.[0] || ''
-  listSearchQuery.value = newFilters.search || ''
-}, { deep: true })
-
 // Lifecycle
 onMounted(() => {
   loadTrackingList()
+  loadTrackingStats()
 })
 </script>
 

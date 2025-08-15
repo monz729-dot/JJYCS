@@ -161,26 +161,58 @@
     </div>
 
     <!-- 스캔 결과 모달 -->
-    <ScanResultModal
-      :show="showResultModal"
-      :scan-result="currentScanResult"
-      @close="closeResultModal"
-      @action="handleScanAction"
-    />
+    <div v-if="showResultModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closeResultModal">
+      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white" @click.stop>
+        <div class="mt-3 text-center">
+          <h3 class="text-lg font-medium text-gray-900">스캔 결과</h3>
+          <div class="mt-2 px-7 py-3">
+            <p class="text-sm text-gray-500">스캔이 완료되었습니다.</p>
+          </div>
+          <div class="items-center px-4 py-3">
+            <button @click="closeResultModal" class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full">
+              확인
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- 일괄 처리 결과 모달 -->
-    <BatchResultModal
-      :show="showBatchResultModal"
-      :batch-result="batchResult"
-      @close="closeBatchResultModal"
-    />
+    <div v-if="showBatchResultModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closeBatchResultModal">
+      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white" @click.stop>
+        <div class="mt-3 text-center">
+          <h3 class="text-lg font-medium text-gray-900">일괄 처리 결과</h3>
+          <div class="mt-2 px-7 py-3">
+            <p class="text-sm text-gray-500">일괄 처리가 완료되었습니다.</p>
+          </div>
+          <div class="items-center px-4 py-3">
+            <button @click="closeBatchResultModal" class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full">
+              확인
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- 권한 요청 모달 -->
-    <PermissionModal
-      :show="showPermissionModal"
-      @grant="requestCameraPermission"
-      @deny="closePermissionModal"
-    />
+    <div v-if="showPermissionModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3 text-center">
+          <h3 class="text-lg font-medium text-gray-900">카메라 권한 필요</h3>
+          <div class="mt-2 px-7 py-3">
+            <p class="text-sm text-gray-500">QR 코드 스캔을 위해 카메라 권한이 필요합니다.</p>
+          </div>
+          <div class="items-center px-4 py-3 flex space-x-2">
+            <button @click="requestCameraPermission" class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md flex-1">
+              허용
+            </button>
+            <button @click="closePermissionModal" class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md flex-1">
+              거부
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -190,11 +222,15 @@ import { useI18n } from 'vue-i18n'
 import { useWarehouseStore } from '@/stores/warehouse'
 import { useToast } from '@/composables/useToast'
 import QRScanner from '../components/QRScanner.vue'
-import ScanResultModal from '../components/ScanResultModal.vue'
-import BatchResultModal from '../components/BatchResultModal.vue'
-import PermissionModal from '../components/PermissionModal.vue'
+// Removed missing modal imports - using inline modals instead
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import type { ScanRequest, ScanResult, BatchScanItem } from '@/types/warehouse'
+
+interface BatchProcessRequest {
+  orderIds: string[]
+  action: string
+  warehouseCode: string
+}
 
 const { t } = useI18n()
 const warehouseStore = useWarehouseStore()

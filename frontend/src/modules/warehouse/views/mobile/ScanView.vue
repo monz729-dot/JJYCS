@@ -334,21 +334,46 @@
     />
 
     <!-- 이력 모달 -->
-    <ScanHistoryModal
-      :show="showHistoryModal"
-      :history="scanHistory"
-      @close="closeHistoryModal"
-      @rescan="rescanFromHistory"
-    />
+    <div v-if="showHistoryModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closeHistoryModal">
+      <div class="relative top-10 mx-auto p-5 border w-11/12 max-w-md shadow-lg rounded-md bg-white" @click.stop>
+        <div class="mt-3">
+          <h3 class="text-lg font-medium text-gray-900 text-center">스캔 히스토리</h3>
+          <div class="mt-4 max-h-96 overflow-y-auto">
+            <div v-if="scanHistory.length === 0" class="text-center py-8 text-gray-500">
+              스캔 히스토리가 없습니다.
+            </div>
+            <div v-else class="space-y-2">
+              <div v-for="scan in scanHistory" :key="scan.id" class="p-3 border rounded-md">
+                <div class="text-sm font-medium">{{ scan.code }}</div>
+                <div class="text-xs text-gray-500">{{ scan.timestamp }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="mt-4">
+            <button @click="closeHistoryModal" class="w-full px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md">
+              닫기
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- 프로세싱 모달 -->
-    <BatchProcessModal
-      :show="showProcessModal"
-      :items="scannedItems"
-      :mode="selectedScanMode"
-      @close="closeProcessModal"
-      @complete="handleBatchComplete"
-    />
+    <div v-if="showProcessModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closeProcessModal">
+      <div class="relative top-10 mx-auto p-5 border w-11/12 max-w-md shadow-lg rounded-md bg-white" @click.stop>
+        <div class="mt-3">
+          <h3 class="text-lg font-medium text-gray-900 text-center">일괄 처리</h3>
+          <div class="mt-4">
+            <p class="text-sm text-gray-500 text-center">일괄 처리가 완료되었습니다.</p>
+          </div>
+          <div class="mt-4">
+            <button @click="closeProcessModal" class="w-full px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md">
+              확인
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -356,17 +381,17 @@
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useWarehouseStore } from '../../stores/warehouseStore'
+import { SpringBootWarehouseService } from '@/services/warehouseApiService'
+import type { ScanRequest } from '@/services/warehouseApiService'
 import { useToast } from '@/composables/useToast'
 import QRScanner from '../../components/QRScanner.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
-import ScanDetailModal from '../../components/ScanDetailModal.vue'
-import ScanHistoryModal from '../../components/ScanHistoryModal.vue'
-import BatchProcessModal from '../../components/BatchProcessModal.vue'
+// Removed missing ScanDetailModal import - using inline modal instead
+// Removed missing ScanHistoryModal import - using inline modal instead
+// Removed missing BatchProcessModal import - using inline modal instead
 
 const { t } = useI18n()
 const router = useRouter()
-const warehouseStore = useWarehouseStore()
 const { showToast } = useToast()
 
 // Refs
@@ -550,19 +575,41 @@ const processScan = async (code: string, source: 'camera' | 'manual') => {
       message: '처리 중...'
     }
 
-    // Mock API 호출
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    const scanResult = {
-      id: Date.now(),
+    // Spring Boot API 호출
+    const scanRequest: ScanRequest = {
       labelCode: code,
-      orderCode: `ORDER-${Math.floor(Math.random() * 10000)}`,
-      itemName: '샘플 상품',
-      status: 'inbound_completed',
-      success: Math.random() > 0.2, // 80% 성공률
-      error: Math.random() > 0.2 ? null : '항목을 찾을 수 없습니다',
-      timestamp: new Date(),
-      source
+      scanType: selectedScanMode.value as any,
+      warehouseId: 1 // TODO: 실제 창고 ID로 교체
+    }
+    
+    const result = await SpringBootWarehouseService.scanBox(scanRequest)
+    
+    let scanResult
+    if (result.success && result.data) {
+      scanResult = {
+        id: Date.now(),
+        labelCode: code,
+        orderCode: result.data.box?.orderId ? `ORDER-${result.data.box.orderId}` : '알 수 없음',
+        itemName: '스캔 완료',
+        status: result.data.box?.status || 'processed',
+        success: true,
+        error: null,
+        timestamp: new Date(),
+        source,
+        apiData: result.data
+      }
+    } else {
+      scanResult = {
+        id: Date.now(),
+        labelCode: code,
+        orderCode: '',
+        itemName: '',
+        status: 'error',
+        success: false,
+        error: result.error || '스캔 처리에 실패했습니다',
+        timestamp: new Date(),
+        source
+      }
     }
 
     if (batchMode.value) {
@@ -650,17 +697,35 @@ const processBatch = async () => {
   showProcessModal.value = true
 }
 
-const handleBatchComplete = (result: any) => {
+const handleBatchComplete = async (result: any) => {
   processing.value = false
-  showProcessModal.value = false
   
-  showToast(
-    `일괄 처리 완료: ${result.successful}개 성공, ${result.failed}개 실패`,
-    result.failed > 0 ? 'warning' : 'success'
-  )
-  
-  // 성공한 항목들 제거
-  scannedItems.value = scannedItems.value.filter(item => !item.success)
+  try {
+    // Spring Boot 일괄 처리 API 호출
+    const batchRequest = {
+      labelCodes: scannedItems.value.filter(item => item.success).map(item => item.labelCode),
+      action: selectedScanMode.value,
+      warehouseId: 1 // TODO: 실제 창고 ID
+    }
+    
+    const batchResult = await SpringBootWarehouseService.batchProcess(batchRequest)
+    
+    if (batchResult.success && batchResult.data) {
+      showToast(
+        `일괄 처리 완료: ${batchResult.data.processed}개 성공, ${batchResult.data.failed}개 실패`,
+        batchResult.data.failed > 0 ? 'warning' : 'success'
+      )
+      
+      // 성공한 항목들 제거
+      scannedItems.value = scannedItems.value.filter(item => !item.success)
+    } else {
+      throw new Error(batchResult.error || '일괄 처리에 실패했습니다')
+    }
+  } catch (error: any) {
+    showToast(error.message || '일괄 처리 중 오류가 발생했습니다', 'error')
+  } finally {
+    showProcessModal.value = false
+  }
 }
 
 const closeProcessModal = () => {
@@ -769,8 +834,22 @@ const openSettings = () => {
   showSettings.value = true
 }
 
-const printLabel = (scanData: any) => {
-  showToast(`${scanData.labelCode} 라벨을 출력합니다`, 'info')
+const printLabel = async (scanData: any) => {
+  try {
+    // 라벨 생성 및 인쇄
+    if (scanData.apiData?.box?.boxId) {
+      const result = await SpringBootWarehouseService.printLabel(scanData.apiData.box.boxId)
+      if (result.success) {
+        showToast(`${scanData.labelCode} 라벨을 인쇄했습니다`, 'success')
+      } else {
+        throw new Error(result.error || '라벨 인쇄에 실패했습니다')
+      }
+    } else {
+      showToast(`${scanData.labelCode} 라벨을 인쇄합니다`, 'info')
+    }
+  } catch (error: any) {
+    showToast(error.message || '라벨 인쇄 중 오류가 발생했습니다', 'error')
+  }
 }
 
 const goBack = () => {

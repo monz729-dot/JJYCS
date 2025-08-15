@@ -5,7 +5,9 @@
       <div class="px-4 py-4">
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-3">
-            <img src="/logo-mobile.png" alt="YCS" class="h-8 w-auto" />
+            <div class="h-8 w-12 bg-blue-600 rounded flex items-center justify-center">
+              <span class="text-white font-bold text-sm">YCS</span>
+            </div>
             <div>
               <h1 class="text-lg font-bold text-gray-900">
                 YCS 물류시스템

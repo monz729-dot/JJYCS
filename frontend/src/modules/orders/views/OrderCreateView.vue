@@ -444,16 +444,16 @@
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useOrdersStore } from '@/stores/orders'
+import { useOrdersApiStore } from '@/stores/ordersApiStore'
 import { useToast } from '@/composables/useToast'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import CBMWarning from '../components/CBMWarning.vue'
 import WarningModal from '../components/WarningModal.vue'
-import type { CreateOrderRequest, BusinessWarning } from '@/types/orders'
+import type { BusinessWarning } from '@/stores/ordersApiStore'
 
 const router = useRouter()
 const { t } = useI18n()
-const ordersStore = useOrdersStore()
+const ordersApiStore = useOrdersApiStore()
 const { showToast } = useToast()
 
 // 폼 단계 정의
@@ -470,7 +470,7 @@ const hsCodeValidation = ref<Record<number, { valid: boolean; message: string }>
 const showWarnings = ref<BusinessWarning[]>([])
 
 // 폼 데이터
-const formData = ref<CreateOrderRequest>({
+const formData = ref({
   recipient: {
     name: '',
     phone: '',
@@ -486,23 +486,22 @@ const formData = ref<CreateOrderRequest>({
     currency: 'THB',
     category: '',
     hsCode: '',
-    description: ''
+    description: '',
+    emsCode: '',
+    countryOfOrigin: '',
+    brand: ''
   }],
   boxes: [{
     width: 0,
     height: 0,
     depth: 0,
-    weight: 0,
-    items: [0]
+    weight: 0
   }],
   shipping: {
     preferredType: 'sea',
     urgency: 'normal',
     needsRepacking: false,
     specialInstructions: ''
-  },
-  payment: {
-    method: 'prepaid'
   }
 })
 
@@ -577,7 +576,10 @@ const addItem = () => {
     currency: 'THB',
     category: '',
     hsCode: '',
-    description: ''
+    description: '',
+    emsCode: '',
+    countryOfOrigin: '',
+    brand: ''
   })
 }
 
@@ -592,8 +594,7 @@ const addBox = () => {
     width: 0,
     height: 0,
     depth: 0,
-    weight: 0,
-    items: [formData.value.items.length - 1]
+    weight: 0
   })
 }
 
@@ -611,7 +612,7 @@ const validateHSCode = async (item: any, index: number) => {
   }
 
   try {
-    const result = await ordersStore.validateBusinessRules({ items: [item] })
+    const result = await ordersApiStore.validateBusinessRules({ items: [item] })
     hsCodeValidation.value[index] = {
       valid: result.valid,
       message: result.valid ? 
@@ -639,11 +640,10 @@ const handleSubmit = async () => {
 
   try {
     // 비즈니스 룰 사전 검증
-    const validationResult = await ordersStore.validateBusinessRules({
+    const validationResult = await ordersApiStore.validateBusinessRules({
       items: formData.value.items,
       boxes: formData.value.boxes,
-      currency: formData.value.items[0]?.currency || 'THB',
-      totalAmount: totalAmount.value
+      currency: formData.value.items[0]?.currency || 'THB'
     })
 
     if (validationResult.warnings && validationResult.warnings.length > 0) {
@@ -653,12 +653,12 @@ const handleSubmit = async () => {
     }
 
     // 주문 생성
-    const order = await ordersStore.createOrder(formData.value)
+    const order = await ordersApiStore.createOrder(formData.value)
     
     showToast(t('orders.create.success'), 'success')
     
     // 주문 상세 페이지로 이동
-    router.push({ name: 'OrderDetail', params: { id: order.orderId } })
+    router.push({ name: 'OrderDetail', params: { id: order.id } })
     
   } catch (error: any) {
     console.error('Order creation error:', error)
@@ -677,9 +677,9 @@ const handleWarningsContinue = async () => {
   
   // 경고를 무시하고 주문 생성 진행
   try {
-    const order = await ordersStore.createOrder(formData.value)
+    const order = await ordersApiStore.createOrder(formData.value)
     showToast(t('orders.create.success_with_warnings'), 'success')
-    router.push({ name: 'OrderDetail', params: { id: order.orderId } })
+    router.push({ name: 'OrderDetail', params: { id: order.id } })
   } catch (error: any) {
     showToast(error.message || t('orders.create.error'), 'error')
   }

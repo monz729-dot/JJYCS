@@ -407,7 +407,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { useNotificationStore } from '@/stores/notification'
+import { useToast } from '@/composables/useToast'
+import { SpringBootEstimatesService } from '@/services/estimatesApiService'
+import { SpringBootOrdersService } from '@/services/ordersApiService'
+import type { EstimateCreateRequest } from '@/services/estimatesApiService'
 import {
   ArrowLeftIcon,
   CalculatorIcon,
@@ -418,7 +421,7 @@ import {
 // Composables
 const router = useRouter()
 const route = useRoute()
-const notificationStore = useNotificationStore()
+const { showToast } = useToast()
 
 // Props
 const orderId = computed(() => route.params.orderId)
@@ -519,11 +522,33 @@ const loadOrderInfo = async () => {
   isLoading.value = true
   
   try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    const result = await SpringBootOrdersService.getOrder(Number(orderId.value))
+    if (result.success && result.data) {
+      orderInfo.value = {
+        id: result.data.id,
+        orderCode: result.data.orderNumber || `ORD-${result.data.id}`,
+        orderType: result.data.orderType || 'sea',
+        totalCbm: result.data.totalCBM || 0,
+        totalWeight: result.data.totalWeight || 0,
+        itemCount: result.data.items?.length || 0,
+        totalValue: result.data.totalAmount || 0,
+        recipientName: result.data.recipientName,
+        recipientCountry: result.data.recipientCountry,
+        customer: {
+          name: result.data.customerName || 'Unknown',
+          company: result.data.customerCompany || '',
+          email: result.data.customerEmail || ''
+        }
+      }
+    } else {
+      // Fallback to mock data if API fails
+      orderInfo.value = mockOrderInfo
+      showToast('주문 정보를 불러오는데 실패했습니다. 목 데이터를 사용합니다.', 'warning')
+    }
+  } catch (error: any) {
+    console.error('Order info load error:', error)
     orderInfo.value = mockOrderInfo
-  } catch (error) {
-    notificationStore.error('오류', '주문 정보를 불러오는데 실패했습니다.')
+    showToast('주문 정보를 불러오는데 실패했습니다. 목 데이터를 사용합니다.', 'warning')
   } finally {
     isLoading.value = false
   }
@@ -542,43 +567,40 @@ const calculateEstimate = async () => {
   isCalculating.value = true
   
   try {
-    // Simulate calculation API call
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    const result = await SpringBootEstimatesService.calculateEstimate(
+      orderInfo.value.id,
+      orderInfo.value.orderType,
+      undefined, // carrier
+      'standard' // service level
+    )
     
-    // Auto-calculate based on order info
-    const order = orderInfo.value
-    
-    // Base shipping cost calculation
-    if (order.orderType === 'sea') {
-      costs.value.shippingCost = Math.round(order.totalCbm * 3500) // 3,500 THB per CBM for sea
+    if (result.success && result.data) {
+      costs.value.shippingCost = result.data.shippingCost
+      costs.value.localDelivery = result.data.localShippingCost
+      costs.value.repackingFee = result.data.repackingCost
+      
+      // Calculate additional costs based on order
+      const order = orderInfo.value
+      costs.value.handlingFee = Math.round(order.itemCount * 150 + order.totalValue * 0.02)
+      costs.value.customsFee = Math.round(order.totalValue * 0.015)
+      
+      // Auto-set options based on order characteristics
+      if (order.itemCount > 3) {
+        includeRepacking.value = true
+      }
+      
+      if (order.totalValue > 2000) {
+        includeInsurance.value = true
+        costs.value.insurance = Math.round(order.totalValue * 0.01)
+      }
+      
+      showToast('견적이 자동으로 계산되었습니다.', 'success')
     } else {
-      costs.value.shippingCost = Math.round(order.totalWeight * 85) // 85 THB per kg for air
+      throw new Error(result.error || '견적 계산에 실패했습니다')
     }
-    
-    // Local delivery based on destination
-    costs.value.localDelivery = 1200
-    
-    // Handling fee based on item count and value
-    costs.value.handlingFee = Math.round(order.itemCount * 150 + order.totalValue * 0.02)
-    
-    // Customs fee based on value
-    costs.value.customsFee = Math.round(order.totalValue * 0.015)
-    
-    // Auto-set repacking if many items
-    if (order.itemCount > 3) {
-      includeRepacking.value = true
-      costs.value.repackingFee = Math.round(order.itemCount * 200)
-    }
-    
-    // Auto-set insurance for high value orders
-    if (order.totalValue > 2000) {
-      includeInsurance.value = true
-      costs.value.insurance = Math.round(order.totalValue * 0.01)
-    }
-    
-    notificationStore.success('계산 완료', '견적이 자동으로 계산되었습니다.')
-  } catch (error) {
-    notificationStore.error('오류', '견적 계산에 실패했습니다.')
+  } catch (error: any) {
+    console.error('Estimate calculation error:', error)
+    showToast(error.message || '견적 계산에 실패했습니다', 'error')
   } finally {
     isCalculating.value = false
   }
@@ -588,12 +610,22 @@ const saveDraft = async () => {
   isSaving.value = true
   
   try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    const estimateData: EstimateCreateRequest = {
+      shippingMethod: orderInfo.value?.orderType || 'sea',
+      serviceLevel: 'standard',
+      notes: `드래프트 - ${specialNotes.value}\n추가 서비스: ${Object.entries(additionalServices.value).filter(([_, v]) => v).map(([k]) => k).join(', ')}`
+    }
     
-    notificationStore.success('저장 완료', '견적 초안이 저장되었습니다.')
-  } catch (error) {
-    notificationStore.error('오류', '견적 저장에 실패했습니다.')
+    const result = await SpringBootEstimatesService.createEstimate(orderInfo.value!.id, estimateData)
+    
+    if (result.success) {
+      showToast('견적 초안이 저장되었습니다.', 'success')
+    } else {
+      throw new Error(result.error || '견적 저장에 실패했습니다')
+    }
+  } catch (error: any) {
+    console.error('Draft save error:', error)
+    showToast(error.message || '견적 저장에 실패했습니다', 'error')
   } finally {
     isSaving.value = false
   }
@@ -605,15 +637,29 @@ const createEstimate = async () => {
   isSaving.value = true
   
   try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    const estimateData: EstimateCreateRequest = {
+      shippingMethod: orderInfo.value?.orderType || 'sea',
+      serviceLevel: additionalServices.value.urgentProcessing ? 'urgent' : 'standard',
+      notes: [
+        specialNotes.value,
+        `버전: ${estimateVersion.value}차 견적`,
+        `유효기간: ${validityDays.value}일`,
+        `추가 서비스: ${Object.entries(additionalServices.value).filter(([_, v]) => v).map(([k]) => k).join(', ')}`,
+        `예상 총비용: ${formatCurrency(totalAmount.value)}`
+      ].filter(Boolean).join('\n')
+    }
     
-    notificationStore.success('견적 생성 완료', '견적서가 성공적으로 생성되었습니다.')
+    const result = await SpringBootEstimatesService.createEstimate(orderInfo.value!.id, estimateData)
     
-    // Navigate to estimate detail or list
-    router.push({ name: 'EstimateList' })
-  } catch (error) {
-    notificationStore.error('오류', '견적 생성에 실패했습니다.')
+    if (result.success && result.data) {
+      showToast('견적서가 성공적으로 생성되었습니다.', 'success')
+      router.push({ name: 'EstimateDetail', params: { id: result.data.id } })
+    } else {
+      throw new Error(result.error || '견적 생성에 실패했습니다')
+    }
+  } catch (error: any) {
+    console.error('Estimate creation error:', error)
+    showToast(error.message || '견적 생성에 실패했습니다', 'error')
   } finally {
     isSaving.value = false
   }

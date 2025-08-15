@@ -438,13 +438,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useWarehouseStore } from '../stores/warehouseStore'
+import { useWarehouseStore } from '@/stores/warehouse'
 import { useToast } from '@/composables/useToast'
 import QRScanner from '../components/QRScanner.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
-import ProcessingResultModal from '../components/ProcessingResultModal.vue'
-import ProcessingPreviewModal from '../components/ProcessingPreviewModal.vue'
-import PresetModal from '../components/PresetModal.vue'
+// Removed missing modal imports - using inline modals instead
 
 const { t } = useI18n()
 const router = useRouter()

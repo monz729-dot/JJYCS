@@ -464,13 +464,13 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useWarehouseStore } from '../stores/warehouseStore'
+import { useWarehouseStore } from '@/stores/warehouse'
 import { useToast } from '@/composables/useToast'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
-import PhotoUploadModal from '../components/PhotoUploadModal.vue'
-import PhotoViewModal from '../components/PhotoViewModal.vue'
-import PhotoEditModal from '../components/PhotoEditModal.vue'
-import CameraCaptureModal from '../components/CameraCaptureModal.vue'
+// Removed missing PhotoUploadModal import
+// Removed missing PhotoViewModal import
+// Removed missing PhotoEditModal import
+// Removed missing CameraCaptureModal import
 
 const { t } = useI18n()
 const router = useRouter()

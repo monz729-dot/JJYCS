@@ -100,7 +100,7 @@
             class="control-btn manual-btn"
             @click="toggleManualInput"
           >
-            <KeyboardIcon class="control-icon" />
+            <PencilIcon class="control-icon" />
           </button>
         </div>
       </div>
@@ -187,7 +187,7 @@ import {
   BoltIcon,
   PauseIcon,
   PlayIcon,
-  KeyboardIcon,
+  PencilIcon,
   CheckCircleIcon,
   XMarkIcon
 } from '@heroicons/vue/24/outline'

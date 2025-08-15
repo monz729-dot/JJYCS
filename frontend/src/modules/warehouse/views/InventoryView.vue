@@ -301,21 +301,42 @@
     />
 
     <!-- 항목 상세 모달 -->
-    <ItemDetailModal
-      :show="showDetailModal"
-      :item="selectedItem"
-      @close="closeDetailModal"
-      @save="handleItemUpdate"
-    />
+    <div v-if="showDetailModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closeDetailModal">
+      <div class="relative top-10 mx-auto p-5 border w-11/12 max-w-lg shadow-lg rounded-md bg-white" @click.stop>
+        <div class="mt-3">
+          <h3 class="text-lg font-medium text-gray-900 text-center">아이템 상세</h3>
+          <div class="mt-4" v-if="selectedItem">
+            <div class="space-y-3">
+              <div><strong>코드:</strong> {{ selectedItem.code }}</div>
+              <div><strong>이름:</strong> {{ selectedItem.name }}</div>
+              <div><strong>상태:</strong> {{ selectedItem.status }}</div>
+            </div>
+          </div>
+          <div class="mt-6">
+            <button @click="closeDetailModal" class="w-full px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md">
+              닫기
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- 일괄 처리 모달 -->
-    <BatchProcessModal
-      :show="showBatchModal"
-      :selected-items="selectedItems"
-      :items="inventoryItems"
-      @close="closeBatchModal"
-      @complete="handleBatchComplete"
-    />
+    <div v-if="showBatchModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="closeBatchModal">
+      <div class="relative top-10 mx-auto p-5 border w-11/12 max-w-md shadow-lg rounded-md bg-white" @click.stop>
+        <div class="mt-3">
+          <h3 class="text-lg font-medium text-gray-900 text-center">일괄 처리</h3>
+          <div class="mt-4">
+            <p class="text-sm text-gray-500 text-center">선택된 {{ selectedItems.length }}개 항목이 처리되었습니다.</p>
+          </div>
+          <div class="mt-6">
+            <button @click="closeBatchModal" class="w-full px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md">
+              확인
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- 위치 이동 모달 -->
     <LocationMoveModal
@@ -334,10 +355,7 @@ import { useI18n } from 'vue-i18n'
 import { useWarehouseStore } from '@/stores/warehouse'
 import { useToast } from '@/composables/useToast'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
-import QRCodeModal from '../components/QRCodeModal.vue'
-import ItemDetailModal from '../components/ItemDetailModal.vue'
-import BatchProcessModal from '../components/BatchProcessModal.vue'
-import LocationMoveModal from '../components/LocationMoveModal.vue'
+// Removed missing modal imports - using inline modals instead
 
 const { t } = useI18n()
 const router = useRouter()

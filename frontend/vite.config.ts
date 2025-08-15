@@ -77,7 +77,6 @@ export default defineConfig({
       output: {
         manualChunks: {
           'vendor': ['vue', 'vue-router', 'pinia'],
-          'ui': ['primevue', 'primeicons'],
           'utils': ['axios', 'dayjs', 'vue-i18n']
         }
       }

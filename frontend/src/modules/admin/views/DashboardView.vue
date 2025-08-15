@@ -242,7 +242,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import {
   ArrowUpIcon,
   ArrowDownIcon,
@@ -251,83 +251,122 @@ import {
   CurrencyDollarIcon,
   ChartBarIcon
 } from '@heroicons/vue/24/outline'
+import { useAdminApiStore } from '@/stores/adminApiStore'
+import { useToast } from '@/composables/useToast'
 
 const selectedPeriod = ref('today')
 const selectedRevenuePeriod = ref('30일')
+const adminApiStore = useAdminApiStore()
+const { showToast } = useToast()
 
-// KPI data
-const kpis = ref([
-  {
-    title: '총 사용자',
-    value: '2,847',
-    change: '12.3%',
-    changeType: 'increase',
-    icon: UsersIcon,
-    iconColor: 'text-blue-600',
-    bgColor: 'bg-blue-600'
-  },
-  {
-    title: '금일 주문',
-    value: '156',
-    change: '8.1%',
-    changeType: 'increase',
-    icon: ShoppingCartIcon,
-    iconColor: 'text-green-600',
-    bgColor: 'bg-green-600'
-  },
-  {
-    title: '금일 매출',
-    value: '₩12.4M',
-    change: '3.2%',
-    changeType: 'decrease',
-    icon: CurrencyDollarIcon,
-    iconColor: 'text-yellow-600',
-    bgColor: 'bg-yellow-600'
-  },
-  {
-    title: '배송 완료',
-    value: '89',
-    change: '15.7%',
-    changeType: 'increase',
-    icon: ChartBarIcon,
-    iconColor: 'text-purple-600',
-    bgColor: 'bg-purple-600'
+// Computed KPI data from store
+const kpis = computed(() => {
+  if (!adminApiStore.stats) return []
+  
+  return [
+    {
+      title: '총 사용자',
+      value: adminApiStore.stats.totalUsers.toLocaleString(),
+      change: `${adminApiStore.stats.userGrowthRate}%`,
+      changeType: adminApiStore.stats.userGrowthRate >= 0 ? 'increase' : 'decrease',
+      icon: UsersIcon,
+      iconColor: 'text-blue-600',
+      bgColor: 'bg-blue-600'
+    },
+    {
+      title: '금일 주문',
+      value: adminApiStore.stats.todayOrders.toLocaleString(),
+      change: `${adminApiStore.stats.orderGrowthRate}%`,
+      changeType: adminApiStore.stats.orderGrowthRate >= 0 ? 'increase' : 'decrease',
+      icon: ShoppingCartIcon,
+      iconColor: 'text-green-600',
+      bgColor: 'bg-green-600'
+    },
+    {
+      title: '금일 매출',
+      value: `₩${(adminApiStore.stats.todayRevenue / 1000000).toFixed(1)}M`,
+      change: `${Math.abs(adminApiStore.stats.revenueGrowthRate)}%`,
+      changeType: adminApiStore.stats.revenueGrowthRate >= 0 ? 'increase' : 'decrease',
+      icon: CurrencyDollarIcon,
+      iconColor: 'text-yellow-600',
+      bgColor: 'bg-yellow-600'
+    },
+    {
+      title: '배송 완료',
+      value: adminApiStore.stats.completedDeliveries.toLocaleString(),
+      change: `${adminApiStore.stats.deliveryGrowthRate}%`,
+      changeType: adminApiStore.stats.deliveryGrowthRate >= 0 ? 'increase' : 'decrease',
+      icon: ChartBarIcon,
+      iconColor: 'text-purple-600',
+      bgColor: 'bg-purple-600'
+    }
+  ]
+})
+
+// Computed order status data from store
+const orderStatuses = computed(() => {
+  return adminApiStore.orderStatusCounts.map(status => {
+    const statusLabels: Record<string, string> = {
+      'REQUESTED': '주문 접수',
+      'PROCESSING': '처리 중',
+      'SHIPPING': '배송 중',
+      'DELIVERED': '배송 완료'
+    }
+    
+    const statusColors: Record<string, string> = {
+      'REQUESTED': '#3B82F6',
+      'PROCESSING': '#F59E0B',
+      'SHIPPING': '#8B5CF6',
+      'DELIVERED': '#10B981'
+    }
+    
+    return {
+      label: statusLabels[status.status] || status.status,
+      count: status.count,
+      percentage: status.percentage,
+      color: statusColors[status.status] || '#6B7280'
+    }
+  })
+})
+
+// Computed recent orders from store
+const recentOrders = computed(() => {
+  const statusLabels: Record<string, string> = {
+    'REQUESTED': '주문 접수',
+    'PROCESSING': '처리 중',
+    'SHIPPING': '배송 중',
+    'DELIVERED': '배송 완료'
   }
-])
+  
+  return adminApiStore.recentOrders.map(order => ({
+    id: order.id,
+    orderNumber: order.orderNumber,
+    customer: order.customerName,
+    amount: `₩${order.totalAmount.toLocaleString()}`,
+    status: statusLabels[order.status] || order.status
+  }))
+})
 
-// Order status data
-const orderStatuses = ref([
-  { label: '주문 접수', count: 45, percentage: 28.8, color: '#3B82F6' },
-  { label: '처리 중', count: 32, percentage: 20.5, color: '#F59E0B' },
-  { label: '배송 중', count: 28, percentage: 17.9, color: '#8B5CF6' },
-  { label: '배송 완료', count: 51, percentage: 32.7, color: '#10B981' }
-])
+// Computed recent users from store
+const recentUsers = computed(() => {
+  const roleLabels: Record<string, string> = {
+    'INDIVIDUAL': '일반',
+    'ENTERPRISE': '기업',
+    'PARTNER': '파트너',
+    'WAREHOUSE': '창고',
+    'ADMIN': '관리자'
+  }
+  
+  return adminApiStore.recentUsers.map(user => ({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    type: roleLabels[user.role] || user.role
+  }))
+})
 
-// Recent orders data
-const recentOrders = ref([
-  { id: 1, orderNumber: 'ORD-001', customer: '김철수', amount: '₩125,000', status: '주문 접수' },
-  { id: 2, orderNumber: 'ORD-002', customer: '이영희', amount: '₩89,500', status: '처리 중' },
-  { id: 3, orderNumber: 'ORD-003', customer: '박민수', amount: '₩234,000', status: '배송 중' },
-  { id: 4, orderNumber: 'ORD-004', customer: '최지영', amount: '₩67,800', status: '배송 완료' },
-  { id: 5, orderNumber: 'ORD-005', customer: '정현우', amount: '₩156,200', status: '주문 접수' }
-])
-
-// Recent users data
-const recentUsers = ref([
-  { id: 1, name: '김철수', email: 'kim@example.com', type: '일반' },
-  { id: 2, name: '이영희', email: 'lee@example.com', type: '기업' },
-  { id: 3, name: '박민수', email: 'park@example.com', type: '파트너' },
-  { id: 4, name: '최지영', email: 'choi@example.com', type: '일반' },
-  { id: 5, name: '정현우', email: 'jung@example.com', type: '기업' }
-])
-
-// System status data
-const systemStatus = ref([
-  { name: '웹 서버', status: 'online' },
-  { name: '데이터베이스', status: 'online' },
-  { name: '결제 시스템', status: 'online' },
-  { name: '배송 추적', status: 'online' }
-])
+// Computed system status from store
+const systemStatus = computed(() => adminApiStore.systemStatus)
 
 // Methods
 const getStatusClass = (status: string) => {
@@ -350,9 +389,23 @@ const getUserTypeClass = (type: string) => {
   return classes[type] || 'bg-gray-100 text-gray-800'
 }
 
+// Load dashboard data
+const loadDashboard = async () => {
+  try {
+    await adminApiStore.loadDashboardData(selectedPeriod.value)
+  } catch (error: any) {
+    showToast('대시보드 데이터 로드에 실패했습니다', 'error')
+  }
+}
+
+// Watch for period changes
+watch(selectedPeriod, loadDashboard)
+watch(selectedRevenuePeriod, () => {
+  adminApiStore.loadRevenueChartData(selectedRevenuePeriod.value)
+})
+
 // Lifecycle
 onMounted(() => {
-  // Load dashboard data
-  console.log('Dashboard mounted')
+  loadDashboard()
 })
 </script>
