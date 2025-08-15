@@ -148,15 +148,40 @@
           <!-- 비밀번호 -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">비밀번호 *</label>
-            <input
-              v-model="form.password"
-              type="password"
-              required
-              class="form-input form-input-md"
-              placeholder="8자 이상, 영문/숫자/특수문자 포함"
-            />
-            <div v-if="form.password && form.password.length < 8" class="mt-1 text-sm text-amber-600">
-              비밀번호는 최소 8자 이상이어야 합니다.
+            <div class="relative">
+              <input
+                v-model="form.password"
+                :type="showPassword ? 'text' : 'password'"
+                required
+                class="form-input form-input-md pr-10"
+                placeholder="8자 이상, 영문/숫자/특수문자 포함"
+                @input="checkPasswordStrength"
+              />
+              <button
+                type="button"
+                @click="showPassword = !showPassword"
+                class="absolute inset-y-0 right-0 pr-3 flex items-center"
+              >
+                <span :class="showPassword ? 'mdi mdi-eye-off' : 'mdi mdi-eye'" class="text-gray-400"></span>
+              </button>
+            </div>
+            <div v-if="form.password" class="mt-2">
+              <div class="flex items-center gap-2">
+                <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    class="h-full transition-all duration-300"
+                    :class="passwordStrengthClass"
+                    :style="{ width: passwordStrengthPercent + '%' }"
+                  ></div>
+                </div>
+                <span class="text-xs" :class="passwordStrengthTextClass">{{ passwordStrengthText }}</span>
+              </div>
+              <div v-if="passwordErrors.length > 0" class="mt-1 text-xs text-gray-600">
+                <div v-for="error in passwordErrors" :key="error" class="flex items-center gap-1">
+                  <span class="mdi mdi-close-circle text-red-500"></span>
+                  {{ error }}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -200,7 +225,12 @@
               required
               class="form-input form-input-md"
               placeholder="010-1234-5678"
+              @input="formatPhoneNumber"
+              maxlength="13"
             />
+            <div v-if="phoneError" class="mt-1 text-sm text-red-600">
+              {{ phoneError }}
+            </div>
           </div>
 
           <!-- 이메일 -->
@@ -449,7 +479,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
@@ -479,6 +509,10 @@ const referralInfo = ref<{
   partnerName: string
   partnerCode: string
 } | null>(null)
+const showPassword = ref(false)
+const phoneError = ref('')
+const passwordStrength = ref(0)
+const passwordErrors = ref<string[]>([])
 
 // 이메일 인증 관련 상태
 const registrationCompleted = ref(false)
@@ -699,6 +733,110 @@ const startCooldown = () => {
     }
   }, 1000)
 }
+
+// 전화번호 포맷팅
+const formatPhoneNumber = (event: Event) => {
+  const input = event.target as HTMLInputElement
+  let value = input.value.replace(/[^0-9]/g, '')
+  
+  // 한국 전화번호 포맷 (010-1234-5678)
+  if (value.startsWith('010') || value.startsWith('011') || value.startsWith('016') || value.startsWith('017') || value.startsWith('018') || value.startsWith('019')) {
+    if (value.length > 3 && value.length <= 7) {
+      value = `${value.slice(0, 3)}-${value.slice(3)}`
+    } else if (value.length > 7) {
+      value = `${value.slice(0, 3)}-${value.slice(3, 7)}-${value.slice(7, 11)}`
+    }
+  } else if (value.startsWith('02')) {
+    // 서울 지역번호
+    if (value.length > 2 && value.length <= 5) {
+      value = `${value.slice(0, 2)}-${value.slice(2)}`
+    } else if (value.length > 5 && value.length <= 9) {
+      value = `${value.slice(0, 2)}-${value.slice(2, 5)}-${value.slice(5)}`
+    } else if (value.length > 9) {
+      value = `${value.slice(0, 2)}-${value.slice(2, 6)}-${value.slice(6, 10)}`
+    }
+  } else if (value.startsWith('0')) {
+    // 기타 지역번호
+    if (value.length > 3 && value.length <= 6) {
+      value = `${value.slice(0, 3)}-${value.slice(3)}`
+    } else if (value.length > 6 && value.length <= 10) {
+      value = `${value.slice(0, 3)}-${value.slice(3, 6)}-${value.slice(6)}`
+    } else if (value.length > 10) {
+      value = `${value.slice(0, 3)}-${value.slice(3, 7)}-${value.slice(7, 11)}`
+    }
+  }
+  
+  form.phone = value
+  
+  // 전화번호 유효성 검사
+  const phoneRegex = /^(010|011|016|017|018|019)-\d{3,4}-\d{4}$|^(02|0[3-9]{1}[0-9]{1})-\d{3,4}-\d{4}$/
+  if (value.length > 0 && !phoneRegex.test(value) && value.length >= 12) {
+    phoneError.value = '올바른 전화번호 형식이 아닙니다'
+  } else {
+    phoneError.value = ''
+  }
+}
+
+// 비밀번호 강도 체크
+const checkPasswordStrength = () => {
+  const password = form.password
+  passwordErrors.value = []
+  let strength = 0
+  
+  // 길이 체크
+  if (password.length >= 8) {
+    strength += 25
+  } else {
+    passwordErrors.value.push('최소 8자 이상')
+  }
+  
+  // 영문 체크
+  if (/[a-zA-Z]/.test(password)) {
+    strength += 25
+  } else {
+    passwordErrors.value.push('영문 포함')
+  }
+  
+  // 숫자 체크
+  if (/[0-9]/.test(password)) {
+    strength += 25
+  } else {
+    passwordErrors.value.push('숫자 포함')
+  }
+  
+  // 특수문자 체크
+  if (/[!@#$%^&*(),.?\":{}|<>]/.test(password)) {
+    strength += 25
+  } else {
+    passwordErrors.value.push('특수문자 포함')
+  }
+  
+  passwordStrength.value = strength
+}
+
+// 비밀번호 강도 관련 계산 속성
+const passwordStrengthPercent = computed(() => passwordStrength.value)
+
+const passwordStrengthClass = computed(() => {
+  if (passwordStrength.value <= 25) return 'bg-red-500'
+  if (passwordStrength.value <= 50) return 'bg-orange-500'
+  if (passwordStrength.value <= 75) return 'bg-yellow-500'
+  return 'bg-green-500'
+})
+
+const passwordStrengthText = computed(() => {
+  if (passwordStrength.value <= 25) return '약함'
+  if (passwordStrength.value <= 50) return '보통'
+  if (passwordStrength.value <= 75) return '강함'
+  return '매우 강함'
+})
+
+const passwordStrengthTextClass = computed(() => {
+  if (passwordStrength.value <= 25) return 'text-red-600'
+  if (passwordStrength.value <= 50) return 'text-orange-600'
+  if (passwordStrength.value <= 75) return 'text-yellow-600'
+  return 'text-green-600'
+})
 
 const handleSubmit = async () => {
   try {

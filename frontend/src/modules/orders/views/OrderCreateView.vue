@@ -42,13 +42,23 @@
 
         <div class="form-group">
           <label for="recipientPhone">{{ $t('orders.recipient.phone') }}</label>
-          <input
-            id="recipientPhone"
-            v-model="formData.recipient.phone"
-            type="tel"
-            :placeholder="$t('orders.recipient.phone_placeholder')"
-            class="form-input form-input-md"
-          />
+          <div class="phone-input-group">
+            <Select
+              v-model="formData.recipient.phoneCountryCode"
+              :options="phoneCountryCodeOptions"
+              class="phone-country-code"
+              size="sm"
+            />
+            <input
+              id="recipientPhone"
+              v-model="formData.recipient.phone"
+              type="tel"
+              :placeholder="$t('orders.recipient.phone_placeholder')"
+              class="form-input form-input-md"
+              @input="formatPhoneNumber"
+              maxlength="15"
+            />
+          </div>
         </div>
 
         <!-- 국가 선택 먼저 (주소 형식 결정) -->
@@ -182,14 +192,31 @@
 
             <div class="form-group">
               <label :for="`itemQuantity-${index}`" class="required">{{ $t('orders.items.quantity') }}</label>
-              <input
-                :id="`itemQuantity-${index}`"
-                v-model.number="item.quantity"
-                type="number"
-                min="1"
-                required
-                class="form-input form-input-md"
-              />
+              <div class="quantity-input-group">
+                <button
+                  type="button"
+                  @click="decrementQuantity(item)"
+                  class="quantity-btn"
+                  :disabled="item.quantity <= 1"
+                >
+                  <span class="mdi mdi-minus"></span>
+                </button>
+                <input
+                  :id="`itemQuantity-${index}`"
+                  v-model.number="item.quantity"
+                  type="number"
+                  min="1"
+                  required
+                  class="form-input form-input-md quantity-input"
+                />
+                <button
+                  type="button"
+                  @click="incrementQuantity(item)"
+                  class="quantity-btn"
+                >
+                  <span class="mdi mdi-plus"></span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -209,15 +236,22 @@
 
             <div class="form-group">
               <label :for="`itemAmount-${index}`" class="required">{{ $t('orders.items.amount') }}</label>
-              <input
-                :id="`itemAmount-${index}`"
-                v-model.number="item.amount"
-                type="number"
-                step="0.01"
-                min="0"
-                required
-                class="form-input form-input-md"
-              />
+              <div class="amount-input-group">
+                <span class="currency-symbol">{{ getCurrencySymbol(item.currency) }}</span>
+                <input
+                  :id="`itemAmount-${index}`"
+                  v-model="item.formattedAmount"
+                  type="text"
+                  @input="formatAmount(item, index)"
+                  @blur="validateAmount(item, index)"
+                  required
+                  class="form-input form-input-md amount-input"
+                  placeholder="0.00"
+                />
+              </div>
+              <div v-if="item.amount > 1500 && item.currency === 'THB'" class="warning-text">
+                {{ $t('orders.warnings.thb_1500_exceeded') }}
+              </div>
             </div>
 
             <div class="form-group">
@@ -524,6 +558,15 @@ const countryOptions = [
   { label: t('countries.JP'), value: 'JP' }
 ]
 
+const phoneCountryCodeOptions = [
+  { label: '+66 (TH)', value: '+66' },
+  { label: '+84 (VN)', value: '+84' },
+  { label: '+86 (CN)', value: '+86' },
+  { label: '+82 (KR)', value: '+82' },
+  { label: '+81 (JP)', value: '+81' },
+  { label: '+1 (US)', value: '+1' }
+]
+
 const currencyOptions = [
   { label: 'THB', value: 'THB' },
   { label: 'KRW', value: 'KRW' },
@@ -531,10 +574,18 @@ const currencyOptions = [
   { label: 'JPY', value: 'JPY' }
 ]
 
+const currencySymbols: Record<string, string> = {
+  THB: '฿',
+  KRW: '₩',
+  USD: '$',
+  JPY: '¥'
+}
+
 // 폼 데이터
 const formData = ref({
   recipient: {
     name: '',
+    phoneCountryCode: '+82',
     phone: '',
     country: '',
     zipCode: '',
@@ -549,6 +600,7 @@ const formData = ref({
     quantity: 1,
     weight: 0,
     amount: 0,
+    formattedAmount: '',
     currency: 'THB',
     category: '',
     hsCode: '',
@@ -641,6 +693,7 @@ const addItem = () => {
     quantity: 1,
     weight: 0,
     amount: 0,
+    formattedAmount: '',
     currency: 'THB',
     category: '',
     hsCode: '',
@@ -794,6 +847,70 @@ const formatCBM = (cbm: number): string => {
 watch(totalCBM, (newCBM) => {
   calculateCBM()
 })
+
+// 전화번호 포맷팅
+const formatPhoneNumber = (event: Event) => {
+  const input = event.target as HTMLInputElement
+  let value = input.value.replace(/[^0-9]/g, '')
+  
+  // 한국 번호 포맷 (010-1234-5678)
+  if (formData.value.recipient.phoneCountryCode === '+82') {
+    if (value.length > 3 && value.length <= 7) {
+      value = `${value.slice(0, 3)}-${value.slice(3)}`
+    } else if (value.length > 7) {
+      value = `${value.slice(0, 3)}-${value.slice(3, 7)}-${value.slice(7, 11)}`
+    }
+  }
+  
+  formData.value.recipient.phone = value
+}
+
+// 금액 포맷팅
+const formatAmount = (item: any, index: number) => {
+  const value = item.formattedAmount.replace(/[^0-9.]/g, '')
+  const parts = value.split('.')
+  
+  // 정수 부분에 콤마 추가
+  if (parts[0]) {
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  }
+  
+  // 소수점 2자리까지만 허용
+  if (parts[1] && parts[1].length > 2) {
+    parts[1] = parts[1].slice(0, 2)
+  }
+  
+  item.formattedAmount = parts.join('.')
+  item.amount = parseFloat(value) || 0
+}
+
+// 금액 검증
+const validateAmount = (item: any, index: number) => {
+  if (!item.formattedAmount) {
+    item.formattedAmount = '0.00'
+    item.amount = 0
+  } else {
+    const value = parseFloat(item.formattedAmount.replace(/,/g, ''))
+    item.amount = value || 0
+    item.formattedAmount = value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  }
+}
+
+// 수량 증감
+const incrementQuantity = (item: any) => {
+  item.quantity++
+}
+
+const decrementQuantity = (item: any) => {
+  if (item.quantity > 1) {
+    item.quantity--
+  }
+}
+
+// 통화 심볼 가져오기
+const getCurrencySymbol = (currency: string): string => {
+  return currencySymbols[currency] || currency
+}
 
 // 주소 필드 변경 감지
 watch([
@@ -1061,6 +1178,95 @@ watch([
 
 .flex-1 {
   flex: 1;
+}
+
+/* 전화번호 입력 그룹 */
+.phone-input-group {
+  display: flex;
+  gap: 8px;
+}
+
+.phone-country-code {
+  width: 120px;
+}
+
+/* 수량 입력 그룹 */
+.quantity-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.quantity-btn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.quantity-btn:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+
+.quantity-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.quantity-btn:first-child {
+  border-radius: 6px 0 0 6px;
+  border-right: none;
+}
+
+.quantity-btn:last-child {
+  border-radius: 0 6px 6px 0;
+  border-left: none;
+}
+
+.quantity-input {
+  width: 80px;
+  text-align: center;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+}
+
+/* 금액 입력 그룹 */
+.amount-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.currency-symbol {
+  position: absolute;
+  left: 12px;
+  font-weight: 500;
+  color: #6b7280;
+  z-index: 1;
+}
+
+.amount-input {
+  padding-left: 32px;
+}
+
+/* 경고 텍스트 */
+.warning-text {
+  font-size: 12px;
+  color: #f59e0b;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.warning-text::before {
+  content: '⚠';
 }
 
 
