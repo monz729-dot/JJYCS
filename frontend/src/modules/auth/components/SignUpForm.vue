@@ -75,8 +75,11 @@
               v-model="form.password"
               type="password"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="비밀번호를 입력하세요"
+              placeholder="8자 이상, 영문/숫자/특수문자 포함"
             />
+            <div v-if="form.password && form.password.length < 8" class="text-sm mt-1 text-amber-600">
+              비밀번호는 최소 8자 이상이어야 합니다.
+            </div>
           </div>
 
           <div>
@@ -84,9 +87,16 @@
             <input
               v-model="form.passwordConfirm"
               type="password"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              :class="[
+                'w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                passwordMismatch ? 'border-red-500' : 'border-gray-300'
+              ]"
               placeholder="비밀번호를 다시 입력하세요"
+              @blur="checkPasswordMatch"
             />
+            <div v-if="passwordMismatch" class="text-sm mt-1 text-red-600">
+              비밀번호가 일치하지 않습니다.
+            </div>
           </div>
 
           <div>
@@ -152,34 +162,87 @@
 
         <!-- 약관 동의 -->
         <div class="space-y-4">
-          <div class="flex items-start">
-            <input
-              v-model="form.terms_agreed"
-              type="checkbox"
-              id="terms"
-              class="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <label for="terms" class="ml-2 block text-sm text-gray-900">
-              <span class="font-medium">이용약관</span>에 동의합니다.
-              <button type="button" @click="showTerms = true" class="text-blue-600 hover:text-blue-800 ml-1">
-                (보기)
-              </button>
-            </label>
-          </div>
+          <div class="bg-gray-50 p-4 rounded-lg">
+            <h3 class="font-medium text-gray-900 mb-3">약관 동의</h3>
+            
+            <!-- 전체 동의 -->
+            <div class="flex items-start mb-3 p-3 bg-white rounded border">
+              <input
+                v-model="allAgreed"
+                @change="toggleAllAgreements"
+                type="checkbox"
+                id="allAgreed"
+                class="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label for="allAgreed" class="ml-2 block text-sm font-medium text-gray-900">
+                전체 약관에 동의합니다
+              </label>
+            </div>
 
-          <div class="flex items-start">
-            <input
-              v-model="form.privacy_agreed"
-              type="checkbox"
-              id="privacy"
-              class="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <label for="privacy" class="ml-2 block text-sm text-gray-900">
-              <span class="font-medium">개인정보 수집 및 이용</span>에 동의합니다.
-              <button type="button" @click="showPrivacy = true" class="text-blue-600 hover:text-blue-800 ml-1">
-                (보기)
-              </button>
-            </label>
+            <!-- 필수 약관들 -->
+            <div class="space-y-3">
+              <div class="flex items-start">
+                <input
+                  v-model="consents.termsOfService"
+                  type="checkbox"
+                  id="terms"
+                  class="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label for="terms" class="ml-2 block text-sm text-gray-900 flex-1">
+                  <span class="font-medium text-red-600">[필수]</span> 이용약관에 동의합니다
+                  <button 
+                    type="button" 
+                    @click="openTermsModal('terms')" 
+                    class="text-blue-600 hover:text-blue-800 ml-2 underline"
+                  >
+                    보기
+                  </button>
+                </label>
+              </div>
+
+              <div class="flex items-start">
+                <input
+                  v-model="consents.privacyPolicy"
+                  type="checkbox"
+                  id="privacy"
+                  class="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label for="privacy" class="ml-2 block text-sm text-gray-900 flex-1">
+                  <span class="font-medium text-red-600">[필수]</span> 개인정보 수집 및 이용에 동의합니다
+                  <button 
+                    type="button" 
+                    @click="openTermsModal('privacy')" 
+                    class="text-blue-600 hover:text-blue-800 ml-2 underline"
+                  >
+                    보기
+                  </button>
+                </label>
+              </div>
+
+              <div class="flex items-start">
+                <input
+                  v-model="consents.marketingConsent"
+                  type="checkbox"
+                  id="marketing"
+                  class="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label for="marketing" class="ml-2 block text-sm text-gray-900 flex-1">
+                  <span class="font-medium text-gray-600">[선택]</span> 마케팅 정보 수신에 동의합니다
+                  <button 
+                    type="button" 
+                    @click="openTermsModal('marketing')" 
+                    class="text-blue-600 hover:text-blue-800 ml-2 underline"
+                  >
+                    보기
+                  </button>
+                </label>
+              </div>
+            </div>
+
+            <!-- 필수 동의 안내 -->
+            <div v-if="!isAllRequiredConsentsChecked" class="mt-3 text-sm text-red-600">
+              필수 항목에 모두 동의해주세요.
+            </div>
           </div>
         </div>
 
@@ -208,33 +271,29 @@
     </div>
 
     <!-- 약관 모달 -->
-    <div v-if="showTerms" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-lg p-6 max-w-2xl max-h-96 overflow-y-auto">
-        <h3 class="text-lg font-semibold mb-4">이용약관</h3>
-        <div class="text-sm text-gray-700 space-y-2">
-          <p>제1조 (목적)</p>
-          <p>이 약관은 YCS 물류관리 시스템(이하 "서비스")의 이용조건 및 절차, 이용자와 서비스 제공자의 권리, 의무, 책임사항을 규정함을 목적으로 합니다.</p>
-          <!-- 더 많은 약관 내용... -->
+    <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg max-w-4xl max-h-[80vh] w-full mx-4 flex flex-col">
+        <div class="flex items-center justify-between p-6 border-b">
+          <h3 class="text-lg font-semibold">{{ modalTitle }}</h3>
+          <button @click="closeModal" class="text-gray-400 hover:text-gray-600">
+            <span class="mdi mdi-close text-xl"></span>
+          </button>
         </div>
-        <button @click="showTerms = false" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-          확인
-        </button>
-      </div>
-    </div>
-
-    <!-- 개인정보 처리방침 모달 -->
-    <div v-if="showPrivacy" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-lg p-6 max-w-2xl max-h-96 overflow-y-auto">
-        <h3 class="text-lg font-semibold mb-4">개인정보 수집 및 이용</h3>
-        <div class="text-sm text-gray-700 space-y-2">
-          <p>1. 수집하는 개인정보 항목</p>
-          <p>- 필수항목: 아이디, 이메일, 비밀번호, 이름</p>
-          <p>- 선택항목: 연락처, 주소, 사업자등록증</p>
-          <!-- 더 많은 개인정보 처리방침 내용... -->
+        
+        <div class="flex-1 overflow-y-auto p-6">
+          <div class="prose prose-sm max-w-none">
+            <div v-html="renderMarkdown(modalContent)"></div>
+          </div>
         </div>
-        <button @click="showPrivacy = false" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-          확인
-        </button>
+        
+        <div class="flex justify-end gap-3 p-6 border-t">
+          <button @click="closeModal" class="btn btn-md btn-secondary">
+            확인
+          </button>
+          <button v-if="!consents[currentModalType]" @click="agreeAndClose" class="btn btn-md btn-primary">
+            동의하고 닫기
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -246,6 +305,13 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from 'vue-toastification'
 import { AuthService } from '@/services/authService'
+import { 
+  TERMS_OF_SERVICE, 
+  PRIVACY_POLICY, 
+  MARKETING_CONSENT,
+  type ConsentState,
+  isAllRequiredConsentsChecked as checkRequiredConsents
+} from '@/constants/terms'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -258,8 +324,20 @@ const usernameChecking = ref(false)
 const usernameAvailable = ref(false)
 const usernameMessage = ref('')
 const usernameError = ref(false)
-const showTerms = ref(false)
-const showPrivacy = ref(false)
+const passwordMismatch = ref(false)
+
+// 약관 동의 상태
+const consents = reactive<ConsentState>({
+  termsOfService: false,
+  privacyPolicy: false,
+  marketingConsent: false
+})
+
+// 모달 상태
+const showModal = ref(false)
+const currentModalType = ref<keyof ConsentState>('termsOfService')
+const modalTitle = ref('')
+const modalContent = ref('')
 
 // 폼 데이터
 const form = reactive({
@@ -273,7 +351,8 @@ const form = reactive({
   user_type: 'general' as 'general' | 'corporate' | 'partner',
   business_license_file: null as File | null,
   terms_agreed: false,
-  privacy_agreed: false
+  privacy_agreed: false,
+  marketing_agreed: false
 })
 
 // 회원 종류 옵션
@@ -295,20 +374,94 @@ const userTypes = [
   }
 ]
 
+// 동의 관련 computed
+const allAgreed = computed({
+  get: () => consents.termsOfService && consents.privacyPolicy && consents.marketingConsent,
+  set: (value: boolean) => {
+    if (value) {
+      toggleAllAgreements()
+    }
+  }
+})
+
+const isAllRequiredConsentsChecked = computed(() => {
+  return checkRequiredConsents(consents)
+})
+
 // 폼 유효성 검사
 const isFormValid = computed(() => {
   return (
     form.username &&
     form.email &&
     form.password &&
+    form.password.length >= 8 &&
     form.password === form.passwordConfirm &&
     form.name &&
-    form.terms_agreed &&
-    form.privacy_agreed &&
+    isAllRequiredConsentsChecked.value &&
     usernameAvailable.value &&
     (form.user_type === 'general' || form.business_license_file)
   )
 })
+
+// 약관 동의 관련 함수
+const toggleAllAgreements = () => {
+  const allChecked = consents.termsOfService && consents.privacyPolicy && consents.marketingConsent
+  consents.termsOfService = !allChecked
+  consents.privacyPolicy = !allChecked  
+  consents.marketingConsent = !allChecked
+}
+
+const openTermsModal = (type: string) => {
+  switch (type) {
+    case 'terms':
+      currentModalType.value = 'termsOfService'
+      modalTitle.value = '이용약관'
+      modalContent.value = TERMS_OF_SERVICE
+      break
+    case 'privacy':
+      currentModalType.value = 'privacyPolicy'
+      modalTitle.value = '개인정보 수집 및 이용 동의'
+      modalContent.value = PRIVACY_POLICY
+      break
+    case 'marketing':
+      currentModalType.value = 'marketingConsent'
+      modalTitle.value = '마케팅 정보 수신 동의'
+      modalContent.value = MARKETING_CONSENT
+      break
+  }
+  
+  showModal.value = true
+}
+
+const closeModal = () => {
+  showModal.value = false
+}
+
+const agreeAndClose = () => {
+  consents[currentModalType.value] = true
+  closeModal()
+}
+
+const renderMarkdown = (content: string) => {
+  // 간단한 마크다운 렌더링
+  return content
+    .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mb-4">$1</h1>')
+    .replace(/^## (.*$)/gim, '<h2 class="text-xl font-semibold mb-3">$1</h2>')
+    .replace(/^### (.*$)/gim, '<h3 class="text-lg font-medium mb-2">$1</h3>')
+    .replace(/^\*\*(.*)\*\*/gim, '<strong class="font-semibold">$1</strong>')
+    .replace(/^\* (.*$)/gim, '<li class="ml-4">• $1</li>')
+    .replace(/^(\d+\. .*$)/gim, '<li class="ml-4">$1</li>')
+    .replace(/\n/g, '<br>')
+}
+
+// 비밀번호 일치 확인
+const checkPasswordMatch = () => {
+  if (form.passwordConfirm && form.password !== form.passwordConfirm) {
+    passwordMismatch.value = true
+  } else {
+    passwordMismatch.value = false
+  }
+}
 
 // 아이디 중복 확인
 const checkUsername = async () => {
@@ -396,8 +549,9 @@ const handleSubmit = async () => {
       address: form.address || undefined,
       user_type: form.user_type,
       business_license_file: form.business_license_file || undefined,
-      terms_agreed: form.terms_agreed,
-      privacy_agreed: form.privacy_agreed
+      terms_agreed: consents.termsOfService,
+      privacy_agreed: consents.privacyPolicy,
+      marketing_agreed: consents.marketingConsent
     })
 
     if (result.success) {

@@ -26,12 +26,12 @@
               ]"
               :style="column.width ? `width: ${column.width}` : ''"
             >
-              <div class="flex items-center gap-1">
+              <div class="flex-start gap-xs">
                 {{ column.label }}
                 <button
                   v-if="column.sortable"
                   @click="handleSort(column.key)"
-                  class="text-gray-400 hover:text-gray-600"
+                  class="text-muted hover:text-primary"
                 >
                   <span class="mdi mdi-sort" />
                 </button>
@@ -78,9 +78,9 @@
           <tr v-if="!data || data.length === 0">
             <td :colspan="columns.length + ($slots.actions ? 1 : 0)" class="px-6 py-12 text-center">
               <slot name="empty">
-                <div class="text-gray-500">
-                  <span class="mdi mdi-table-off text-4xl mb-2 block" />
-                  <p>데이터가 없습니다</p>
+                <div class="text-muted">
+                  <span class="mdi mdi-table-off text-4xl spacing-sm block" />
+                  <p class="text-body">데이터가 없습니다</p>
                 </div>
               </slot>
             </td>
@@ -123,7 +123,7 @@
             <button
               :disabled="pagination.currentPage === 1"
               @click="emit('page-change', pagination.currentPage - 1)"
-              class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+              class="btn btn-sm btn-secondary rounded-l-md rounded-r-none"
             >
               <span class="mdi mdi-chevron-left" />
             </button>
@@ -133,10 +133,10 @@
               :key="page"
               @click="emit('page-change', page)"
               :class="[
-                'relative inline-flex items-center px-4 py-2 border text-sm font-medium',
+                'btn btn-sm rounded-none',
                 page === pagination.currentPage
-                  ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                  : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                  ? 'btn-primary'
+                  : 'btn-secondary'
               ]"
             >
               {{ page }}
@@ -145,7 +145,7 @@
             <button
               :disabled="pagination.currentPage === pagination.totalPages"
               @click="emit('page-change', pagination.currentPage + 1)"
-              class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+              class="btn btn-sm btn-secondary rounded-r-md rounded-l-none"
             >
               <span class="mdi mdi-chevron-right" />
             </button>

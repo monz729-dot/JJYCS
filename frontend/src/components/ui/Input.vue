@@ -1,6 +1,6 @@
 <template>
   <div class="w-full">
-    <label v-if="label" :for="id" class="block text-sm font-medium text-gray-700 mb-1">
+    <label v-if="label" :for="id" class="form-label">
       {{ label }}
       <span v-if="required" class="text-red-500">*</span>
     </label>
@@ -19,13 +19,12 @@
         :readonly="readonly"
         :required="required"
         :class="[
-          'block w-full rounded-lg border-gray-300 shadow-sm transition-colors duration-200',
-          'focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
-          'disabled:bg-gray-50 disabled:text-gray-500',
-          icon ? 'pl-10' : 'pl-3',
-          rightIcon ? 'pr-10' : 'pr-3',
-          error ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : '',
+          'form-input',
           sizeClasses,
+          icon ? 'pl-10' : '',
+          rightIcon ? 'pr-10' : '',
+          error ? 'error' : '',
+          readonly ? 'readonly' : '',
           className
         ]"
         @input="handleInput"
@@ -46,8 +45,8 @@
       </div>
     </div>
     
-    <p v-if="hint && !error" class="mt-1 text-sm text-gray-500">{{ hint }}</p>
-    <p v-if="error" class="mt-1 text-sm text-red-600">{{ error }}</p>
+    <p v-if="hint && !error" class="text-caption text-muted mt-1">{{ hint }}</p>
+    <p v-if="error" class="form-error">{{ error }}</p>
   </div>
 </template>
 
@@ -67,7 +66,7 @@ interface Props {
   disabled?: boolean
   readonly?: boolean
   required?: boolean
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
   className?: string
   id?: string
 }
@@ -87,9 +86,11 @@ const emit = defineEmits(['update:modelValue', 'blur', 'focus', 'icon-click'])
 
 const sizeClasses = computed(() => {
   const sizes = {
-    sm: 'py-1.5 text-sm',
-    md: 'py-2 text-base',
-    lg: 'py-3 text-lg'
+    xs: 'form-input-xs',
+    sm: 'form-input-sm',
+    md: 'form-input-md',
+    lg: 'form-input-lg',
+    xl: 'form-input-xl'
   }
   return sizes[props.size]
 })

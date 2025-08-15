@@ -40,19 +40,58 @@ body {
   padding: 0 1rem;
 }
 
+/* Button Base Styles */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem 1rem;
   border: 1px solid transparent;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
   font-weight: 500;
-  line-height: 1.25rem;
   cursor: pointer;
   transition: all 0.15s ease;
   text-decoration: none;
+  white-space: nowrap;
+}
+
+/* Button Sizes - 높이 통일 */
+.btn-xs {
+  padding: 0.375rem 0.75rem;  /* 6px 12px */
+  font-size: 0.75rem;         /* 12px */
+  line-height: 1rem;          /* 16px */
+  border-radius: 0.375rem;    /* 6px */
+  height: 2rem;               /* 32px */
+}
+
+.btn-sm {
+  padding: 0.5rem 0.875rem;   /* 8px 14px */
+  font-size: 0.8125rem;       /* 13px */
+  line-height: 1.125rem;      /* 18px */
+  border-radius: 0.375rem;    /* 6px */
+  height: 2.25rem;            /* 36px */
+}
+
+.btn-md {
+  padding: 0.625rem 1rem;     /* 10px 16px */
+  font-size: 0.875rem;        /* 14px */
+  line-height: 1.25rem;       /* 20px */
+  border-radius: 0.5rem;      /* 8px */
+  height: 2.5rem;             /* 40px */
+}
+
+.btn-lg {
+  padding: 0.75rem 1.25rem;   /* 12px 20px */
+  font-size: 1rem;            /* 16px */
+  line-height: 1.5rem;        /* 24px */
+  border-radius: 0.5rem;      /* 8px */
+  height: 3rem;               /* 48px */
+}
+
+.btn-xl {
+  padding: 0.875rem 1.5rem;   /* 14px 24px */
+  font-size: 1.125rem;        /* 18px */
+  line-height: 1.75rem;       /* 28px */
+  border-radius: 0.5rem;      /* 8px */
+  height: 3.5rem;             /* 56px */
 }
 
 .btn:disabled {
@@ -96,14 +135,65 @@ body {
   color: white;
 }
 
-/* Form Styles */
+/* Form Input Base Styles */
 .form-input {
   width: 100%;
-  padding: 0.5rem 0.75rem;
   border: 1px solid #d1d5db;
-  border-radius: 0.375rem;
+  background-color: white;
   font-size: 0.875rem;
-  transition: border-color 0.15s ease;
+  transition: all 0.15s ease;
+  appearance: none;
+}
+
+/* Form Input Sizes - 높이 통일 */
+.form-input-xs {
+  padding: 0.375rem 0.5rem;   /* 6px 8px */
+  font-size: 0.75rem;         /* 12px */
+  border-radius: 0.375rem;    /* 6px */
+  height: 2rem;               /* 32px */
+}
+
+.form-input-sm {
+  padding: 0.5rem 0.75rem;    /* 8px 12px */
+  font-size: 0.8125rem;       /* 13px */
+  border-radius: 0.375rem;    /* 6px */
+  height: 2.25rem;            /* 36px */
+}
+
+.form-input-md {
+  padding: 0.625rem 0.75rem;  /* 10px 12px */
+  font-size: 0.875rem;        /* 14px */
+  border-radius: 0.5rem;      /* 8px */
+  height: 2.5rem;             /* 40px */
+}
+
+.form-input-lg {
+  padding: 0.75rem 1rem;      /* 12px 16px */
+  font-size: 1rem;            /* 16px */
+  border-radius: 0.5rem;      /* 8px */
+  height: 3rem;               /* 48px */
+}
+
+.form-input-xl {
+  padding: 0.875rem 1rem;     /* 14px 16px */
+  font-size: 1.125rem;        /* 18px */
+  border-radius: 0.5rem;      /* 8px */
+  height: 3.5rem;             /* 56px */
+}
+
+/* Select 스타일 */
+.form-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem;
+}
+
+/* Textarea 스타일 */
+.form-textarea {
+  resize: vertical;
+  min-height: 5rem;
 }
 
 .form-input:focus {
@@ -243,6 +333,171 @@ body {
 /* Dark Mode Support (for future) */
 @media (prefers-color-scheme: dark) {
   /* Dark mode styles can be added here */
+}
+
+/* Typography System */
+.text-heading-xl {
+  font-size: 1.875rem;        /* 30px */
+  font-weight: 700;
+  line-height: 2.25rem;       /* 36px */
+  color: #1f2937;
+}
+
+.text-heading-lg {
+  font-size: 1.5rem;          /* 24px */
+  font-weight: 600;
+  line-height: 2rem;          /* 32px */
+  color: #1f2937;
+}
+
+.text-heading-md {
+  font-size: 1.25rem;         /* 20px */
+  font-weight: 600;
+  line-height: 1.75rem;       /* 28px */
+  color: #1f2937;
+}
+
+.text-heading-sm {
+  font-size: 1.125rem;        /* 18px */
+  font-weight: 600;
+  line-height: 1.5rem;        /* 24px */
+  color: #1f2937;
+}
+
+.text-body-lg {
+  font-size: 1rem;            /* 16px */
+  line-height: 1.5rem;        /* 24px */
+  color: #374151;
+}
+
+.text-body {
+  font-size: 0.875rem;        /* 14px */
+  line-height: 1.25rem;       /* 20px */
+  color: #374151;
+}
+
+.text-body-sm {
+  font-size: 0.8125rem;       /* 13px */
+  line-height: 1.125rem;      /* 18px */
+  color: #374151;
+}
+
+.text-caption {
+  font-size: 0.75rem;         /* 12px */
+  line-height: 1rem;          /* 16px */
+  color: #6b7280;
+}
+
+.text-muted {
+  color: #9ca3af;
+}
+
+.text-primary {
+  color: var(--color-primary);
+}
+
+.text-success {
+  color: var(--color-success);
+}
+
+.text-warning {
+  color: var(--color-warning);
+}
+
+.text-error {
+  color: var(--color-error);
+}
+
+/* Spacing System */
+.spacing-xs { margin-bottom: 0.5rem; }    /* 8px */
+.spacing-sm { margin-bottom: 1rem; }      /* 16px */
+.spacing-md { margin-bottom: 1.5rem; }    /* 24px */
+.spacing-lg { margin-bottom: 2rem; }      /* 32px */
+.spacing-xl { margin-bottom: 3rem; }      /* 48px */
+.spacing-2xl { margin-bottom: 4rem; }     /* 64px */
+
+.gap-xs { gap: 0.5rem; }                  /* 8px */
+.gap-sm { gap: 1rem; }                    /* 16px */
+.gap-md { gap: 1.5rem; }                  /* 24px */
+.gap-lg { gap: 2rem; }                    /* 32px */
+.gap-xl { gap: 3rem; }                    /* 48px */
+
+/* Layout Utilities */
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.flex-start {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.flex-end {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.flex-col-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Animation and Transitions */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
+
+.slide-up-enter-active {
+  transition: all 0.3s ease-out;
+}
+
+.slide-up-leave-active {
+  transition: all 0.3s cubic-bezier(1.0, 0.5, 0.8, 1.0);
+}
+
+.slide-up-enter-from,
+.slide-up-leave-to {
+  transform: translateY(20px);
+  opacity: 0;
+}
+
+/* State Styles */
+.loading {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.readonly {
+  background-color: #f9fafb;
+  cursor: not-allowed;
+}
+
+/* Focus States */
+.focus-ring:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--color-primary);
 }
 
 /* Print Styles */

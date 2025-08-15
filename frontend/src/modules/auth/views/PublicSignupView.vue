@@ -153,8 +153,30 @@
               type="password"
               required
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="8자 이상"
+              placeholder="8자 이상, 영문/숫자/특수문자 포함"
             />
+            <div v-if="form.password && form.password.length < 8" class="mt-1 text-sm text-amber-600">
+              비밀번호는 최소 8자 이상이어야 합니다.
+            </div>
+          </div>
+
+          <!-- 비밀번호 확인 -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">비밀번호 확인 *</label>
+            <input
+              v-model="form.passwordConfirm"
+              type="password"
+              required
+              :class="[
+                'w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
+                passwordMismatch ? 'border-red-500' : 'border-gray-300'
+              ]"
+              placeholder="비밀번호를 다시 입력하세요"
+              @blur="checkPasswordMatch"
+            />
+            <div v-if="passwordMismatch" class="mt-1 text-sm text-red-600">
+              비밀번호가 일치하지 않습니다.
+            </div>
           </div>
 
           <!-- 이름 -->
@@ -351,7 +373,7 @@
                 class="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
               <span class="ml-2 text-sm text-gray-600">
-                <router-link to="/terms" class="text-blue-600 hover:text-blue-500">이용약관</router-link>에 동의합니다. *
+                <button type="button" @click="openTermsModal('terms')" class="text-blue-600 hover:text-blue-500 underline">이용약관</button>에 동의합니다. *
               </span>
             </label>
             
@@ -363,7 +385,7 @@
                 class="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
               <span class="ml-2 text-sm text-gray-600">
-                <router-link to="/privacy" class="text-blue-600 hover:text-blue-500">개인정보 수집 및 이용</router-link>에 동의합니다. *
+                <button type="button" @click="openTermsModal('privacy')" class="text-blue-600 hover:text-blue-500 underline">개인정보 수집 및 이용</button>에 동의합니다. *
               </span>
             </label>
           </div>
@@ -371,7 +393,7 @@
                      <!-- Submit Button -->
            <button
              type="submit"
-             :disabled="loading || !form.terms_agreed || !form.privacy_agreed || !usernameAvailable || (registrationCompleted && !tokenVerified)"
+             :disabled="loading || !form.terms_agreed || !form.privacy_agreed || !usernameAvailable || passwordMismatch || form.password.length < 8 || form.password !== form.passwordConfirm || (registrationCompleted && !tokenVerified)"
              class="w-full py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
            >
              <span v-if="loading">가입 처리 중...</span>
@@ -394,6 +416,35 @@
         </form>
       </div>
     </div>
+
+    <!-- 약관 모달 -->
+    <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-lg max-w-4xl max-h-[80vh] w-full flex flex-col">
+        <div class="flex items-center justify-between p-6 border-b">
+          <h3 class="text-lg font-semibold">{{ modalTitle }}</h3>
+          <button @click="closeModal" class="text-gray-400 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-6">
+          <div class="prose prose-sm max-w-none">
+            <div v-html="renderMarkdown(modalContent)"></div>
+          </div>
+        </div>
+        
+        <div class="flex justify-end gap-3 p-6 border-t">
+          <button @click="closeModal" class="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
+            확인
+          </button>
+          <button v-if="!getConsentValue()" @click="agreeAndClose" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            동의하고 닫기
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -408,6 +459,10 @@ import {
   UserGroupIcon
 } from '@heroicons/vue/24/outline'
 import { AuthService } from '@/services/authService'
+import { 
+  TERMS_OF_SERVICE, 
+  PRIVACY_POLICY 
+} from '@/constants/terms'
 
 const route = useRoute()
 const router = useRouter()
@@ -433,12 +488,21 @@ const verifyingToken = ref(false)
 const tokenVerified = ref(false)
 let cooldownTimer: NodeJS.Timeout | null = null
 
+const passwordMismatch = ref(false)
+
+// 모달 상태
+const showModal = ref(false)
+const currentModalType = ref<'terms' | 'privacy'>('terms')
+const modalTitle = ref('')
+const modalContent = ref('')
+
 const form = reactive({
   username: '',
   name: '',
   email: '',
   phone: '',
   password: '',
+  passwordConfirm: '',
   address: '',
   user_type: 'general' as 'general' | 'corporate' | 'partner',
   company_name: '',
@@ -452,6 +516,66 @@ const form = reactive({
 })
 
 // Methods
+const checkPasswordMatch = () => {
+  if (form.passwordConfirm && form.password !== form.passwordConfirm) {
+    passwordMismatch.value = true
+  } else {
+    passwordMismatch.value = false
+  }
+}
+
+// 약관 모달 관련 함수
+const openTermsModal = (type: 'terms' | 'privacy') => {
+  currentModalType.value = type
+  
+  switch (type) {
+    case 'terms':
+      modalTitle.value = '이용약관'
+      modalContent.value = TERMS_OF_SERVICE
+      break
+    case 'privacy':
+      modalTitle.value = '개인정보 수집 및 이용 동의'
+      modalContent.value = PRIVACY_POLICY
+      break
+  }
+  
+  showModal.value = true
+}
+
+const closeModal = () => {
+  showModal.value = false
+}
+
+const agreeAndClose = () => {
+  if (currentModalType.value === 'terms') {
+    form.terms_agreed = true
+  } else if (currentModalType.value === 'privacy') {
+    form.privacy_agreed = true
+  }
+  closeModal()
+}
+
+const getConsentValue = () => {
+  if (currentModalType.value === 'terms') {
+    return form.terms_agreed
+  } else if (currentModalType.value === 'privacy') {
+    return form.privacy_agreed
+  }
+  return false
+}
+
+const renderMarkdown = (content: string) => {
+  // 간단한 마크다운 렌더링
+  return content
+    .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mb-4">$1</h1>')
+    .replace(/^## (.*$)/gim, '<h2 class="text-xl font-semibold mb-3">$1</h2>')
+    .replace(/^### (.*$)/gim, '<h3 class="text-lg font-medium mb-2">$1</h3>')
+    .replace(/^\*\*(.*)\*\*/gim, '<strong class="font-semibold">$1</strong>')
+    .replace(/^\* (.*$)/gim, '<li class="ml-4">• $1</li>')
+    .replace(/^(\d+\. .*$)/gim, '<li class="ml-4">$1</li>')
+    .replace(/\n/g, '<br>')
+}
+
 const loadReferralInfo = async () => {
   const code = route.query.ref as string
   if (!code) return

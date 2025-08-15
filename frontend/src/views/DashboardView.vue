@@ -1,29 +1,29 @@
 <template>
   <div>
     <!-- Welcome Header -->
-    <div class="mb-6">
-      <h1 class="text-2xl font-bold text-gray-900">
+    <div class="spacing-lg">
+      <h1 class="text-heading-xl">
         안녕하세요, {{ authStore.user?.name || '사용자' }}님! 👋
       </h1>
-      <p class="mt-1 text-sm text-gray-500">
+      <p class="text-body text-muted spacing-xs">
         오늘의 물류 현황을 한눈에 확인하세요
       </p>
     </div>
 
     <!-- Account Status Alert (for pending users) -->
-    <Card v-if="authStore.isPending" class="mb-6 border-yellow-200 bg-yellow-50">
-      <div class="flex items-start gap-3">
-        <div class="w-10 h-10 rounded-lg bg-yellow-100 flex items-center justify-center">
+    <Card v-if="authStore.isPending" class="spacing-lg border-yellow-200 bg-yellow-50">
+      <div class="flex-start gap-md">
+        <div class="w-10 h-10 rounded-lg bg-yellow-100 flex-center">
           <span class="mdi mdi-clock-outline text-yellow-600 text-xl" />
         </div>
         <div class="flex-1">
-          <h3 class="font-medium text-yellow-800">
+          <h3 class="text-heading-sm text-yellow-800">
             계정 승인 대기 중
           </h3>
-          <p class="mt-1 text-sm text-yellow-700">
+          <p class="text-body-sm text-yellow-700 spacing-xs">
             관리자의 승인을 기다리고 있습니다. 평일 1-2일 내에 처리됩니다.
           </p>
-          <div class="mt-3">
+          <div class="spacing-md">
             <Button variant="warning" size="sm" text="프로필 완성하기" @click="router.push('/app/profile')" />
           </div>
         </div>

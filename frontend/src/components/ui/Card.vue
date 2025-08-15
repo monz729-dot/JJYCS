@@ -1,25 +1,25 @@
 <template>
   <div 
     :class="[
-      'bg-white rounded-xl border transition-all duration-200',
-      noPadding ? '' : 'p-6',
+      'card',
+      noPadding ? '' : 'card-body',
       hoverable ? 'hover:shadow-lg hover:border-gray-300' : '',
       clickable ? 'cursor-pointer' : '',
-      borderless ? 'border-transparent shadow-sm' : 'border-gray-200',
+      borderless ? 'border-transparent shadow-sm' : '',
       className
     ]"
     @click="handleClick"
   >
     <!-- Header -->
-    <div v-if="title || $slots.header" class="mb-4">
+    <div v-if="title || $slots.header" class="card-header">
       <slot name="header">
-        <div class="flex items-center justify-between">
-          <h3 class="text-lg font-semibold text-gray-900">{{ title }}</h3>
+        <div class="flex-between">
+          <h3 class="text-heading-md">{{ title }}</h3>
           <div v-if="$slots.action">
             <slot name="action" />
           </div>
         </div>
-        <p v-if="subtitle" class="mt-1 text-sm text-gray-500">{{ subtitle }}</p>
+        <p v-if="subtitle" class="text-body-sm text-muted spacing-xs">{{ subtitle }}</p>
       </slot>
     </div>
 
@@ -29,7 +29,7 @@
     </div>
 
     <!-- Footer -->
-    <div v-if="$slots.footer" class="mt-4 pt-4 border-t border-gray-100">
+    <div v-if="$slots.footer" class="card-footer">
       <slot name="footer" />
     </div>
   </div>
