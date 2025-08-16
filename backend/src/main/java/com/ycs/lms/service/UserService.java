@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -357,7 +358,7 @@ public class UserService implements UserDetailsService {
         currentUser.setTwoFactorSecret(secret);
         userRepository.save(currentUser);
         
-        return Map.of(
+        return java.util.Map.of(
             "qrCodeUrl", qrCodeUrl,
             "secret", secret,
             "backupCodes", backupCodes

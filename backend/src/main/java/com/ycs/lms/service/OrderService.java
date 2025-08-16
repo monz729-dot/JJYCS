@@ -1,14 +1,16 @@
-package com.ysc.lms.service;
+package com.ycs.lms.service;
 
-import com.ysc.lms.dto.orders.*;
-import com.ysc.lms.entity.Order;
-import com.ysc.lms.entity.OrderBox;
-import com.ysc.lms.entity.OrderItem;
-import com.ysc.lms.entity.User;
-import com.ysc.lms.repository.OrderRepository;
-import com.ysc.lms.repository.UserRepository;
-import com.ysc.lms.util.CBMCalculator;
-import com.ysc.lms.util.PagedResponse;
+import com.ycs.lms.dto.orders.*;
+import com.ycs.lms.entity.Order;
+import com.ycs.lms.entity.OrderBox;
+import com.ycs.lms.entity.OrderItem;
+import com.ycs.lms.entity.User;
+import com.ycs.lms.repository.OrderRepository;
+import com.ycs.lms.repository.UserRepository;
+import com.ycs.lms.util.CBMCalculator;
+import com.ycs.lms.util.PagedResponse;
+import com.ycs.lms.dto.orders.BusinessRuleValidationResponse.BusinessWarning;
+import com.ycs.lms.exception.BusinessRuleViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -19,8 +21,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.UUID;
+import java.util.Map;
+import lombok.Data;
+import lombok.AllArgsConstructor;
 
 /**
  * 주문 관리 서비스
@@ -177,7 +182,6 @@ public class OrderService {
                 boxRequest.getDepth()
             );
             
-            
             orderBoxes.add(orderBox);
         }
         
@@ -315,6 +319,55 @@ public class OrderService {
         
         // 비즈니스 룰 재적용
         applyBusinessRules(order, order.getUser());
+        
+        order = orderRepository.save(order);
+        
+        return mapToOrderResponse(order);
+    }
+
+    /**
+     * 주문 상태 변경
+     */
+    public OrderResponse updateOrderStatus(Long orderId, UpdateOrderStatusRequest request, Long userId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException("주문을 찾을 수 없습니다."));
+        
+        // 상태 전환 검증
+        if (!isValidStatusTransition(order.getStatus(), request.getStatus())) {
+            throw new InvalidStatusTransitionException("잘못된 상태 전환입니다: " + order.getStatus() + " -> " + request.getStatus());
+        }
+        
+        // 상태 변경
+        order.setStatus(request.getStatus());
+        if (request.getReason() != null) {
+            order.appendNote("[STATUS_CHANGE] " + request.getReason());
+        }
+        
+        order = orderRepository.save(order);
+        
+        return mapToOrderResponse(order);
+    }
+
+    /**
+     * 주문 취소
+     */
+    public OrderResponse cancelOrder(Long orderId, CancelOrderRequest request, Long userId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException("주문을 찾을 수 없습니다."));
+        
+        // 권한 검증
+        if (!isOrderOwner(orderId, userId)) {
+            throw new AccessDeniedException("주문을 취소할 권한이 없습니다.");
+        }
+        
+        // 취소 가능 상태 검증
+        if (!isOrderCancellable(orderId, userId)) {
+            throw new OrderNotCancellableException("현재 상태에서는 주문을 취소할 수 없습니다.");
+        }
+        
+        // 주문 취소
+        order.setStatus("cancelled");
+        order.appendNote("[CANCELLED] " + request.getReason());
         
         order = orderRepository.save(order);
         
@@ -466,25 +519,45 @@ public class OrderService {
         return List.of("requested", "confirmed", "payment_pending").contains(status);
     }
 
+    private boolean isValidStatusTransition(String currentStatus, String newStatus) {
+        // 상태 전환 규칙 정의
+        return switch (currentStatus) {
+            case "requested" -> List.of("confirmed", "cancelled", "delayed").contains(newStatus);
+            case "confirmed" -> List.of("processing", "cancelled").contains(newStatus);
+            case "processing" -> List.of("ready_for_shipping", "cancelled").contains(newStatus);
+            case "ready_for_shipping" -> List.of("shipped", "cancelled").contains(newStatus);
+            case "shipped" -> List.of("delivered", "returned").contains(newStatus);
+            case "delayed" -> List.of("confirmed", "cancelled").contains(newStatus);
+            default -> false;
+        };
+    }
+
     private void updateOrderFromRequest(Order order, UpdateOrderRequest request) {
         // TODO: 실제 업데이트 로직 구현
+        // 수취인 정보 업데이트
+        if (request.getRecipient() != null) {
+            order.setRecipientName(request.getRecipient().getName());
+            order.setRecipientPhone(request.getRecipient().getPhone());
+            order.setRecipientAddress(request.getRecipient().getAddress());
+            order.setRecipientZipCode(request.getRecipient().getZipCode());
+            order.setRecipientCountry(request.getRecipient().getCountry());
+        }
+        
+        // 배송 정보 업데이트
+        if (request.getShipping() != null) {
+            order.setUrgency(request.getShipping().getUrgency());
+            order.setNeedsRepacking(request.getShipping().getNeedsRepacking());
+            order.setSpecialInstructions(request.getShipping().getSpecialInstructions());
+        }
+        
+        // 결제 정보 업데이트
+        if (request.getPayment() != null) {
+            order.setPaymentMethod(request.getPayment().getMethod());
+        }
     }
 }
 
-// 비즈니스 경고 클래스
-@Data
-@AllArgsConstructor
-class BusinessWarning {
-    private String type;
-    private String message;
-    private Map<String, Object> details;
-    
-    public BusinessWarning(String type, String message) {
-        this.type = type;
-        this.message = message;
-        this.details = new HashMap<>();
-    }
-}
+// 비즈니스 경고 클래스는 com.ycs.lms.dto.orders.BusinessRuleValidationResponse.BusinessWarning을 사용합니다.
 
 // 추가 예외 클래스들
 class UserNotFoundException extends RuntimeException {
@@ -494,3 +567,19 @@ class UserNotFoundException extends RuntimeException {
 class AccessDeniedException extends RuntimeException {
     public AccessDeniedException(String message) { super(message); }
 }
+
+class OrderNotFoundException extends RuntimeException {
+    public OrderNotFoundException(String message) { super(message); }
+}
+
+class OrderNotModifiableException extends RuntimeException {
+    public OrderNotModifiableException(String message) { super(message); }
+}
+
+class OrderNotCancellableException extends RuntimeException {
+    public OrderNotCancellableException(String message) { super(message); }
+}
+
+class InvalidStatusTransitionException extends RuntimeException {
+    public InvalidStatusTransitionException(String message) { super(message); }
+} 
