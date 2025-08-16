@@ -8,21 +8,22 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL,
     name VARCHAR(100) NOT NULL,
     phone VARCHAR(20),
-    role ENUM('individual', 'enterprise', 'partner', 'warehouse', 'admin') NOT NULL,
-    status ENUM('pending_approval', 'active', 'suspended', 'deleted') DEFAULT 'active',
+    role VARCHAR(20) NOT NULL CHECK (role IN ('individual', 'enterprise', 'partner', 'warehouse', 'admin')),
+    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('pending_approval', 'active', 'suspended', 'deleted')),
     member_code VARCHAR(20) NULL,
     email_verified BOOLEAN DEFAULT FALSE,
     agree_terms BOOLEAN DEFAULT FALSE,
     agree_privacy BOOLEAN DEFAULT FALSE,
     agree_marketing BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    last_login_at TIMESTAMP NULL,
-    
-    INDEX idx_users_email (email),
-    INDEX idx_users_member_code (member_code),
-    INDEX idx_users_role_status (role, status)
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_login_at TIMESTAMP NULL
 );
+
+-- 인덱스 생성
+CREATE INDEX idx_users_email ON users (email);
+CREATE INDEX idx_users_member_code ON users (member_code);
+CREATE INDEX idx_users_role_status ON users (role, status);
 
 -- 기업 프로필 테이블
 CREATE TABLE enterprise_profiles (
@@ -35,40 +36,42 @@ CREATE TABLE enterprise_profiles (
     contact_email VARCHAR(255),
     contact_phone VARCHAR(20),
     company_type VARCHAR(50),
-    approval_status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+    approval_status VARCHAR(20) DEFAULT 'pending' CHECK (approval_status IN ('pending', 'approved', 'rejected')),
     approval_date TIMESTAMP NULL,
     approved_by BIGINT NULL,
     rejection_reason TEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (approved_by) REFERENCES users(id),
-    INDEX idx_enterprise_user_id (user_id),
-    INDEX idx_enterprise_approval_status (approval_status)
+    FOREIGN KEY (approved_by) REFERENCES users(id)
 );
+
+CREATE INDEX idx_enterprise_user_id ON enterprise_profiles (user_id);
+CREATE INDEX idx_enterprise_approval_status ON enterprise_profiles (approval_status);
 
 -- 파트너 프로필 테이블
 CREATE TABLE partner_profiles (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
-    partner_type ENUM('affiliate', 'referral', 'corporate') NOT NULL,
+    partner_type VARCHAR(20) NOT NULL CHECK (partner_type IN ('affiliate', 'referral', 'corporate')),
     business_info TEXT,
     referral_code VARCHAR(20) UNIQUE,
     commission_rate DECIMAL(5,2) DEFAULT 0.00,
-    approval_status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+    approval_status VARCHAR(20) DEFAULT 'pending' CHECK (approval_status IN ('pending', 'approved', 'rejected')),
     approval_date TIMESTAMP NULL,
     approved_by BIGINT NULL,
     rejection_reason TEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (approved_by) REFERENCES users(id),
-    INDEX idx_partner_user_id (user_id),
-    INDEX idx_partner_referral_code (referral_code),
-    INDEX idx_partner_approval_status (approval_status)
+    FOREIGN KEY (approved_by) REFERENCES users(id)
 );
+
+CREATE INDEX idx_partner_user_id ON partner_profiles (user_id);
+CREATE INDEX idx_partner_referral_code ON partner_profiles (referral_code);
+CREATE INDEX idx_partner_approval_status ON partner_profiles (approval_status);
 
 -- 창고 프로필 테이블
 CREATE TABLE warehouse_profiles (
@@ -81,18 +84,19 @@ CREATE TABLE warehouse_profiles (
     manager_phone VARCHAR(20),
     capacity_info TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_warehouse_user_id (user_id),
-    INDEX idx_warehouse_code (warehouse_code)
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+CREATE INDEX idx_warehouse_user_id ON warehouse_profiles (user_id);
+CREATE INDEX idx_warehouse_code ON warehouse_profiles (warehouse_code);
 
 -- 주소 테이블
 CREATE TABLE addresses (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
-    address_type ENUM('pickup', 'delivery', 'billing') NOT NULL,
+    address_type VARCHAR(20) NOT NULL CHECK (address_type IN ('pickup', 'delivery', 'billing')),
     recipient_name VARCHAR(100),
     recipient_phone VARCHAR(20),
     country_code VARCHAR(3) NOT NULL,
@@ -103,20 +107,21 @@ CREATE TABLE addresses (
     state_province VARCHAR(100),
     is_default BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_addresses_user_id (user_id),
-    INDEX idx_addresses_type (address_type)
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+CREATE INDEX idx_addresses_user_id ON addresses (user_id);
+CREATE INDEX idx_addresses_type ON addresses (address_type);
 
 -- 주문 테이블
 CREATE TABLE orders (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     order_code VARCHAR(50) NOT NULL UNIQUE,
     user_id BIGINT NOT NULL,
-    status ENUM('requested', 'confirmed', 'in_progress', 'shipped', 'delivered', 'cancelled', 'delayed') DEFAULT 'requested',
-    order_type ENUM('air', 'sea') DEFAULT 'sea',
+    status VARCHAR(20) DEFAULT 'requested' CHECK (status IN ('requested', 'confirmed', 'in_progress', 'shipped', 'delivered', 'cancelled', 'delayed')),
+    order_type VARCHAR(10) DEFAULT 'sea' CHECK (order_type IN ('air', 'sea')),
     
     -- 수취인 정보
     recipient_name VARCHAR(100) NOT NULL,
@@ -128,10 +133,7 @@ CREATE TABLE orders (
     -- 비즈니스 룰 결과
     total_amount DECIMAL(12,2) DEFAULT 0.00,
     currency VARCHAR(3) DEFAULT 'THB',
-    total_cbm_m3 DECIMAL(10,6) AS (
-        (SELECT COALESCE(SUM(width_cm * height_cm * depth_cm / 1000000), 0) 
-         FROM order_boxes WHERE order_id = id)
-    ) VIRTUAL,
+    total_cbm_m3 DECIMAL(10,6) DEFAULT 0.000000,
     requires_extra_recipient BOOLEAN DEFAULT FALSE,
     
     -- 배송 정보
@@ -150,15 +152,16 @@ CREATE TABLE orders (
     notes TEXT,
     special_instructions TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    INDEX idx_orders_order_code (order_code),
-    INDEX idx_orders_user_id (user_id),
-    INDEX idx_orders_status (status),
-    INDEX idx_orders_order_type (order_type),
-    INDEX idx_orders_created_at (created_at)
+    FOREIGN KEY (user_id) REFERENCES users(id)
 );
+
+CREATE INDEX idx_orders_order_code ON orders (order_code);
+CREATE INDEX idx_orders_user_id ON orders (user_id);
+CREATE INDEX idx_orders_status ON orders (status);
+CREATE INDEX idx_orders_order_type ON orders (order_type);
+CREATE INDEX idx_orders_created_at ON orders (created_at);
 
 -- 주문 상품 테이블
 CREATE TABLE order_items (
@@ -167,7 +170,7 @@ CREATE TABLE order_items (
     product_name VARCHAR(200) NOT NULL,
     quantity INT NOT NULL,
     unit_price DECIMAL(10,2) NOT NULL,
-    amount DECIMAL(12,2) AS (quantity * unit_price) STORED,
+    amount DECIMAL(12,2) DEFAULT 0.00,
     currency VARCHAR(3) DEFAULT 'THB',
     
     -- 분류 코드
@@ -181,13 +184,14 @@ CREATE TABLE order_items (
     weight_kg DECIMAL(8,3),
     
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-    INDEX idx_order_items_order_id (order_id),
-    INDEX idx_order_items_ems_code (ems_code),
-    INDEX idx_order_items_hs_code (hs_code)
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
 );
+
+CREATE INDEX idx_order_items_order_id ON order_items (order_id);
+CREATE INDEX idx_order_items_ems_code ON order_items (ems_code);
+CREATE INDEX idx_order_items_hs_code ON order_items (hs_code);
 
 -- 주문 박스 테이블
 CREATE TABLE order_boxes (
@@ -201,31 +205,32 @@ CREATE TABLE order_boxes (
     depth_cm DECIMAL(8,2) NOT NULL,
     
     -- CBM 자동 계산
-    cbm_m3 DECIMAL(10,6) AS (width_cm * height_cm * depth_cm / 1000000) STORED,
+    cbm_m3 DECIMAL(10,6) DEFAULT 0.000000,
     
     -- 무게
     weight_kg DECIMAL(8,3),
     
     -- 박스 상태
-    status ENUM('registered', 'packed', 'shipped', 'delivered') DEFAULT 'registered',
+    status VARCHAR(20) DEFAULT 'registered' CHECK (status IN ('registered', 'packed', 'shipped', 'delivered')),
     label_code VARCHAR(50) UNIQUE,
     
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-    INDEX idx_order_boxes_order_id (order_id),
-    INDEX idx_order_boxes_label_code (label_code),
-    INDEX idx_order_boxes_status (status)
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
 );
+
+CREATE INDEX idx_order_boxes_order_id ON order_boxes (order_id);
+CREATE INDEX idx_order_boxes_label_code ON order_boxes (label_code);
+CREATE INDEX idx_order_boxes_status ON order_boxes (status);
 
 -- 리패킹 사진 테이블
 CREATE TABLE repack_photos (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     order_id BIGINT NOT NULL,
     box_id BIGINT,
-    photo_type ENUM('before', 'during', 'after') NOT NULL,
+    photo_type VARCHAR(20) NOT NULL CHECK (photo_type IN ('before', 'during', 'after')),
     file_path VARCHAR(500) NOT NULL,
     file_name VARCHAR(200) NOT NULL,
     file_size BIGINT,
@@ -235,10 +240,11 @@ CREATE TABLE repack_photos (
     
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
     FOREIGN KEY (box_id) REFERENCES order_boxes(id) ON DELETE CASCADE,
-    FOREIGN KEY (uploaded_by) REFERENCES users(id),
-    INDEX idx_repack_photos_order_id (order_id),
-    INDEX idx_repack_photos_box_id (box_id)
+    FOREIGN KEY (uploaded_by) REFERENCES users(id)
 );
+
+CREATE INDEX idx_repack_photos_order_id ON repack_photos (order_id);
+CREATE INDEX idx_repack_photos_box_id ON repack_photos (box_id);
 
 -- 창고 테이블
 CREATE TABLE warehouses (
@@ -250,14 +256,15 @@ CREATE TABLE warehouses (
     contact_phone VARCHAR(20),
     manager_user_id BIGINT,
     capacity_limit INT,
-    status ENUM('active', 'maintenance', 'closed') DEFAULT 'active',
+    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'maintenance', 'closed')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    FOREIGN KEY (manager_user_id) REFERENCES users(id),
-    INDEX idx_warehouses_code (warehouse_code),
-    INDEX idx_warehouses_status (status)
+    FOREIGN KEY (manager_user_id) REFERENCES users(id)
 );
+
+CREATE INDEX idx_warehouses_code ON warehouses (warehouse_code);
+CREATE INDEX idx_warehouses_status ON warehouses (status);
 
 -- 재고 테이블
 CREATE TABLE inventory (
@@ -266,7 +273,7 @@ CREATE TABLE inventory (
     box_id BIGINT,
     warehouse_id BIGINT NOT NULL,
     
-    status ENUM('inbound', 'stored', 'processing', 'outbound', 'hold', 'mixbox') DEFAULT 'inbound',
+    status VARCHAR(20) DEFAULT 'inbound' CHECK (status IN ('inbound', 'stored', 'processing', 'outbound', 'hold', 'mixbox')),
     location_code VARCHAR(50),
     
     received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -275,15 +282,16 @@ CREATE TABLE inventory (
     
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
     FOREIGN KEY (box_id) REFERENCES order_boxes(id) ON DELETE CASCADE,
-    FOREIGN KEY (warehouse_id) REFERENCES warehouses(id),
-    INDEX idx_inventory_order_id (order_id),
-    INDEX idx_inventory_warehouse_id (warehouse_id),
-    INDEX idx_inventory_status (status)
+    FOREIGN KEY (warehouse_id) REFERENCES warehouses(id)
 );
+
+CREATE INDEX idx_inventory_order_id ON inventory (order_id);
+CREATE INDEX idx_inventory_warehouse_id ON inventory (warehouse_id);
+CREATE INDEX idx_inventory_status ON inventory (status);
 
 -- 스캔 이벤트 테이블
 CREATE TABLE scan_events (
@@ -292,12 +300,12 @@ CREATE TABLE scan_events (
     box_id BIGINT,
     label_code VARCHAR(50) NOT NULL,
     
-    scan_type ENUM('inbound', 'outbound', 'hold', 'mixbox', 'check') NOT NULL,
+    scan_type VARCHAR(20) NOT NULL CHECK (scan_type IN ('inbound', 'outbound', 'hold', 'mixbox', 'check')),
     warehouse_id BIGINT NOT NULL,
     scanned_by BIGINT NOT NULL,
     
     location_code VARCHAR(50),
-    scan_result ENUM('success', 'error', 'warning') DEFAULT 'success',
+    scan_result VARCHAR(20) DEFAULT 'success' CHECK (scan_result IN ('success', 'error', 'warning')),
     error_message TEXT,
     
     scanned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -305,12 +313,13 @@ CREATE TABLE scan_events (
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
     FOREIGN KEY (box_id) REFERENCES order_boxes(id) ON DELETE CASCADE,
     FOREIGN KEY (warehouse_id) REFERENCES warehouses(id),
-    FOREIGN KEY (scanned_by) REFERENCES users(id),
-    INDEX idx_scan_events_order_id (order_id),
-    INDEX idx_scan_events_label_code (label_code),
-    INDEX idx_scan_events_scan_type (scan_type),
-    INDEX idx_scan_events_scanned_at (scanned_at)
+    FOREIGN KEY (scanned_by) REFERENCES users(id)
 );
+
+CREATE INDEX idx_scan_events_order_id ON scan_events (order_id);
+CREATE INDEX idx_scan_events_label_code ON scan_events (label_code);
+CREATE INDEX idx_scan_events_scan_type ON scan_events (scan_type);
+CREATE INDEX idx_scan_events_scanned_at ON scan_events (scanned_at);
 
 -- 초기 데이터 삽입
 INSERT INTO warehouses (warehouse_code, name, location, address, contact_phone, status) VALUES

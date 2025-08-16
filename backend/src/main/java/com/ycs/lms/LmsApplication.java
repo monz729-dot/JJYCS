@@ -8,7 +8,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication(exclude = {
     org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration.class,
     org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration.class,
-    org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration.class
+    org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration.class,
+    org.springframework.boot.autoconfigure.sql.init.SqlInitializationAutoConfiguration.class
 })
 @EnableAsync
 @EnableScheduling

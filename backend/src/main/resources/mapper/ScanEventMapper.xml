@@ -41,7 +41,9 @@
                 AND scan_time >= #{startDate}
             </if>
             <if test="endDate != null and endDate != ''">
+                <![CDATA[
                 AND scan_time <= #{endDate}
+                ]]>
             </if>
             <if test="userId != null">
                 AND scanned_by = #{userId}
@@ -305,7 +307,9 @@
     </delete>
 
     <delete id="deleteOldScanEvents" parameterType="java.time.LocalDateTime">
+        <![CDATA[
         DELETE FROM scan_events WHERE created_at < #{cutoffDate}
+        ]]>
     </delete>
 
 </mapper>

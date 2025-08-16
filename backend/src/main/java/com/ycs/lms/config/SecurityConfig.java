@@ -79,6 +79,12 @@ public class SecurityConfig {
                 .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                 .requestMatchers("/h2-console/**").permitAll() // H2 콘솔 접근 허용
+                .requestMatchers("/api/h2-console/**").permitAll() // H2 콘솔 API 접근 허용
+                .requestMatchers("/database/**").permitAll() // 데이터베이스 초기화 허용
+                .requestMatchers("/force-init/**").permitAll() // 강제 초기화 허용
+                .requestMatchers("/test-data/**").permitAll() // 테스트 데이터 허용
+                .requestMatchers("/db-check/**").permitAll() // DB 체크 허용
+                .requestMatchers("/h2-info/**").permitAll() // H2 정보 허용
                 
                 // Admin only endpoints  
                 .requestMatchers("/admin/**").hasRole("ADMIN")
