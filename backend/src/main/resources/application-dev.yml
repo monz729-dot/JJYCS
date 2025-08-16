@@ -24,17 +24,23 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.H2Dialect
         
-  # Redis Configuration (embedded for dev)
-  data:
-    redis:
-      host: localhost
-      port: 6379
-      timeout: 2000ms
-      lettuce:
-        pool:
-          max-active: 8
-          max-idle: 8
-          min-idle: 0
+  # Redis Configuration (disabled for dev)
+  # data:
+  #   redis:
+  #     host: localhost
+  #     port: 6379
+  #     timeout: 2000ms
+  #     lettuce:
+  #       pool:
+  #         max-active: 8
+  #         max-idle: 8
+  #         min-idle: 0
+          
+  # Data Initialization - 테스트 데이터 로딩 (일시적으로 비활성화)
+  sql:
+    init:
+      mode: never
+      # data-locations: classpath:data-dev.sql
           
   # Mail Configuration (mock for dev)
   mail:
@@ -68,7 +74,7 @@ logging:
 # Application Configuration
 app:
   jwt:
-    secret: ${JWT_SECRET:ycs-lms-dev-secret-key-2024-super-secure-token}
+    secret: ${JWT_SECRET:eWNzTG1zRGV2U2VjcmV0S2V5MjAyNFN1cGVyU2VjdXJlVG9rZW5Gb3JKV1RBVVRI}
     expiration: 86400000 # 24 hours
     refresh-expiration: 604800000 # 7 days
     
@@ -128,7 +134,7 @@ app:
       - application/pdf
       
   notification:
-    email-enabled: false
+    email-enabled: false  # 개발 환경에서는 이메일 발송 비활성화
     sms-enabled: false
     
 # MyBatis Configuration - 일시적으로 비활성화
@@ -158,6 +164,3 @@ management:
 # Development Features
 debug: true
 
-# Initialization - 일시적으로 비활성화 (Entity가 준비되면 다시 활성화)
-spring.sql.init.mode: never
-# spring.sql.init.data-locations: classpath:data-dev.sql

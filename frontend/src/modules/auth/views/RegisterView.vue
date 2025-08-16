@@ -446,11 +446,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useToast } from 'vue-toastification'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useToast } from '@/composables/useToast'
 import { AuthService } from '@/services/authService'
+import {
+  UserIcon,
+  BuildingOfficeIcon,
+  UserGroupIcon
+} from '@heroicons/vue/24/outline'
+import { 
+  TERMS_OF_SERVICE, 
+  PRIVACY_POLICY 
+} from '@/constants/terms'
 
+const route = useRoute()
 const router = useRouter()
 const toast = useToast()
 
@@ -465,6 +475,30 @@ const emailVerifying = ref(false)
 const emailVerified = ref(false)
 const emailSent = ref(false)
 const verificationCode = ref('')
+const passwordStrength = ref(0)
+const passwordErrors = ref<string[]>([])
+const phoneError = ref('')
+const selectedFile = ref<File | null>(null)
+const referralInfo = ref<{
+  partnerName: string
+  partnerCode: string
+} | null>(null)
+
+// 이메일 인증 관련 상태
+const registrationCompleted = ref(false)
+const resendCooldown = ref(0)
+const verificationToken = ref('')
+const verifyingToken = ref(false)
+const tokenVerified = ref(false)
+let cooldownTimer: NodeJS.Timeout | null = null
+
+const passwordMismatchState = ref(false)
+
+// 모달 상태
+const showModal = ref(false)
+const currentModalType = ref<'terms' | 'privacy'>('terms')
+const modalTitle = ref('')
+const modalContent = ref('')
 
 // 사용자 유형 옵션
 const userTypes = [
@@ -501,12 +535,37 @@ const form = reactive({
   business_number: '',
   business_license_url: '',
   termsAccepted: false,
-  marketingConsent: false
+  marketingConsent: false,
+  referralCode: ''
 })
 
 // 계산된 속성
 const passwordMismatch = computed(() => {
   return form.password && form.passwordConfirm && form.password !== form.passwordConfirm
+})
+
+// 비밀번호 강도 관련 계산 속성
+const passwordStrengthPercent = computed(() => passwordStrength.value)
+
+const passwordStrengthClass = computed(() => {
+  if (passwordStrength.value <= 25) return 'bg-red-500'
+  if (passwordStrength.value <= 50) return 'bg-orange-500'
+  if (passwordStrength.value <= 75) return 'bg-yellow-500'
+  return 'bg-green-500'
+})
+
+const passwordStrengthText = computed(() => {
+  if (passwordStrength.value <= 25) return '약함'
+  if (passwordStrength.value <= 50) return '보통'
+  if (passwordStrength.value <= 75) return '강함'
+  return '매우 강함'
+})
+
+const passwordStrengthTextClass = computed(() => {
+  if (passwordStrength.value <= 25) return 'text-red-600'
+  if (passwordStrength.value <= 50) return 'text-orange-600'
+  if (passwordStrength.value <= 75) return 'text-yellow-600'
+  return 'text-green-600'
 })
 
 const isFormValid = computed(() => {
@@ -534,6 +593,256 @@ const isFormValid = computed(() => {
   }
 
   return basicValid
+}
+
+// 비밀번호 강도 체크
+const checkPasswordStrength = () => {
+  const password = form.password
+  passwordErrors.value = []
+  let strength = 0
+  
+  // 길이 체크
+  if (password.length >= 8) {
+    strength += 25
+  } else {
+    passwordErrors.value.push('최소 8자 이상')
+  }
+  
+  // 영문 체크
+  if (/[a-zA-Z]/.test(password)) {
+    strength += 25
+  } else {
+    passwordErrors.value.push('영문 포함')
+  }
+  
+  // 숫자 체크
+  if (/[0-9]/.test(password)) {
+    strength += 25
+  } else {
+    passwordErrors.value.push('숫자 포함')
+  }
+  
+  // 특수문자 체크
+  if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+    strength += 25
+  } else {
+    passwordErrors.value.push('특수문자 포함')
+  }
+  
+  passwordStrength.value = strength
+}
+
+// 비밀번호 일치 확인
+const checkPasswordMatch = () => {
+  if (form.passwordConfirm && form.password !== form.passwordConfirm) {
+    passwordMismatchState.value = true
+  } else {
+    passwordMismatchState.value = false
+  }
+}
+
+// 전화번호 포맷팅
+const formatPhoneNumber = (event: Event) => {
+  const input = event.target as HTMLInputElement
+  let value = input.value.replace(/[^0-9]/g, '')
+  
+  // 한국 전화번호 포맷 (010-1234-5678)
+  if (value.startsWith('010') || value.startsWith('011') || value.startsWith('016') || value.startsWith('017') || value.startsWith('018') || value.startsWith('019')) {
+    if (value.length > 3 && value.length <= 7) {
+      value = `${value.slice(0, 3)}-${value.slice(3)}`
+    } else if (value.length > 7) {
+      value = `${value.slice(0, 3)}-${value.slice(3, 7)}-${value.slice(7, 11)}`
+    }
+  } else if (value.startsWith('02')) {
+    // 서울 지역번호
+    if (value.length > 2 && value.length <= 5) {
+      value = `${value.slice(0, 2)}-${value.slice(2)}`
+    } else if (value.length > 5 && value.length <= 9) {
+      value = `${value.slice(0, 2)}-${value.slice(2, 5)}-${value.slice(5)}`
+    } else if (value.length > 9) {
+      value = `${value.slice(0, 2)}-${value.slice(2, 6)}-${value.slice(6, 10)}`
+    }
+  } else if (value.startsWith('0')) {
+    // 기타 지역번호
+    if (value.length > 3 && value.length <= 6) {
+      value = `${value.slice(0, 3)}-${value.slice(3)}`
+    } else if (value.length > 6 && value.length <= 10) {
+      value = `${value.slice(0, 3)}-${value.slice(3, 6)}-${value.slice(6)}`
+    } else if (value.length > 10) {
+      value = `${value.slice(0, 3)}-${value.slice(3, 7)}-${value.slice(7, 11)}`
+    }
+  }
+  
+  form.phone = value
+  
+  // 전화번호 유효성 검사
+  const phoneRegex = /^(010|011|016|017|018|019)-\d{3,4}-\d{4}$|^(02|0[3-9]{1}[0-9]{1})-\d{3,4}-\d{4}$/
+  if (value.length > 0 && !phoneRegex.test(value) && value.length >= 12) {
+    phoneError.value = '올바른 전화번호 형식이 아닙니다'
+  } else {
+    phoneError.value = ''
+  }
+}
+
+// 파트너 추천 정보 로드
+const loadReferralInfo = async () => {
+  const code = route.query.ref as string
+  if (!code) return
+
+  try {
+    // Mock referral info lookup
+    referralInfo.value = {
+      partnerName: '김파트너',
+      partnerCode: code
+    }
+    form.referralCode = code
+    
+  } catch (error) {
+    console.error('Failed to load referral info:', error)
+  }
+}
+
+// 토큰 포맷팅 (숫자만 입력 가능)
+const formatToken = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  let value = target.value.replace(/\D/g, '') // 숫자만 허용
+  value = value.substring(0, 6) // 최대 6자리
+  verificationToken.value = value
+}
+
+// 토큰 인증
+const verifyToken = async () => {
+  if (!verificationToken.value || verificationToken.value.length !== 6) {
+    toast.error('6자리 토큰을 입력해주세요.')
+    return
+  }
+
+  verifyingToken.value = true
+
+  try {
+    const result = await AuthService.verifyEmail(form.email, verificationToken.value)
+    
+    if (result.success) {
+      tokenVerified.value = true
+      toast.success('이메일 인증이 완료되었습니다!')
+    } else {
+      toast.error(result.error || '토큰 인증에 실패했습니다.')
+    }
+  } catch (error) {
+    toast.error('토큰 인증에 실패했습니다.')
+  } finally {
+    verifyingToken.value = false
+  }
+}
+
+// 토큰 재발송
+const resendVerificationToken = async () => {
+  if (!form.email) {
+    toast.error('이메일 주소를 입력해주세요.')
+    return
+  }
+
+  try {
+    const result = await AuthService.resendVerificationToken(form.email)
+    
+    if (result.success) {
+      // 재발송 쿨다운 시작
+      resendCooldown.value = 60
+      startCooldown()
+      
+      toast.success('인증 토큰을 재발송했습니다.')
+    } else {
+      toast.error(result.error || '인증 토큰 재발송에 실패했습니다.')
+    }
+  } catch (error) {
+    toast.error('인증 토큰 재발송에 실패했습니다.')
+  }
+}
+
+// 쿨다운 타이머 시작
+const startCooldown = () => {
+  cooldownTimer = setInterval(() => {
+    resendCooldown.value--
+    if (resendCooldown.value <= 0) {
+      if (cooldownTimer) {
+        clearInterval(cooldownTimer)
+        cooldownTimer = null
+      }
+    }
+  }, 1000)
+}
+
+// 파일 업로드 처리 개선
+const handleFileUpload = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (target.files && target.files[0]) {
+    const file = target.files[0]
+    
+    // 파일 크기 검사 (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('파일 크기는 10MB 이하여야 합니다.')
+      return
+    }
+    
+    // 파일 형식 검사
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png']
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('PDF, JPG, PNG 파일만 업로드 가능합니다.')
+      return
+    }
+    
+    selectedFile.value = file
+    form.business_license_url = `uploaded_${file.name}`
+    toast.success('파일이 업로드되었습니다.')
+  }
+}
+
+// 약관 모달 관련 함수
+const openTermsModal = (type: 'terms' | 'privacy') => {
+  currentModalType.value = type
+  
+  switch (type) {
+    case 'terms':
+      modalTitle.value = '이용약관'
+      modalContent.value = TERMS_OF_SERVICE
+      break
+    case 'privacy':
+      modalTitle.value = '개인정보 수집 및 이용 동의'
+      modalContent.value = PRIVACY_POLICY
+      break
+  }
+  
+  showModal.value = true
+}
+
+const closeModal = () => {
+  showModal.value = false
+}
+
+const agreeAndClose = () => {
+  if (currentModalType.value === 'terms') {
+    form.termsAccepted = true
+  }
+  closeModal()
+}
+
+const getConsentValue = () => {
+  if (currentModalType.value === 'terms') {
+    return form.termsAccepted
+  }
+  return false
+}
+
+const renderMarkdown = (content: string) => {
+  // 간단한 마크다운 렌더링
+  return content
+    .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mb-4">$1</h1>')
+    .replace(/^## (.*$)/gim, '<h2 class="text-xl font-semibold mb-3">$1</h2>')
+    .replace(/^### (.*$)/gim, '<h3 class="text-lg font-medium mb-2">$1</h3>')
+    .replace(/^\*\*(.*)\*\*/gim, '<strong class="font-semibold">$1</strong>')
+    .replace(/^\* (.*$)/gim, '<li class="ml-4">• $1</li>')
+    .replace(/^(\d+\. .*$)/gim, '<li class="ml-4">$1</li>')
+    .replace(/\n/g, '<br>')
 })
 
 // 필드별 유효성 검사 메시지
@@ -672,6 +981,7 @@ const validateEmail = () => {
 
 const validatePassword = () => {
   fieldErrors.password = validateField('password')
+  checkPasswordStrength() // 비밀번호 강도 체크 추가
   if (form.passwordConfirm) {
     validatePasswordConfirm() // 비밀번호 변경시 확인도 재검증
   }
@@ -864,21 +1174,51 @@ const handleSubmit = async () => {
       business_number: form.user_type === 'corporate' ? form.business_number : undefined,
       business_license_url: form.user_type !== 'general' ? form.business_license_url : undefined,
       terms_agreed: form.termsAccepted,
-      privacy_agreed: form.termsAccepted
+      privacy_agreed: form.termsAccepted,
+      marketing_agreed: form.marketingConsent,
+      referralCode: form.referralCode
     }
 
-    const result = await AuthService.signUp(signupData)
-
-    if (result.success) {
-      if (form.user_type === 'general') {
-        toast.success('회원가입이 완료되었습니다! 이메일 인증을 완료해주세요.')
-        router.push('/auth/verify-email')
+    // 토큰 인증이 완료된 경우, 바로 프로필 생성
+    if (tokenVerified.value) {
+      const completeResponse = await AuthService.completeSignUp(signupData)
+      if (completeResponse.success) {
+        let message = '회원가입이 완료되었습니다.'
+        if (form.user_type === 'corporate' || form.user_type === 'partner') {
+          message += ' 관리자 승인 후 로그인 가능합니다. (평일 1~2일 소요)'
+        }
+        toast.success(message)
+        router.push({ name: 'Login' })
       } else {
-        toast.info('회원가입 신청이 완료되었습니다. 승인까지 1-2 영업일이 소요됩니다.')
-        router.push('/auth/approval')
+        error.value = completeResponse.error || '회원가입 완료에 실패했습니다.'
+      }
+      return
+    }
+
+    // 첫 번째 회원가입 시도 (이메일 인증 토큰 발송)
+    const result = await AuthService.signUp(signupData)
+    
+    if (result.success) {
+      if (result.requiresEmailVerification) {
+        // 이메일 인증이 필요한 경우
+        registrationCompleted.value = true
+        toast.success('이메일 인증 토큰을 발송했습니다. 이메일을 확인하여 6자리 토큰을 입력해주세요.')
+      } else {
+        // 이메일 인증이 완료된 경우, 프로필 생성 시도
+        const completeResponse = await AuthService.completeSignUp(signupData)
+        if (completeResponse.success) {
+          let message = '회원가입이 완료되었습니다.'
+          if (form.user_type === 'corporate' || form.user_type === 'partner') {
+            message += ' 관리자 승인 후 로그인 가능합니다. (평일 1~2일 소요)'
+          }
+          toast.success(message)
+          router.push({ name: 'Login' })
+        } else {
+          error.value = completeResponse.error || '회원가입 완료에 실패했습니다.'
+        }
       }
     } else {
-      error.value = result.error || '회원가입에 실패했습니다.'
+      error.value = result.error || '회원가입 중 오류가 발생했습니다.'
     }
   } catch (err) {
     console.error('회원가입 오류:', err)
@@ -887,6 +1227,31 @@ const handleSubmit = async () => {
     loading.value = false
   }
 }
+
+// Lifecycle
+onMounted(async () => {
+  loadReferralInfo()
+  
+  // URL 쿼리 파라미터 확인 (이메일 인증 완료 후 리다이렉트)
+  const urlParams = new URLSearchParams(window.location.search)
+  const emailVerified = urlParams.get('emailVerified')
+  const message = urlParams.get('message')
+  
+  if (emailVerified === 'true') {
+    // 이메일 인증이 완료된 상태
+    registrationCompleted.value = true
+    tokenVerified.value = true
+    if (message) {
+      toast.success(message)
+    }
+  }
+})
+
+onUnmounted(() => {
+  if (cooldownTimer) {
+    clearInterval(cooldownTimer)
+  }
+})
 </script>
 
 <style scoped>

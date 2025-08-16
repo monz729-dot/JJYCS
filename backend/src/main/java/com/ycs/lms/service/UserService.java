@@ -95,10 +95,20 @@ public class UserService {
         log.info("Login attempt for email: {}", request.getEmail());
 
         User user = userRepository.findByEmail(request.getEmail())
-            .orElseThrow(() -> new BadRequestException("잘못된 이메일 또는 비밀번호입니다"));
+            .orElseThrow(() -> {
+                log.warn("User not found for email: {}", request.getEmail());
+                return new BadRequestException("잘못된 이메일 또는 비밀번호입니다");
+            });
+        
+        log.info("User found: id={}, email={}, password_hash={}", user.getId(), user.getEmail(), 
+                user.getPasswordHash() != null ? "***HASH_EXISTS***" : "***NULL***");
 
         // 비밀번호 확인
-        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+        log.info("Password verification - input: '{}', stored hash: '{}'", request.getPassword(), user.getPasswordHash());
+        boolean passwordMatches = passwordEncoder.matches(request.getPassword(), user.getPasswordHash());
+        log.info("Password matches: {}", passwordMatches);
+        
+        if (!passwordMatches) {
             // 로그인 실패 횟수 증가
             incrementLoginAttempts(user);
             throw new BadRequestException("잘못된 이메일 또는 비밀번호입니다");

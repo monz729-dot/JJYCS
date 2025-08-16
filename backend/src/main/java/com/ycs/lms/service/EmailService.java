@@ -1,8 +1,9 @@
 package com.ycs.lms.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
@@ -10,16 +11,24 @@ import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class EmailService {
 
-    private final JavaMailSender emailSender;
+    @Autowired(required = false)
+    private JavaMailSender emailSender;
     
     @Value("${spring.mail.username}")
     private String fromEmail;
+    
+    @Value("${app.notification.email-enabled:false}")
+    private boolean emailEnabled;
 
     @Async
     public void sendVerificationEmail(String toEmail, String name, String verificationLink) {
+        if (!emailEnabled || emailSender == null) {
+            log.info("Email service disabled or unavailable - skipping verification email to: {}", toEmail);
+            return;
+        }
+        
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
@@ -42,6 +51,11 @@ public class EmailService {
 
     @Async
     public void sendApprovalEmail(String toEmail, String name) {
+        if (!emailEnabled || emailSender == null) {
+            log.info("Email service disabled or unavailable - skipping approval email to: {}", toEmail);
+            return;
+        }
+        
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
@@ -64,6 +78,11 @@ public class EmailService {
 
     @Async
     public void sendPasswordResetEmail(String toEmail, String name, String resetLink) {
+        if (!emailEnabled || emailSender == null) {
+            log.info("Email service disabled or unavailable - skipping password reset email to: {}", toEmail);
+            return;
+        }
+        
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
@@ -87,6 +106,11 @@ public class EmailService {
 
     @Async
     public void sendRejectionEmail(String toEmail, String name, String reason) {
+        if (!emailEnabled || emailSender == null) {
+            log.info("Email service disabled or unavailable - skipping rejection email to: {}", toEmail);
+            return;
+        }
+        
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);

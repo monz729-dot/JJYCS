@@ -70,15 +70,17 @@ public class SecurityConfig {
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint))
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .headers(headers -> headers.frameOptions().disable()) // H2 콘솔용 프레임 옵션 비활성화
             .authorizeHttpRequests(auth -> auth
-                // Public endpoints
+                // Public endpoints (컨텍스트 경로 /api는 자동으로 제거되므로 원래 패턴 사용)
                 .requestMatchers("/auth/signup", "/auth/login", "/auth/refresh", "/auth/verify-email").permitAll()
+                .requestMatchers("/auth/**").permitAll() // 모든 인증 관련 엔드포인트 허용
                 .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                .requestMatchers("/h2-console/**").permitAll() // H2 콘솔 접근 허용
                 
-                // Admin only endpoints
+                // Admin only endpoints  
                 .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/auth/approve/**").hasRole("ADMIN")
                 
                 // Warehouse endpoints
                 .requestMatchers("/warehouse/**").hasAnyRole("WAREHOUSE", "ADMIN")
