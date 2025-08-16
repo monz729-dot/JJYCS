@@ -1,171 +1,82 @@
+# YCS LMS Default Configuration
+# This file contains common settings shared across all profiles
+
 spring:
   application:
     name: ycs-lms
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:dev}
+    active: ${SPRING_PROFILES_ACTIVE:local}
     
-  datasource:
-    url: jdbc:h2:file:./data/ycs_lms_dev;AUTO_SERVER=TRUE
-    username: sa
-    password: 
-    driver-class-name: org.h2.Driver
-    hikari:
-      maximum-pool-size: 10
-      minimum-idle: 5
-      connection-timeout: 30000
-      idle-timeout: 600000
-      max-lifetime: 1800000
-      
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
-      settings:
-        trace: false
-        web-allow-others: false
-      
-  redis:
-    host: ${REDIS_HOST:localhost}
-    port: ${REDIS_PORT:6379}
-    password: ${REDIS_PASSWORD:}
-    timeout: 10000ms
-    lettuce:
-      pool:
-        max-active: 8
-        max-idle: 8
-        min-idle: 0
-        
-  kafka:
-    bootstrap-servers: ${KAFKA_BROKERS:localhost:9092}
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-    consumer:
-      group-id: ycs-lms-group
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring.json.trusted.packages: "com.ycs.lms.dto"
-        
-  mail:
-    host: ${SMTP_HOST:smtp.gmail.com}
-    port: ${SMTP_PORT:587}
-    username: ${SMTP_USER:}
-    password: ${SMTP_PASS:}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-            required: true
-          timeout: 5000
-          connectiontimeout: 5000
-          
-  # JPA configuration removed - using MyBatis
-  sql:
-    init:
-      mode: never
+  # 공통 Jackson 설정
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+      fail-on-empty-beans: false
+    deserialization:
+      fail-on-unknown-properties: false
+    time-zone: Asia/Bangkok
+    date-format: yyyy-MM-dd HH:mm:ss
     
-# MyBatis Configuration
-mybatis:
-  mapper-locations: classpath:mapper/**/*.xml
-  type-aliases-package: com.ycs.lms.entity
-  configuration:
-    map-underscore-to-camel-case: true
-    default-fetch-size: 100
-    default-statement-timeout: 30
-    lazy-loading-enabled: true
-    aggressive-lazy-loading: false
-    multiple-result-sets-enabled: true
-    use-generated-keys: true
-    auto-mapping-behavior: partial
-    auto-mapping-unknown-column-behavior: warning
-    cache-enabled: true
-    call-setters-on-nulls: true
-    return-instance-for-empty-row: false
-    shrink-whitespaces-in-sql: true
+  # 공통 Web 설정
+  web:
+    resources:
+      add-mappings: true
+      static-locations: classpath:/static/
     
-springdoc:
-  api-docs:
-    path: /api-docs
-  swagger-ui:
-    path: /swagger-ui.html
-    
-server:
-  port: ${SERVER_PORT:8080}
+  # 공통 Servlet 설정
   servlet:
-    context-path: /api
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 100MB
+      
+  # 공통 Transaction 설정
+  transaction:
+    default-timeout: 30
+    rollback-on-commit-failure: true
+
+# 공통 서버 설정
+server:
+  error:
+    include-message: always
+    include-binding-errors: always
+    include-stacktrace: on_param
+    include-exception: false
+  tomcat:
+    max-threads: 200
+    min-spare-threads: 10
     
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics,prometheus
-      base-path: /actuator
-  endpoint:
-    health:
-      show-details: always
+# 공통 애플리케이션 설정
+app:
+  version: @project.version@
+  name: YCS LMS
+  description: YCS Learning Management System
+  
+  # 공통 보안 설정
+  security:
+    remember-me-key: ${REMEMBER_ME_KEY:ycs-lms-remember-me-key-2024}
+    session-timeout: 1800 # 30 minutes
+    
+  # 공통 페이징 설정
+  pagination:
+    default-size: 20
+    max-size: 100
+    
+  # 공통 캐시 설정
+  cache:
+    default-ttl: 3600 # 1 hour
+    user-cache-ttl: 1800 # 30 minutes
+    
+---
+# Profile별 활성화 안내
+spring:
+  config:
+    activate:
+      on-profile: "!local & !dev & !production"
       
 logging:
   level:
-    root: INFO
-    com.ycs.lms: INFO
-    org.springframework.web: WARN
-    org.mybatis: WARN
-    org.springframework.boot.autoconfigure.sql.init: DEBUG
+    root: WARN
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
-  file:
-    name: logs/ycs-lms.log
-    
-# Application specific properties
-app:
-  jwt:
-    # 환경변수에서 강력한 Base64 인코딩된 비밀키 사용 (최소 512비트)
-    secret: ${JWT_SECRET:ycs-lms-dev-secret-key-2024-super-secure-token-for-development-only}
-    expiration: ${JWT_EXPIRATION:3600000} # 1 hour (기본값)
-    refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000} # 7 days (기본값)
-    # JWT 발급자 정보
-    issuer: ${JWT_ISSUER:ycs-lms}
-    # 허용되는 클럭 스큐 (초)
-    clock-skew: ${JWT_CLOCK_SKEW:300}
-    
-  cors:
-    allowed-origins: ${CORS_ORIGINS:http://localhost:3000,http://localhost:5173}
-    allowed-methods: GET,POST,PUT,DELETE,OPTIONS
-    allowed-headers: "*"
-    allow-credentials: true
-    
-  file:
-    upload-dir: ${FILE_UPLOAD_DIR:./uploads}
-    max-size: 10485760 # 10MB
-    allowed-extensions: jpg,jpeg,png,pdf,doc,docx,xls,xlsx
-    
-  external-api:
-    ems:
-      url: ${EMS_API_URL:}
-      key: ${EMS_API_KEY:}
-      timeout: 30000
-    hs-code:
-      url: ${HS_API_URL:}
-      key: ${HS_API_KEY:}
-      timeout: 30000
-    exchange-rate:
-      url: ${EXCHANGE_RATE_API_URL:}
-      key: ${EXCHANGE_RATE_API_KEY:}
-      timeout: 10000
-      
-  business-rules:
-    cbm-threshold: 29.0
-    thb-amount-threshold: 1500.0
-    auto-air-conversion: true
-    require-member-code: true
-    enterprise-approval-days: 2
-    partner-approval-days: 2
-    
-  recaptcha:
-    site-key: ${RECAPTCHA_SITE_KEY:}
-    secret-key: ${RECAPTCHA_SECRET_KEY:}
-    verify-url: https://www.google.com/recaptcha/api/siteverify
+    console: "%d{yyyy-MM-dd HH:mm:ss} - Profile not specified. Please set SPRING_PROFILES_ACTIVE to one of: local, dev, production"

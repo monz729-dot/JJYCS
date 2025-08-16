@@ -1,27 +1,28 @@
-# YCS LMS Development Configuration
+# YCS LMS Local Development Configuration
 spring:
   datasource:
-    url: jdbc:h2:tcp://localhost/~/ycs
+    url: jdbc:h2:mem:testdb
     username: sa
-    password: ycs
+    password: 
     driver-class-name: org.h2.Driver
   h2:
     console:
       enabled: true
+      path: /h2-console
       
-  # Data Initialization - 개발 테스트 데이터 로딩
+  # Data Initialization - 로컬 테스트 데이터 로딩
   sql:
     init:
-      mode: embedded
-      data-locations: classpath:data-dev.sql
+      mode: always
+      data-locations: classpath:data-local.sql
       platform: h2
           
-  # Mail Configuration (development SMTP)
+  # Mail Configuration (mock for local)
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${SMTP_USER:dev@ycs.com}
-    password: ${SMTP_PASS:devpassword}
+    username: ${SMTP_USER:local@gmail.com}
+    password: ${SMTP_PASS:localpassword}
     properties:
       mail:
         smtp:
@@ -40,19 +41,19 @@ logging:
   level:
     com.ycs.lms: DEBUG
     org.springframework.security: DEBUG
-    org.springframework.web: INFO
+    org.springframework.web: DEBUG
     org.mybatis: DEBUG
     org.springframework.boot.autoconfigure.logging.ConditionEvaluationReportLogger: OFF
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
   file:
-    name: logs/ycs-lms-dev.log
+    name: logs/ycs-lms-local.log
 
 # Application Configuration
 app:
   jwt:
-    secret: ${JWT_SECRET:eWNzTG1zRGV2U2VjcmV0S2V5MjAyNFN1cGVyU2VjdXJlVG9rZW5Gb3JKV1RBVVRIZXh0cmFMb25nU2VjcmV0S2V5Rm9yNTEyQml0c0hNQUNTaGE1MTJTdXBwb3J0}
+    secret: ${JWT_SECRET:eWNzTG1zTG9jYWxTZWNyZXRLZXkyMDI0U3VwZXJTZWN1cmVUb2tlbkZvckpXVEFVVEhleHRyYUxvbmdTZWNyZXRLZXlGb3I1MTJCaXRzSE1BQ1NoYTUxMlN1cHBvcnQ=}
     expiration: 86400000 # 24 hours
     refresh-expiration: 604800000 # 7 days
     
@@ -63,8 +64,8 @@ app:
       - http://localhost:5175
       - http://127.0.0.1:3000
       - http://127.0.0.1:5173
-      - http://dev.ycs.com
-      - https://dev.ycs.com
+      - http://localhost:*
+      - http://127.0.0.1:*
     allowed-methods:
       - GET
       - POST  
@@ -76,9 +77,9 @@ app:
     allow-credentials: true
     
   security:
-    bcrypt-strength: 10
+    bcrypt-strength: 4  # 로컬에서는 빠른 처리를 위해 낮은 강도
     password-policy:
-      min-length: 6
+      min-length: 4  # 로컬에서는 간단한 패스워드 허용
       require-uppercase: false
       require-lowercase: false
       require-numbers: false
@@ -91,31 +92,33 @@ app:
     
   external-apis:
     ems:
-      url: ${EMS_API_URL:https://api.dev.ycs.com/ems}
-      key: ${EMS_API_KEY:dev-api-key}
-      timeout: 10000
+      url: ${EMS_API_URL:http://localhost:9001/mock/ems}
+      key: ${EMS_API_KEY:local-test-key}
+      timeout: 30000  # 로컬에서는 긴 타임아웃
       fallback-enabled: true
     hs-code:
-      url: ${HS_API_URL:https://api.dev.ycs.com/hs}
-      key: ${HS_API_KEY:dev-api-key}
-      timeout: 10000
+      url: ${HS_API_URL:http://localhost:9001/mock/hs}
+      key: ${HS_API_KEY:local-test-key}
+      timeout: 30000
       fallback-enabled: true
     exchange-rate:
-      url: ${EXCHANGE_API_URL:https://api.exchangerate-api.com/v4/latest/THB}
-      timeout: 5000
+      url: ${EXCHANGE_API_URL:http://localhost:9001/mock/exchange}
+      timeout: 30000
       
   file-storage:
     type: local
-    base-path: /app/uploads/dev
-    max-file-size: 10MB
+    base-path: ${java.io.tmpdir}/ycs-lms-local-uploads
+    max-file-size: 50MB  # 로컬에서는 큰 파일 허용
     allowed-types:
       - image/jpeg
       - image/png  
       - image/gif
       - application/pdf
+      - text/plain
+      - application/json
       
   notification:
-    email-enabled: true  # 개발 환경에서는 이메일 발송 활성화
+    email-enabled: false
     sms-enabled: false
     
 # MyBatis Configuration
@@ -124,13 +127,13 @@ mybatis:
   type-aliases-package: com.ycs.lms.entity
   configuration:
     map-underscore-to-camel-case: true
-    cache-enabled: true
+    cache-enabled: false  # 로컬에서는 캐시 비활성화로 실시간 반영
     lazy-loading-enabled: true
     multiple-result-sets-enabled: true
     use-column-label: true
     use-generated-keys: true
     default-executor-type: reuse
-    default-statement-timeout: 25000
+    default-statement-timeout: 60000  # 로컬에서는 긴 타임아웃
   config-location: classpath:mybatis-config.xml
 
 # Management Endpoints
@@ -138,7 +141,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,env,loggers
+        include: "*"  # 로컬에서는 모든 엔드포인트 노출
   endpoint:
     health:
       show-details: always
