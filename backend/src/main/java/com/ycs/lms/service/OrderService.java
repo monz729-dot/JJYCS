@@ -1,14 +1,16 @@
-package com.ysc.lms.service;
+package com.ycs.lms.service;
 
-import com.ysc.lms.dto.orders.*;
-import com.ysc.lms.entity.Order;
-import com.ysc.lms.entity.OrderBox;
-import com.ysc.lms.entity.OrderItem;
-import com.ysc.lms.entity.User;
-import com.ysc.lms.repository.OrderRepository;
-import com.ysc.lms.repository.UserRepository;
-import com.ysc.lms.util.CBMCalculator;
-import com.ysc.lms.util.PagedResponse;
+import com.ycs.lms.dto.orders.*;
+import com.ycs.lms.entity.Order;
+import com.ycs.lms.entity.OrderBox;
+import com.ycs.lms.entity.OrderItem;
+import com.ycs.lms.entity.User;
+import com.ycs.lms.repository.OrderRepository;
+import com.ycs.lms.repository.UserRepository;
+import com.ycs.lms.util.CBMCalculator;
+import com.ycs.lms.util.PagedResponse;
+import com.ycs.lms.dto.orders.BusinessRuleValidationResponse.BusinessWarning;
+import com.ycs.lms.exception.BusinessRuleViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -19,8 +21,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.UUID;
+import java.util.Map;
+import lombok.Data;
+import lombok.AllArgsConstructor;
 
 /**
  * 주문 관리 서비스
@@ -95,8 +100,8 @@ public class OrderService {
         // 주문 코드 생성 (ORD-2024-001 형식)
         order.setOrderCode(generateOrderCode());
         order.setUser(user);
-        order.setStatus("requested");
-        order.setOrderType(request.getShipping().getPreferredType()); // 초기값, CBM 계산 후 변경 가능
+        order.setStatus(Order.OrderStatus.REQUESTED);
+        order.setOrderType(Order.OrderType.valueOf(request.getShipping().getPreferredType().toUpperCase())); // 초기값, CBM 계산 후 변경 가능
         
         // 수취인 정보
         order.setRecipientName(request.getRecipient().getName());
@@ -106,13 +111,13 @@ public class OrderService {
         order.setRecipientCountry(request.getRecipient().getCountry());
         
         // 배송 정보
-        order.setUrgency(request.getShipping().getUrgency());
-        order.setNeedsRepacking(request.getShipping().getNeedsRepacking());
+        order.setUrgency(Order.OrderUrgency.valueOf(request.getShipping().getUrgency().toUpperCase()));
+        order.setNeedsRepacking(request.getShipping().isNeedsRepacking());
         order.setSpecialInstructions(request.getShipping().getSpecialInstructions());
         
         // 결제 정보
-        order.setPaymentMethod(request.getPayment().getMethod());
-        order.setPaymentStatus("pending");
+        order.setPaymentMethod(Order.PaymentMethod.valueOf(request.getPayment().getMethod().toUpperCase()));
+        order.setPaymentStatus(Order.PaymentStatus.PENDING);
         
         return order;
     }
@@ -168,15 +173,15 @@ public class OrderService {
             orderBox.setHeightCm(boxRequest.getHeight());
             orderBox.setDepthCm(boxRequest.getDepth());
             orderBox.setWeightKg(boxRequest.getWeight());
-            orderBox.setStatus("created");
+            orderBox.setStatus(OrderBox.BoxStatus.CREATED);
             
             // CBM은 DB 가상컬럼에서 자동 계산되지만, 애플리케이션에서도 계산
-            BigDecimal cbm = cbmCalculator.calculateCBM(
+            CBMCalculator.CBMResult cbmResult = cbmCalculator.calculateCBM(
                 boxRequest.getWidth(), 
                 boxRequest.getHeight(), 
                 boxRequest.getDepth()
             );
-            
+            orderBox.setCbmM3(cbmResult.cbm);
             
             orderBoxes.add(orderBox);
         }
@@ -192,7 +197,7 @@ public class OrderService {
         
         // 1. member_code 검증
         if (user.getMemberCode() == null || user.getMemberCode().trim().isEmpty()) {
-            order.setStatus("delayed");
+            order.setStatus(Order.OrderStatus.REQUESTED); // DELAYED 상태가 없으면 REQUESTED로 유지
             order.appendNote("[AUTO] 회원코드 미기재로 지연 처리");
             warnings.add(new BusinessWarning("MEMBER_CODE_REQUIRED", 
                 "회원코드가 없어 주문이 지연 상태로 처리됩니다. 고객센터에 문의해주세요."));
@@ -203,8 +208,8 @@ public class OrderService {
         BigDecimal totalCBM = calculateTotalCBM(order.getBoxes());
         BigDecimal cbmThreshold = configService.getCBMThreshold(); // 29.0
         
-        if (totalCBM.compareTo(cbmThreshold) > 0 && "sea".equals(order.getOrderType())) {
-            order.setOrderType("air");
+        if (totalCBM.compareTo(cbmThreshold) > 0 && Order.OrderType.SEA.equals(order.getOrderType())) {
+            order.setOrderType(Order.OrderType.AIR);
             order.appendNote(String.format("[AUTO] CBM %.3f 초과로 항공 배송 전환", totalCBM));
             warnings.add(new BusinessWarning("CBM_EXCEEDED", 
                 String.format("총 CBM이 %.3fm³으로 %sm³을 초과하여 항공 배송으로 자동 전환되었습니다.", 
@@ -284,7 +289,11 @@ public class OrderService {
      */
     @Transactional(readOnly = true)
     public PagedResponse<OrderSummary> getOrders(OrderSearchFilter filter, Pageable pageable) {
-        Page<Order> ordersPage = orderRepository.findByFilter(filter, pageable);
+        Page<Order> ordersPage = orderRepository.findByFilter(
+            filter.getUserId(), 
+            filter.getStatus(), 
+            filter.getOrderType(), 
+            pageable);
         
         List<OrderSummary> orderSummaries = ordersPage.getContent().stream()
                 .map(this::mapToOrderSummary)
@@ -322,6 +331,56 @@ public class OrderService {
     }
 
     /**
+     * 주문 상태 변경
+     */
+    public OrderResponse updateOrderStatus(Long orderId, UpdateOrderStatusRequest request, Long userId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException("주문을 찾을 수 없습니다."));
+        
+        // 상태 전환 검증
+        Order.OrderStatus newStatus = Order.OrderStatus.valueOf(request.getStatus().toUpperCase());
+        if (!isValidStatusTransition(order.getStatus(), newStatus)) {
+            throw new InvalidStatusTransitionException("잘못된 상태 전환입니다: " + order.getStatus() + " -> " + newStatus);
+        }
+        
+        // 상태 변경
+        order.setStatus(newStatus);
+        if (request.getReason() != null) {
+            order.appendNote("[STATUS_CHANGE] " + request.getReason());
+        }
+        
+        order = orderRepository.save(order);
+        
+        return mapToOrderResponse(order);
+    }
+
+    /**
+     * 주문 취소
+     */
+    public OrderResponse cancelOrder(Long orderId, CancelOrderRequest request, Long userId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException("주문을 찾을 수 없습니다."));
+        
+        // 권한 검증
+        if (!isOrderOwner(orderId, userId)) {
+            throw new AccessDeniedException("주문을 취소할 권한이 없습니다.");
+        }
+        
+        // 취소 가능 상태 검증
+        if (!isOrderCancellable(orderId, userId)) {
+            throw new OrderNotCancellableException("현재 상태에서는 주문을 취소할 수 없습니다.");
+        }
+        
+        // 주문 취소
+        order.setStatus(Order.OrderStatus.CANCELLED);
+        order.appendNote("[CANCELLED] " + request.getReason());
+        
+        order = orderRepository.save(order);
+        
+        return mapToOrderResponse(order);
+    }
+
+    /**
      * CBM 계산
      */
     public CBMCalculationResponse calculateCBM(CBMCalculationRequest request) {
@@ -329,7 +388,8 @@ public class OrderService {
         List<CBMCalculationResponse.BoxCBM> boxCBMs = new ArrayList<>();
         
         for (CBMCalculationRequest.Box box : request.getBoxes()) {
-            BigDecimal cbm = cbmCalculator.calculateCBM(box.getWidth(), box.getHeight(), box.getDepth());
+            CBMCalculator.CBMResult cbmResult = cbmCalculator.calculateCBM(box.getWidth(), box.getHeight(), box.getDepth());
+            BigDecimal cbm = cbmResult.cbm;
             totalCBM = totalCBM.add(cbm);
             
             boxCBMs.add(CBMCalculationResponse.BoxCBM.builder()
@@ -372,7 +432,7 @@ public class OrderService {
         
         // CBM 검증
         BigDecimal totalCBM = request.getBoxes().stream()
-                .map(box -> cbmCalculator.calculateCBM(box.getWidth(), box.getHeight(), box.getDepth()))
+                .map(box -> cbmCalculator.calculateCBM(box.getWidth(), box.getHeight(), box.getDepth()).cbm)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         
         if (totalCBM.compareTo(configService.getCBMThreshold()) > 0) {
@@ -412,7 +472,7 @@ public class OrderService {
     private BigDecimal calculateTotalCBM(List<OrderBox> boxes) {
         return boxes.stream()
                 .map(box -> cbmCalculator.calculateCBM(
-                    box.getWidthCm(), box.getHeightCm(), box.getDepthCm()))
+                    box.getWidthCm(), box.getHeightCm(), box.getDepthCm()).cbm)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
@@ -421,8 +481,8 @@ public class OrderService {
         return OrderResponse.builder()
                 .orderId(order.getId())
                 .orderCode(order.getOrderCode())
-                .status(order.getStatus())
-                .orderType(order.getOrderType())
+                .status(order.getStatus().toString())
+                .orderType(order.getOrderType().toString())
                 .totalAmount(order.getTotalAmount())
                 .currency(order.getCurrency())
                 .requiresExtraRecipient(order.getRequiresExtraRecipient())
@@ -435,14 +495,15 @@ public class OrderService {
         return OrderSummary.builder()
                 .orderId(order.getId())
                 .orderCode(order.getOrderCode())
-                .status(order.getStatus())
-                .orderType(order.getOrderType())
+                .status(order.getStatus().toString())
+                .orderType(order.getOrderType().toString())
                 .totalAmount(order.getTotalAmount())
                 .currency(order.getCurrency())
                 .recipientName(order.getRecipientName())
                 .recipientCountry(order.getRecipientCountry())
                 .createdAt(order.getCreatedAt())
-                .estimatedDeliveryDate(order.getEstimatedDeliveryDate())
+                .estimatedDeliveryDate(order.getEstimatedDeliveryDate() != null ? 
+                    order.getEstimatedDeliveryDate().atStartOfDay() : null)
                 .build();
     }
 
@@ -462,29 +523,49 @@ public class OrderService {
         return true;
     }
 
-    private boolean isOrderModifiable(String status) {
-        return List.of("requested", "confirmed", "payment_pending").contains(status);
+    private boolean isOrderModifiable(Order.OrderStatus status) {
+        return List.of(Order.OrderStatus.REQUESTED, Order.OrderStatus.CONFIRMED).contains(status);
+    }
+
+    private boolean isValidStatusTransition(Order.OrderStatus currentStatus, Order.OrderStatus newStatus) {
+        // 상태 전환 규칙 정의
+        return switch (currentStatus) {
+            case REQUESTED -> List.of(Order.OrderStatus.CONFIRMED, Order.OrderStatus.CANCELLED).contains(newStatus);
+            case CONFIRMED -> List.of(Order.OrderStatus.IN_PROGRESS, Order.OrderStatus.CANCELLED).contains(newStatus);
+            case IN_PROGRESS -> List.of(Order.OrderStatus.SHIPPED, Order.OrderStatus.CANCELLED).contains(newStatus);
+            case SHIPPED -> List.of(Order.OrderStatus.DELIVERED, Order.OrderStatus.CANCELLED).contains(newStatus);
+            case DELIVERED -> false; // 배송완료는 더 이상 변경 불가
+            case CANCELLED -> false; // 취소된 주문은 더 이상 변경 불가
+            default -> false;
+        };
     }
 
     private void updateOrderFromRequest(Order order, UpdateOrderRequest request) {
         // TODO: 실제 업데이트 로직 구현
+        // 수취인 정보 업데이트
+        if (request.getRecipient() != null) {
+            order.setRecipientName(request.getRecipient().getName());
+            order.setRecipientPhone(request.getRecipient().getPhone());
+            order.setRecipientAddress(request.getRecipient().getAddress());
+            order.setRecipientZipCode(request.getRecipient().getZipCode());
+            order.setRecipientCountry(request.getRecipient().getCountry());
+        }
+        
+        // 배송 정보 업데이트
+        if (request.getShipping() != null) {
+            order.setUrgency(Order.OrderUrgency.valueOf(request.getShipping().getUrgency().toUpperCase()));
+            order.setNeedsRepacking(request.getShipping().isNeedsRepacking());
+            order.setSpecialInstructions(request.getShipping().getSpecialInstructions());
+        }
+        
+        // 결제 정보 업데이트
+        if (request.getPayment() != null) {
+            order.setPaymentMethod(Order.PaymentMethod.valueOf(request.getPayment().getMethod().toUpperCase()));
+        }
     }
 }
 
-// 비즈니스 경고 클래스
-@Data
-@AllArgsConstructor
-class BusinessWarning {
-    private String type;
-    private String message;
-    private Map<String, Object> details;
-    
-    public BusinessWarning(String type, String message) {
-        this.type = type;
-        this.message = message;
-        this.details = new HashMap<>();
-    }
-}
+// 비즈니스 경고 클래스는 com.ycs.lms.dto.orders.BusinessRuleValidationResponse.BusinessWarning을 사용합니다.
 
 // 추가 예외 클래스들
 class UserNotFoundException extends RuntimeException {
@@ -494,3 +575,19 @@ class UserNotFoundException extends RuntimeException {
 class AccessDeniedException extends RuntimeException {
     public AccessDeniedException(String message) { super(message); }
 }
+
+class OrderNotFoundException extends RuntimeException {
+    public OrderNotFoundException(String message) { super(message); }
+}
+
+class OrderNotModifiableException extends RuntimeException {
+    public OrderNotModifiableException(String message) { super(message); }
+}
+
+class OrderNotCancellableException extends RuntimeException {
+    public OrderNotCancellableException(String message) { super(message); }
+}
+
+class InvalidStatusTransitionException extends RuntimeException {
+    public InvalidStatusTransitionException(String message) { super(message); }
+} 

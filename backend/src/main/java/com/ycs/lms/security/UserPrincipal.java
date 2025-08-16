@@ -39,7 +39,7 @@ public class UserPrincipal implements UserDetails {
             user.getEmail(),
             user.getName(),
             user.getMemberCode(),
-            user.getRole(),
+            user.getRole().toString(),
             user.getPasswordHash(),
             authorities,
             user.isEmailVerified(),

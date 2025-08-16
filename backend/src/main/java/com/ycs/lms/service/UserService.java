@@ -11,24 +11,23 @@ import com.ycs.lms.security.JwtTokenProvider;
 import com.ycs.lms.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 @Transactional
-public class UserService implements UserDetailsService {
+public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -74,7 +73,10 @@ public class UserService implements UserDetailsService {
         sendVerificationEmail(user);
 
         // JWT 토큰 생성 (이메일 인증 전이라도 로그인 가능)
-        String token = tokenProvider.generateToken(user.getEmail());
+        UserPrincipal userPrincipal = UserPrincipal.create(user);
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+            userPrincipal, null, userPrincipal.getAuthorities());
+        String token = tokenProvider.generateToken(authentication);
 
         return AuthResponse.builder()
             .accessToken(token)
@@ -123,7 +125,10 @@ public class UserService implements UserDetailsService {
         userRepository.save(user);
 
         // JWT 토큰 생성
-        String token = tokenProvider.generateToken(user.getEmail());
+        UserPrincipal userPrincipal = UserPrincipal.create(user);
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+            userPrincipal, null, userPrincipal.getAuthorities());
+        String token = tokenProvider.generateToken(authentication);
 
         return AuthResponse.builder()
             .accessToken(token)
@@ -240,7 +245,7 @@ public class UserService implements UserDetailsService {
      */
     @Transactional(readOnly = true)
     public List<User> getPendingUsers() {
-        return userRepository.findByStatus(User.UserStatus.PENDING_APPROVAL);
+        return userRepository.findByStatus(User.UserStatus.PENDING_APPROVAL.toString());
     }
 
     /**
@@ -321,7 +326,10 @@ public class UserService implements UserDetailsService {
         }
         
         // 새 토큰 생성
-        String newAccessToken = tokenProvider.generateToken(user.getEmail());
+        UserPrincipal userPrincipal = UserPrincipal.create(user);
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+            userPrincipal, null, userPrincipal.getAuthorities());
+        String newAccessToken = tokenProvider.generateToken(authentication);
         String newRefreshToken = tokenProvider.generateRefreshToken(userId);
         
         return AuthResponse.builder()
@@ -357,7 +365,7 @@ public class UserService implements UserDetailsService {
         currentUser.setTwoFactorSecret(secret);
         userRepository.save(currentUser);
         
-        return Map.of(
+        return java.util.Map.of(
             "qrCodeUrl", qrCodeUrl,
             "secret", secret,
             "backupCodes", backupCodes
@@ -431,17 +439,6 @@ public class UserService implements UserDetailsService {
         return "123456".equals(code) || code.startsWith("1");
     }
 
-    /**
-     * Spring Security UserDetailsService 구현
-     */
-    @Override
-    @Transactional(readOnly = true)
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
-
-        return UserPrincipal.create(user);
-    }
 
     // Private helper methods
 

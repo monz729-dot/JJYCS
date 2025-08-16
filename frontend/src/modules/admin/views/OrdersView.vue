@@ -293,7 +293,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   MagnifyingGlassIcon,
@@ -333,6 +333,12 @@ const currentPage = ref(1)
 const itemsPerPage = ref(10)
 const showActionMenu = ref<number | null>(null)
 
+// Reactive data for real API calls
+const dashboardData = ref({
+  orders: [],
+  stats: []
+})
+
 // Filters
 const filters = ref({
   search: '',
@@ -341,116 +347,31 @@ const filters = ref({
   period: ''
 })
 
-// Stats
-const orderStats = ref([
-  {
-    title: '총 주문',
-    value: '1,247',
-    description: '이번 달',
-    icon: ShoppingBagIcon,
-    iconColor: 'text-blue-600'
-  },
-  {
-    title: '대기 주문',
-    value: '89',
-    description: '처리 필요',
-    icon: ClockIcon,
-    iconColor: 'text-yellow-600'
-  },
-  {
-    title: '배송 중',
-    value: '156',
-    description: '진행 중',
-    icon: TruckIcon,
-    iconColor: 'text-purple-600'
-  },
-  {
-    title: '완료',
-    value: '1,002',
-    description: '배송 완료',
-    icon: CheckCircleIcon,
-    iconColor: 'text-green-600'
-  }
-])
+// Stats (computed from real data)
+const orderStats = computed(() => {
+  return dashboardData.value.stats.map(stat => ({
+    ...stat,
+    icon: getIconComponent(stat.icon)
+  }))
+})
 
-// Mock data
-const orders = ref<Order[]>([
-  {
-    id: 1,
-    orderNumber: 'YCS240001',
-    customerName: '김철수',
-    customerEmail: 'kim@example.com',
-    orderType: 'air',
-    status: 'processing',
-    totalAmount: '₩485,000',
-    estimatedCost: '₩520,000',
-    itemCount: 3,
-    totalCbm: 15.5,
-    requiresExtraRecipient: false,
-    memberCode: 'YCS001',
-    createdAt: '2024-01-20'
-  },
-  {
-    id: 2,
-    orderNumber: 'YCS240002',
-    customerName: '박영희',
-    customerEmail: 'park@company.com',
-    orderType: 'sea',
-    status: 'warehouse',
-    totalAmount: '₩1,250,000',
-    estimatedCost: '₩1,350,000',
-    itemCount: 8,
-    totalCbm: 45.2,
-    requiresExtraRecipient: true,
-    memberCode: 'YCS002',
-    createdAt: '2024-01-18'
-  },
-  {
-    id: 3,
-    orderNumber: 'YCS240003',
-    customerName: '이민준',
-    customerEmail: 'lee@partner.com',
-    orderType: 'air',
-    status: 'shipping',
-    totalAmount: '₩750,000',
-    estimatedCost: '₩780,000',
-    itemCount: 5,
-    totalCbm: 32.8,
-    requiresExtraRecipient: false,
-    createdAt: '2024-01-15'
-  },
-  {
-    id: 4,
-    orderNumber: 'YCS240004',
-    customerName: '최서연',
-    customerEmail: 'choi@example.com',
-    orderType: 'sea',
-    status: 'pending',
-    totalAmount: '₩125,000',
-    estimatedCost: '₩145,000',
-    itemCount: 1,
-    totalCbm: 8.2,
-    requiresExtraRecipient: false,
-    createdAt: '2024-01-22'
-  },
-  {
-    id: 5,
-    orderNumber: 'YCS240005',
-    customerName: '정도현',
-    customerEmail: 'jung@example.com',
-    orderType: 'air',
-    status: 'delivered',
-    totalAmount: '₩950,000',
-    estimatedCost: '₩980,000',
-    itemCount: 6,
-    totalCbm: 28.9,
-    requiresExtraRecipient: true,
-    createdAt: '2024-01-10'
+const getIconComponent = (iconName: string) => {
+  const components = {
+    'ShoppingBagIcon': ShoppingBagIcon,
+    'ClockIcon': ClockIcon,
+    'TruckIcon': TruckIcon,
+    'CheckCircleIcon': CheckCircleIcon
   }
-])
+  return components[iconName as keyof typeof components] || ShoppingBagIcon
+}
+
+// Orders data (from API)
+const orders = computed(() => dashboardData.value.orders)
 
 // Computed
 const filteredOrders = computed(() => {
+  if (!orders.value || !Array.isArray(orders.value)) return []
+  
   return orders.value.filter(order => {
     const matchesSearch = !filters.value.search || 
       order.orderNumber.toLowerCase().includes(filters.value.search.toLowerCase()) ||
@@ -541,8 +462,8 @@ const exportOrders = () => {
   
 }
 
-const refreshOrders = () => {
-  
+const refreshOrders = async () => {
+  await loadOrdersData()
 }
 
 const toggleActionMenu = (orderId: number) => {
@@ -622,6 +543,54 @@ const getStatusText = (status: string) => {
   }
   return texts[status as keyof typeof texts] || '알수없음'
 }
+
+// API calls
+const loadOrdersData = async () => {
+  loading.value = true
+  try {
+    await Promise.all([
+      loadOrders(),
+      loadOrderStats()
+    ])
+  } catch (error) {
+    console.error('Failed to load orders data:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+const loadOrders = async () => {
+  try {
+    const response = await fetch('/api/admin/orders', {
+      headers: {
+        'x-user-email': 'admin@test.com' // Admin always sees all data
+      }
+    })
+    const result = await response.json()
+    if (result.success) {
+      dashboardData.value.orders = result.data
+    }
+  } catch (error) {
+    console.error('Failed to load orders:', error)
+  }
+}
+
+const loadOrderStats = async () => {
+  try {
+    const response = await fetch('/api/admin/orders/stats')
+    const result = await response.json()
+    if (result.success) {
+      dashboardData.value.stats = result.data
+    }
+  } catch (error) {
+    console.error('Failed to load order stats:', error)
+  }
+}
+
+// Lifecycle
+onMounted(() => {
+  loadOrdersData()
+})
 
 // Close action menu when clicking outside
 document.addEventListener('click', (e) => {

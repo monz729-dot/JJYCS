@@ -548,6 +548,24 @@ const routes: RouteRecordRaw[] = [
     }
   },
 
+  // Admin routes redirect for convenience
+  {
+    path: '/admin',
+    redirect: '/app/admin'
+  },
+  {
+    path: '/admin/users',
+    redirect: '/app/admin/users'
+  },
+  {
+    path: '/admin/orders',
+    redirect: '/app/admin/orders'
+  },
+  {
+    path: '/admin/dashboard',
+    redirect: '/app/admin'
+  },
+
   // 테스트 페이지
   {
     path: '/test-login',
@@ -598,7 +616,7 @@ router.beforeEach(async (to, from, next) => {
     try {
       await authStore.fetchUserProfile()
     } catch (error) {
-      
+      console.error('Failed to fetch user profile:', error)
     }
   }
   

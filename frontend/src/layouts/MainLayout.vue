@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen bg-gray-50 flex">
     <!-- Mobile Header -->
     <header class="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-100">
       <div class="flex items-center justify-between px-4 h-14">
@@ -27,12 +27,12 @@
     <!-- Sidebar -->
     <aside 
       :class="[
-        'fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-100 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0',
+        'fixed inset-y-0 left-0 z-50 w-64 xl:w-72 bg-white border-r border-gray-100 transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0',
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       ]"
     >
       <!-- Logo -->
-      <div class="flex items-center gap-3 h-16 px-6 border-b border-gray-100">
+      <div class="flex items-center gap-3 h-16 px-4 lg:px-6 border-b border-gray-100">
         <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-sm">
           <span class="mdi mdi-package-variant text-white text-xl" />
         </div>
@@ -43,7 +43,7 @@
       </div>
       
       <!-- Navigation -->
-      <nav class="flex-1 px-4 py-4 overflow-y-auto">
+      <nav class="flex-1 px-3 lg:px-4 py-4 overflow-y-auto">
         <div v-for="section in navigationSections" :key="section.title" class="mb-6">
           <h3 v-if="section.title" class="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
             {{ section.title }}
@@ -53,7 +53,7 @@
               <router-link
                 :to="{ name: item.name }"
                 :class="[
-                  'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200',
+                  'flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200',
                   isActiveRoute(item.name)
                     ? 'bg-blue-50 text-blue-700 shadow-sm'
                     : 'text-gray-700 hover:bg-gray-50'
@@ -77,33 +77,13 @@
           </ul>
         </div>
       </nav>
-
-      <!-- User Profile Section -->
-      <div class="p-4 border-t border-gray-100">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center text-sm font-medium shadow-sm">
-            {{ userInitials }}
-          </div>
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-semibold text-gray-900 truncate">{{ authStore.user?.name }}</p>
-            <p class="text-xs text-gray-500 truncate">{{ getRoleLabel(authStore.userType) }}</p>
-          </div>
-          <button 
-            @click="logout" 
-            class="p-2 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
-            title="로그아웃"
-          >
-            <span class="mdi mdi-logout text-lg" />
-          </button>
-        </div>
-      </div>
     </aside>
 
     <!-- Main Content -->
-    <main class="lg:ml-64 min-h-screen pt-14 lg:pt-0">
+    <main class="flex-1 min-h-screen pt-14 lg:pt-0">
       <!-- Desktop Header -->
       <header class="hidden lg:block bg-white border-b border-gray-100">
-        <div class="flex items-center justify-between px-6 h-16">
+        <div class="flex items-center justify-between px-4 lg:px-6 xl:px-8 h-16">
           <!-- Breadcrumb & Title -->
           <div>
             <nav class="flex items-center gap-2 text-sm text-gray-500 mb-1">
@@ -122,7 +102,7 @@
               <input
                 type="text"
                 placeholder="검색..."
-                class="w-64 pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="w-64 2xl:w-80 pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               <span class="absolute left-3 top-2.5 mdi mdi-magnify text-gray-400" />
             </div>
@@ -199,7 +179,7 @@
       </header>
 
       <!-- Page Content -->
-      <div class="p-4 lg:p-6">
+      <div class="p-4 lg:p-6 xl:p-8 2xl:px-12">
         <transition
           mode="out-in"
           enter-active-class="transition ease-out duration-200"
@@ -357,14 +337,7 @@ const navigationSections = computed(() => {
     })
   }
   
-  // Settings
-  sections.push({
-    title: '설정',
-    items: [
-      { name: 'Profile', title: 'navigation.profile', icon: 'mdi-account-circle-outline' },
-      { name: 'Notifications', title: 'navigation.notifications', icon: 'mdi-bell-outline', badge: notificationCount.value > 0 ? notificationCount.value : null }
-    ]
-  })
+  // Settings section removed - profile and notifications are in the header
   
   return sections
 })

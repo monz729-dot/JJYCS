@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen bg-gray-100">
+  <div class="min-h-screen bg-gray-100 flex">
     <!-- Sidebar - PC optimized width -->
-    <div class="fixed inset-y-0 left-0 z-50 w-56 lg:w-64 bg-slate-900 shadow-xl transform transition-transform duration-300 ease-in-out md:translate-x-0" 
+    <aside class="fixed inset-y-0 left-0 z-50 w-56 lg:w-64 xl:w-72 bg-slate-900 shadow-xl transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0" 
          :class="{ '-translate-x-full': !sidebarOpen }">
       <!-- Logo Header - Compact height -->
       <div class="flex h-12 lg:h-14 items-center justify-between px-4 lg:px-6 bg-slate-800">
@@ -40,28 +40,13 @@
         </router-link>
       </nav>
       
-      <!-- User info - Compact -->
-      <div class="p-3 border-t border-slate-700">
-        <div class="flex items-center space-x-3 px-2">
-          <div class="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
-            <UserIcon class="h-5 w-5 text-white" />
-          </div>
-          <div class="flex-1">
-            <p class="text-sm font-medium text-white">시스템 관리자</p>
-            <p class="text-xs text-gray-400">admin@ycs.com</p>
-          </div>
-          <button @click="handleLogout" class="text-gray-400 hover:text-white transition-colors">
-            <ArrowRightOnRectangleIcon class="h-5 w-5" />
-          </button>
-        </div>
-      </div>
-    </div>
+    </aside>
 
     <!-- Mobile backdrop -->
     <div v-if="sidebarOpen" class="fixed inset-0 z-40 md:hidden bg-black bg-opacity-50" @click="toggleSidebar"></div>
 
     <!-- Main content area -->
-    <div class="md:pl-56 lg:pl-64 flex flex-col min-h-screen">
+    <div class="flex-1 flex flex-col min-h-screen">
       <!-- Top bar - Compact and functional -->
       <header class="bg-white shadow-sm border-b h-12 lg:h-14 sticky top-0 z-30">
         <div class="flex items-center justify-between px-4 lg:px-6 h-full">

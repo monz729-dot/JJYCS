@@ -10,4 +10,4 @@ if not exist %MAVEN_WRAPPER_JAR% (
     powershell -Command "Invoke-WebRequest -Uri 'https://repo.maven.apache.org/maven2/org/apache/maven/wrapper/maven-wrapper/3.2.0/maven-wrapper-3.2.0.jar' -OutFile '%MAVEN_WRAPPER_JAR%'"
 )
 
-java -classpath %MAVEN_WRAPPER_JAR% -Dmaven.multiModuleProjectDirectory="%CD%" org.apache.maven.wrapper.MavenWrapperMain %*
+"C:\Program Files\Microsoft\jdk-17.0.16.8-hotspot\bin\java.exe" -classpath %MAVEN_WRAPPER_JAR% -Dmaven.multiModuleProjectDirectory="%CD%" org.apache.maven.wrapper.MavenWrapperMain %*

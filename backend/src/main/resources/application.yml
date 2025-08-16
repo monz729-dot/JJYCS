@@ -66,8 +66,6 @@ spring:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: create-drop
-      naming:
-        physical-strategy: org.hibernate.boot.model.naming.SnakeCasePhysicalNamingStrategy
     show-sql: false
     properties:
       hibernate:
@@ -76,15 +74,15 @@ spring:
     
   sql:
     init:
-      mode: always
-      data-locations: classpath:data-h2.sql
+      mode: never
+      # data-locations: classpath:data-h2.sql
     
-mybatis:
-  mapper-locations: classpath:mapper/**/*.xml
-  configuration:
-    map-underscore-to-camel-case: true
-    default-fetch-size: 100
-    default-statement-timeout: 30
+# mybatis:
+#   mapper-locations: classpath:mapper/**/*.xml
+#   configuration:
+#     map-underscore-to-camel-case: true
+#     default-fetch-size: 100
+#     default-statement-timeout: 30
     
 springdoc:
   api-docs:
@@ -123,7 +121,7 @@ logging:
 app:
   jwt:
     # 환경변수에서 강력한 Base64 인코딩된 비밀키 사용 (최소 512비트)
-    secret: ${JWT_SECRET:}
+    secret: ${JWT_SECRET:ycs-lms-dev-secret-key-2024-super-secure-token-for-development-only}
     expiration: ${JWT_EXPIRATION:3600000} # 1 hour (기본값)
     refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000} # 7 days (기본값)
     # JWT 발급자 정보

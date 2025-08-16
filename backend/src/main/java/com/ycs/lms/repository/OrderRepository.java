@@ -9,75 +9,77 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * 주문 리포지토리
+ */
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
-    
-    Optional<Order> findByOrderCode(String orderCode);
-    
-    boolean existsByOrderCode(String orderCode);
-    
-    List<Order> findByUserId(Long userId);
-    
+
+    /**
+     * 주문 ID로 상세 정보 조회 (연관 엔티티 포함)
+     */
+    @Query("SELECT o FROM Order o " +
+           "LEFT JOIN FETCH o.items " +
+           "LEFT JOIN FETCH o.boxes " +
+           "WHERE o.id = :orderId")
+    Optional<Order> findByIdWithDetails(@Param("orderId") Long orderId);
+
+    /**
+     * 필터 조건으로 주문 목록 조회
+     */
+    @Query("SELECT o FROM Order o " +
+           "WHERE (:userId IS NULL OR o.user.id = :userId) " +
+           "AND (:status IS NULL OR o.status = :status) " +
+           "AND (:orderType IS NULL OR o.orderType = :orderType) " +
+           "ORDER BY o.createdAt DESC")
+    Page<Order> findByFilter(@Param("userId") Long userId,
+                            @Param("status") String status,
+                            @Param("orderType") String orderType,
+                            Pageable pageable);
+
+    /**
+     * 사용자별 주문 조회
+     */
     Page<Order> findByUserId(Long userId, Pageable pageable);
     
-    List<Order> findByStatus(Order.OrderStatus status);
-    
-    Page<Order> findByStatus(Order.OrderStatus status, Pageable pageable);
-    
-    List<Order> findByUserIdAndStatus(Long userId, Order.OrderStatus status);
-    
+    /**
+     * 사용자별 상태별 주문 조회
+     */
     Page<Order> findByUserIdAndStatus(Long userId, Order.OrderStatus status, Pageable pageable);
     
-    List<Order> findByOrderType(Order.OrderType orderType);
+    /**
+     * 상태별 주문 조회
+     */
+    Page<Order> findByStatus(Order.OrderStatus status, Pageable pageable);
     
-    List<Order> findByUserIdAndOrderType(Long userId, Order.OrderType orderType);
+    /**
+     * 사용자별 주문 수 조회
+     */
+    long countByUserId(Long userId);
     
-    @Query("SELECT o FROM Order o WHERE o.userId = :userId AND o.createdAt BETWEEN :startDate AND :endDate")
-    List<Order> findByUserIdAndDateRange(@Param("userId") Long userId, 
-                                        @Param("startDate") LocalDateTime startDate, 
-                                        @Param("endDate") LocalDateTime endDate);
+    /**
+     * 사용자별 상태별 주문 수 조회
+     */
+    long countByUserIdAndStatus(Long userId, Order.OrderStatus status);
+
+    /**
+     * 다음 주문 시퀀스 번호 조회
+     */
+    @Query("SELECT COUNT(o) + 1 FROM Order o WHERE YEAR(o.createdAt) = YEAR(CURRENT_DATE)")
+    int getNextOrderSequence();
     
-    @Query("SELECT o FROM Order o WHERE o.createdAt BETWEEN :startDate AND :endDate")
-    List<Order> findByDateRange(@Param("startDate") LocalDateTime startDate, 
-                               @Param("endDate") LocalDateTime endDate);
-    
-    @Query("SELECT o FROM Order o WHERE o.totalCbmM3 > :cbmThreshold")
-    List<Order> findByTotalCbmGreaterThan(@Param("cbmThreshold") BigDecimal cbmThreshold);
-    
-    @Query("SELECT o FROM Order o WHERE o.totalAmount > :amountThreshold")
-    List<Order> findByTotalAmountGreaterThan(@Param("amountThreshold") BigDecimal amountThreshold);
-    
-    @Query("SELECT o FROM Order o WHERE o.requiresExtraRecipient = true")
-    List<Order> findOrdersRequiringExtraRecipient();
-    
-    @Query("SELECT o FROM Order o WHERE o.status IN :statuses")
-    List<Order> findByStatusIn(@Param("statuses") List<Order.OrderStatus> statuses);
-    
-    @Query("SELECT o FROM Order o WHERE o.estimatedDeliveryDate = :date")
-    List<Order> findByEstimatedDeliveryDate(@Param("date") LocalDate date);
-    
-    @Query("SELECT o FROM Order o WHERE o.estimatedDeliveryDate BETWEEN :startDate AND :endDate")
-    List<Order> findByEstimatedDeliveryDateRange(@Param("startDate") LocalDate startDate, 
-                                                @Param("endDate") LocalDate endDate);
-    
-    // Statistics queries
-    @Query("SELECT COUNT(o) FROM Order o WHERE o.userId = :userId")
-    long countByUserId(@Param("userId") Long userId);
-    
-    @Query("SELECT COUNT(o) FROM Order o WHERE o.status = :status")
-    long countByStatus(@Param("status") Order.OrderStatus status);
-    
-    @Query("SELECT COUNT(o) FROM Order o WHERE o.userId = :userId AND o.status = :status")
-    long countByUserIdAndStatus(@Param("userId") Long userId, @Param("status") Order.OrderStatus status);
-    
-    @Query("SELECT SUM(o.totalAmount) FROM Order o WHERE o.userId = :userId AND o.paymentStatus = 'COMPLETED'")
+    /**
+     * 사용자별 완료 주문 총액 조회
+     */
+    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.userId = :userId AND (o.status = 'DELIVERED' OR o.status = 'COMPLETED')")
     BigDecimal sumTotalAmountByUserIdAndCompleted(@Param("userId") Long userId);
     
+    /**
+     * 사용자별 최근 주문 조회
+     */
     @Query("SELECT o FROM Order o WHERE o.userId = :userId ORDER BY o.createdAt DESC")
     List<Order> findByUserIdOrderByCreatedAtDesc(@Param("userId") Long userId, Pageable pageable);
 }

@@ -136,27 +136,64 @@ public class Order {
     
     // Enum definitions
     public enum OrderStatus {
-        REQUESTED, CONFIRMED, IN_PROGRESS, SHIPPED, DELIVERED, CANCELLED
+        REQUESTED, CONFIRMED, IN_PROGRESS, SHIPPED, DELIVERED, CANCELLED;
+        
+        @Override
+        public String toString() {
+            return name();
+        }
     }
     
     public enum OrderType {
-        SEA, AIR
+        SEA, AIR;
+        
+        @Override
+        public String toString() {
+            return name();
+        }
     }
     
     public enum OrderUrgency {
-        NORMAL, URGENT
+        NORMAL, URGENT;
+        
+        @Override
+        public String toString() {
+            return name();
+        }
     }
     
     public enum PaymentMethod {
-        PREPAID, POSTPAID
+        PREPAID, POSTPAID;
+        
+        @Override
+        public String toString() {
+            return name();
+        }
     }
     
     public enum PaymentStatus {
-        PENDING, COMPLETED, FAILED, REFUNDED
+        PENDING, COMPLETED, FAILED, REFUNDED;
+        
+        @Override
+        public String toString() {
+            return name();
+        }
     }
     
-    // Convenience methods for EstimatesService
+    // Convenience methods
     public boolean isRequiresRepacking() {
         return this.needsRepacking;
+    }
+    
+    public boolean getRequiresExtraRecipient() {
+        return this.requiresExtraRecipient;
+    }
+    
+    public void appendNote(String note) {
+        if (this.notes == null || this.notes.isEmpty()) {
+            this.notes = note;
+        } else {
+            this.notes += "; " + note;
+        }
     }
 }

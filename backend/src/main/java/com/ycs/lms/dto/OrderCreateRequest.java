@@ -16,6 +16,8 @@ import java.util.List;
 @AllArgsConstructor
 public class OrderCreateRequest {
     
+    private Long userId;
+    
     @Valid
     @NotNull(message = "수취인 정보는 필수입니다")
     private RecipientInfo recipient;
@@ -102,6 +104,14 @@ public class OrderCreateRequest {
         
         @Size(max = 100, message = "모델은 100자 이하여야 합니다")
         private String model;
+        
+        // Additional fields for compatibility
+        private Integer itemOrder;
+        private BigDecimal unitWeight;
+        private BigDecimal unitPrice;
+        private String countryOfOrigin;
+        private boolean restricted;
+        private String restrictionNote;
     }
     
     @Data
@@ -131,6 +141,14 @@ public class OrderCreateRequest {
         
         @NotEmpty(message = "박스에 포함된 상품 인덱스는 필수입니다")
         private List<Integer> itemIndexes; // 아이템 배열의 인덱스
+        
+        // Additional fields for compatibility
+        private Integer boxNumber;
+        private BigDecimal widthCm;
+        private BigDecimal heightCm;
+        private BigDecimal depthCm;
+        private BigDecimal weightKg;
+        private String notes;
     }
     
     @Data
@@ -158,5 +176,34 @@ public class OrderCreateRequest {
         @NotBlank(message = "결제 방식은 필수입니다")
         @Pattern(regexp = "^(prepaid|postpaid)$", message = "결제 방식은 prepaid 또는 postpaid만 가능합니다")
         private String method = "prepaid";
+    }
+    
+    // Convenience methods
+    public String getRecipientName() {
+        return recipient != null ? recipient.getName() : null;
+    }
+    
+    public String getRecipientPhone() {
+        return recipient != null ? recipient.getPhone() : null;
+    }
+    
+    public String getRecipientAddress() {
+        return recipient != null ? recipient.getAddress() : null;
+    }
+    
+    public String getRecipientCountry() {
+        return recipient != null ? recipient.getCountry() : null;
+    }
+    
+    public boolean isUrgent() {
+        return shipping != null && "urgent".equals(shipping.getUrgency());
+    }
+    
+    public boolean isNeedsRepacking() {
+        return shipping != null && shipping.isNeedsRepacking();
+    }
+    
+    public String getSpecialInstructions() {
+        return shipping != null ? shipping.getSpecialInstructions() : null;
     }
 }

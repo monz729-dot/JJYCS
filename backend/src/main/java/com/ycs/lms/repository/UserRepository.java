@@ -6,43 +6,47 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
+/**
+ * 사용자 리포지토리
+ */
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
-    
+
+    /**
+     * 이메일로 사용자 조회
+     */
     Optional<User> findByEmail(String email);
-    
+
+    /**
+     * 이메일 존재 여부 확인
+     */
     boolean existsByEmail(String email);
-    
-    boolean existsByMemberCode(String memberCode);
-    
+
+    /**
+     * 회원코드로 사용자 조회
+     */
     Optional<User> findByMemberCode(String memberCode);
     
+    /**
+     * 회원코드 존재 여부 확인
+     */
+    boolean existsByMemberCode(String memberCode);
+    
+    /**
+     * 이메일 검증 토큰으로 사용자 조회
+     */
     Optional<User> findByEmailVerificationToken(String token);
     
+    /**
+     * 비밀번호 리셋 토큰으로 사용자 조회
+     */
     Optional<User> findByPasswordResetToken(String token);
-    
-    List<User> findByStatus(User.UserStatus status);
-    
-    List<User> findByRole(User.UserRole role);
-    
-    List<User> findByStatusAndRole(User.UserStatus status, User.UserRole role);
-    
-    @Query("SELECT u FROM User u WHERE u.status = :status AND u.createdAt >= :since")
-    List<User> findPendingUsersCreatedSince(@Param("status") User.UserStatus status, @Param("since") LocalDateTime since);
-    
-    @Query("SELECT u FROM User u WHERE u.emailVerified = false AND u.createdAt < :before")
-    List<User> findUnverifiedUsersCreatedBefore(@Param("before") LocalDateTime before);
-    
-    @Query("SELECT u FROM User u WHERE u.lastLoginAt IS NULL OR u.lastLoginAt < :before")
-    List<User> findInactiveUsersSince(@Param("before") LocalDateTime before);
-    
-    @Query("SELECT COUNT(u) FROM User u WHERE u.status = :status")
-    long countByStatus(@Param("status") User.UserStatus status);
-    
-    @Query("SELECT COUNT(u) FROM User u WHERE u.role = :role")
-    long countByRole(@Param("role") User.UserRole role);
+
+    /**
+     * 상태별 사용자 조회
+     */
+    @Query("SELECT u FROM User u WHERE u.status = :status")
+    java.util.List<User> findByStatus(@Param("status") String status);
 }

@@ -7,7 +7,7 @@ import org.apache.ibatis.annotations.*;
 
 import java.util.List;
 
-@Mapper
+// @Mapper - 일시적으로 비활성화
 public interface OrderMapper {
 
     // Order CRUD operations

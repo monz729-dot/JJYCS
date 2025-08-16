@@ -37,6 +37,9 @@ public class SignupRequest {
              message = "올바른 역할이 아닙니다")
     private String role;
     
+    @Size(max = 50, message = "회원코드는 50자 이하여야 합니다")
+    private String memberCode;
+    
     @NotNull(message = "이용약관 동의는 필수입니다")
     @AssertTrue(message = "이용약관에 동의해야 합니다")
     private Boolean agreeTerms;
@@ -49,6 +52,23 @@ public class SignupRequest {
     
     @Valid
     private AdditionalInfo additionalInfo;
+    
+    // Convenience methods
+    public String getMemberCode() {
+        return memberCode;
+    }
+    
+    public boolean isAgreeTerms() {
+        return agreeTerms != null && agreeTerms;
+    }
+    
+    public boolean isAgreePrivacy() {
+        return agreePrivacy != null && agreePrivacy;
+    }
+    
+    public boolean isAgreeMarketing() {
+        return agreeMarketing != null && agreeMarketing;
+    }
     
     @Data
     @Builder

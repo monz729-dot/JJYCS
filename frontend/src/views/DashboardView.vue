@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="w-full max-w-full">
     <!-- Welcome Header -->
     <div class="spacing-lg">
       <h1 class="text-heading-xl">
@@ -51,7 +51,7 @@
     </Card>
 
     <!-- Stats Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8">
       <Card 
         v-for="stat in stats" 
         :key="stat.title"
@@ -60,8 +60,8 @@
       >
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-500">{{ stat.title }}</p>
-            <p class="mt-2 text-3xl font-bold text-gray-900">{{ stat.value }}</p>
+            <p class="text-sm lg:text-base font-medium text-gray-500">{{ stat.title }}</p>
+            <p class="mt-2 text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-900">{{ stat.value }}</p>
             <div class="mt-2 flex items-center text-sm">
               <span 
                 :class="[
@@ -86,33 +86,33 @@
     </div>
 
     <!-- Quick Actions -->
-    <div class="mb-6">
-      <h2 class="text-lg font-semibold text-gray-900 mb-4">빠른 작업</h2>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="mb-8">
+      <h2 class="text-xl font-semibold text-gray-900 mb-4">빠른 작업</h2>
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
         <Card 
           v-for="action in quickActions" 
           :key="action.title"
           :hoverable="true"
           :clickable="true"
           @click="handleQuickAction(action.route)"
-          class="text-center"
+          class="text-center min-w-[120px] lg:min-w-[140px]"
         >
           <div :class="[
-            'w-16 h-16 rounded-lg mx-auto mb-3 flex items-center justify-center',
+            'w-14 h-14 lg:w-16 lg:h-16 rounded-lg mx-auto mb-3 flex items-center justify-center',
             action.bgColor
           ]">
             <span :class="['mdi', action.icon, 'text-2xl', action.iconColor]" />
           </div>
-          <h3 class="font-medium text-gray-900">{{ action.title }}</h3>
-          <p class="text-xs text-gray-500 mt-1">{{ action.description }}</p>
+          <h3 class="text-sm lg:text-base font-medium text-gray-900 whitespace-nowrap">{{ action.title }}</h3>
+          <p class="text-xs lg:text-sm text-gray-500 mt-1 whitespace-nowrap">{{ action.description }}</p>
         </Card>
       </div>
     </div>
 
     <!-- Main Content Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8 mb-6">
       <!-- Recent Orders -->
-      <div class="lg:col-span-2">
+      <div class="xl:col-span-2">
         <Card title="최근 주문" subtitle="최근 7일간의 주문 내역">
           <template #action>
             <Button variant="ghost" size="sm" text="전체보기" icon="mdi-arrow-right" @click="router.push('/app/orders')" />
@@ -192,7 +192,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import Card from '@/components/ui/Card.vue'
@@ -203,45 +203,59 @@ import Table from '@/components/ui/Table.vue'
 const router = useRouter()
 const authStore = useAuthStore()
 
-// Dashboard stats
-const stats = ref([
-  {
-    title: '신규 주문',
-    value: '24',
-    change: 12,
-    trend: 'up',
-    icon: 'mdi-package-variant',
-    iconBg: 'bg-blue-50',
-    iconColor: 'text-blue-600'
-  },
-  {
-    title: '처리 대기',
-    value: '8',
-    change: 5,
-    trend: 'down',
-    icon: 'mdi-clock-outline',
-    iconBg: 'bg-yellow-50',
-    iconColor: 'text-yellow-600'
-  },
-  {
-    title: '배송 중',
-    value: '156',
-    change: 8,
-    trend: 'up',
-    icon: 'mdi-truck-delivery',
-    iconBg: 'bg-green-50',
-    iconColor: 'text-green-600'
-  },
-  {
-    title: '완료',
-    value: '1,247',
-    change: 15,
-    trend: 'up',
-    icon: 'mdi-check-circle',
-    iconBg: 'bg-purple-50',
-    iconColor: 'text-purple-600'
-  }
-])
+// Reactive data for real API calls
+const dashboardData = ref({
+  stats: null,
+  orders: [],
+  activities: []
+})
+
+const loading = ref(false)
+
+// Dashboard stats (computed from real data)
+const stats = computed(() => {
+  if (!dashboardData.value.stats) return []
+  
+  const data = dashboardData.value.stats
+  return [
+    {
+      title: '신규 주문',
+      value: String(data.newOrders || 0),
+      change: 12,
+      trend: 'up',
+      icon: 'mdi-package-variant',
+      iconBg: 'bg-blue-50',
+      iconColor: 'text-blue-600'
+    },
+    {
+      title: '처리 대기',
+      value: String(data.pending || 0),
+      change: 5,
+      trend: 'down',
+      icon: 'mdi-clock-outline',
+      iconBg: 'bg-yellow-50',
+      iconColor: 'text-yellow-600'
+    },
+    {
+      title: '배송 중',
+      value: String(data.shipped || 0),
+      change: 8,
+      trend: 'up',
+      icon: 'mdi-truck-delivery',
+      iconBg: 'bg-green-50',
+      iconColor: 'text-green-600'
+    },
+    {
+      title: '완료',
+      value: String(data.delivered || 0),
+      change: 15,
+      trend: 'up',
+      icon: 'mdi-check-circle',
+      iconBg: 'bg-purple-50',
+      iconColor: 'text-purple-600'
+    }
+  ]
+})
 
 // Recent orders table
 const orderColumns = [
@@ -252,53 +266,10 @@ const orderColumns = [
   { key: 'date', label: '주문일' }
 ]
 
-const recentOrdersData = ref([
-  { id: 1, orderNo: 'ORD-2024-001', customer: '김철수', status: 'pending', amount: 125000, date: '2024-01-15' },
-  { id: 2, orderNo: 'ORD-2024-002', customer: '이영희', status: 'processing', amount: 89000, date: '2024-01-15' },
-  { id: 3, orderNo: 'ORD-2024-003', customer: '박민수', status: 'shipped', amount: 234000, date: '2024-01-14' },
-  { id: 4, orderNo: 'ORD-2024-004', customer: '최지은', status: 'delivered', amount: 156000, date: '2024-01-14' },
-  { id: 5, orderNo: 'ORD-2024-005', customer: '정대호', status: 'pending', amount: 78000, date: '2024-01-13' }
-])
+const recentOrdersData = computed(() => dashboardData.value.orders)
 
-// Activity feed
-const activities = ref([
-  {
-    id: 1,
-    title: '새 주문 접수',
-    description: 'ORD-2024-006 주문이 접수되었습니다',
-    time: '5분 전',
-    icon: 'mdi-package-variant',
-    iconBg: 'bg-blue-50',
-    iconColor: 'text-blue-600'
-  },
-  {
-    id: 2,
-    title: '배송 완료',
-    description: 'ORD-2024-003 배송이 완료되었습니다',
-    time: '30분 전',
-    icon: 'mdi-check-circle',
-    iconBg: 'bg-green-50',
-    iconColor: 'text-green-600'
-  },
-  {
-    id: 3,
-    title: '재고 부족 알림',
-    description: 'SKU-12345 재고가 10개 이하입니다',
-    time: '1시간 전',
-    icon: 'mdi-alert',
-    iconBg: 'bg-yellow-50',
-    iconColor: 'text-yellow-600'
-  },
-  {
-    id: 4,
-    title: '견적 요청',
-    description: '김철수님이 견적을 요청했습니다',
-    time: '2시간 전',
-    icon: 'mdi-calculator',
-    iconBg: 'bg-purple-50',
-    iconColor: 'text-purple-600'
-  }
-])
+// Activity feed (computed from real data)
+const activities = computed(() => dashboardData.value.activities)
 
 // Quick actions
 const quickActions = computed(() => {
@@ -384,6 +355,72 @@ const viewOrder = (order: any) => {
 const handleQuickAction = (route: string) => {
   router.push(route)
 }
+
+// API calls
+const loadDashboardStats = async () => {
+  try {
+    const response = await fetch('/api/dashboard/stats', {
+      headers: {
+        'x-user-email': authStore.user?.email || 'general@test.com'
+      }
+    })
+    const result = await response.json()
+    if (result.success) {
+      dashboardData.value.stats = result.data
+    }
+  } catch (error) {
+    console.error('Failed to load dashboard stats:', error)
+  }
+}
+
+const loadRecentOrders = async () => {
+  try {
+    const response = await fetch('/api/orders', {
+      headers: {
+        'x-user-email': authStore.user?.email || 'general@test.com'
+      }
+    })
+    const result = await response.json()
+    if (result.success) {
+      dashboardData.value.orders = result.data
+    }
+  } catch (error) {
+    console.error('Failed to load recent orders:', error)
+  }
+}
+
+const loadActivities = async () => {
+  try {
+    const response = await fetch('/api/activities')
+    const result = await response.json()
+    if (result.success) {
+      dashboardData.value.activities = result.data
+    }
+  } catch (error) {
+    console.error('Failed to load activities:', error)
+  }
+}
+
+// Load all dashboard data
+const loadDashboard = async () => {
+  loading.value = true
+  try {
+    await Promise.all([
+      loadDashboardStats(),
+      loadRecentOrders(),
+      loadActivities()
+    ])
+  } catch (error) {
+    console.error('Failed to load dashboard data:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+// Lifecycle
+onMounted(() => {
+  loadDashboard()
+})
 </script>
 
 <style scoped>

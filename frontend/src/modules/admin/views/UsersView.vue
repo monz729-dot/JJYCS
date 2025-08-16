@@ -20,6 +20,22 @@
       </div>
     </div>
 
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div v-for="stat in userStats" :key="stat.title" class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <component :is="stat.icon" class="h-8 w-8" :class="stat.iconColor" />
+          </div>
+          <div class="ml-5">
+            <p class="text-sm font-medium text-gray-500">{{ stat.title }}</p>
+            <p class="text-2xl font-semibold text-gray-900">{{ stat.value }}</p>
+            <p class="text-xs text-gray-400">{{ stat.description }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Filters - PC Optimized -->
     <div class="bg-white rounded-lg shadow p-6">
       <div class="grid grid-cols-1 lg:grid-cols-6 gap-4">
@@ -136,7 +152,7 @@
                   <div class="ml-4">
                     <div class="text-sm font-semibold text-gray-900">{{ user.name }}</div>
                     <div class="text-sm text-gray-600">{{ user.email }}</div>
-                    <div class="text-xs text-gray-500">ID: {{ user.username || '-' }}</div>
+                    <div class="text-xs text-gray-500">ID: {{ user.id || '-' }}</div>
                   </div>
                 </div>
               </td>
@@ -319,8 +335,20 @@ import {
   PlusIcon,
   ArrowDownTrayIcon,
   ChevronLeftIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
+  UsersIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  UserPlusIcon
 } from '@heroicons/vue/24/outline'
+
+// Icon component map for dynamic rendering
+const iconComponents = {
+  UsersIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  UserPlusIcon
+}
 
 interface User {
   id: number
@@ -367,28 +395,52 @@ const userForm = ref({
 
 // Users data
 const users = ref<User[]>([])
+const userStats = ref([])
+
 const loadUsers = async () => {
+  loading.value = true
   try {
-    // AuthService에서 실제 가입된 사용자들 불러오기
-    const userData = await AuthService.getAllUsers()
-    users.value = userData.map((user: any) => ({
-      id: parseInt(user.id),
-      name: user.name,
-      email: user.email,
-      role: user.role || user.user_type,
-      status: user.status || (user.approval_status === 'approved' ? 'active' : 'pending_approval'),
-      createdAt: user.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
-      lastLoginAt: user.lastLoginAt,
-      memberCode: user.memberCode,
-      phone: user.phone,
-      manager_name: user.manager_name,
-      manager_contact: user.manager_contact,
-      company_name: user.company_name,
-      business_number: user.business_number,
-      business_license_url: user.business_license_url
-    }))
+    const response = await fetch('/api/admin/users', {
+      headers: {
+        'x-user-email': 'admin@test.com'
+      }
+    })
+    const result = await response.json()
+    
+    if (result.success && result.data) {
+      users.value = result.data.map((user: any) => ({
+        id: parseInt(user.id),
+        name: user.name,
+        email: user.email,
+        role: user.user_type,
+        status: user.approval_status || 'pending',
+        createdAt: user.joinDate || user.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+        lastLoginAt: user.lastLogin || user.last_login_at,
+        memberCode: user.member_code,
+        phone: user.phone,
+        statusBadge: user.statusBadge
+      }))
+    }
   } catch (error) {
     console.error('Failed to load users:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+const loadUserStats = async () => {
+  try {
+    const response = await fetch('/api/admin/users/stats')
+    const result = await response.json()
+    
+    if (result.success && result.data) {
+      userStats.value = result.data.map((stat: any) => ({
+        ...stat,
+        icon: iconComponents[stat.icon as keyof typeof iconComponents] || UsersIcon
+      }))
+    }
+  } catch (error) {
+    console.error('Failed to load user stats:', error)
   }
 }
 
@@ -616,5 +668,6 @@ const getStatusText = (status: string) => {
 // Load users on mount
 onMounted(() => {
   loadUsers()
+  loadUserStats()
 })
 </script>

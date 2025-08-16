@@ -805,7 +805,7 @@ const checkPasswordStrength = () => {
   }
   
   // 특수문자 체크
-  if (/[!@#$%^&*(),.?\":{}|<>]/.test(password)) {
+  if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
     strength += 25
   } else {
     passwordErrors.value.push('특수문자 포함')

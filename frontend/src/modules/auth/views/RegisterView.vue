@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100 py-8 px-4 sm:px-6 lg:px-8">
     <!-- Background Pattern -->
     <div class="absolute inset-0 bg-white/50 backdrop-blur-[2px]"></div>
     <div class="absolute top-0 left-0 w-full h-full">
@@ -8,8 +8,8 @@
       <div class="absolute bottom-10 left-20 w-72 h-72 bg-pink-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
     </div>
     
-    <div class="relative max-w-4xl mx-auto">
-      <div class="bg-white/80 backdrop-blur-md rounded-2xl shadow-2xl border border-white/50 p-8">
+    <div class="relative w-full max-w-5xl mx-auto">
+      <div class="bg-white/80 backdrop-blur-md rounded-2xl shadow-2xl border border-white/50 p-6 lg:p-10">
         <!-- Header -->
         <div class="text-center mb-8">
           <div class="mx-auto w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
@@ -26,13 +26,13 @@
           <!-- User Type Selection -->
           <div class="space-y-4">
             <h3 class="text-lg font-semibold text-gray-900 text-center">회원 유형 선택</h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div
                 v-for="type in userTypes"
                 :key="type.value"
                 @click="form.user_type = type.value"
                 :class="[
-                  'p-6 border-2 rounded-2xl cursor-pointer transition-all duration-300 hover:shadow-lg',
+                  'p-4 lg:p-6 border-2 rounded-2xl cursor-pointer transition-all duration-300 hover:shadow-lg',
                   form.user_type === type.value
                     ? 'border-blue-500 bg-blue-50 shadow-lg transform scale-105'
                     : 'border-gray-200 hover:border-gray-300 bg-white'

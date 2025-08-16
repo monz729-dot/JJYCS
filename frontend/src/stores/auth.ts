@@ -274,6 +274,7 @@ export const useAuthStore = defineStore('auth', () => {
     signUp,
     signIn,
     signOut,
+    logout: signOut, // alias for logout
     fetchUserProfile,
     updateProfile,
     checkUsernameAvailability,

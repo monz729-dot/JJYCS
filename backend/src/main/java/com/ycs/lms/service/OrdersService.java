@@ -165,15 +165,7 @@ public class OrdersService {
             .map(this::convertToOrderResponse)
             .collect(Collectors.toList());
 
-        return PageResponse.<OrderResponse>builder()
-            .content(orderResponses)
-            .page(orders.getNumber())
-            .size(orders.getSize())
-            .totalElements(orders.getTotalElements())
-            .totalPages(orders.getTotalPages())
-            .first(orders.isFirst())
-            .last(orders.isLast())
-            .build();
+        return PageResponse.of(orderResponses, orders.getNumber(), orders.getSize(), orders.getTotalElements());
     }
 
     /**
@@ -359,33 +351,31 @@ public class OrdersService {
      */
     private OrderResponse convertToOrderResponseWithData(Order order, List<OrderItem> items, List<OrderBox> boxes) {
         return OrderResponse.builder()
-            .id(order.getId())
+            .orderId(order.getId())
             .orderCode(order.getOrderCode())
-            .userId(order.getUserId())
             .status(order.getStatus().name())
             .orderType(order.getOrderType().name())
-            .recipientName(order.getRecipientName())
-            .recipientPhone(order.getRecipientPhone())
-            .recipientAddress(order.getRecipientAddress())
-            .recipientCountry(order.getRecipientCountry())
-            .urgency(order.getUrgency().name())
-            .needsRepacking(order.isNeedsRepacking())
-            .specialInstructions(order.getSpecialInstructions())
+            .totalCBM(order.getTotalCbmM3())
             .totalAmount(order.getTotalAmount())
             .currency(order.getCurrency())
-            .totalCbmM3(order.getTotalCbmM3())
-            .requiresExtraRecipient(order.isRequiresExtraRecipient())
-            .estimatedDeliveryDate(order.getEstimatedDeliveryDate())
-            .actualDeliveryDate(order.getActualDeliveryDate())
-            .paymentMethod(order.getPaymentMethod().name())
-            .paymentStatus(order.getPaymentStatus().name())
-            .estimatedCost(order.getEstimatedCost())
-            .actualCost(order.getActualCost())
-            .notes(order.getNotes())
+            .requiresExtraRecipient(order.getRequiresExtraRecipient())
+            .recipient(OrderResponse.RecipientInfo.builder()
+                .name(order.getRecipientName())
+                .phone(order.getRecipientPhone())
+                .address(order.getRecipientAddress())
+                .country(order.getRecipientCountry())
+                .build())
+            .shipping(OrderResponse.ShippingInfo.builder()
+                .urgency(order.getUrgency().name())
+                .needsRepacking(order.isNeedsRepacking())
+                .specialInstructions(order.getSpecialInstructions())
+                .paymentMethod(order.getPaymentMethod().name())
+                .paymentStatus(order.getPaymentStatus().name())
+                .build())
+            .estimatedDelivery(order.getEstimatedDeliveryDate())
+            .actualDelivery(order.getActualDeliveryDate())
             .createdAt(order.getCreatedAt())
             .updatedAt(order.getUpdatedAt())
-            .itemCount(items.size())
-            .boxCount(boxes.size())
             .build();
     }
 

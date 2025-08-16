@@ -128,6 +128,11 @@ public class OrderBox {
     // Enum definitions
     public enum BoxStatus {
         CREATED, INBOUND_PENDING, INBOUND_COMPLETED, READY_FOR_OUTBOUND, 
-        OUTBOUND_PENDING, OUTBOUND_COMPLETED, SHIPPED, DELIVERED
+        OUTBOUND_PENDING, OUTBOUND_COMPLETED, SHIPPED, DELIVERED;
+        
+        @Override
+        public String toString() {
+            return name();
+        }
     }
 }

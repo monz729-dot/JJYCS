@@ -1,7 +1,5 @@
 # YCS LMS Development Configuration
 spring:
-  profiles:
-    active: dev
   
   # Database Configuration
   datasource:
@@ -133,19 +131,19 @@ app:
     email-enabled: false
     sms-enabled: false
     
-# MyBatis Configuration
-mybatis:
-  mapper-locations: classpath:mappers/*.xml
-  type-aliases-package: com.ycs.lms.entity
-  configuration:
-    map-underscore-to-camel-case: true
-    cache-enabled: true
-    lazy-loading-enabled: true
-    multiple-result-sets-enabled: true
-    use-column-label: true
-    use-generated-keys: true
-    default-executor-type: reuse
-    default-statement-timeout: 25000
+# MyBatis Configuration - 일시적으로 비활성화
+# mybatis:
+#   mapper-locations: classpath:mappers/*.xml
+#   type-aliases-package: com.ycs.lms.entity
+#   configuration:
+#     map-underscore-to-camel-case: true
+#     cache-enabled: true
+#     lazy-loading-enabled: true
+#     multiple-result-sets-enabled: true
+#     use-column-label: true
+#     use-generated-keys: true
+#     default-executor-type: reuse
+#     default-statement-timeout: 25000
 
 # Management Endpoints
 management:
@@ -160,6 +158,6 @@ management:
 # Development Features
 debug: true
 
-# Initialization
-spring.sql.init.mode: always
-spring.sql.init.data-locations: classpath:data-dev.sql
+# Initialization - 일시적으로 비활성화 (Entity가 준비되면 다시 활성화)
+spring.sql.init.mode: never
+# spring.sql.init.data-locations: classpath:data-dev.sql

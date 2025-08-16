@@ -17,7 +17,9 @@
     "date": "Date",
     "amount": "Amount",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "select_country": "Select a country",
+    "remove": "Remove"
   },
   "auth": {
     "login": {
@@ -419,5 +421,26 @@
       "records_updated": "Records Updated",
       "error_message": "Error Message"
     }
+  },
+  "estimates": {
+    "title": "Estimates"
+  },
+  "roles": {
+    "general": "General User",
+    "corporate": "Corporate User",
+    "partner": "Partner",
+    "warehouse": "Warehouse",
+    "admin": "Administrator"
+  },
+  "partner": {
+    "title": "Partner Center"
+  },
+  "admin": {
+    "title": "Admin Panel"
+  },
+  "countries": {
+    "TH": "Thailand",
+    "KR": "South Korea",
+    "US": "United States"
   }
 }

@@ -66,8 +66,18 @@ public class CBMCalculator {
         
         boolean exceedsThreshold = cbm.compareTo(CBM_THRESHOLD) > 0;
         
+        log.debug("CBM 계산: {}cm × {}cm × {}cm = {} m³ (임계값 초과: {})", 
+                dimensions.width, dimensions.height, dimensions.depth, cbm, exceedsThreshold);
         
         return new CBMResult(cbm, exceedsThreshold);
+    }
+    
+    /**
+     * 개별 치수로 CBM 계산 (backward compatibility)
+     */
+    public CBMResult calculateCBM(BigDecimal widthCm, BigDecimal heightCm, BigDecimal depthCm) {
+        BoxDimensions dimensions = new BoxDimensions(widthCm, heightCm, depthCm);
+        return calculateCBM(dimensions);
     }
     
     /**

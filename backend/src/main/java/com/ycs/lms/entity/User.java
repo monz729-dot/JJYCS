@@ -95,10 +95,24 @@ public class User {
     
     // Enum definitions
     public enum UserRole {
-        INDIVIDUAL, ENTERPRISE, PARTNER, WAREHOUSE, ADMIN
+        INDIVIDUAL, ENTERPRISE, PARTNER, WAREHOUSE, ADMIN;
+        
+        @Override
+        public String toString() {
+            return name();
+        }
+        
+        public String toUpperCase() {
+            return name().toUpperCase();
+        }
     }
     
     public enum UserStatus {
-        ACTIVE, PENDING_APPROVAL, SUSPENDED, INACTIVE
+        ACTIVE, PENDING_APPROVAL, SUSPENDED, INACTIVE;
+        
+        @Override
+        public String toString() {
+            return name();
+        }
     }
 }

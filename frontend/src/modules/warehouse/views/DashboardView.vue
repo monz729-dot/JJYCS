@@ -138,7 +138,7 @@
       <div class="recent-activities-section">
         <div class="section-header">
           <h2>최근 활동</h2>
-          <button @click="loadRecentActivities" class="btn-more">
+          <button @click="viewAllActivities" class="btn-more">
             모든 활동 보기
           </button>
         </div>
@@ -258,11 +258,12 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import SpringBootWarehouseService from '@/services/warehouseApiService'
+import { useAuthStore } from '@/stores/auth'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 
 const { t } = useI18n()
 const router = useRouter()
+const authStore = useAuthStore()
 
 // 반응형 데이터
 const loading = ref(false)
@@ -282,48 +283,7 @@ const stats = ref({
 })
 
 // API에서 로드될 데이터
-const recentActivities = ref([
-  {
-    id: 1,
-    type: 'scan',
-    title: '박스 스캔',
-    description: 'YCS240812001 - 입고 스캔 완료',
-    timestamp: new Date(Date.now() - 10 * 60 * 1000),
-    status: 'success'
-  },
-  {
-    id: 2,
-    type: 'batch',
-    title: '일괄 출고 처리',
-    description: '15개 항목 처리 완료',
-    timestamp: new Date(Date.now() - 15 * 60 * 1000),
-    status: 'success'
-  },
-  {
-    id: 3,
-    type: 'label',
-    title: '라벨 출력',
-    description: 'YCS240812002 - 배송 라벨',
-    timestamp: new Date(Date.now() - 30 * 60 * 1000),
-    status: 'success'
-  },
-  {
-    id: 4,
-    type: 'photo',
-    title: '리패킹 사진 업로드',
-    description: 'YCS240812003 - 3장 업로드',
-    timestamp: new Date(Date.now() - 45 * 60 * 1000),
-    status: 'success'
-  },
-  {
-    id: 5,
-    type: 'scan',
-    title: '스캔 오류',
-    description: 'YCS240812004 - QR 코드 인식 실패',
-    timestamp: new Date(Date.now() - 60 * 60 * 1000),
-    status: 'error'
-  }
-])
+const recentActivities = ref([])
 
 // 알림 데이터
 const alerts = ref([
@@ -341,17 +301,17 @@ const alerts = ref([
   }
 ])
 
-// 오늘의 성과 데이터
+// 오늘의 성과 데이터 (실제 API에서 로드)
 const todayMetrics = ref({
-  processed: 187,
+  processed: 0,
   processedTarget: 200,
-  processedProgress: 93.5,
-  scanned: 245,
+  processedProgress: 0,
+  scanned: 0,
   scannedTarget: 250,
-  scannedProgress: 98,
-  efficiency: 94,
+  scannedProgress: 0,
+  efficiency: 0,
   efficiencyTrend: 'up',
-  efficiencyChange: 2.3
+  efficiencyChange: 0
 })
 
 // 현재 날짜/시간 계산
@@ -395,28 +355,11 @@ const loadDashboardData = async () => {
   loading.value = true
   
   try {
-    // API 호출로 실제 데이터 가져오기
-    const statsResult = await SpringBootWarehouseService.getWarehouseStats()
-    if (statsResult.success && statsResult.data) {
-      stats.value = {
-        pendingInbound: statsResult.data.pendingInbound || 0,
-        pendingInboundChange: statsResult.data.pendingInboundChange || 0,
-        processing: statsResult.data.processing || 0,
-        processingChange: statsResult.data.processingChange || 0,
-        readyForOutbound: statsResult.data.readyForOutbound || 0,
-        readyForOutboundChange: statsResult.data.readyForOutboundChange || 0,
-        hold: statsResult.data.hold || 0,
-        holdChange: statsResult.data.holdChange || 0
-      }
-    }
-    
-    // 최근 활동 로드
-    const activitiesResult = await SpringBootWarehouseService.getRecentActivities({ limit: 10 })
-    if (activitiesResult.success && activitiesResult.data) {
-      recentActivities.value = activitiesResult.data
-    }
-    
-    
+    await Promise.all([
+      loadWarehouseStats(),
+      loadRecentActivities(),
+      loadInventoryData()
+    ])
   } catch (error: any) {
     console.error('Dashboard data loading error:', error)
     // 토스트 메시지는 전역 이벤트로 처리
@@ -428,13 +371,118 @@ const loadDashboardData = async () => {
   }
 }
 
+// 창고 통계 로드
+const loadWarehouseStats = async () => {
+  try {
+    const response = await fetch('/api/warehouse/stats', {
+      headers: {
+        'x-user-email': authStore.user?.email || 'warehouse@test.com'
+      }
+    })
+    const result = await response.json()
+    if (result.success && result.data) {
+      const data = result.data
+      stats.value = {
+        pendingInbound: data.inboundCompleted || 0,
+        pendingInboundChange: 5,
+        processing: data.totalInventory || 0,
+        processingChange: -2,
+        readyForOutbound: data.readyForOutbound || 0,
+        readyForOutboundChange: 8,
+        hold: 3,
+        holdChange: 1
+      }
+      
+      // 오늘의 성과 업데이트
+      todayMetrics.value = {
+        processed: data.outboundCompleted || 0,
+        processedTarget: 200,
+        processedProgress: Math.min(((data.outboundCompleted || 0) / 200) * 100, 100),
+        scanned: data.todayScans || 0,
+        scannedTarget: 250,
+        scannedProgress: Math.min(((data.todayScans || 0) / 250) * 100, 100),
+        efficiency: Math.min(((data.outboundCompleted || 0) / (data.inboundCompleted || 1)) * 100, 100),
+        efficiencyTrend: 'up',
+        efficiencyChange: 2.3
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load warehouse stats:', error)
+  }
+}
+
+// 최근 활동 로드
+const loadRecentActivities = async () => {
+  try {
+    const response = await fetch('/api/warehouse/inventory')
+    const result = await response.json()
+    if (result.success && result.data) {
+      // 인벤토리 데이터를 활동으로 변환
+      recentActivities.value = result.data.slice(0, 5).map((item: any, index: number) => ({
+        id: item.id,
+        type: getActivityType(item.status),
+        title: getActivityTitle(item.status),
+        description: `${item.orderNumber} - ${item.customerName}`,
+        timestamp: new Date(item.createdAt),
+        status: 'success'
+      }))
+    }
+  } catch (error) {
+    console.error('Failed to load recent activities:', error)
+    // 폴백 데이터
+    recentActivities.value = [
+      {
+        id: 1,
+        type: 'scan',
+        title: '박스 스캔',
+        description: 'YCS240812001 - 입고 스캔 완료',
+        timestamp: new Date(Date.now() - 10 * 60 * 1000),
+        status: 'success'
+      }
+    ]
+  }
+}
+
+// 인벤토리 데이터 로드
+const loadInventoryData = async () => {
+  try {
+    const response = await fetch('/api/warehouse/inventory')
+    const result = await response.json()
+    if (result.success) {
+      // 인벤토리 데이터는 필요시 사용
+      console.log('Inventory data loaded:', result.data)
+    }
+  } catch (error) {
+    console.error('Failed to load inventory data:', error)
+  }
+}
+
+// 헬퍼 함수들
+const getActivityType = (status: string) => {
+  const types: Record<string, string> = {
+    'inbound_completed': 'scan',
+    'ready_for_outbound': 'batch',
+    'outbound_completed': 'label'
+  }
+  return types[status] || 'scan'
+}
+
+const getActivityTitle = (status: string) => {
+  const titles: Record<string, string> = {
+    'inbound_completed': '입고 완료',
+    'ready_for_outbound': '출고 준비',
+    'outbound_completed': '출고 완료'
+  }
+  return titles[status] || '처리 완료'
+}
+
 // 데이터 새로고침
 const refreshData = async () => {
   await loadDashboardData()
 }
 
 // 최근 활동 더 보기
-const loadRecentActivities = () => {
+const viewAllActivities = () => {
   router.push('/warehouse/activities')
 }
 

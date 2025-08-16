@@ -31,6 +31,10 @@ public class ApiResponse<T> {
             .build();
     }
 
+    public static <T> ApiResponse<T> error(String message) {
+        return error("ERROR", message, null);
+    }
+
     public static <T> ApiResponse<T> error(String code, String message) {
         return error(code, message, null);
     }
