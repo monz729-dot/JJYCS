@@ -4,12 +4,7 @@ const API_BASE_URL = 'http://localhost:8080/api'
 interface ApiResponse<T> {
   success: boolean
   data?: T
-  error?: {
-    message: string
-    code: string
-    details?: any
-  }
-  timestamp?: number
+  error?: string
 }
 
 interface LoginRequest {
@@ -18,15 +13,26 @@ interface LoginRequest {
 }
 
 interface LoginResponse {
-  token: string
-  refreshToken: string
+  accessToken: string
+  refreshToken?: string
+  tokenType: string
+  expiresIn: number
   user: {
     id: number
     email: string
     name: string
     role: string
-    memberCode?: string
+    status: string
+    phone: string
+    memberCode: string
+    emailVerified: boolean
+    twoFactorEnabled: boolean
+    createdAt: string
   }
+  requiresTwoFactor: boolean
+  requiresEmailVerification: boolean
+  requiresApproval: boolean
+  message: string
 }
 
 interface User {
@@ -56,7 +62,7 @@ interface Order {
 
 class ApiService {
   private static getAuthHeaders(): Record<string, string> {
-    const token = localStorage.getItem('accessToken')
+    const token = localStorage.getItem('access_token')
     return {
       'Content-Type': 'application/json',
       ...(token && { Authorization: `Bearer ${token}` })
@@ -73,16 +79,25 @@ class ApiService {
         }
       })
 
-      const data = await response.json()
-      return data
+      const result = await response.json()
+      
+      // 백엔드에서 항상 { success, data?, error? } 구조로 응답
+      if (result.success) {
+        return {
+          success: true,
+          data: result.data
+        }
+      } else {
+        return {
+          success: false,
+          error: result.error?.message || result.message || 'Unknown error'
+        }
+      }
     } catch (error) {
       console.error('API 요청 실패:', error)
       return {
         success: false,
-        error: {
-          message: '네트워크 오류가 발생했습니다.',
-          code: 'NETWORK_ERROR'
-        }
+        error: '네트워크 오류가 발생했습니다.'
       }
     }
   }
@@ -137,6 +152,29 @@ class ApiService {
     currentPage: number
   }>> {
     return this.request<any>(`/admin/orders?page=${page}&size=${size}`)
+  }
+
+  // 편의 메서드들
+  static async get<T>(endpoint: string): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, { method: 'GET' })
+  }
+
+  static async post<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'POST',
+      body: data ? JSON.stringify(data) : undefined
+    })
+  }
+
+  static async put<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'PUT',
+      body: data ? JSON.stringify(data) : undefined
+    })
+  }
+
+  static async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, { method: 'DELETE' })
   }
 }
 

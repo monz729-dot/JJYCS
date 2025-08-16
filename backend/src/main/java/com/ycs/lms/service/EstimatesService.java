@@ -3,8 +3,8 @@ package com.ycs.lms.service;
 import com.ycs.lms.dto.*;
 import com.ycs.lms.entity.Order;
 import com.ycs.lms.exception.NotFoundException;
-import com.ycs.lms.repository.OrderRepository;
-import com.ycs.lms.repository.OrderBoxRepository;
+import com.ycs.lms.mapper.OrderMapper;
+import com.ycs.lms.mapper.OrderBoxMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,8 +20,8 @@ import java.util.*;
 @Transactional
 public class EstimatesService {
 
-    private final OrderRepository orderRepository;
-    private final OrderBoxRepository orderBoxRepository;
+    private final OrderMapper orderMapper;
+    private final OrderBoxMapper orderBoxMapper;
     private final BusinessRuleService businessRuleService;
     
     // Mock storage for estimates (will be replaced with database entity later)
@@ -209,11 +209,11 @@ public class EstimatesService {
         Order order = getOrderById(orderId);
         
         // CBM 계산 (Repository에서 직접 조회)
-        BigDecimal totalCbm = orderBoxRepository.sumCbmByOrderId(orderId);
+        BigDecimal totalCbm = orderBoxMapper.sumCbmByOrderId(orderId);
         if (totalCbm == null) totalCbm = BigDecimal.ZERO;
         
         // 무게 계산 (Repository에서 직접 조회)
-        BigDecimal totalWeight = orderBoxRepository.sumWeightByOrderId(orderId);
+        BigDecimal totalWeight = orderBoxMapper.sumWeightByOrderId(orderId);
         if (totalWeight == null) totalWeight = BigDecimal.ZERO;
         
         // 배송비 계산 (Mock)
@@ -282,7 +282,7 @@ public class EstimatesService {
      * Order 조회 (JPA Repository 사용)
      */
     private Order getOrderById(Long orderId) {
-        return orderRepository.findById(orderId)
+        return orderMapper.findById(orderId)
             .orElseThrow(() -> new NotFoundException("주문을 찾을 수 없습니다: " + orderId));
     }
 }

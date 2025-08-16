@@ -5,16 +5,14 @@ import com.ycs.lms.entity.Order;
 import com.ycs.lms.entity.OrderBox;
 import com.ycs.lms.entity.OrderItem;
 import com.ycs.lms.entity.User;
-import com.ycs.lms.repository.OrderRepository;
-import com.ycs.lms.repository.UserRepository;
+import com.ycs.lms.mapper.OrderMapper;
+import com.ycs.lms.mapper.UserMapper;
 import com.ycs.lms.util.CBMCalculator;
 import com.ycs.lms.util.PagedResponse;
 import com.ycs.lms.dto.orders.BusinessRuleValidationResponse.BusinessWarning;
 import com.ycs.lms.exception.BusinessRuleViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,8 +39,8 @@ import lombok.AllArgsConstructor;
 @Transactional
 public class OrderService {
 
-    private final OrderRepository orderRepository;
-    private final UserRepository userRepository;
+    private final OrderMapper orderMapper;
+    private final UserMapper userMapper;
     private final ValidationService validationService;
     private final NotificationService notificationService;
     private final CBMCalculator cbmCalculator;
@@ -55,7 +53,7 @@ public class OrderService {
         log.info("Creating order for user: {}", userId);
         
         // 1. 사용자 검증 및 조회
-        User user = userRepository.findById(userId)
+        User user = userMapper.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
         
         // 2. 사용자 상태 검증 (승인된 사용자만 주문 가능)
@@ -81,7 +79,7 @@ public class OrderService {
         validateExternalCodes(order);
         
         // 8. 주문 저장
-        order = orderRepository.save(order);
+        order = orderMapper.save(order);
         
         // 9. 알림 발송
         sendOrderNotifications(order);
@@ -278,7 +276,7 @@ public class OrderService {
      */
     @Transactional(readOnly = true)
     public OrderResponse getOrderById(Long orderId) {
-        Order order = orderRepository.findByIdWithDetails(orderId)
+        Order order = orderMapper.findByIdWithDetails(orderId)
                 .orElseThrow(() -> new OrderNotFoundException("주문을 찾을 수 없습니다."));
         
         return mapToOrderResponse(order);
@@ -288,25 +286,33 @@ public class OrderService {
      * 주문 목록 조회
      */
     @Transactional(readOnly = true)
-    public PagedResponse<OrderSummary> getOrders(OrderSearchFilter filter, Pageable pageable) {
-        Page<Order> ordersPage = orderRepository.findByFilter(
+    public PagedResponse<OrderSummary> getOrders(OrderSearchFilter filter, int page, int size) {
+        List<Order> orders = orderMapper.findByFilter(
             filter.getUserId(), 
             filter.getStatus(), 
             filter.getOrderType(), 
-            pageable);
+            page, size);
         
-        List<OrderSummary> orderSummaries = ordersPage.getContent().stream()
+        long totalCount = orderMapper.countOrders(
+            filter.getUserId(),
+            filter.getStatus(),
+            filter.getOrderType(),
+            filter.getStartDate(),
+            filter.getEndDate()
+        );
+        
+        List<OrderSummary> orderSummaries = orders.stream()
                 .map(this::mapToOrderSummary)
                 .toList();
         
-        return PagedResponse.of(orderSummaries, ordersPage);
+        return PagedResponse.of(orderSummaries, page, size, totalCount);
     }
 
     /**
      * 주문 수정
      */
     public OrderResponse updateOrder(Long orderId, UpdateOrderRequest request, Long userId) {
-        Order order = orderRepository.findById(orderId)
+        Order order = orderMapper.findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException("주문을 찾을 수 없습니다."));
         
         // 권한 검증
@@ -325,7 +331,7 @@ public class OrderService {
         // 비즈니스 룰 재적용
         applyBusinessRules(order, order.getUser());
         
-        order = orderRepository.save(order);
+        order = orderMapper.save(order);
         
         return mapToOrderResponse(order);
     }
@@ -334,7 +340,7 @@ public class OrderService {
      * 주문 상태 변경
      */
     public OrderResponse updateOrderStatus(Long orderId, UpdateOrderStatusRequest request, Long userId) {
-        Order order = orderRepository.findById(orderId)
+        Order order = orderMapper.findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException("주문을 찾을 수 없습니다."));
         
         // 상태 전환 검증
@@ -349,7 +355,7 @@ public class OrderService {
             order.appendNote("[STATUS_CHANGE] " + request.getReason());
         }
         
-        order = orderRepository.save(order);
+        order = orderMapper.save(order);
         
         return mapToOrderResponse(order);
     }
@@ -358,7 +364,7 @@ public class OrderService {
      * 주문 취소
      */
     public OrderResponse cancelOrder(Long orderId, CancelOrderRequest request, Long userId) {
-        Order order = orderRepository.findById(orderId)
+        Order order = orderMapper.findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException("주문을 찾을 수 없습니다."));
         
         // 권한 검증
@@ -375,7 +381,7 @@ public class OrderService {
         order.setStatus(Order.OrderStatus.CANCELLED);
         order.appendNote("[CANCELLED] " + request.getReason());
         
-        order = orderRepository.save(order);
+        order = orderMapper.save(order);
         
         return mapToOrderResponse(order);
     }
@@ -419,7 +425,7 @@ public class OrderService {
     public BusinessRuleValidationResponse validateBusinessRules(
             BusinessRuleValidationRequest request, Long userId) {
         
-        User user = userRepository.findById(userId)
+        User user = userMapper.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
         
         List<BusinessWarning> warnings = new ArrayList<>();
@@ -462,7 +468,7 @@ public class OrderService {
     private String generateOrderCode() {
         return String.format("ORD-%d-%06d", 
                 LocalDateTime.now().getYear(), 
-                orderRepository.getNextOrderSequence());
+                orderMapper.getNextOrderSequence());
     }
 
     private String generateLabelCode(String orderCode, int boxNumber) {

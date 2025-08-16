@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ycs.lms.mapper.OrderBoxMapper">
+
+    <!-- Result Maps -->
+    <resultMap id="orderBoxResultMap" type="com.ycs.lms.entity.OrderBox">
+        <id property="id" column="id"/>
+        <result property="orderId" column="order_id"/>
+        <result property="boxNumber" column="box_number"/>
+        <result property="labelCode" column="label_code"/>
+        <result property="qrCodeUrl" column="qr_code_url"/>
+        <result property="widthCm" column="width_cm"/>
+        <result property="heightCm" column="height_cm"/>
+        <result property="depthCm" column="depth_cm"/>
+        <result property="cbmM3" column="cbm_m3"/>
+        <result property="weightKg" column="weight_kg"/>
+        <result property="weight" column="weight"/>
+        <result property="status" column="status" typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
+        <result property="warehouseId" column="warehouse_id"/>
+        <result property="warehouseLocation" column="warehouse_location"/>
+        <result property="inboundDate" column="inbound_date"/>
+        <result property="outboundDate" column="outbound_date"/>
+        <result property="trackingNumber" column="tracking_number"/>
+        <result property="carrier" column="carrier"/>
+        <result property="shippedDate" column="shipped_date"/>
+        <result property="notes" column="notes"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <!-- SQL Fragments -->
+    <sql id="orderBoxColumns">
+        id, order_id, box_number, label_code, qr_code_url, width_cm, height_cm, depth_cm,
+        (width_cm * height_cm * depth_cm / 1000000) as cbm_m3, weight_kg, weight, status,
+        warehouse_id, warehouse_location, inbound_date, outbound_date, tracking_number,
+        carrier, shipped_date, notes, created_at, updated_at
+    </sql>
+
+    <sql id="orderBoxColumnsInsert">
+        order_id, box_number, label_code, qr_code_url, width_cm, height_cm, depth_cm,
+        weight_kg, weight, status, warehouse_id, warehouse_location, inbound_date,
+        outbound_date, tracking_number, carrier, shipped_date, notes, created_at, updated_at
+    </sql>
+
+    <!-- Insert Operations -->
+    <insert id="insertOrderBox" parameterType="com.ycs.lms.entity.OrderBox" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO order_boxes (
+            <include refid="orderBoxColumnsInsert"/>
+        ) VALUES (
+            #{orderId}, #{boxNumber}, #{labelCode}, #{qrCodeUrl}, #{widthCm}, #{heightCm}, #{depthCm},
+            #{weightKg}, #{weight}, #{status}, #{warehouseId}, #{warehouseLocation}, #{inboundDate},
+            #{outboundDate}, #{trackingNumber}, #{carrier}, #{shippedDate}, #{notes},
+            COALESCE(#{createdAt}, NOW()), COALESCE(#{updatedAt}, NOW())
+        )
+    </insert>
+
+    <insert id="insertOrderBoxes" parameterType="list">
+        INSERT INTO order_boxes (
+            <include refid="orderBoxColumnsInsert"/>
+        ) VALUES
+        <foreach collection="list" item="box" separator=",">
+            (
+                #{box.orderId}, #{box.boxNumber}, #{box.labelCode}, #{box.qrCodeUrl}, 
+                #{box.widthCm}, #{box.heightCm}, #{box.depthCm}, #{box.weightKg}, #{box.weight}, 
+                #{box.status}, #{box.warehouseId}, #{box.warehouseLocation}, #{box.inboundDate},
+                #{box.outboundDate}, #{box.trackingNumber}, #{box.carrier}, #{box.shippedDate}, #{box.notes},
+                COALESCE(#{box.createdAt}, NOW()), COALESCE(#{box.updatedAt}, NOW())
+            )
+        </foreach>
+    </insert>
+
+    <!-- Select Operations -->
+    <select id="findById" parameterType="long" resultMap="orderBoxResultMap">
+        SELECT <include refid="orderBoxColumns"/>
+        FROM order_boxes
+        WHERE id = #{id}
+    </select>
+
+    <select id="findByOrderId" parameterType="long" resultMap="orderBoxResultMap">
+        SELECT <include refid="orderBoxColumns"/>
+        FROM order_boxes
+        WHERE order_id = #{orderId}
+        ORDER BY box_number
+    </select>
+
+    <select id="findByOrderIdOrderByBoxNumber" parameterType="long" resultMap="orderBoxResultMap">
+        SELECT <include refid="orderBoxColumns"/>
+        FROM order_boxes
+        WHERE order_id = #{orderId}
+        ORDER BY box_number
+    </select>
+
+    <select id="findByLabelCode" parameterType="string" resultMap="orderBoxResultMap">
+        SELECT <include refid="orderBoxColumns"/>
+        FROM order_boxes
+        WHERE label_code = #{labelCode}
+    </select>
+
+    <select id="findByLabelCodeIn" resultMap="orderBoxResultMap">
+        SELECT <include refid="orderBoxColumns"/>
+        FROM order_boxes
+        WHERE label_code IN
+        <foreach collection="list" item="labelCode" open="(" separator="," close=")">
+            #{labelCode}
+        </foreach>
+    </select>
+
+    <select id="existsByLabelCode" parameterType="string" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM order_boxes
+        WHERE label_code = #{labelCode}
+    </select>
+
+    <select id="findByStatus" resultMap="orderBoxResultMap">
+        SELECT <include refid="orderBoxColumns"/>
+        FROM order_boxes
+        WHERE status = #{status}
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="findByOrderIdAndStatus" resultMap="orderBoxResultMap">
+        SELECT <include refid="orderBoxColumns"/>
+        FROM order_boxes
+        WHERE order_id = #{orderId} AND status = #{status}
+        ORDER BY box_number
+    </select>
+
+    <select id="findByWarehouseId" parameterType="long" resultMap="orderBoxResultMap">
+        SELECT <include refid="orderBoxColumns"/>
+        FROM order_boxes
+        WHERE warehouse_id = #{warehouseId}
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="findByWarehouseIdAndStatus" resultMap="orderBoxResultMap">
+        SELECT <include refid="orderBoxColumns"/>
+        FROM order_boxes
+        WHERE warehouse_id = #{warehouseId} AND status = #{status}
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="findByWarehouseLocation" parameterType="string" resultMap="orderBoxResultMap">
+        SELECT <include refid="orderBoxColumns"/>
+        FROM order_boxes
+        WHERE warehouse_location = #{warehouseLocation}
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="findByTrackingNumber" parameterType="string" resultMap="orderBoxResultMap">
+        SELECT <include refid="orderBoxColumns"/>
+        FROM order_boxes
+        WHERE tracking_number = #{trackingNumber}
+    </select>
+
+    <select id="findByCarrier" parameterType="string" resultMap="orderBoxResultMap">
+        SELECT <include refid="orderBoxColumns"/>
+        FROM order_boxes
+        WHERE carrier = #{carrier}
+        ORDER BY shipped_date DESC
+    </select>
+
+    <select id="findByOrderIdAndCbmGreaterThan" resultMap="orderBoxResultMap">
+        SELECT <include refid="orderBoxColumns"/>
+        FROM order_boxes
+        WHERE order_id = #{orderId} AND (width_cm * height_cm * depth_cm / 1000000) > #{cbmThreshold}
+    </select>
+
+    <select id="findByLabelCodePattern" parameterType="string" resultMap="orderBoxResultMap">
+        SELECT <include refid="orderBoxColumns"/>
+        FROM order_boxes
+        WHERE label_code LIKE #{pattern}
+        ORDER BY label_code
+    </select>
+
+    <select id="findByStatusIn" resultMap="orderBoxResultMap">
+        SELECT <include refid="orderBoxColumns"/>
+        FROM order_boxes
+        WHERE status IN
+        <foreach collection="list" item="status" open="(" separator="," close=")">
+            #{status}
+        </foreach>
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- Aggregate Queries -->
+    <select id="sumCbmByOrderId" parameterType="long" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(width_cm * height_cm * depth_cm / 1000000), 0)
+        FROM order_boxes
+        WHERE order_id = #{orderId}
+    </select>
+
+    <select id="sumWeightByOrderId" parameterType="long" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(COALESCE(weight_kg, weight, 0)), 0)
+        FROM order_boxes
+        WHERE order_id = #{orderId}
+    </select>
+
+    <select id="countByOrderId" parameterType="long" resultType="long">
+        SELECT COUNT(*)
+        FROM order_boxes
+        WHERE order_id = #{orderId}
+    </select>
+
+    <select id="countByStatus" resultType="long">
+        SELECT COUNT(*)
+        FROM order_boxes
+        WHERE status = #{status}
+    </select>
+
+    <select id="countByWarehouseIdAndStatus" resultType="long">
+        SELECT COUNT(*)
+        FROM order_boxes
+        WHERE warehouse_id = #{warehouseId} AND status = #{status}
+    </select>
+
+    <!-- Label Code Generation -->
+    <select id="generateLabelCode" resultType="string">
+        SELECT CONCAT('BOX-', YEAR(NOW()), '-', LPAD(#{orderSeq}, 5, '0'), '-', LPAD(#{boxNumber}, 2, '0'))
+    </select>
+
+    <!-- Update Operations -->
+    <update id="updateOrderBox" parameterType="com.ycs.lms.entity.OrderBox">
+        UPDATE order_boxes
+        SET 
+            box_number = #{boxNumber},
+            label_code = #{labelCode},
+            qr_code_url = #{qrCodeUrl},
+            width_cm = #{widthCm},
+            height_cm = #{heightCm},
+            depth_cm = #{depthCm},
+            weight_kg = #{weightKg},
+            weight = #{weight},
+            status = #{status},
+            warehouse_id = #{warehouseId},
+            warehouse_location = #{warehouseLocation},
+            inbound_date = #{inboundDate},
+            outbound_date = #{outboundDate},
+            tracking_number = #{trackingNumber},
+            carrier = #{carrier},
+            shipped_date = #{shippedDate},
+            notes = #{notes},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateOrderBoxStatus" parameterType="com.ycs.lms.entity.OrderBox">
+        UPDATE order_boxes
+        SET 
+            status = #{status},
+            warehouse_id = #{warehouseId},
+            warehouse_location = #{warehouseLocation},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateBoxInbound">
+        UPDATE order_boxes
+        SET 
+            status = 'INBOUND_COMPLETED',
+            warehouse_id = #{warehouseId},
+            warehouse_location = #{warehouseLocation},
+            inbound_date = NOW(),
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateBoxOutbound">
+        UPDATE order_boxes
+        SET 
+            status = 'OUTBOUND_COMPLETED',
+            outbound_date = NOW(),
+            tracking_number = #{trackingNumber},
+            carrier = #{carrier},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- Delete Operations -->
+    <delete id="deleteById" parameterType="long">
+        DELETE FROM order_boxes WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteByOrderId" parameterType="long">
+        DELETE FROM order_boxes WHERE order_id = #{orderId}
+    </delete>
+
+</mapper>

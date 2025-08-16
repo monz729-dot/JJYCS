@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ycs.lms.mapper.OrderItemMapper">
+
+    <!-- Result Maps -->
+    <resultMap id="orderItemResultMap" type="com.ycs.lms.entity.OrderItem">
+        <id property="id" column="id"/>
+        <result property="orderId" column="order_id"/>
+        <result property="itemOrder" column="item_order"/>
+        <result property="name" column="name"/>
+        <result property="description" column="description"/>
+        <result property="category" column="category"/>
+        <result property="quantity" column="quantity"/>
+        <result property="unitWeight" column="unit_weight"/>
+        <result property="unitPrice" column="unit_price"/>
+        <result property="totalAmount" column="total_amount"/>
+        <result property="currency" column="currency"/>
+        <result property="hsCode" column="hs_code"/>
+        <result property="emsCode" column="ems_code"/>
+        <result property="countryOfOrigin" column="country_of_origin"/>
+        <result property="brand" column="brand"/>
+        <result property="model" column="model"/>
+        <result property="restricted" column="restricted"/>
+        <result property="restrictionNote" column="restriction_note"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <!-- SQL Fragments -->
+    <sql id="orderItemColumns">
+        id, order_id, item_order, name, description, category, quantity, unit_weight,
+        unit_price, total_amount, currency, hs_code, ems_code, country_of_origin,
+        brand, model, restricted, restriction_note, created_at, updated_at
+    </sql>
+
+    <!-- Insert Operations -->
+    <insert id="insertOrderItem" parameterType="com.ycs.lms.entity.OrderItem" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO order_items (
+            order_id, item_order, name, description, category, quantity, unit_weight,
+            unit_price, total_amount, currency, hs_code, ems_code, country_of_origin,
+            brand, model, restricted, restriction_note, created_at, updated_at
+        ) VALUES (
+            #{orderId}, #{itemOrder}, #{name}, #{description}, #{category}, #{quantity}, #{unitWeight},
+            #{unitPrice}, #{totalAmount}, #{currency}, #{hsCode}, #{emsCode}, #{countryOfOrigin},
+            #{brand}, #{model}, #{restricted}, #{restrictionNote},
+            COALESCE(#{createdAt}, NOW()), COALESCE(#{updatedAt}, NOW())
+        )
+    </insert>
+
+    <insert id="insertOrderItems" parameterType="list">
+        INSERT INTO order_items (
+            order_id, item_order, name, description, category, quantity, unit_weight,
+            unit_price, total_amount, currency, hs_code, ems_code, country_of_origin,
+            brand, model, restricted, restriction_note, created_at, updated_at
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.orderId}, #{item.itemOrder}, #{item.name}, #{item.description}, #{item.category}, 
+                #{item.quantity}, #{item.unitWeight}, #{item.unitPrice}, #{item.totalAmount}, #{item.currency}, 
+                #{item.hsCode}, #{item.emsCode}, #{item.countryOfOrigin}, #{item.brand}, #{item.model}, 
+                #{item.restricted}, #{item.restrictionNote}, 
+                COALESCE(#{item.createdAt}, NOW()), COALESCE(#{item.updatedAt}, NOW())
+            )
+        </foreach>
+    </insert>
+
+    <!-- Select Operations -->
+    <select id="findById" parameterType="long" resultMap="orderItemResultMap">
+        SELECT <include refid="orderItemColumns"/>
+        FROM order_items
+        WHERE id = #{id}
+    </select>
+
+    <select id="findByOrderId" parameterType="long" resultMap="orderItemResultMap">
+        SELECT <include refid="orderItemColumns"/>
+        FROM order_items
+        WHERE order_id = #{orderId}
+        ORDER BY item_order
+    </select>
+
+    <select id="findByOrderIdOrderByItemOrder" parameterType="long" resultMap="orderItemResultMap">
+        SELECT <include refid="orderItemColumns"/>
+        FROM order_items
+        WHERE order_id = #{orderId}
+        ORDER BY item_order
+    </select>
+
+    <select id="findByHsCode" parameterType="string" resultMap="orderItemResultMap">
+        SELECT <include refid="orderItemColumns"/>
+        FROM order_items
+        WHERE hs_code = #{hsCode}
+    </select>
+
+    <select id="findByEmsCode" parameterType="string" resultMap="orderItemResultMap">
+        SELECT <include refid="orderItemColumns"/>
+        FROM order_items
+        WHERE ems_code = #{emsCode}
+    </select>
+
+    <select id="findByCategory" parameterType="string" resultMap="orderItemResultMap">
+        SELECT <include refid="orderItemColumns"/>
+        FROM order_items
+        WHERE category = #{category}
+    </select>
+
+    <select id="findByRestricted" parameterType="boolean" resultMap="orderItemResultMap">
+        SELECT <include refid="orderItemColumns"/>
+        FROM order_items
+        WHERE restricted = #{restricted}
+    </select>
+
+    <select id="findByOrderIdAndTotalAmountGreaterThan" resultMap="orderItemResultMap">
+        SELECT <include refid="orderItemColumns"/>
+        FROM order_items
+        WHERE order_id = #{orderId} AND total_amount > #{threshold}
+        ORDER BY total_amount DESC
+    </select>
+
+    <select id="findByOrderIdWithMissingHsCode" parameterType="long" resultMap="orderItemResultMap">
+        SELECT <include refid="orderItemColumns"/>
+        FROM order_items
+        WHERE order_id = #{orderId} AND (hs_code IS NULL OR hs_code = '')
+    </select>
+
+    <select id="findByOrderIdWithMissingEmsCode" parameterType="long" resultMap="orderItemResultMap">
+        SELECT <include refid="orderItemColumns"/>
+        FROM order_items
+        WHERE order_id = #{orderId} AND (ems_code IS NULL OR ems_code = '')
+    </select>
+
+    <!-- Aggregate Queries -->
+    <select id="sumTotalAmountByOrderId" parameterType="long" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(total_amount), 0)
+        FROM order_items
+        WHERE order_id = #{orderId}
+    </select>
+
+    <select id="sumTotalWeightByOrderId" parameterType="long" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(unit_weight * quantity), 0)
+        FROM order_items
+        WHERE order_id = #{orderId}
+    </select>
+
+    <select id="countByOrderId" parameterType="long" resultType="long">
+        SELECT COUNT(*)
+        FROM order_items
+        WHERE order_id = #{orderId}
+    </select>
+
+    <!-- Update Operations -->
+    <update id="updateOrderItem" parameterType="com.ycs.lms.entity.OrderItem">
+        UPDATE order_items
+        SET 
+            item_order = #{itemOrder},
+            name = #{name},
+            description = #{description},
+            category = #{category},
+            quantity = #{quantity},
+            unit_weight = #{unitWeight},
+            unit_price = #{unitPrice},
+            total_amount = #{totalAmount},
+            currency = #{currency},
+            hs_code = #{hsCode},
+            ems_code = #{emsCode},
+            country_of_origin = #{countryOfOrigin},
+            brand = #{brand},
+            model = #{model},
+            restricted = #{restricted},
+            restriction_note = #{restrictionNote},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- Delete Operations -->
+    <delete id="deleteById" parameterType="long">
+        DELETE FROM order_items WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteByOrderId" parameterType="long">
+        DELETE FROM order_items WHERE order_id = #{orderId}
+    </delete>
+
+</mapper>

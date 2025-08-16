@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ycs.lms.mapper.OrderMapper">
+
+    <!-- Result Maps -->
+    <resultMap id="orderResultMap" type="com.ycs.lms.entity.Order">
+        <id property="id" column="id"/>
+        <result property="orderCode" column="order_code"/>
+        <result property="userId" column="user_id"/>
+        <result property="status" column="status" typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
+        <result property="orderType" column="order_type" typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
+        <result property="recipientName" column="recipient_name"/>
+        <result property="recipientPhone" column="recipient_phone"/>
+        <result property="recipientAddress" column="recipient_address"/>
+        <result property="recipientZipCode" column="recipient_zip_code"/>
+        <result property="recipientCountry" column="recipient_country"/>
+        <result property="urgency" column="urgency" typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
+        <result property="needsRepacking" column="needs_repacking"/>
+        <result property="specialInstructions" column="special_instructions"/>
+        <result property="totalAmount" column="total_amount"/>
+        <result property="currency" column="currency"/>
+        <result property="totalCbmM3" column="total_cbm_m3"/>
+        <result property="requiresExtraRecipient" column="requires_extra_recipient"/>
+        <result property="estimatedDeliveryDate" column="estimated_delivery_date"/>
+        <result property="actualDeliveryDate" column="actual_delivery_date"/>
+        <result property="paymentMethod" column="payment_method" typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
+        <result property="paymentStatus" column="payment_status" typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
+        <result property="createdBy" column="created_by"/>
+        <result property="assignedWarehouseId" column="assigned_warehouse_id"/>
+        <result property="estimatedCost" column="estimated_cost"/>
+        <result property="actualCost" column="actual_cost"/>
+        <result property="notes" column="notes"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <resultMap id="orderWithDetailsResultMap" type="com.ycs.lms.entity.Order" extends="orderResultMap">
+        <collection property="items" ofType="com.ycs.lms.entity.OrderItem">
+            <id property="id" column="item_id"/>
+            <result property="orderId" column="order_id"/>
+            <result property="itemOrder" column="item_order"/>
+            <result property="name" column="item_name"/>
+            <result property="description" column="item_description"/>
+            <result property="category" column="category"/>
+            <result property="quantity" column="quantity"/>
+            <result property="unitWeight" column="unit_weight"/>
+            <result property="unitPrice" column="unit_price"/>
+            <result property="totalAmount" column="item_total_amount"/>
+            <result property="currency" column="item_currency"/>
+            <result property="hsCode" column="hs_code"/>
+            <result property="emsCode" column="ems_code"/>
+            <result property="countryOfOrigin" column="country_of_origin"/>
+            <result property="brand" column="brand"/>
+            <result property="model" column="model"/>
+            <result property="restricted" column="restricted"/>
+            <result property="restrictionNote" column="restriction_note"/>
+            <result property="createdAt" column="item_created_at"/>
+            <result property="updatedAt" column="item_updated_at"/>
+        </collection>
+        <collection property="boxes" ofType="com.ycs.lms.entity.OrderBox">
+            <id property="id" column="box_id"/>
+            <result property="orderId" column="order_id"/>
+            <result property="boxNumber" column="box_number"/>
+            <result property="labelCode" column="label_code"/>
+            <result property="qrCodeUrl" column="qr_code_url"/>
+            <result property="widthCm" column="width_cm"/>
+            <result property="heightCm" column="height_cm"/>
+            <result property="depthCm" column="depth_cm"/>
+            <result property="cbmM3" column="cbm_m3"/>
+            <result property="weightKg" column="weight_kg"/>
+            <result property="status" column="box_status" typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
+            <result property="warehouseId" column="warehouse_id"/>
+            <result property="warehouseLocation" column="warehouse_location"/>
+            <result property="inboundDate" column="inbound_date"/>
+            <result property="outboundDate" column="outbound_date"/>
+            <result property="trackingNumber" column="tracking_number"/>
+            <result property="carrier" column="carrier"/>
+            <result property="shippedDate" column="shipped_date"/>
+            <result property="notes" column="box_notes"/>
+            <result property="createdAt" column="box_created_at"/>
+            <result property="updatedAt" column="box_updated_at"/>
+        </collection>
+    </resultMap>
+
+    <!-- SQL Fragments -->
+    <sql id="orderColumns">
+        id, order_code, user_id, status, order_type, recipient_name, recipient_phone,
+        recipient_address, recipient_zip_code, recipient_country, urgency, needs_repacking,
+        special_instructions, total_amount, currency, total_cbm_m3, requires_extra_recipient,
+        estimated_delivery_date, actual_delivery_date, payment_method, payment_status,
+        created_by, assigned_warehouse_id, estimated_cost, actual_cost, notes,
+        created_at, updated_at
+    </sql>
+
+    <sql id="whereConditions">
+        <where>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="status != null and status != 'all'">
+                AND status = #{status}
+            </if>
+            <if test="orderType != null and orderType != 'all'">
+                AND order_type = #{orderType}
+            </if>
+            <if test="startDate != null">
+                AND created_at >= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND created_at <= #{endDate}
+            </if>
+        </where>
+    </sql>
+
+    <!-- Insert Operations -->
+    <insert id="insertOrder" parameterType="com.ycs.lms.entity.Order" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO orders (
+            order_code, user_id, status, order_type, recipient_name, recipient_phone,
+            recipient_address, recipient_zip_code, recipient_country, urgency, needs_repacking,
+            special_instructions, total_amount, currency, requires_extra_recipient,
+            payment_method, payment_status, created_by, assigned_warehouse_id,
+            estimated_cost, actual_cost, notes, created_at, updated_at
+        ) VALUES (
+            #{orderCode}, #{userId}, #{status}, #{orderType}, #{recipientName}, #{recipientPhone},
+            #{recipientAddress}, #{recipientZipCode}, #{recipientCountry}, #{urgency}, #{needsRepacking},
+            #{specialInstructions}, #{totalAmount}, #{currency}, #{requiresExtraRecipient},
+            #{paymentMethod}, #{paymentStatus}, #{createdBy}, #{assignedWarehouseId},
+            #{estimatedCost}, #{actualCost}, #{notes}, 
+            COALESCE(#{createdAt}, NOW()), COALESCE(#{updatedAt}, NOW())
+        )
+    </insert>
+
+    <!-- Select Operations -->
+    <select id="findOrderById" parameterType="long" resultMap="orderResultMap">
+        SELECT <include refid="orderColumns"/>
+        FROM orders 
+        WHERE id = #{orderId}
+    </select>
+
+    <select id="findOrderByIdWithDetails" parameterType="long" resultMap="orderWithDetailsResultMap">
+        SELECT 
+            o.id, o.order_code, o.user_id, o.status, o.order_type, o.recipient_name, o.recipient_phone,
+            o.recipient_address, o.recipient_zip_code, o.recipient_country, o.urgency, o.needs_repacking,
+            o.special_instructions, o.total_amount, o.currency, o.total_cbm_m3, o.requires_extra_recipient,
+            o.estimated_delivery_date, o.actual_delivery_date, o.payment_method, o.payment_status,
+            o.created_by, o.assigned_warehouse_id, o.estimated_cost, o.actual_cost, o.notes,
+            o.created_at, o.updated_at,
+            
+            oi.id as item_id, oi.item_order, oi.name as item_name, oi.description as item_description,
+            oi.category, oi.quantity, oi.unit_weight, oi.unit_price, oi.total_amount as item_total_amount,
+            oi.currency as item_currency, oi.hs_code, oi.ems_code, oi.country_of_origin, oi.brand, oi.model,
+            oi.restricted, oi.restriction_note, oi.created_at as item_created_at, oi.updated_at as item_updated_at,
+            
+            ob.id as box_id, ob.box_number, ob.label_code, ob.qr_code_url,
+            ob.width_cm, ob.height_cm, ob.depth_cm, ob.cbm_m3, ob.weight_kg,
+            ob.status as box_status, ob.warehouse_id, ob.warehouse_location,
+            ob.inbound_date, ob.outbound_date, ob.tracking_number, ob.carrier, ob.shipped_date,
+            ob.notes as box_notes, ob.created_at as box_created_at, ob.updated_at as box_updated_at
+            
+        FROM orders o
+        LEFT JOIN order_items oi ON o.id = oi.order_id
+        LEFT JOIN order_boxes ob ON o.id = ob.order_id
+        WHERE o.id = #{orderId}
+        ORDER BY oi.item_order, ob.box_number
+    </select>
+
+    <select id="findOrders" resultMap="orderResultMap">
+        SELECT <include refid="orderColumns"/>
+        FROM orders
+        <include refid="whereConditions"/>
+        ORDER BY created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countOrders" resultType="long">
+        SELECT COUNT(*)
+        FROM orders
+        <include refid="whereConditions"/>
+    </select>
+
+    <select id="findByUserId" resultMap="orderResultMap">
+        SELECT <include refid="orderColumns"/>
+        FROM orders 
+        WHERE user_id = #{userId}
+        ORDER BY created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="findByUserIdAndStatus" resultMap="orderResultMap">
+        SELECT <include refid="orderColumns"/>
+        FROM orders 
+        WHERE user_id = #{userId} AND status = #{status}
+        ORDER BY created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="findByStatus" resultMap="orderResultMap">
+        SELECT <include refid="orderColumns"/>
+        FROM orders 
+        WHERE status = #{status}
+        ORDER BY created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countByUserId" parameterType="long" resultType="long">
+        SELECT COUNT(*) 
+        FROM orders 
+        WHERE user_id = #{userId}
+    </select>
+
+    <select id="countByUserIdAndStatus" resultType="long">
+        SELECT COUNT(*) 
+        FROM orders 
+        WHERE user_id = #{userId} AND status = #{status}
+    </select>
+
+    <!-- Business Logic Queries -->
+    <select id="getTotalCbmByOrderId" parameterType="long" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(cbm_m3), 0) 
+        FROM order_boxes 
+        WHERE order_id = #{orderId}
+    </select>
+
+    <select id="getTotalAmountByOrderId" parameterType="long" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(total_amount), 0) 
+        FROM order_items 
+        WHERE order_id = #{orderId}
+    </select>
+
+    <select id="hasMemberCodeIssue" parameterType="long" resultType="boolean">
+        SELECT COUNT(*) > 0 
+        FROM users 
+        WHERE id = #{userId} AND (member_code IS NULL OR member_code = '')
+    </select>
+
+    <select id="generateOrderCode" resultType="string">
+        SELECT CONCAT('YCS-', YEAR(NOW()), '-', LPAD(COALESCE(MAX(CAST(SUBSTRING(order_code, 10) AS UNSIGNED)), 0) + 1, 5, '0'))
+        FROM orders 
+        WHERE order_code LIKE CONCAT('YCS-', YEAR(NOW()), '-%')
+    </select>
+    
+    <select id="getNextOrderSequence" resultType="int">
+        SELECT COALESCE(COUNT(*), 0) + 1 
+        FROM orders 
+        WHERE YEAR(created_at) = YEAR(NOW())
+    </select>
+
+    <select id="sumTotalAmountByUserIdAndCompleted" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(total_amount), 0) 
+        FROM orders 
+        WHERE user_id = #{userId} AND status IN ('DELIVERED', 'COMPLETED')
+    </select>
+
+    <select id="findByUserIdOrderByCreatedAtDesc" resultMap="orderResultMap">
+        SELECT <include refid="orderColumns"/>
+        FROM orders 
+        WHERE user_id = #{userId}
+        ORDER BY created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- Update Operations -->
+    <update id="updateOrder" parameterType="com.ycs.lms.entity.Order">
+        UPDATE orders 
+        SET 
+            status = #{status},
+            order_type = #{orderType},
+            recipient_name = #{recipientName},
+            recipient_phone = #{recipientPhone},
+            recipient_address = #{recipientAddress},
+            recipient_zip_code = #{recipientZipCode},
+            recipient_country = #{recipientCountry},
+            urgency = #{urgency},
+            needs_repacking = #{needsRepacking},
+            special_instructions = #{specialInstructions},
+            total_amount = #{totalAmount},
+            total_cbm_m3 = #{totalCbmM3},
+            requires_extra_recipient = #{requiresExtraRecipient},
+            estimated_delivery_date = #{estimatedDeliveryDate},
+            actual_delivery_date = #{actualDeliveryDate},
+            payment_method = #{paymentMethod},
+            payment_status = #{paymentStatus},
+            assigned_warehouse_id = #{assignedWarehouseId},
+            estimated_cost = #{estimatedCost},
+            actual_cost = #{actualCost},
+            notes = #{notes},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="cancelOrder" parameterType="long">
+        UPDATE orders 
+        SET 
+            status = 'CANCELLED', 
+            updated_at = NOW() 
+        WHERE id = #{orderId}
+    </update>
+
+    <!-- Delete Operations -->
+    <delete id="deleteById" parameterType="long">
+        DELETE FROM orders WHERE id = #{id}
+    </delete>
+
+</mapper>

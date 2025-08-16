@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+
+<configuration>
+    <!-- MyBatis 설정 파일 for YCS LMS -->
+    
+    <!-- Global settings -->
+    <settings>
+        <!-- 카멜케이스 변환 활성화 -->
+        <setting name="mapUnderscoreToCamelCase" value="true"/>
+        
+        <!-- 캐시 활성화 -->
+        <setting name="cacheEnabled" value="true"/>
+        
+        <!-- 지연 로딩 활성화 -->
+        <setting name="lazyLoadingEnabled" value="true"/>
+        <setting name="aggressiveLazyLoading" value="false"/>
+        
+        <!-- 다중 결과셋 지원 -->
+        <setting name="multipleResultSetsEnabled" value="true"/>
+        
+        <!-- 컬럼 라벨 사용 -->
+        <setting name="useColumnLabel" value="true"/>
+        
+        <!-- 자동 생성 키 사용 -->
+        <setting name="useGeneratedKeys" value="true"/>
+        
+        <!-- 기본 실행자 타입 -->
+        <setting name="defaultExecutorType" value="REUSE"/>
+        
+        <!-- 기본 쿼리 타임아웃 (25초) -->
+        <setting name="defaultStatementTimeout" value="25000"/>
+        
+        <!-- 자동 매핑 동작 -->
+        <setting name="autoMappingBehavior" value="PARTIAL"/>
+        
+        <!-- 알 수 없는 컬럼 매핑 시 경고 -->
+        <setting name="autoMappingUnknownColumnBehavior" value="WARNING"/>
+        
+        <!-- null 값에 대해서도 setter 호출 -->
+        <setting name="callSettersOnNulls" value="true"/>
+        
+        <!-- 빈 행에 대해 인스턴스 반환 안함 -->
+        <setting name="returnInstanceForEmptyRow" value="false"/>
+        
+        <!-- SQL 공백 제거 -->
+        <setting name="shrinkWhitespacesInSql" value="true"/>
+        
+        <!-- 로그 구현체 설정 -->
+        <setting name="logImpl" value="SLF4J"/>
+    </settings>
+
+    <!-- Type aliases for entities -->
+    <typeAliases>
+        <!-- User 관련 -->
+        <typeAlias alias="User" type="com.ycs.lms.entity.User"/>
+        <typeAlias alias="EnterpriseProfile" type="com.ycs.lms.entity.EnterpriseProfile"/>
+        <typeAlias alias="PartnerProfile" type="com.ycs.lms.entity.PartnerProfile"/>
+        <typeAlias alias="WarehouseProfile" type="com.ycs.lms.entity.WarehouseProfile"/>
+        
+        <!-- Order 관련 -->
+        <typeAlias alias="Order" type="com.ycs.lms.entity.Order"/>
+        <typeAlias alias="OrderItem" type="com.ycs.lms.entity.OrderItem"/>
+        <typeAlias alias="OrderBox" type="com.ycs.lms.entity.OrderBox"/>
+        
+        <!-- 기타 엔티티 -->
+        <typeAlias alias="Address" type="com.ycs.lms.entity.Address"/>
+        <typeAlias alias="Warehouse" type="com.ycs.lms.entity.Warehouse"/>
+        <typeAlias alias="Inventory" type="com.ycs.lms.entity.Inventory"/>
+        <typeAlias alias="ScanEvent" type="com.ycs.lms.entity.ScanEvent"/>
+        <typeAlias alias="ShipmentTracking" type="com.ycs.lms.entity.ShipmentTracking"/>
+        <typeAlias alias="Payment" type="com.ycs.lms.entity.Payment"/>
+        <typeAlias alias="Estimate" type="com.ycs.lms.entity.Estimate"/>
+        <typeAlias alias="PartnerReferral" type="com.ycs.lms.entity.PartnerReferral"/>
+        <typeAlias alias="Config" type="com.ycs.lms.entity.Config"/>
+        <typeAlias alias="AuditLog" type="com.ycs.lms.entity.AuditLog"/>
+        <typeAlias alias="RepackPhoto" type="com.ycs.lms.entity.RepackPhoto"/>
+        
+        <!-- DTO 클래스들 -->
+        <typeAlias alias="EstimateResponse" type="com.ycs.lms.dto.EstimateResponse"/>
+        <typeAlias alias="OrderResponse" type="com.ycs.lms.dto.OrderResponse"/>
+        <typeAlias alias="ScanResponse" type="com.ycs.lms.dto.ScanResponse"/>
+        <typeAlias alias="InventoryResponse" type="com.ycs.lms.dto.InventoryResponse"/>
+        <typeAlias alias="BoxResponse" type="com.ycs.lms.dto.BoxResponse"/>
+        <typeAlias alias="LabelResponse" type="com.ycs.lms.dto.LabelResponse"/>
+        <typeAlias alias="PageResponse" type="com.ycs.lms.dto.PageResponse"/>
+    </typeAliases>
+
+    <!-- Type handlers for special types -->
+    <typeHandlers>
+        <!-- BigDecimal 처리 -->
+        <typeHandler handler="org.apache.ibatis.type.BigDecimalTypeHandler"/>
+        
+        <!-- LocalDateTime 처리 -->
+        <typeHandler handler="org.apache.ibatis.type.LocalDateTimeTypeHandler"/>
+        
+        <!-- Enum 처리 -->
+        <typeHandler handler="org.apache.ibatis.type.EnumTypeHandler"/>
+    </typeHandlers>
+
+    <!-- Object factory -->
+    <objectFactory type="org.apache.ibatis.reflection.factory.DefaultObjectFactory">
+        <property name="objectWrapperFactory" value="org.apache.ibatis.reflection.wrapper.DefaultObjectWrapperFactory"/>
+    </objectFactory>
+
+    <!-- Plugins for interceptors -->
+    <plugins>
+        <!-- 페이징 플러그인 (필요시 추가) -->
+        <!-- <plugin interceptor="com.github.pagehelper.PageInterceptor">
+            <property name="helperDialect" value="mysql"/>
+        </plugin> -->
+    </plugins>
+
+    <!-- Environments (Spring Boot에서 관리하므로 비워둠) -->
+    <environments default="development">
+        <environment id="development">
+            <transactionManager type="JDBC"/>
+            <dataSource type="POOLED">
+                <!-- Spring Boot에서 DataSource 관리 -->
+            </dataSource>
+        </environment>
+    </environments>
+
+    <!-- Mappers (Spring Boot가 자동으로 스캔) -->
+    <mappers>
+        <!-- Mapper XML 파일들 -->
+        <mapper resource="mapper/UserMapper.xml"/>
+        <mapper resource="mapper/ProfileMapper.xml"/>
+        <mapper resource="mapper/OrderMapper.xml"/>
+        <mapper resource="mapper/OrderItemMapper.xml"/>
+        <mapper resource="mapper/OrderBoxMapper.xml"/>
+        <mapper resource="mapper/WarehouseMapper.xml"/>
+        <mapper resource="mapper/InventoryMapper.xml"/>
+        <mapper resource="mapper/ScanEventMapper.xml"/>
+        <mapper resource="mapper/ShipmentTrackingMapper.xml"/>
+        <mapper resource="mapper/PaymentMapper.xml"/>
+        <mapper resource="mapper/EstimateMapper.xml"/>
+        <mapper resource="mapper/PartnerReferralMapper.xml"/>
+        <mapper resource="mapper/ConfigMapper.xml"/>
+        <mapper resource="mapper/AuditLogMapper.xml"/>
+    </mappers>
+
+</configuration>

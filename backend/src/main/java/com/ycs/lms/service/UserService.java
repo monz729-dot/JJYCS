@@ -6,7 +6,7 @@ import com.ycs.lms.dto.SignupRequest;
 import com.ycs.lms.entity.User;
 import com.ycs.lms.exception.BadRequestException;
 import com.ycs.lms.exception.NotFoundException;
-import com.ycs.lms.repository.UserRepository;
+import com.ycs.lms.mapper.UserMapper;
 import com.ycs.lms.security.JwtTokenProvider;
 import com.ycs.lms.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +29,7 @@ import java.util.UUID;
 @Transactional
 public class UserService {
 
-    private final UserRepository userRepository;
+    private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
     private final EmailService emailService;
@@ -41,12 +41,12 @@ public class UserService {
         log.info("Creating user with email: {}", request.getEmail());
 
         // 이메일 중복 검사
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (userMapper.existsByEmail(request.getEmail())) {
             throw new BadRequestException("이미 사용 중인 이메일입니다: " + request.getEmail());
         }
 
         // 회원 코드 중복 검사 (있는 경우)
-        if (request.getMemberCode() != null && userRepository.existsByMemberCode(request.getMemberCode())) {
+        if (request.getMemberCode() != null && userMapper.existsByMemberCode(request.getMemberCode())) {
             throw new BadRequestException("이미 사용 중인 회원 코드입니다: " + request.getMemberCode());
         }
 
@@ -67,7 +67,7 @@ public class UserService {
             .agreeMarketing(request.isAgreeMarketing())
             .build();
 
-        user = userRepository.save(user);
+        user = userMapper.save(user);
 
         // 이메일 인증 발송
         sendVerificationEmail(user);
@@ -94,7 +94,7 @@ public class UserService {
     public AuthResponse login(LoginRequest request) {
         log.info("Login attempt for email: {}", request.getEmail());
 
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userMapper.findByEmail(request.getEmail())
             .orElseThrow(() -> {
                 log.warn("User not found for email: {}", request.getEmail());
                 return new BadRequestException("잘못된 이메일 또는 비밀번호입니다");
@@ -132,7 +132,7 @@ public class UserService {
         user.setLoginAttempts(0);
         user.setLastLoginAt(LocalDateTime.now());
         user.setLockedUntil(null);
-        userRepository.save(user);
+        userMapper.save(user);
 
         // JWT 토큰 생성
         UserPrincipal userPrincipal = UserPrincipal.create(user);
@@ -158,7 +158,7 @@ public class UserService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
 
-        return userRepository.findByEmail(email)
+        return userMapper.findByEmail(email)
             .orElseThrow(() -> new NotFoundException("사용자를 찾을 수 없습니다"));
     }
 
@@ -167,7 +167,7 @@ public class UserService {
      */
     @Transactional(readOnly = true)
     public User getUserById(Long userId) {
-        return userRepository.findById(userId)
+        return userMapper.findById(userId)
             .orElseThrow(() -> new NotFoundException("사용자를 찾을 수 없습니다: " + userId));
     }
 
@@ -180,13 +180,13 @@ public class UserService {
         if (updateRequest.getName() != null) user.setName(updateRequest.getName());
         if (updateRequest.getPhone() != null) user.setPhone(updateRequest.getPhone());
         if (updateRequest.getMemberCode() != null && !updateRequest.getMemberCode().equals(user.getMemberCode())) {
-            if (userRepository.existsByMemberCode(updateRequest.getMemberCode())) {
+            if (userMapper.existsByMemberCode(updateRequest.getMemberCode())) {
                 throw new BadRequestException("이미 사용 중인 회원 코드입니다");
             }
             user.setMemberCode(updateRequest.getMemberCode());
         }
 
-        return userRepository.save(user);
+        return userMapper.save(user);
     }
 
     /**
@@ -200,14 +200,14 @@ public class UserService {
         }
 
         if (memberCode != null && !memberCode.trim().isEmpty()) {
-            if (userRepository.existsByMemberCode(memberCode)) {
+            if (userMapper.existsByMemberCode(memberCode)) {
                 throw new BadRequestException("이미 사용 중인 회원 코드입니다");
             }
             user.setMemberCode(memberCode);
         }
 
         user.setStatus(User.UserStatus.ACTIVE);
-        userRepository.save(user);
+        userMapper.save(user);
 
         // 승인 완료 이메일 발송
         sendApprovalEmail(user);
@@ -226,7 +226,7 @@ public class UserService {
         }
 
         user.setStatus(User.UserStatus.ACTIVE);
-        user = userRepository.save(user);
+        user = userMapper.save(user);
 
         // 승인 완료 이메일 발송
         sendApprovalEmail(user);
@@ -242,7 +242,7 @@ public class UserService {
 
         User user = getUserById(userId);
         user.setStatus(User.UserStatus.INACTIVE);
-        user = userRepository.save(user);
+        user = userMapper.save(user);
 
         // 거부 이메일 발송
         sendRejectionEmail(user, reason);
@@ -255,7 +255,7 @@ public class UserService {
      */
     @Transactional(readOnly = true)
     public List<User> getPendingUsers() {
-        return userRepository.findByStatus(User.UserStatus.PENDING_APPROVAL.toString());
+        return userMapper.findByStatus(User.UserStatus.PENDING_APPROVAL.toString());
     }
 
     /**
@@ -264,26 +264,26 @@ public class UserService {
     public User verifyEmail(String token) {
         log.info("Verifying email with token: {}", token);
 
-        User user = userRepository.findByEmailVerificationToken(token)
+        User user = userMapper.findByEmailVerificationToken(token)
             .orElseThrow(() -> new BadRequestException("잘못된 인증 토큰입니다"));
 
         user.setEmailVerified(true);
         user.setEmailVerificationToken(null);
 
-        return userRepository.save(user);
+        return userMapper.save(user);
     }
 
     /**
      * 비밀번호 재설정 요청
      */
     public void requestPasswordReset(String email) {
-        User user = userRepository.findByEmail(email).orElse(null);
+        User user = userMapper.findByEmail(email).orElse(null);
         
         if (user != null) {
             String resetToken = UUID.randomUUID().toString();
             user.setPasswordResetToken(resetToken);
             user.setPasswordResetExpiresAt(LocalDateTime.now().plusHours(24));
-            userRepository.save(user);
+            userMapper.save(user);
 
             // 비밀번호 재설정 이메일 발송
             sendPasswordResetEmail(user, resetToken);
@@ -297,7 +297,7 @@ public class UserService {
      * 비밀번호 재설정
      */
     public User resetPassword(String token, String newPassword) {
-        User user = userRepository.findByPasswordResetToken(token)
+        User user = userMapper.findByPasswordResetToken(token)
             .orElseThrow(() -> new BadRequestException("잘못된 재설정 토큰입니다"));
 
         if (user.getPasswordResetExpiresAt().isBefore(LocalDateTime.now())) {
@@ -308,7 +308,7 @@ public class UserService {
         user.setPasswordResetToken(null);
         user.setPasswordResetExpiresAt(null);
 
-        return userRepository.save(user);
+        return userMapper.save(user);
     }
 
     /**
@@ -326,7 +326,7 @@ public class UserService {
         Long userId = tokenProvider.getUserIdFromToken(refreshToken);
         
         // 사용자 조회
-        User user = userRepository.findById(userId)
+        User user = userMapper.findById(userId)
             .orElseThrow(() -> new NotFoundException("사용자를 찾을 수 없습니다"));
         
         // 계정 상태 확인
@@ -373,7 +373,7 @@ public class UserService {
         
         // 사용자 2FA 시크릿 저장 (실제 활성화는 verify2FA에서)
         currentUser.setTwoFactorSecret(secret);
-        userRepository.save(currentUser);
+        userMapper.save(currentUser);
         
         return java.util.Map.of(
             "qrCodeUrl", qrCodeUrl,
@@ -397,7 +397,7 @@ public class UserService {
         
         if (isValid) {
             currentUser.setTwoFactorEnabled(true);
-            userRepository.save(currentUser);
+            userMapper.save(currentUser);
         }
         
         return isValid;
@@ -420,7 +420,7 @@ public class UserService {
         
         currentUser.setTwoFactorEnabled(false);
         currentUser.setTwoFactorSecret(null);
-        userRepository.save(currentUser);
+        userMapper.save(currentUser);
     }
 
     // Private helper methods for 2FA
@@ -472,7 +472,7 @@ public class UserService {
             log.warn("User account locked due to multiple failed login attempts: {}", user.getEmail());
         }
         
-        userRepository.save(user);
+        userMapper.save(user);
     }
 
     private void sendVerificationEmail(User user) {

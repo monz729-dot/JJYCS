@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ycs.lms.mapper.ProfileMapper">
+
+    <!-- Enterprise Profile Result Map -->
+    <resultMap id="enterpriseProfileResultMap" type="com.ycs.lms.entity.EnterpriseProfile">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="companyName" column="company_name"/>
+        <result property="businessNumber" column="business_number"/>
+        <result property="companyAddress" column="company_address"/>
+        <result property="ceoName" column="ceo_name"/>
+        <result property="businessType" column="business_type"/>
+        <result property="employeeCount" column="employee_count"/>
+        <result property="annualRevenue" column="annual_revenue"/>
+        <result property="businessRegistrationFile" column="business_registration_file"/>
+        <result property="taxCertificateFile" column="tax_certificate_file"/>
+        <result property="approvalNote" column="approval_note"/>
+        <result property="approvedBy" column="approved_by"/>
+        <result property="approvedAt" column="approved_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <!-- Partner Profile Result Map -->
+    <resultMap id="partnerProfileResultMap" type="com.ycs.lms.entity.PartnerProfile">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="partnerType" column="partner_type"/>
+        <result property="referralCode" column="referral_code"/>
+        <result property="bankName" column="bank_name"/>
+        <result property="accountNumber" column="account_number"/>
+        <result property="accountHolder" column="account_holder"/>
+        <result property="commissionRate" column="commission_rate"/>
+        <result property="totalReferrals" column="total_referrals"/>
+        <result property="totalCommission" column="total_commission"/>
+        <result property="pendingCommission" column="pending_commission"/>
+        <result property="lastSettlementAt" column="last_settlement_at"/>
+        <result property="approvalNote" column="approval_note"/>
+        <result property="approvedBy" column="approved_by"/>
+        <result property="approvedAt" column="approved_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <!-- Warehouse Profile Result Map -->
+    <resultMap id="warehouseProfileResultMap" type="com.ycs.lms.entity.WarehouseProfile">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="warehouseName" column="warehouse_name"/>
+        <result property="warehouseAddress" column="warehouse_address"/>
+        <result property="capacityDescription" column="capacity_description"/>
+        <result property="operatingHours" column="operating_hours"/>
+        <result property="contactPerson" column="contact_person"/>
+        <result property="contactPhone" column="contact_phone"/>
+        <result property="facilities" column="facilities"/>
+        <result property="approvalNote" column="approval_note"/>
+        <result property="approvedBy" column="approved_by"/>
+        <result property="approvedAt" column="approved_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <!-- ========================================= -->
+    <!-- ENTERPRISE PROFILE OPERATIONS -->
+    <!-- ========================================= -->
+
+    <!-- Enterprise Profile Insert -->
+    <insert id="insertEnterpriseProfile" parameterType="com.ycs.lms.entity.EnterpriseProfile" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO enterprise_profiles (
+            user_id, company_name, business_number, company_address, ceo_name, business_type,
+            employee_count, annual_revenue, business_registration_file, tax_certificate_file,
+            approval_note, approved_by, approved_at, created_at, updated_at
+        ) VALUES (
+            #{userId}, #{companyName}, #{businessNumber}, #{companyAddress}, #{ceoName}, #{businessType},
+            #{employeeCount}, #{annualRevenue}, #{businessRegistrationFile}, #{taxCertificateFile},
+            #{approvalNote}, #{approvedBy}, #{approvedAt},
+            COALESCE(#{createdAt}, NOW()), COALESCE(#{updatedAt}, NOW())
+        )
+    </insert>
+
+    <!-- Enterprise Profile Select -->
+    <select id="findEnterpriseProfileByUserId" parameterType="long" resultMap="enterpriseProfileResultMap">
+        SELECT 
+            id, user_id, company_name, business_number, company_address, ceo_name, business_type,
+            employee_count, annual_revenue, business_registration_file, tax_certificate_file,
+            approval_note, approved_by, approved_at, created_at, updated_at
+        FROM enterprise_profiles
+        WHERE user_id = #{userId}
+    </select>
+
+    <select id="findEnterpriseProfileById" parameterType="long" resultMap="enterpriseProfileResultMap">
+        SELECT 
+            id, user_id, company_name, business_number, company_address, ceo_name, business_type,
+            employee_count, annual_revenue, business_registration_file, tax_certificate_file,
+            approval_note, approved_by, approved_at, created_at, updated_at
+        FROM enterprise_profiles
+        WHERE id = #{id}
+    </select>
+
+    <!-- Enterprise Profile Update -->
+    <update id="updateEnterpriseProfile" parameterType="com.ycs.lms.entity.EnterpriseProfile">
+        UPDATE enterprise_profiles
+        SET 
+            company_name = #{companyName},
+            business_number = #{businessNumber},
+            company_address = #{companyAddress},
+            ceo_name = #{ceoName},
+            business_type = #{businessType},
+            employee_count = #{employeeCount},
+            annual_revenue = #{annualRevenue},
+            business_registration_file = #{businessRegistrationFile},
+            tax_certificate_file = #{taxCertificateFile},
+            approval_note = #{approvalNote},
+            approved_by = #{approvedBy},
+            approved_at = #{approvedAt},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- ========================================= -->
+    <!-- PARTNER PROFILE OPERATIONS -->
+    <!-- ========================================= -->
+
+    <!-- Partner Profile Insert -->
+    <insert id="insertPartnerProfile" parameterType="com.ycs.lms.entity.PartnerProfile" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO partner_profiles (
+            user_id, partner_type, referral_code, bank_name, account_number, account_holder,
+            commission_rate, total_referrals, total_commission, pending_commission,
+            last_settlement_at, approval_note, approved_by, approved_at, created_at, updated_at
+        ) VALUES (
+            #{userId}, #{partnerType}, #{referralCode}, #{bankName}, #{accountNumber}, #{accountHolder},
+            #{commissionRate}, #{totalReferrals}, #{totalCommission}, #{pendingCommission},
+            #{lastSettlementAt}, #{approvalNote}, #{approvedBy}, #{approvedAt},
+            COALESCE(#{createdAt}, NOW()), COALESCE(#{updatedAt}, NOW())
+        )
+    </insert>
+
+    <!-- Partner Profile Select -->
+    <select id="findPartnerProfileByUserId" parameterType="long" resultMap="partnerProfileResultMap">
+        SELECT 
+            id, user_id, partner_type, referral_code, bank_name, account_number, account_holder,
+            commission_rate, total_referrals, total_commission, pending_commission,
+            last_settlement_at, approval_note, approved_by, approved_at, created_at, updated_at
+        FROM partner_profiles
+        WHERE user_id = #{userId}
+    </select>
+
+    <select id="findPartnerProfileById" parameterType="long" resultMap="partnerProfileResultMap">
+        SELECT 
+            id, user_id, partner_type, referral_code, bank_name, account_number, account_holder,
+            commission_rate, total_referrals, total_commission, pending_commission,
+            last_settlement_at, approval_note, approved_by, approved_at, created_at, updated_at
+        FROM partner_profiles
+        WHERE id = #{id}
+    </select>
+
+    <select id="findPartnerProfileByReferralCode" parameterType="string" resultMap="partnerProfileResultMap">
+        SELECT 
+            id, user_id, partner_type, referral_code, bank_name, account_number, account_holder,
+            commission_rate, total_referrals, total_commission, pending_commission,
+            last_settlement_at, approval_note, approved_by, approved_at, created_at, updated_at
+        FROM partner_profiles
+        WHERE referral_code = #{referralCode}
+    </select>
+
+    <!-- Partner Profile Update -->
+    <update id="updatePartnerProfile" parameterType="com.ycs.lms.entity.PartnerProfile">
+        UPDATE partner_profiles
+        SET 
+            partner_type = #{partnerType},
+            referral_code = #{referralCode},
+            bank_name = #{bankName},
+            account_number = #{accountNumber},
+            account_holder = #{accountHolder},
+            commission_rate = #{commissionRate},
+            total_referrals = #{totalReferrals},
+            total_commission = #{totalCommission},
+            pending_commission = #{pendingCommission},
+            last_settlement_at = #{lastSettlementAt},
+            approval_note = #{approvalNote},
+            approved_by = #{approvedBy},
+            approved_at = #{approvedAt},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- ========================================= -->
+    <!-- WAREHOUSE PROFILE OPERATIONS -->
+    <!-- ========================================= -->
+
+    <!-- Warehouse Profile Insert -->
+    <insert id="insertWarehouseProfile" parameterType="com.ycs.lms.entity.WarehouseProfile" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO warehouse_profiles (
+            user_id, warehouse_name, warehouse_address, capacity_description, operating_hours,
+            contact_person, contact_phone, facilities, approval_note, approved_by, approved_at,
+            created_at, updated_at
+        ) VALUES (
+            #{userId}, #{warehouseName}, #{warehouseAddress}, #{capacityDescription}, #{operatingHours},
+            #{contactPerson}, #{contactPhone}, #{facilities}, #{approvalNote}, #{approvedBy}, #{approvedAt},
+            COALESCE(#{createdAt}, NOW()), COALESCE(#{updatedAt}, NOW())
+        )
+    </insert>
+
+    <!-- Warehouse Profile Select -->
+    <select id="findWarehouseProfileByUserId" parameterType="long" resultMap="warehouseProfileResultMap">
+        SELECT 
+            id, user_id, warehouse_name, warehouse_address, capacity_description, operating_hours,
+            contact_person, contact_phone, facilities, approval_note, approved_by, approved_at,
+            created_at, updated_at
+        FROM warehouse_profiles
+        WHERE user_id = #{userId}
+    </select>
+
+    <select id="findWarehouseProfileById" parameterType="long" resultMap="warehouseProfileResultMap">
+        SELECT 
+            id, user_id, warehouse_name, warehouse_address, capacity_description, operating_hours,
+            contact_person, contact_phone, facilities, approval_note, approved_by, approved_at,
+            created_at, updated_at
+        FROM warehouse_profiles
+        WHERE id = #{id}
+    </select>
+
+    <!-- Warehouse Profile Update -->
+    <update id="updateWarehouseProfile" parameterType="com.ycs.lms.entity.WarehouseProfile">
+        UPDATE warehouse_profiles
+        SET 
+            warehouse_name = #{warehouseName},
+            warehouse_address = #{warehouseAddress},
+            capacity_description = #{capacityDescription},
+            operating_hours = #{operatingHours},
+            contact_person = #{contactPerson},
+            contact_phone = #{contactPhone},
+            facilities = #{facilities},
+            approval_note = #{approvalNote},
+            approved_by = #{approvedBy},
+            approved_at = #{approvedAt},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- ========================================= -->
+    <!-- COMMON OPERATIONS -->
+    <!-- ========================================= -->
+
+    <!-- Delete Operations -->
+    <delete id="deleteEnterpriseProfile" parameterType="long">
+        DELETE FROM enterprise_profiles WHERE id = #{id}
+    </delete>
+
+    <delete id="deletePartnerProfile" parameterType="long">
+        DELETE FROM partner_profiles WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteWarehouseProfile" parameterType="long">
+        DELETE FROM warehouse_profiles WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteEnterpriseProfileByUserId" parameterType="long">
+        DELETE FROM enterprise_profiles WHERE user_id = #{userId}
+    </delete>
+
+    <delete id="deletePartnerProfileByUserId" parameterType="long">
+        DELETE FROM partner_profiles WHERE user_id = #{userId}
+    </delete>
+
+    <delete id="deleteWarehouseProfileByUserId" parameterType="long">
+        DELETE FROM warehouse_profiles WHERE user_id = #{userId}
+    </delete>
+
+</mapper>

@@ -41,6 +41,22 @@ public class PagedResponse<T> {
     }
 
     /**
+     * 직접 페이징 정보로 PagedResponse 생성
+     */
+    public static <T> PagedResponse<T> of(List<T> content, int page, int size, long totalElements) {
+        int totalPages = (int) Math.ceil((double) totalElements / size);
+        return PagedResponse.<T>builder()
+                .content(content)
+                .page(page)
+                .size(size)
+                .totalElements(totalElements)
+                .totalPages(totalPages)
+                .first(page == 0)
+                .last(page >= totalPages - 1)
+                .build();
+    }
+
+    /**
      * 빈 PagedResponse 생성
      */
     public static <T> PagedResponse<T> empty() {

@@ -9,14 +9,12 @@ import com.ycs.lms.entity.OrderItem;
 import com.ycs.lms.entity.User;
 import com.ycs.lms.exception.BadRequestException;
 import com.ycs.lms.exception.NotFoundException;
-import com.ycs.lms.repository.OrderRepository;
-import com.ycs.lms.repository.OrderBoxRepository;
-import com.ycs.lms.repository.OrderItemRepository;
-import com.ycs.lms.repository.UserRepository;
+import com.ycs.lms.mapper.OrderMapper;
+import com.ycs.lms.mapper.OrderBoxMapper;
+import com.ycs.lms.mapper.OrderItemMapper;
+import com.ycs.lms.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,10 +30,10 @@ import java.util.stream.Collectors;
 @Transactional
 public class OrdersService {
 
-    private final OrderRepository orderRepository;
-    private final OrderItemRepository orderItemRepository;
-    private final OrderBoxRepository orderBoxRepository;
-    private final UserRepository userRepository;
+    private final OrderMapper orderMapper;
+    private final OrderItemMapper orderItemMapper;
+    private final OrderBoxMapper orderBoxMapper;
+    private final UserMapper userMapper;
     private final BusinessRuleService businessRuleService;
 
     /**
@@ -45,7 +43,7 @@ public class OrdersService {
         log.info("Creating order for user: {}", request.getUserId());
         
         // 사용자 존재 확인
-        User user = userRepository.findById(request.getUserId())
+        User user = userMapper.findById(request.getUserId())
             .orElseThrow(() -> new NotFoundException("사용자를 찾을 수 없습니다: " + request.getUserId()));
 
         // 주문 생성
@@ -68,7 +66,7 @@ public class OrdersService {
             .build();
 
         // 주문 저장
-        order = orderRepository.save(order);
+        order = orderMapper.save(order);
         final Long savedOrderId = order.getId();
 
         // 주문 아이템 생성
@@ -94,7 +92,7 @@ public class OrdersService {
                     .build())
                 .collect(Collectors.toList());
 
-            orderItemRepository.saveAll(items);
+            orderItemMapper.saveAll(items);
         }
 
         // 주문 박스 생성
@@ -113,14 +111,14 @@ public class OrdersService {
                     .build())
                 .collect(Collectors.toList());
 
-            orderBoxRepository.saveAll(boxes);
+            orderBoxMapper.saveAll(boxes);
         }
 
         // 비즈니스 룰 적용
         applyBusinessRules(savedOrderId);
 
         // 업데이트된 주문 조회 및 반환
-        Order savedOrder = orderRepository.findById(savedOrderId).orElse(order);
+        Order savedOrder = orderMapper.findById(savedOrderId).orElse(order);
         return convertToOrderResponse(savedOrder);
     }
 
@@ -128,10 +126,10 @@ public class OrdersService {
      * 주문 목록 조회 (컨트롤러용 오버로드)
      */
     @Transactional(readOnly = true)
-    public PageResponse<OrderResponse> getOrders(String status, String startDate, String endDate, Pageable pageable) {
+    public PageResponse<OrderResponse> getOrders(String status, String startDate, String endDate, int page, int size) {
         LocalDateTime start = startDate != null ? LocalDateTime.parse(startDate) : null;
         LocalDateTime end = endDate != null ? LocalDateTime.parse(endDate) : null;
-        return getOrders(null, status, null, start, end, pageable);
+        return getOrders(null, status, null, start, end, page, size);
     }
     
     /**
@@ -140,32 +138,35 @@ public class OrdersService {
     @Transactional(readOnly = true)
     public PageResponse<OrderResponse> getOrders(Long userId, String status, String orderType,
                                                 LocalDateTime startDate, LocalDateTime endDate,
-                                                Pageable pageable) {
+                                                int page, int size) {
         log.info("Getting orders for user: {}, status: {}, type: {}", userId, status, orderType);
 
-        Page<Order> orders;
+        List<Order> orders;
+        long totalCount;
 
         if (userId != null) {
             if (status != null) {
-                Order.OrderStatus orderStatus = Order.OrderStatus.valueOf(status.toUpperCase());
-                orders = orderRepository.findByUserIdAndStatus(userId, orderStatus, pageable);
+                orders = orderMapper.findByUserIdAndStatus(userId, status, size, page * size);
+                totalCount = orderMapper.countByUserIdAndStatus(userId, status);
             } else {
-                orders = orderRepository.findByUserId(userId, pageable);
+                orders = orderMapper.findByUserId(userId, size, page * size);
+                totalCount = orderMapper.countByUserId(userId);
             }
         } else {
             if (status != null) {
-                Order.OrderStatus orderStatus = Order.OrderStatus.valueOf(status.toUpperCase());
-                orders = orderRepository.findByStatus(orderStatus, pageable);
+                orders = orderMapper.findByStatus(status, size, page * size);
+                totalCount = orderMapper.countOrders(null, status, null, null, null);
             } else {
-                orders = orderRepository.findAll(pageable);
+                orders = orderMapper.findOrders(null, null, null, null, null, size, page * size);
+                totalCount = orderMapper.countOrders(null, null, null, null, null);
             }
         }
 
-        List<OrderResponse> orderResponses = orders.getContent().stream()
+        List<OrderResponse> orderResponses = orders.stream()
             .map(this::convertToOrderResponse)
             .collect(Collectors.toList());
 
-        return PageResponse.of(orderResponses, orders.getNumber(), orders.getSize(), orders.getTotalElements());
+        return PageResponse.of(orderResponses, page, size, totalCount);
     }
 
     /**
@@ -175,7 +176,7 @@ public class OrdersService {
     public OrderResponse getOrder(Long orderId) {
         log.info("Getting order: {}", orderId);
 
-        Order order = orderRepository.findById(orderId)
+        Order order = orderMapper.findById(orderId)
             .orElseThrow(() -> new NotFoundException("주문을 찾을 수 없습니다: " + orderId));
 
         return convertToOrderResponseOptimized(order);
@@ -188,12 +189,12 @@ public class OrdersService {
     public OrderResponse getOrderOptimized(Long orderId) {
         log.info("Getting order with optimized query: {}", orderId);
 
-        Order order = orderRepository.findById(orderId)
+        Order order = orderMapper.findById(orderId)
             .orElseThrow(() -> new NotFoundException("주문을 찾을 수 없습니다: " + orderId));
 
         // 한 번의 쿼리로 items와 boxes 함께 조회
-        List<OrderItem> items = orderItemRepository.findByOrderIdOrderByItemOrder(orderId);
-        List<OrderBox> boxes = orderBoxRepository.findByOrderIdOrderByBoxNumber(orderId);
+        List<OrderItem> items = orderItemMapper.findByOrderIdOrderByItemOrder(orderId);
+        List<OrderBox> boxes = orderBoxMapper.findByOrderIdOrderByBoxNumber(orderId);
 
         return convertToOrderResponseWithData(order, items, boxes);
     }
@@ -204,12 +205,12 @@ public class OrdersService {
     public OrderResponse updateOrderStatus(Long orderId, String status) {
         log.info("Updating order {} status to: {}", orderId, status);
 
-        Order order = orderRepository.findById(orderId)
+        Order order = orderMapper.findById(orderId)
             .orElseThrow(() -> new NotFoundException("주문을 찾을 수 없습니다: " + orderId));
 
         try {
             order.setStatus(Order.OrderStatus.valueOf(status.toUpperCase()));
-            order = orderRepository.save(order);
+            order = orderMapper.save(order);
 
             return convertToOrderResponse(order);
         } catch (IllegalArgumentException e) {
@@ -223,7 +224,7 @@ public class OrdersService {
     public OrderResponse updateOrder(Long orderId, OrderCreateRequest request) {
         log.info("Updating order: {}", orderId);
         
-        Order order = orderRepository.findById(orderId)
+        Order order = orderMapper.findById(orderId)
             .orElseThrow(() -> new NotFoundException("주문을 찾을 수 없습니다: " + orderId));
         
         // 수정 로직 구현
@@ -235,7 +236,7 @@ public class OrdersService {
         order.setNeedsRepacking(request.isNeedsRepacking());
         order.setUrgency(request.isUrgent() ? Order.OrderUrgency.URGENT : Order.OrderUrgency.NORMAL);
         
-        order = orderRepository.save(order);
+        order = orderMapper.save(order);
         return convertToOrderResponse(order);
     }
     
@@ -252,7 +253,7 @@ public class OrdersService {
     public OrderResponse cancelOrder(Long orderId, String reason) {
         log.info("Cancelling order: {} with reason: {}", orderId, reason);
 
-        Order order = orderRepository.findById(orderId)
+        Order order = orderMapper.findById(orderId)
             .orElseThrow(() -> new NotFoundException("주문을 찾을 수 없습니다: " + orderId));
 
         if (order.getStatus() == Order.OrderStatus.DELIVERED ||
@@ -262,7 +263,7 @@ public class OrdersService {
 
         order.setStatus(Order.OrderStatus.CANCELLED);
         order.setNotes(order.getNotes() + "\n취소 사유: " + reason);
-        order = orderRepository.save(order);
+        order = orderMapper.save(order);
 
         return convertToOrderResponse(order);
     }
@@ -273,11 +274,11 @@ public class OrdersService {
     private void applyBusinessRules(Long orderId) {
         log.info("Applying business rules for order: {}", orderId);
 
-        Order order = orderRepository.findById(orderId).orElse(null);
+        Order order = orderMapper.findById(orderId).orElse(null);
         if (order == null) return;
 
         // CBM 계산 및 29 초과 시 항공 전환
-        BigDecimal totalCbm = orderBoxRepository.sumCbmByOrderId(orderId);
+        BigDecimal totalCbm = orderBoxMapper.sumCbmByOrderId(orderId);
         if (totalCbm != null) {
             order.setTotalCbmM3(totalCbm);
 
@@ -288,7 +289,7 @@ public class OrdersService {
         }
 
         // THB 1,500 초과 시 추가 수취인 정보 필요
-        BigDecimal totalAmount = orderItemRepository.sumTotalAmountByOrderId(orderId);
+        BigDecimal totalAmount = orderItemMapper.sumTotalAmountByOrderId(orderId);
         if (totalAmount != null) {
             order.setTotalAmount(totalAmount);
 
@@ -299,21 +300,21 @@ public class OrdersService {
         }
 
         // 회원 코드 없는 사용자 지연 처리
-        User user = userRepository.findById(order.getUserId()).orElse(null);
+        User user = userMapper.findById(order.getUserId()).orElse(null);
         if (user != null && (user.getMemberCode() == null || user.getMemberCode().trim().isEmpty())) {
             log.warn("Order {} user has no member code, marking for delay", orderId);
             // 상태를 지연으로 설정하거나 특별 플래그 설정
             order.setNotes(order.getNotes() + "\n회원코드 미등록으로 지연 처리됨");
         }
 
-        orderRepository.save(order);
+        orderMapper.save(order);
     }
 
     /**
      * 주문 코드 생성
      */
     private String generateOrderCode() {
-        long count = orderRepository.count();
+        long count = orderMapper.count();
         return String.format("YCS-%d-%05d", LocalDate.now().getYear(), count + 1);
     }
 
@@ -329,8 +330,8 @@ public class OrdersService {
      */
     private OrderResponse convertToOrderResponse(Order order) {
         // 관련 데이터 조회 - N+1 문제 발생
-        List<OrderItem> items = orderItemRepository.findByOrderIdOrderByItemOrder(order.getId());
-        List<OrderBox> boxes = orderBoxRepository.findByOrderIdOrderByBoxNumber(order.getId());
+        List<OrderItem> items = orderItemMapper.findByOrderIdOrderByItemOrder(order.getId());
+        List<OrderBox> boxes = orderBoxMapper.findByOrderIdOrderByBoxNumber(order.getId());
 
         return convertToOrderResponseWithData(order, items, boxes);
     }
@@ -340,8 +341,8 @@ public class OrdersService {
      */
     private OrderResponse convertToOrderResponseOptimized(Order order) {
         // 최적화된 단일 쿼리로 items와 boxes 조회
-        List<OrderItem> items = orderItemRepository.findByOrderIdOrderByItemOrder(order.getId());
-        List<OrderBox> boxes = orderBoxRepository.findByOrderIdOrderByBoxNumber(order.getId());
+        List<OrderItem> items = orderItemMapper.findByOrderIdOrderByItemOrder(order.getId());
+        List<OrderBox> boxes = orderBoxMapper.findByOrderIdOrderByBoxNumber(order.getId());
 
         return convertToOrderResponseWithData(order, items, boxes);
     }
@@ -384,10 +385,10 @@ public class OrdersService {
      */
     @Transactional(readOnly = true)
     public OrderStatsResponse getUserOrderStats(Long userId) {
-        long totalOrders = orderRepository.countByUserId(userId);
-        long pendingOrders = orderRepository.countByUserIdAndStatus(userId, Order.OrderStatus.REQUESTED);
-        long inTransitOrders = orderRepository.countByUserIdAndStatus(userId, Order.OrderStatus.IN_PROGRESS);
-        BigDecimal totalSpent = orderRepository.sumTotalAmountByUserIdAndCompleted(userId);
+        long totalOrders = orderMapper.countByUserId(userId);
+        long pendingOrders = orderMapper.countByUserIdAndStatus(userId, "REQUESTED");
+        long inTransitOrders = orderMapper.countByUserIdAndStatus(userId, "IN_PROGRESS");
+        BigDecimal totalSpent = orderMapper.sumTotalAmountByUserIdAndCompleted(userId);
         if (totalSpent == null) totalSpent = BigDecimal.ZERO;
 
         return OrderStatsResponse.builder()
@@ -403,8 +404,7 @@ public class OrdersService {
      */
     @Transactional(readOnly = true)
     public List<OrderResponse> getRecentOrders(Long userId, int limit) {
-        Pageable pageable = org.springframework.data.domain.PageRequest.of(0, limit);
-        List<Order> orders = orderRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+        List<Order> orders = orderMapper.findByUserIdOrderByCreatedAtDesc(userId, limit, 0);
 
         return orders.stream()
             .map(this::convertToOrderResponse)

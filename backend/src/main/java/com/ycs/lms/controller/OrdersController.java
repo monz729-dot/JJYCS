@@ -11,9 +11,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -140,10 +137,6 @@ public class OrdersController {
                 userPrincipal.getId(), page, size);
         
         try {
-            // 페이징 및 정렬 설정
-            Sort sortObj = Sort.by(Sort.Direction.fromString(direction), sort);
-            Pageable pageable = PageRequest.of(page, size, sortObj);
-            
             // 검색 필터 설정
             OrderSearchFilter filter = OrderSearchFilter.builder()
                     .userId(userPrincipal.getId())
@@ -154,7 +147,7 @@ public class OrdersController {
                     .userRole(userPrincipal.getRole())
                     .build();
             
-            PagedResponse<OrderSummary> orders = orderService.getOrders(filter, pageable);
+            PagedResponse<OrderSummary> orders = orderService.getOrders(filter, page, size);
             return ResponseEntity.ok(ApiResponse.success(orders));
             
         } catch (Exception e) {

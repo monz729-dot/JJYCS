@@ -14,15 +14,15 @@ spring:
       enabled: true
       path: /h2-console
       
-  # JPA Configuration  
-  jpa:
-    hibernate:
-      ddl-auto: create-drop
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-        dialect: org.hibernate.dialect.H2Dialect
+  # JPA Configuration - DISABLED for MyBatis migration
+  # jpa:
+  #   hibernate:
+  #     ddl-auto: create-drop
+  #   show-sql: true
+  #   properties:
+  #     hibernate:
+  #       format_sql: true
+  #       dialect: org.hibernate.dialect.H2Dialect
         
   # Redis Configuration (disabled for dev)
   # data:
@@ -36,11 +36,11 @@ spring:
   #         max-idle: 8
   #         min-idle: 0
           
-  # Data Initialization - 테스트 데이터 로딩 (일시적으로 비활성화)
+  # Data Initialization - 테스트 데이터 로딩 활성화
   sql:
     init:
-      mode: never
-      # data-locations: classpath:data-dev.sql
+      mode: always
+      data-locations: classpath:data-dev.sql
           
   # Mail Configuration (mock for dev)
   mail:
@@ -74,7 +74,7 @@ logging:
 # Application Configuration
 app:
   jwt:
-    secret: ${JWT_SECRET:eWNzTG1zRGV2U2VjcmV0S2V5MjAyNFN1cGVyU2VjdXJlVG9rZW5Gb3JKV1RBVVRI}
+    secret: ${JWT_SECRET:eWNzTG1zRGV2U2VjcmV0S2V5MjAyNFN1cGVyU2VjdXJlVG9rZW5Gb3JKV1RBVVRIZXh0cmFMb25nU2VjcmV0S2V5Rm9yNTEyQml0c0hNQUNTaGE1MTJTdXBwb3J0}
     expiration: 86400000 # 24 hours
     refresh-expiration: 604800000 # 7 days
     
@@ -137,19 +137,20 @@ app:
     email-enabled: false  # 개발 환경에서는 이메일 발송 비활성화
     sms-enabled: false
     
-# MyBatis Configuration - 일시적으로 비활성화
-# mybatis:
-#   mapper-locations: classpath:mappers/*.xml
-#   type-aliases-package: com.ycs.lms.entity
-#   configuration:
-#     map-underscore-to-camel-case: true
-#     cache-enabled: true
-#     lazy-loading-enabled: true
-#     multiple-result-sets-enabled: true
-#     use-column-label: true
-#     use-generated-keys: true
-#     default-executor-type: reuse
-#     default-statement-timeout: 25000
+# MyBatis Configuration - ACTIVATED for JPA migration
+mybatis:
+  mapper-locations: classpath:mappers/*.xml
+  type-aliases-package: com.ycs.lms.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: true
+    lazy-loading-enabled: true
+    multiple-result-sets-enabled: true
+    use-column-label: true
+    use-generated-keys: true
+    default-executor-type: reuse
+    default-statement-timeout: 25000
+  config-location: classpath:mybatis-config.xml
 
 # Management Endpoints
 management:

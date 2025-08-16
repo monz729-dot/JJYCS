@@ -11,9 +11,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -132,8 +129,7 @@ public class WarehouseController {
                         .body(ApiResponse.error("WAREHOUSE_ACCESS_DENIED", "해당 창고에 접근 권한이 없습니다."));
             }
             
-            Sort sortObj = Sort.by(Sort.Direction.fromString(direction), sort);
-            Pageable pageable = PageRequest.of(page, size, sortObj);
+            // 페이징 처리는 Service 레이어에서 직접 처리
             
             InventorySearchFilter filter = InventorySearchFilter.builder()
                     .warehouseId(warehouseId)
@@ -142,7 +138,7 @@ public class WarehouseController {
                     .search(search)
                     .build();
             
-            PagedResponse<InventoryItem> inventory = warehouseService.getInventory(filter, pageable);
+            PagedResponse<InventoryItem> inventory = warehouseService.getInventory(filter, page, size);
             return ResponseEntity.ok(ApiResponse.success(inventory));
             
         } catch (WarehouseNotFoundException e) {
@@ -195,8 +191,7 @@ public class WarehouseController {
         log.info("Getting scan events - warehouseId: {}, boxId: {}", warehouseId, boxId);
         
         try {
-            Pageable pageable = PageRequest.of(page, size, 
-                Sort.by(Sort.Direction.DESC, "scanTimestamp"));
+            // 페이징 처리는 Service 레이어에서 직접 처리
             
             ScanEventSearchFilter filter = ScanEventSearchFilter.builder()
                     .warehouseId(warehouseId)
@@ -207,7 +202,7 @@ public class WarehouseController {
                     .userId(userPrincipal.getRole().equals("ADMIN") ? null : userPrincipal.getId())
                     .build();
             
-            PagedResponse<ScanEvent> events = warehouseService.getScanEvents(filter, pageable);
+            PagedResponse<ScanEvent> events = warehouseService.getScanEvents(filter, page, size);
             return ResponseEntity.ok(ApiResponse.success(events));
             
         } catch (Exception e) {

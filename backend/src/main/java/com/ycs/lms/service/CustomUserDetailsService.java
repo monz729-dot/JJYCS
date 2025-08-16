@@ -1,7 +1,7 @@
 package com.ycs.lms.service;
 
 import com.ycs.lms.entity.User;
-import com.ycs.lms.repository.UserRepository;
+import com.ycs.lms.mapper.UserMapper;
 import com.ycs.lms.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class CustomUserDetailsService implements UserDetailsService {
 
-    private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
     @Override
     public UserDetails loadUserByUsername(String userId) throws UsernameNotFoundException {
@@ -29,7 +29,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         
         try {
             Long id = Long.valueOf(userId);
-            User user = userRepository.findById(id)
+            User user = userMapper.findById(id)
                 .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + userId));
             
             return UserPrincipal.create(user);
@@ -44,7 +44,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByEmail(String email) throws UsernameNotFoundException {
         log.debug("Loading user by email: {}", email);
         
-        User user = userRepository.findByEmail(email)
+        User user = userMapper.findByEmail(email)
             .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + email));
         
         return UserPrincipal.create(user);

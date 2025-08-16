@@ -4,8 +4,6 @@ import com.ycs.lms.dto.warehouse.*;
 import com.ycs.lms.util.PagedResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -71,7 +69,7 @@ public class WarehouseService {
      * 재고 조회
      */
     @Transactional(readOnly = true)
-    public PagedResponse<InventoryItem> getInventory(InventorySearchFilter filter, Pageable pageable) {
+    public PagedResponse<InventoryItem> getInventory(InventorySearchFilter filter, int page, int size) {
         log.info("Getting inventory with filter: {}", filter);
         
         // TODO: 실제 재고 조회 로직 구현
@@ -109,7 +107,7 @@ public class WarehouseService {
      * 스캔 이벤트 조회
      */
     @Transactional(readOnly = true)
-    public PagedResponse<ScanEvent> getScanEvents(ScanEventSearchFilter filter, Pageable pageable) {
+    public PagedResponse<ScanEvent> getScanEvents(ScanEventSearchFilter filter, int page, int size) {
         log.info("Getting scan events with filter: {}", filter);
         
         // TODO: 실제 스캔 이벤트 조회 로직 구현

@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ycs.lms.mapper.UserMapper">
+
+    <!-- Result Maps -->
+    <resultMap id="userResultMap" type="com.ycs.lms.entity.User">
+        <id property="id" column="id"/>
+        <result property="email" column="email"/>
+        <result property="passwordHash" column="password_hash"/>
+        <result property="name" column="name"/>
+        <result property="phone" column="phone"/>
+        <result property="role" column="role" typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
+        <result property="status" column="status" typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
+        <result property="memberCode" column="member_code"/>
+        <result property="emailVerified" column="email_verified"/>
+        <result property="emailVerificationToken" column="email_verification_token"/>
+        <result property="twoFactorEnabled" column="two_factor_enabled"/>
+        <result property="twoFactorSecret" column="two_factor_secret"/>
+        <result property="passwordResetToken" column="password_reset_token"/>
+        <result property="passwordResetExpiresAt" column="password_reset_expires_at"/>
+        <result property="lastLoginAt" column="last_login_at"/>
+        <result property="loginAttempts" column="login_attempts"/>
+        <result property="lockedUntil" column="locked_until"/>
+        <result property="agreeTerms" column="agree_terms"/>
+        <result property="agreePrivacy" column="agree_privacy"/>
+        <result property="agreeMarketing" column="agree_marketing"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <!-- SQL Fragments -->
+    <sql id="userColumns">
+        id, email, password_hash, name, phone, role, status, member_code,
+        email_verified, email_verification_token, two_factor_enabled, two_factor_secret,
+        password_reset_token, password_reset_expires_at, last_login_at, login_attempts,
+        locked_until, agree_terms, agree_privacy, agree_marketing, created_at, updated_at
+    </sql>
+
+    <!-- Insert Operations -->
+    <insert id="insertUser" parameterType="com.ycs.lms.entity.User" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO users (
+            email, password_hash, name, phone, role, status, member_code,
+            email_verified, email_verification_token, two_factor_enabled, two_factor_secret,
+            password_reset_token, password_reset_expires_at, last_login_at, login_attempts,
+            locked_until, agree_terms, agree_privacy, agree_marketing, created_at, updated_at
+        ) VALUES (
+            #{email}, #{passwordHash}, #{name}, #{phone}, #{role}, #{status}, #{memberCode},
+            #{emailVerified}, #{emailVerificationToken}, #{twoFactorEnabled}, #{twoFactorSecret},
+            #{passwordResetToken}, #{passwordResetExpiresAt}, #{lastLoginAt}, #{loginAttempts},
+            #{lockedUntil}, #{agreeTerms}, #{agreePrivacy}, #{agreeMarketing}, 
+            COALESCE(#{createdAt}, NOW()), COALESCE(#{updatedAt}, NOW())
+        )
+    </insert>
+
+    <!-- Select Operations -->
+    <select id="findById" parameterType="long" resultMap="userResultMap">
+        SELECT <include refid="userColumns"/>
+        FROM users 
+        WHERE id = #{id}
+    </select>
+
+    <select id="findByEmail" parameterType="string" resultMap="userResultMap">
+        SELECT <include refid="userColumns"/>
+        FROM users 
+        WHERE email = #{email}
+    </select>
+
+    <select id="findByMemberCode" parameterType="string" resultMap="userResultMap">
+        SELECT <include refid="userColumns"/>
+        FROM users 
+        WHERE member_code = #{memberCode}
+    </select>
+
+    <select id="existsByEmail" parameterType="string" resultType="boolean">
+        SELECT COUNT(*) > 0 
+        FROM users 
+        WHERE email = #{email}
+    </select>
+
+    <select id="existsByMemberCode" parameterType="string" resultType="boolean">
+        SELECT COUNT(*) > 0 
+        FROM users 
+        WHERE member_code = #{memberCode}
+    </select>
+
+    <select id="findByEmailVerificationToken" parameterType="string" resultMap="userResultMap">
+        SELECT <include refid="userColumns"/>
+        FROM users 
+        WHERE email_verification_token = #{token}
+    </select>
+
+    <select id="findByPasswordResetToken" parameterType="string" resultMap="userResultMap">
+        SELECT <include refid="userColumns"/>
+        FROM users 
+        WHERE password_reset_token = #{token}
+    </select>
+
+    <select id="findByStatus" parameterType="string" resultMap="userResultMap">
+        SELECT <include refid="userColumns"/>
+        FROM users 
+        WHERE status = #{status}
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="findPendingApprovals" resultMap="userResultMap">
+        SELECT 
+            u.id, u.email, u.password_hash, u.name, u.phone, u.role, u.status, u.member_code,
+            u.email_verified, u.email_verification_token, u.two_factor_enabled, u.two_factor_secret,
+            u.password_reset_token, u.password_reset_expires_at, u.last_login_at, u.login_attempts,
+            u.locked_until, u.agree_terms, u.agree_privacy, u.agree_marketing, u.created_at, u.updated_at
+        FROM users u
+        WHERE u.status = 'PENDING_APPROVAL'
+        ORDER BY u.created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countPendingApprovals" resultType="long">
+        SELECT COUNT(*) 
+        FROM users 
+        WHERE status = 'PENDING_APPROVAL'
+    </select>
+
+    <!-- Update Operations -->
+    <update id="updateUser" parameterType="com.ycs.lms.entity.User">
+        UPDATE users 
+        SET 
+            email = #{email},
+            name = #{name},
+            phone = #{phone},
+            role = #{role},
+            status = #{status},
+            member_code = #{memberCode},
+            email_verified = #{emailVerified},
+            email_verification_token = #{emailVerificationToken},
+            two_factor_enabled = #{twoFactorEnabled},
+            two_factor_secret = #{twoFactorSecret},
+            password_reset_token = #{passwordResetToken},
+            password_reset_expires_at = #{passwordResetExpiresAt},
+            last_login_at = #{lastLoginAt},
+            login_attempts = #{loginAttempts},
+            locked_until = #{lockedUntil},
+            agree_terms = #{agreeTerms},
+            agree_privacy = #{agreePrivacy},
+            agree_marketing = #{agreeMarketing},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="verifyEmail">
+        UPDATE users 
+        SET 
+            email_verified = #{emailVerified}, 
+            email_verification_token = NULL, 
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="updatePassword">
+        UPDATE users 
+        SET 
+            password_hash = #{passwordHash}, 
+            password_reset_token = NULL, 
+            password_reset_expires_at = NULL, 
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateLastLogin" parameterType="long">
+        UPDATE users 
+        SET 
+            last_login_at = NOW(), 
+            login_attempts = 0, 
+            locked_until = NULL, 
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="incrementLoginAttempts" parameterType="long">
+        UPDATE users 
+        SET 
+            login_attempts = login_attempts + 1,
+            locked_until = CASE 
+                WHEN login_attempts >= 4 THEN TIMESTAMPADD(MINUTE, 30, NOW())
+                ELSE locked_until
+            END,
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="approveUser">
+        UPDATE users 
+        SET 
+            member_code = #{memberCode}, 
+            status = 'ACTIVE', 
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- Delete Operations -->
+    <delete id="deleteById" parameterType="long">
+        DELETE FROM users WHERE id = #{id}
+    </delete>
+
+</mapper>
