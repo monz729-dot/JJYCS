@@ -297,6 +297,11 @@
         WHERE id = #{orderId}
     </update>
 
+    <!-- Count Operations -->
+    <select id="count" resultType="long">
+        SELECT COUNT(*) FROM orders
+    </select>
+
     <!-- Delete Operations -->
     <delete id="deleteById" parameterType="long">
         DELETE FROM orders WHERE id = #{id}

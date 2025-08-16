@@ -1,6 +1,7 @@
 package com.ycs.lms.service;
 
 import com.ycs.lms.dto.warehouse.*;
+import com.ycs.lms.mapper.ScanEventMapper;
 import com.ycs.lms.util.PagedResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,8 @@ import java.util.List;
 @Slf4j
 @Transactional
 public class WarehouseService {
+
+    private final ScanEventMapper scanEventMapper;
 
     /**
      * QR/라벨 스캔 처리
@@ -77,7 +80,7 @@ public class WarehouseService {
         // 2. 페이징 처리
         // 3. 결과 반환
         
-        return PagedResponse.of(List.of(), Page.empty());
+        return PagedResponse.empty();
     }
 
     /**
@@ -108,11 +111,50 @@ public class WarehouseService {
      */
     @Transactional(readOnly = true)
     public PagedResponse<ScanEvent> getScanEvents(ScanEventSearchFilter filter, int page, int size) {
-        log.info("Getting scan events with filter: {}", filter);
+        log.info("Getting scan events with filter: {}, page: {}, size: {}", filter, page, size);
         
-        // TODO: 실제 스캔 이벤트 조회 로직 구현
-        
-        return PagedResponse.of(List.of(), Page.empty());
+        try {
+            int offset = page * size;
+            
+            // 필터 조건에 따른 스캔 이벤트 조회 (Entity)
+            List<com.ycs.lms.entity.ScanEvent> entityScanEvents = scanEventMapper.findScanEventsWithFilter(
+                filter.getWarehouseId(),
+                filter.getBoxId(),
+                filter.getEventType(),
+                filter.getStartDate(),
+                filter.getEndDate(),
+                filter.getUserId(),
+                filter.getLabelCode(),
+                filter.getOrderCode(),
+                size,
+                offset
+            );
+            
+            // Entity를 DTO로 변환
+            List<ScanEvent> scanEvents = entityScanEvents.stream()
+                .map(this::convertToDto)
+                .toList();
+            
+            // 총 개수 조회
+            long totalElements = scanEventMapper.countScanEventsWithFilter(
+                filter.getWarehouseId(),
+                filter.getBoxId(),
+                filter.getEventType(),
+                filter.getStartDate(),
+                filter.getEndDate(),
+                filter.getUserId(),
+                filter.getLabelCode(),
+                filter.getOrderCode()
+            );
+            
+            log.info("Found {} scan events, total: {}", scanEvents.size(), totalElements);
+            
+            return PagedResponse.of(scanEvents, page, size, totalElements);
+            
+        } catch (Exception e) {
+            log.error("Error getting scan events with filter: {}", filter, e);
+            throw new RuntimeException("스캔 이벤트 조회 중 오류가 발생했습니다: " + e.getMessage(), e);
+        }
     }
 
     /**
@@ -194,5 +236,25 @@ public class WarehouseService {
         // 3. 접근 권한 반환
         
         return "ADMIN".equals(userRole) || "WAREHOUSE".equals(userRole);
+    }
+
+    /**
+     * Entity ScanEvent를 DTO ScanEvent로 변환
+     */
+    private ScanEvent convertToDto(com.ycs.lms.entity.ScanEvent entity) {
+        return ScanEvent.builder()
+                .eventId(entity.getId())
+                .labelCode(entity.getLabelCode())
+                .boxId(entity.getOrderBoxId())
+                .orderCode(null) // TODO: order_id로부터 order_code 조회 필요
+                .eventType(entity.getScanType() != null ? 
+                    ScanRequest.ScanType.valueOf(entity.getScanType().name()) : null)
+                .status(entity.getStatus() != null ? entity.getStatus().name() : null)
+                .location(entity.getScanLocation())
+                .userId(entity.getUserId())
+                .userName(null) // TODO: user_id로부터 user_name 조회 필요
+                .scanTimestamp(entity.getScanTimestamp())
+                .memo(entity.getNotes())
+                .build();
     }
 }

@@ -58,6 +58,27 @@ public interface ScanEventMapper {
     void updateScanEventStatus(@Param("id") Long id, @Param("status") String status);
     void updateScanEventNotes(@Param("id") Long id, @Param("notes") String notes);
     
+    // Filtered search with pagination
+    List<ScanEvent> findScanEventsWithFilter(@Param("warehouseId") Long warehouseId,
+                                            @Param("boxId") Long boxId,
+                                            @Param("eventType") String eventType,
+                                            @Param("startDate") String startDate,
+                                            @Param("endDate") String endDate,
+                                            @Param("userId") Long userId,
+                                            @Param("labelCode") String labelCode,
+                                            @Param("orderCode") String orderCode,
+                                            @Param("limit") int limit,
+                                            @Param("offset") int offset);
+    
+    long countScanEventsWithFilter(@Param("warehouseId") Long warehouseId,
+                                  @Param("boxId") Long boxId,
+                                  @Param("eventType") String eventType,
+                                  @Param("startDate") String startDate,
+                                  @Param("endDate") String endDate,
+                                  @Param("userId") Long userId,
+                                  @Param("labelCode") String labelCode,
+                                  @Param("orderCode") String orderCode);
+
     // Delete operations
     void deleteById(Long id);
     void deleteByOrderId(Long orderId);

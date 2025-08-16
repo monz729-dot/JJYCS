@@ -75,6 +75,9 @@ public interface OrderMapper {
         return order;
     }
     
+    // Order count method
+    long count();
+    
     // Pageable 대체 메서드
     default List<Order> findByFilter(Long userId, String status, String orderType, int page, int size) {
         int offset = page * size;
