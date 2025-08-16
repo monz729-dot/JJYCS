@@ -64,40 +64,43 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, JwtTokenProvider tokenProvider) throws Exception {
         http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(csrf -> csrf.disable())
-            .exceptionHandling(exception -> exception
-                .authenticationEntryPoint(jwtAuthenticationEntryPoint))
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .headers(headers -> headers.frameOptions().disable()) // H2 콘솔용 프레임 옵션 비활성화
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.POST, "/health/healthCheck").permitAll()
-                // Public endpoints (컨텍스트 경로 /api는 자동으로 제거되므로 원래 패턴 사용)
-                .requestMatchers("/auth/signup", "/auth/login", "/auth/refresh", "/auth/verify-email").permitAll()
-                .requestMatchers("/auth/**").permitAll() // 모든 인증 관련 엔드포인트 허용
-                .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                .requestMatchers("/actuator/health", "/actuator/info").permitAll()
-                .requestMatchers("/h2-console/**").permitAll() // H2 콘솔 접근 허용
-                .requestMatchers("/api/h2-console/**").permitAll() // H2 콘솔 API 접근 허용
-                .requestMatchers("/database/**").permitAll() // 데이터베이스 초기화 허용
-                .requestMatchers("/force-init/**").permitAll() // 강제 초기화 허용
-                .requestMatchers("/test-data/**").permitAll() // 테스트 데이터 허용
-                .requestMatchers("/db-check/**").permitAll() // DB 체크 허용
-                .requestMatchers("/h2-info/**").permitAll() // H2 정보 허용
-                
-                // Admin only endpoints  
-                .requestMatchers("/admin/**").hasRole("ADMIN")
-                
-                // Warehouse endpoints
-                .requestMatchers("/warehouse/**").hasAnyRole("WAREHOUSE", "ADMIN")
-                
-                // Partner endpoints
-                .requestMatchers("/partner/**").hasAnyRole("PARTNER", "ADMIN")
-                
-                // All other endpoints require authentication
-                .anyRequest().authenticated()
-            );
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint))
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .headers(headers -> headers.frameOptions().disable()) // H2 콘솔용 프레임 옵션 비활성화
+                .authorizeHttpRequests(auth -> auth
+                        // 프리플라이트는 전부 허용
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        .requestMatchers(HttpMethod.POST, "/health/healthCheck").permitAll()
+                        // Public endpoints
+                        .requestMatchers("/auth/signup", "/auth/login", "/auth/refresh", "/auth/verify-email").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                        .requestMatchers("/h2-console/**").permitAll()
+                        .requestMatchers("/api/h2-console/**").permitAll()
+                        .requestMatchers("/database/**").permitAll()
+                        .requestMatchers("/force-init/**").permitAll()
+                        .requestMatchers("/test-data/**").permitAll()
+                        .requestMatchers("/db-check/**").permitAll()
+                        .requestMatchers("/h2-info/**").permitAll()
+
+                        // Admin only endpoints
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+
+                        // Warehouse endpoints
+                        .requestMatchers("/warehouse/**").hasAnyRole("WAREHOUSE", "ADMIN")
+
+                        // Partner endpoints
+                        .requestMatchers("/partner/**").hasAnyRole("PARTNER", "ADMIN")
+
+                        // All other endpoints require authentication
+                        .anyRequest().authenticated()
+                );
 
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(jwtAuthenticationFilter(tokenProvider), UsernamePasswordAuthenticationFilter.class);
@@ -108,12 +111,13 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://localhost:5173"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        // 개발 편의: 로컬 전체 포트 허용
+        configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:*", "http://127.0.0.1:*"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
-        
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
