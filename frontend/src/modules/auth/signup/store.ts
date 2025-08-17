@@ -9,9 +9,17 @@ export const useAuthStore = defineStore('useAuthStore', () => {
 
     async function checkUsernameAvailability(username: string) {
         const r = await apiCheckUsername(username)
-        if (!r.success) return { available: false, error: r.error || '확인 실패' }
-        return { available: !!r.data?.available, error: r.data?.available ? null : '이미 사용 중인 아이디입니다.' }
+
+        // 서버 응답 구조: r.data.data.available
+        const available = (r as any)?.data?.data?.available ?? false
+
+        return {
+            available,
+            error: available ? null : '이미 사용 중인 아이디입니다.'
+        }
     }
+
+
 
     async function signUp(payload: RegistrationData) {
         const r = await apiSignUp(payload)
