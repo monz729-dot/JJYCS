@@ -11,7 +11,7 @@ export const useAuthStore = defineStore('useAuthStore', () => {
         const r = await apiCheckUsername(username)
 
         // 서버 응답 구조: r.data.data.available
-        const available = (r as any)?.data?.data?.available ?? false
+        const available = r?.data?.data?.available ?? false
 
         return {
             available,

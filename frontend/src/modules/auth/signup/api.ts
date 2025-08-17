@@ -20,7 +20,7 @@ async function request(path: string, init: RequestInit): Promise<ApiResult<any>>
     }
 }
 
-export async function checkUsername(username: string): Promise<ApiResult<{ available: boolean }>> {
+export async function checkUsername(username: string): Promise<ApiResult<any>> {
     return request('/auth/check-username?username=' + encodeURIComponent(username), { method: 'GET', credentials: 'include' })
 }
 
