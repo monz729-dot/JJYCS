@@ -42,38 +42,40 @@ public class UserService {
      * 회원가입
      */
     public AuthResponse signup(SignupRequest request) {
-        log.info("Creating user with email: {}", request.getEmail());
+        log.info("Creating user with email: {}, username: {}", request.getEmail(), request.getUsername());
 
-        // 이메일 중복 검사
+        // 아이디 중복
+        if (userMapper.existsByUsername(request.getUsername())) {
+            throw new BadRequestException("이미 사용 중인 아이디입니다: " + request.getUsername());
+        }
+        // 이메일 중복
         if (userMapper.existsByEmail(request.getEmail())) {
             throw new BadRequestException("이미 사용 중인 이메일입니다: " + request.getEmail());
         }
-
-        // 회원 코드 중복 검사 (있는 경우)
+        // 회원코드 중복(있을 때만)
         if (request.getMemberCode() != null && userMapper.existsByMemberCode(request.getMemberCode())) {
             throw new BadRequestException("이미 사용 중인 회원 코드입니다: " + request.getMemberCode());
         }
 
-        // 사용자 생성
         User user = User.builder()
-            .email(request.getEmail())
-            .passwordHash(passwordEncoder.encode(request.getPassword()))
-            .name(request.getName())
-            .phone(request.getPhone())
-            .role(User.UserRole.valueOf(request.getRole().toUpperCase()))
-            .status(needsApproval(request.getRole()) ? User.UserStatus.PENDING_APPROVAL : User.UserStatus.ACTIVE)
-            .memberCode(request.getMemberCode())
-            .emailVerified(false)
-            .emailVerificationToken(UUID.randomUUID().toString())
-            .twoFactorEnabled(false)
-            .agreeTerms(request.isAgreeTerms())
-            .agreePrivacy(request.isAgreePrivacy())
-            .agreeMarketing(request.isAgreeMarketing())
-            .build();
+                .username(request.getUsername())                 // ★ 추가
+                .email(request.getEmail())
+                .passwordHash(passwordEncoder.encode(request.getPassword()))
+                .name(request.getName())
+                .phone(request.getPhone())
+                .role(User.UserRole.valueOf(request.getRole().toUpperCase()))
+                .status(needsApproval(request.getRole()) ? User.UserStatus.PENDING_APPROVAL : User.UserStatus.ACTIVE)
+                .memberCode(request.getMemberCode())
+                .emailVerified(false)
+                .emailVerificationToken(UUID.randomUUID().toString())
+                .twoFactorEnabled(false)
+                .agreeTerms(request.isAgreeTerms())
+                .agreePrivacy(request.isAgreePrivacy())
+                .agreeMarketing(request.isAgreeMarketing())
+                .build();
 
         user = userMapper.save(user);
 
-        // 이메일 인증 발송
         sendVerificationEmail(user);
 
         // JWT 토큰 생성 (이메일 인증 전이라도 로그인 가능)
@@ -605,4 +607,23 @@ public class UserService {
             .createdAt(user.getCreatedAt())
             .build();
     }
+
+    public boolean isUsernameAvailable(String username) {
+        return !userMapper.existsByUsername(username);
+    }
+
+    public void resendEmailVerificationByEmail(String email) {
+        User user = userMapper.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException("사용자를 찾을 수 없습니다: " + email));
+
+        if (user.isEmailVerified()) {
+            throw new BadRequestException("이미 인증된 이메일입니다");
+        }
+
+        user.setEmailVerificationToken(UUID.randomUUID().toString());
+        userMapper.save(user);
+
+        sendVerificationEmail(user);
+    }
+
 }

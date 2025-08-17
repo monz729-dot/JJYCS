@@ -56,4 +56,7 @@ public interface UserMapper {
     default List<User> findAll() {
         throw new UnsupportedOperationException("Use specific find methods instead");
     }
+
+    Optional<User> findByUsername(String username);
+    boolean existsByUsername(String username);
 }

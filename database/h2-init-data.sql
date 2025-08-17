@@ -182,5 +182,31 @@ INSERT INTO audit_logs (user_id, action, entity_type, entity_id, ip_address, use
 (8, 'SCAN_INVENTORY', 'INVENTORY', 1, '192.168.1.102', 'YCS Scanner App v1.0'),
 (1, 'UPDATE_CONFIG', 'CONFIG', 1, '192.168.1.1', 'Mozilla/5.0 Firefox/121.0');
 
+ALTER TABLE users ADD COLUMN username VARCHAR(50);
+UPDATE users SET username = SUBSTRING_INDEX(email, '@', 1) WHERE username IS NULL OR username = '';
+ALTER TABLE users MODIFY username VARCHAR(50) NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS ux_users_username ON users(username);
+
+UPDATE users
+SET username = SUBSTRING(email, 1, LOCATE('@', email) - 1)
+WHERE username IS NULL OR username = '';
+
+UPDATE users
+SET username = 'user' || CAST(id AS VARCHAR)
+WHERE username IS NULL OR username = '';
+
+UPDATE users u
+SET username = username || '_' || CAST(id AS VARCHAR)
+WHERE EXISTS (
+    SELECT 1 FROM users u2
+    WHERE u2.username = u.username
+      AND u2.id < u.id
+);
+
+ALTER TABLE users ALTER COLUMN username VARCHAR(50);
+ALTER TABLE users ALTER COLUMN username SET NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_users_username ON users(username);
+
 -- 데이터 삽입 완료
 COMMIT;

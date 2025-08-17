@@ -11,33 +11,9 @@
         <h1 class="text-4xl font-extrabold text-gray-900 mb-2">
           YCS LMS에 오신 것을 환영합니다
         </h1>
-        
-        <!-- Referral Info -->
-        <div v-if="referralInfo" class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
-          <div class="flex items-center justify-center mb-4">
-            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
-              <UserIcon class="w-6 h-6 text-blue-600" />
-            </div>
-            <div>
-              <h3 class="font-semibold text-blue-900">{{ referralInfo.partnerName }}님이 초대했습니다</h3>
-              <p class="text-sm text-blue-600">파트너 추천을 통한 특별 혜택</p>
-            </div>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="text-center p-4 bg-white rounded-lg">
-              <div class="text-2xl font-bold text-blue-600">10%</div>
-              <div class="text-sm text-gray-600">수수료 할인</div>
-            </div>
-            <div class="text-center p-4 bg-white rounded-lg">
-              <div class="text-2xl font-bold text-green-600">무료</div>
-              <div class="text-sm text-gray-600">첫 3개월 기본료</div>
-            </div>
-            <div class="text-center p-4 bg-white rounded-lg">
-              <div class="text-2xl font-bold text-purple-600">전담</div>
-              <div class="text-sm text-gray-600">고객 지원</div>
-            </div>
-          </div>
-        </div>
+
+        <!-- Referral Info (자식 컴포넌트로 분리, 마크업 동일) -->
+        <ReferralInfo :referral-info="referralInfo" />
       </div>
 
       <!-- Registration Form -->
@@ -48,18 +24,18 @@
             <label class="block text-sm font-medium text-gray-700 mb-4">계정 유형 *</label>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div
-                class="border rounded-lg p-4 cursor-pointer transition-all"
-                :class="{
+                  class="border rounded-lg p-4 cursor-pointer transition-all"
+                  :class="{
                   'border-blue-500 bg-blue-50': form.user_type === 'general',
                   'border-gray-300 hover:border-gray-400': form.user_type !== 'general'
                 }"
-                @click="form.user_type = 'general'"
+                  @click="selectUserType('general')"
               >
                 <input
-                  v-model="form.user_type"
-                  value="general"
-                  type="radio"
-                  class="sr-only"
+                    v-model="form.user_type"
+                    value="general"
+                    type="radio"
+                    class="sr-only"
                 />
                 <div class="flex items-center">
                   <UserIcon class="w-6 h-6 text-blue-600 mr-3" />
@@ -71,18 +47,18 @@
               </div>
 
               <div
-                class="border rounded-lg p-4 cursor-pointer transition-all"
-                :class="{
+                  class="border rounded-lg p-4 cursor-pointer transition-all"
+                  :class="{
                   'border-blue-500 bg-blue-50': form.user_type === 'corporate',
                   'border-gray-300 hover:border-gray-400': form.user_type !== 'corporate'
                 }"
-                @click="form.user_type = 'corporate'"
+                  @click="selectUserType('corporate')"
               >
                 <input
-                  v-model="form.user_type"
-                  value="corporate"
-                  type="radio"
-                  class="sr-only"
+                    v-model="form.user_type"
+                    value="corporate"
+                    type="radio"
+                    class="sr-only"
                 />
                 <div class="flex items-center">
                   <BuildingOfficeIcon class="w-6 h-6 text-green-600 mr-3" />
@@ -94,18 +70,18 @@
               </div>
 
               <div
-                class="border rounded-lg p-4 cursor-pointer transition-all"
-                :class="{
+                  class="border rounded-lg p-4 cursor-pointer transition-all"
+                  :class="{
                   'border-blue-500 bg-blue-50': form.user_type === 'partner',
                   'border-gray-300 hover:border-gray-400': form.user_type !== 'partner'
                 }"
-                @click="form.user_type = 'partner'"
+                  @click="selectUserType('partner')"
               >
                 <input
-                  v-model="form.user_type"
-                  value="partner"
-                  type="radio"
-                  class="sr-only"
+                    v-model="form.user_type"
+                    value="partner"
+                    type="radio"
+                    class="sr-only"
                 />
                 <div class="flex items-center">
                   <UserGroupIcon class="w-6 h-6 text-purple-600 mr-3" />
@@ -123,19 +99,19 @@
             <label class="block text-sm font-medium text-gray-700 mb-2">아이디 *</label>
             <div class="space-y-2">
               <input
-                v-model="form.username"
-                type="text"
-                required
-                :disabled="checkingUsername"
-                class="form-input form-input-md"
-                placeholder="사용할 아이디"
-                @blur="checkUsername"
+                  v-model="form.username"
+                  type="text"
+                  required
+                  :disabled="checkingUsername"
+                  class="form-input form-input-md"
+                  placeholder="사용할 아이디"
+                  @blur="checkUsername"
               />
               <button
-                type="button"
-                @click="checkUsername"
-                :disabled="checkingUsername || !form.username"
-                class="btn btn-md btn-primary"
+                  type="button"
+                  @click="checkUsername"
+                  :disabled="checkingUsername || !form.username"
+                  class="btn btn-md btn-primary"
               >
                 {{ checkingUsername ? '확인중...' : '중복확인' }}
               </button>
@@ -150,17 +126,17 @@
             <label class="block text-sm font-medium text-gray-700 mb-2">비밀번호 *</label>
             <div class="relative">
               <input
-                v-model="form.password"
-                :type="showPassword ? 'text' : 'password'"
-                required
-                class="form-input form-input-md pr-10"
-                placeholder="8자 이상, 영문/숫자/특수문자 포함"
-                @input="checkPasswordStrength"
+                  v-model="form.password"
+                  :type="showPassword ? 'text' : 'password'"
+                  required
+                  class="form-input form-input-md pr-10"
+                  placeholder="8자 이상, 영문/숫자/특수문자 포함"
+                  @input="checkPasswordStrength"
               />
               <button
-                type="button"
-                @click="showPassword = !showPassword"
-                class="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  type="button"
+                  @click="togglePassword"
+                  class="absolute inset-y-0 right-0 pr-3 flex items-center"
               >
                 <span :class="showPassword ? 'mdi mdi-eye-off' : 'mdi mdi-eye'" class="text-gray-400"></span>
               </button>
@@ -169,9 +145,9 @@
               <div class="flex items-center gap-2">
                 <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
                   <div
-                    class="h-full transition-all duration-300"
-                    :class="passwordStrengthClass"
-                    :style="{ width: passwordStrengthPercent + '%' }"
+                      class="h-full transition-all duration-300"
+                      :class="passwordStrengthClass"
+                      :style="{ width: passwordStrengthPercent + '%' }"
                   ></div>
                 </div>
                 <span class="text-xs" :class="passwordStrengthTextClass">{{ passwordStrengthText }}</span>
@@ -189,15 +165,15 @@
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">비밀번호 확인 *</label>
             <input
-              v-model="form.passwordConfirm"
-              type="password"
-              required
-              :class="[
+                v-model="form.passwordConfirm"
+                type="password"
+                required
+                :class="[
                 'w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
                 passwordMismatch ? 'border-red-500' : 'border-gray-300'
               ]"
-              placeholder="비밀번호를 다시 입력하세요"
-              @blur="checkPasswordMatch"
+                placeholder="비밀번호를 다시 입력하세요"
+                @blur="checkPasswordMatch"
             />
             <div v-if="passwordMismatch" class="mt-1 text-sm text-red-600">
               비밀번호가 일치하지 않습니다.
@@ -208,11 +184,11 @@
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">이름 *</label>
             <input
-              v-model="form.name"
-              type="text"
-              required
-              class="form-input form-input-md"
-              placeholder="홍길동"
+                v-model="form.name"
+                type="text"
+                required
+                class="form-input form-input-md"
+                placeholder="홍길동"
             />
           </div>
 
@@ -220,13 +196,13 @@
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">전화번호 *</label>
             <input
-              v-model="form.phone"
-              type="tel"
-              required
-              class="form-input form-input-md"
-              placeholder="010-1234-5678"
-              @input="formatPhoneNumber"
-              maxlength="13"
+                v-model="form.phone"
+                type="tel"
+                required
+                class="form-input form-input-md"
+                placeholder="010-1234-5678"
+                @input="formatPhoneNumber"
+                maxlength="13"
             />
             <div v-if="phoneError" class="mt-1 text-sm text-red-600">
               {{ phoneError }}
@@ -237,33 +213,33 @@
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">이메일 *</label>
             <input
-              v-model="form.email"
-              type="email"
-              required
-              class="form-input form-input-md"
-              placeholder="hong@example.com"
+                v-model="form.email"
+                type="email"
+                required
+                class="form-input form-input-md"
+                placeholder="hong@example.com"
             />
             <div class="mt-1 text-sm text-gray-500">
               회원가입 시 인증 메일이 자동으로 발송됩니다.
             </div>
           </div>
 
-                     <!-- 이메일 인증 토큰 입력 -->
-           <div v-if="registrationCompleted" class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-             <div class="flex items-start">
-               <div class="flex-shrink-0">
-                 <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                   <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-                 </svg>
-               </div>
-               <div class="ml-3 w-full">
-                 <h3 class="text-sm font-medium text-blue-800 mb-3">
-                   이메일 인증 토큰을 입력해주세요
-                 </h3>
-                 <div class="space-y-3">
-                                       <div>
-                      <label class="block text-sm font-medium text-gray-700 mb-2">인증 토큰 *</label>
-                      <input
+          <!-- 이메일 인증 토큰 입력 -->
+          <div v-if="registrationCompleted" class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div class="flex items-start">
+              <div class="flex-shrink-0">
+               <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                 <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+               </svg>
+              </div>
+              <div class="ml-3 w-full">
+                <h3 class="text-sm font-medium text-blue-800 mb-3">
+                  이메일 인증 토큰을 입력해주세요
+                </h3>
+                <div class="space-y-3">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">인증 토큰 *</label>
+                    <input
                         v-model="verificationToken"
                         type="text"
                         required
@@ -271,50 +247,50 @@
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center text-lg font-mono tracking-widest"
                         placeholder="000000"
                         @input="formatToken"
-                      />
-                      <button
+                    />
+                    <button
                         type="button"
                         @click="verifyToken"
                         :disabled="verifyingToken || !verificationToken || verificationToken.length !== 6"
                         class="btn btn-md btn-primary w-full mt-2"
-                      >
-                        {{ verifyingToken ? '확인중...' : '인증하기' }}
-                      </button>
+                    >
+                      {{ verifyingToken ? '확인중...' : '인증하기' }}
+                    </button>
+                  </div>
+                  <div class="text-sm text-blue-700">
+                    <p>{{ form.email }}로 인증 토큰을 발송했습니다.</p>
+                    <p class="mt-1">이메일을 확인하여 6자리 토큰을 입력해주세요.</p>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <button
+                        type="button"
+                        @click="resendVerificationToken"
+                        :disabled="resendCooldown > 0"
+                        class="text-sm font-medium text-blue-800 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span v-if="resendCooldown > 0">{{ resendCooldown }}초 후 재발송</span>
+                      <span v-else>토큰 재발송</span>
+                    </button>
+                    <div v-if="tokenVerified" class="flex items-center text-green-600">
+                      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                      </svg>
+                      <span class="text-sm font-medium">인증 완료</span>
                     </div>
-                   <div class="text-sm text-blue-700">
-                     <p>{{ form.email }}로 인증 토큰을 발송했습니다.</p>
-                     <p class="mt-1">이메일을 확인하여 6자리 토큰을 입력해주세요.</p>
-                   </div>
-                   <div class="flex justify-between items-center">
-                     <button
-                       type="button"
-                       @click="resendVerificationToken"
-                       :disabled="resendCooldown > 0"
-                       class="text-sm font-medium text-blue-800 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                     >
-                       <span v-if="resendCooldown > 0">{{ resendCooldown }}초 후 재발송</span>
-                       <span v-else>토큰 재발송</span>
-                     </button>
-                     <div v-if="tokenVerified" class="flex items-center text-green-600">
-                       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                       </svg>
-                       <span class="text-sm font-medium">인증 완료</span>
-                     </div>
-                   </div>
-                 </div>
-               </div>
-             </div>
-           </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <!-- 주소 -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">주소</label>
             <input
-              v-model="form.address"
-              type="text"
-              class="form-input form-input-md"
-              placeholder="서울시 강남구 테헤란로 123"
+                v-model="form.address"
+                type="text"
+                class="form-input form-input-md"
+                placeholder="서울시 강남구 테헤란로 123"
             />
           </div>
 
@@ -325,20 +301,20 @@
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">회사명 *</label>
                 <input
-                  v-model="form.company_name"
-                  type="text"
-                  :required="form.user_type === 'corporate' || form.user_type === 'partner'"
-                  class="form-input form-input-md"
-                  placeholder="(주)글로벌무역"
+                    v-model="form.company_name"
+                    type="text"
+                    :required="form.user_type === 'corporate' || form.user_type === 'partner'"
+                    class="form-input form-input-md"
+                    placeholder="(주)글로벌무역"
                 />
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">사업자번호</label>
                 <input
-                  v-model="form.business_number"
-                  type="text"
-                  class="form-input form-input-md"
-                  placeholder="123-45-67890"
+                    v-model="form.business_number"
+                    type="text"
+                    class="form-input form-input-md"
+                    placeholder="123-45-67890"
                 />
               </div>
             </div>
@@ -346,19 +322,19 @@
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">담당자명</label>
                 <input
-                  v-model="form.manager_name"
-                  type="text"
-                  class="form-input form-input-md"
-                  placeholder="담당자 이름"
+                    v-model="form.manager_name"
+                    type="text"
+                    class="form-input form-input-md"
+                    placeholder="담당자 이름"
                 />
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">담당자 연락처</label>
                 <input
-                  v-model="form.manager_contact"
-                  type="tel"
-                  class="form-input form-input-md"
-                  placeholder="010-1234-5678"
+                    v-model="form.manager_contact"
+                    type="tel"
+                    class="form-input form-input-md"
+                    placeholder="010-1234-5678"
                 />
               </div>
             </div>
@@ -373,13 +349,13 @@
                     <label for="file-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
                       <span>파일 업로드</span>
                       <input
-                        id="file-upload"
-                        ref="fileInput"
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        class="sr-only"
-                        @change="handleFileUpload"
-                        required
+                          id="file-upload"
+                          ref="fileInput"
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          class="sr-only"
+                          @change="handleFileUpload"
+                          required
                       />
                     </label>
                     <p class="pl-1">또는 드래그 앤 드롭</p>
@@ -397,22 +373,22 @@
           <div class="space-y-4">
             <label class="flex items-start">
               <input
-                v-model="form.terms_agreed"
-                type="checkbox"
-                required
-                class="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  v-model="form.terms_agreed"
+                  type="checkbox"
+                  required
+                  class="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
               <span class="ml-2 text-sm text-gray-600">
                 <button type="button" @click="openTermsModal('terms')" class="text-blue-600 hover:text-blue-500 underline">이용약관</button>에 동의합니다. *
               </span>
             </label>
-            
+
             <label class="flex items-start">
               <input
-                v-model="form.privacy_agreed"
-                type="checkbox"
-                required
-                class="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  v-model="form.privacy_agreed"
+                  type="checkbox"
+                  required
+                  class="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
               <span class="ml-2 text-sm text-gray-600">
                 <button type="button" @click="openTermsModal('privacy')" class="text-blue-600 hover:text-blue-500 underline">개인정보 수집 및 이용</button>에 동의합니다. *
@@ -420,24 +396,24 @@
             </label>
           </div>
 
-                     <!-- Submit Button -->
-           <button
-             type="submit"
-             :disabled="loading || !form.terms_agreed || !form.privacy_agreed || !usernameAvailable || passwordMismatch || form.password.length < 8 || form.password !== form.passwordConfirm || (registrationCompleted && !tokenVerified)"
-             class="btn btn-lg btn-primary w-full"
-           >
-             <span v-if="loading">가입 처리 중...</span>
-             <span v-else-if="registrationCompleted && !tokenVerified">토큰 인증 후 회원가입</span>
-             <span v-else>무료로 시작하기</span>
-           </button>
+          <!-- Submit Button -->
+          <button
+              type="submit"
+              :disabled="loading || !form.terms_agreed || !form.privacy_agreed || !usernameAvailable || passwordMismatch || form.password.length < 8 || form.password !== form.passwordConfirm || (registrationCompleted && !tokenVerified)"
+              class="btn btn-lg btn-primary w-full"
+          >
+            <span v-if="loading">가입 처리 중...</span>
+            <span v-else-if="registrationCompleted && !tokenVerified">토큰 인증 후 회원가입</span>
+            <span v-else>무료로 시작하기</span>
+          </button>
 
           <!-- Login Link -->
           <div class="text-center">
             <p class="text-sm text-gray-600">
               이미 계정이 있으신가요?
-              <router-link 
-                :to="{ name: 'Login' }" 
-                class="font-medium text-blue-600 hover:text-blue-500 ml-1"
+              <router-link
+                  :to="{ name: 'Login' }"
+                  class="font-medium text-blue-600 hover:text-blue-500 ml-1"
               >
                 로그인하기
               </router-link>
@@ -458,13 +434,13 @@
             </svg>
           </button>
         </div>
-        
+
         <div class="flex-1 overflow-y-auto p-6">
           <div class="prose prose-sm max-w-none">
             <div v-html="renderMarkdown(modalContent)"></div>
           </div>
         </div>
-        
+
         <div class="flex justify-end gap-3 p-6 border-t">
           <button @click="closeModal" class="btn btn-md btn-secondary">
             확인
@@ -481,18 +457,16 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore } from './store.ts'
 import { useToast } from '@/composables/useToast'
+import ReferralInfo from './ReferralInfo.vue'
 import {
   UserIcon,
   BuildingOfficeIcon,
   UserGroupIcon
 } from '@heroicons/vue/24/outline'
-import { AuthService } from '@/services/authService'
-import { 
-  TERMS_OF_SERVICE, 
-  PRIVACY_POLICY 
-} from '@/constants/terms'
+import { AuthService } from './api'
+import { TERMS_OF_SERVICE, PRIVACY_POLICY } from '@/constants/terms'
 
 const route = useRoute()
 const router = useRouter()
@@ -505,10 +479,7 @@ const checkingUsername = ref(false)
 const usernameAvailable = ref(false)
 const usernameMessage = ref('')
 const selectedFile = ref<File | null>(null)
-const referralInfo = ref<{
-  partnerName: string
-  partnerCode: string
-} | null>(null)
+const referralInfo = ref<{ partnerName: string; partnerCode: string } | null>(null)
 const showPassword = ref(false)
 const phoneError = ref('')
 const passwordStrength = ref(0)
@@ -520,7 +491,7 @@ const resendCooldown = ref(0)
 const verificationToken = ref('')
 const verifyingToken = ref(false)
 const tokenVerified = ref(false)
-let cooldownTimer: NodeJS.Timeout | null = null
+let cooldownTimer: ReturnType<typeof setInterval> | null = null
 
 const passwordMismatch = ref(false)
 
@@ -549,8 +520,12 @@ const form = reactive({
   referralCode: ''
 })
 
-// Methods
-const checkPasswordMatch = () => {
+// ===== functions (모두 function 선언식) =====
+function selectUserType(type: 'general'|'corporate'|'partner') {
+  form.user_type = type
+}
+
+function checkPasswordMatch() {
   if (form.passwordConfirm && form.password !== form.passwordConfirm) {
     passwordMismatch.value = true
   } else {
@@ -558,10 +533,8 @@ const checkPasswordMatch = () => {
   }
 }
 
-// 약관 모달 관련 함수
-const openTermsModal = (type: 'terms' | 'privacy') => {
+function openTermsModal(type: 'terms' | 'privacy') {
   currentModalType.value = type
-  
   switch (type) {
     case 'terms':
       modalTitle.value = '이용약관'
@@ -572,77 +545,52 @@ const openTermsModal = (type: 'terms' | 'privacy') => {
       modalContent.value = PRIVACY_POLICY
       break
   }
-  
   showModal.value = true
 }
-
-const closeModal = () => {
-  showModal.value = false
-}
-
-const agreeAndClose = () => {
-  if (currentModalType.value === 'terms') {
-    form.terms_agreed = true
-  } else if (currentModalType.value === 'privacy') {
-    form.privacy_agreed = true
-  }
+function closeModal() { showModal.value = false }
+function agreeAndClose() {
+  if (currentModalType.value === 'terms') { form.terms_agreed = true }
+  else if (currentModalType.value === 'privacy') { form.privacy_agreed = true }
   closeModal()
 }
-
-const getConsentValue = () => {
-  if (currentModalType.value === 'terms') {
-    return form.terms_agreed
-  } else if (currentModalType.value === 'privacy') {
-    return form.privacy_agreed
-  }
+function getConsentValue() {
+  if (currentModalType.value === 'terms') return form.terms_agreed
+  if (currentModalType.value === 'privacy') return form.privacy_agreed
   return false
 }
 
-const renderMarkdown = (content: string) => {
-  // 간단한 마크다운 렌더링
+function renderMarkdown(content: string) {
   return content
-    .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mb-4">$1</h1>')
-    .replace(/^## (.*$)/gim, '<h2 class="text-xl font-semibold mb-3">$1</h2>')
-    .replace(/^### (.*$)/gim, '<h3 class="text-lg font-medium mb-2">$1</h3>')
-    .replace(/^\*\*(.*)\*\*/gim, '<strong class="font-semibold">$1</strong>')
-    .replace(/^\* (.*$)/gim, '<li class="ml-4">• $1</li>')
-    .replace(/^(\d+\. .*$)/gim, '<li class="ml-4">$1</li>')
-    .replace(/\n/g, '<br>')
+      .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mb-4">$1</h1>')
+      .replace(/^## (.*$)/gim, '<h2 class="text-xl font-semibold mb-3">$1</h2>')
+      .replace(/^### (.*$)/gim, '<h3 class="text-lg font-medium mb-2">$1</h3>')
+      .replace(/\*\*(.*)\*\*/gim, '<strong class="font-semibold">$1</strong>')
+      .replace(/^\* (.*$)/gim, '<li class="ml-4">• $1</li>')
+      .replace(/^(\d+\. .*$)/gim, '<li class="ml-4">$1</li>')
+      .replace(/\n/g, '<br>')
 }
 
-const loadReferralInfo = async () => {
+async function loadReferralInfo() {
   const code = route.query.ref as string
   if (!code) return
-
-  try {
-    // Mock referral info lookup
-    referralInfo.value = {
-      partnerName: '김파트너',
-      partnerCode: code
-    }
-    form.referralCode = code
-    
-  } catch (error) {
-    console.error('Failed to load referral info:', error)
-  }
+  referralInfo.value = { partnerName: '김파트너', partnerCode: code }
+  form.referralCode = code
 }
 
-const checkUsername = async () => {
+async function checkUsername() {
   if (!form.username) {
     usernameMessage.value = ''
     usernameAvailable.value = false
     return
   }
-
   checkingUsername.value = true
   usernameMessage.value = ''
-
   try {
     const result = await authStore.checkUsernameAvailability(form.username)
     usernameAvailable.value = result.available
-    usernameMessage.value = result.available 
-      ? '사용 가능한 아이디입니다.' 
-      : result.error || '이미 사용 중인 아이디입니다.'
+    usernameMessage.value = result.available
+        ? '사용 가능한 아이디입니다.'
+        : result.error || '이미 사용 중인 아이디입니다.'
   } catch (error) {
     usernameAvailable.value = false
     usernameMessage.value = '아이디 확인 중 오류가 발생했습니다.'
@@ -651,11 +599,11 @@ const checkUsername = async () => {
   }
 }
 
-const handleFileUpload = (event: Event) => {
+function handleFileUpload(event: Event) {
   const target = event.target as HTMLInputElement
   if (target.files && target.files[0]) {
     const file = target.files[0]
-    if (file.size > 10 * 1024 * 1024) { // 10MB 제한
+    if (file.size > 10 * 1024 * 1024) {
       toast.error('파일 크기는 10MB 이하여야 합니다.')
       return
     }
@@ -664,29 +612,25 @@ const handleFileUpload = (event: Event) => {
   }
 }
 
-// 토큰 포맷팅 (숫자만 입력 가능)
-const formatToken = (event: Event) => {
+function formatToken(event: Event) {
   const target = event.target as HTMLInputElement
-  let value = target.value.replace(/\D/g, '') // 숫자만 허용
-  value = value.substring(0, 6) // 최대 6자리
+  let value = target.value.replace(/\D/g, '')
+  value = value.substring(0, 6)
   verificationToken.value = value
 }
 
-// 토큰 인증
-const verifyToken = async () => {
+async function verifyToken() {
   if (!verificationToken.value || verificationToken.value.length !== 6) {
     toast.error('6자리 토큰을 입력해주세요.')
     return
   }
-
   verifyingToken.value = true
-
   try {
     const result = await AuthService.verifyEmail(form.email, verificationToken.value)
-    
     if (result.success) {
       tokenVerified.value = true
       toast.success('이메일 인증이 완료되었습니다!')
+      router.push({ name: 'Login', query: { emailVerified: 'true' } })
     } else {
       toast.error(result.error || '토큰 인증에 실패했습니다.')
     }
@@ -697,21 +641,16 @@ const verifyToken = async () => {
   }
 }
 
-// 토큰 재발송
-const resendVerificationToken = async () => {
+async function resendVerificationToken() {
   if (!form.email) {
     toast.error('이메일 주소를 입력해주세요.')
     return
   }
-
   try {
     const result = await AuthService.resendVerificationToken(form.email)
-    
     if (result.success) {
-      // 재발송 쿨다운 시작
       resendCooldown.value = 60
       startCooldown()
-      
       toast.success('인증 토큰을 재발송했습니다.')
     } else {
       toast.error(result.error || '인증 토큰 재발송에 실패했습니다.')
@@ -721,54 +660,44 @@ const resendVerificationToken = async () => {
   }
 }
 
-// 쿨다운 타이머 시작
-const startCooldown = () => {
-  cooldownTimer = setInterval(() => {
+function startCooldown() {
+  if (cooldownTimer) clearInterval(cooldownTimer)
+  cooldownTimer = setInterval(function () {
     resendCooldown.value--
-    if (resendCooldown.value <= 0) {
-      if (cooldownTimer) {
-        clearInterval(cooldownTimer)
-        cooldownTimer = null
-      }
+    if (resendCooldown.value <= 0 && cooldownTimer) {
+      clearInterval(cooldownTimer)
+      cooldownTimer = null
     }
   }, 1000)
 }
 
-// 전화번호 포맷팅
-const formatPhoneNumber = (event: Event) => {
+function formatPhoneNumber(event: Event) {
   const input = event.target as HTMLInputElement
   let value = input.value.replace(/[^0-9]/g, '')
-  
-  // 한국 전화번호 포맷 (010-1234-5678)
   if (value.startsWith('010') || value.startsWith('011') || value.startsWith('016') || value.startsWith('017') || value.startsWith('018') || value.startsWith('019')) {
     if (value.length > 3 && value.length <= 7) {
-      value = `${value.slice(0, 3)}-${value.slice(3)}`
+      value = value.slice(0, 3) + '-' + value.slice(3)
     } else if (value.length > 7) {
-      value = `${value.slice(0, 3)}-${value.slice(3, 7)}-${value.slice(7, 11)}`
+      value = value.slice(0, 3) + '-' + value.slice(3, 7) + '-' + value.slice(7, 11)
     }
   } else if (value.startsWith('02')) {
-    // 서울 지역번호
     if (value.length > 2 && value.length <= 5) {
-      value = `${value.slice(0, 2)}-${value.slice(2)}`
+      value = value.slice(0, 2) + '-' + value.slice(2)
     } else if (value.length > 5 && value.length <= 9) {
-      value = `${value.slice(0, 2)}-${value.slice(2, 5)}-${value.slice(5)}`
+      value = value.slice(0, 2) + '-' + value.slice(2, 5) + '-' + value.slice(5)
     } else if (value.length > 9) {
-      value = `${value.slice(0, 2)}-${value.slice(2, 6)}-${value.slice(6, 10)}`
+      value = value.slice(0, 2) + '-' + value.slice(2, 6) + '-' + value.slice(6, 10)
     }
   } else if (value.startsWith('0')) {
-    // 기타 지역번호
     if (value.length > 3 && value.length <= 6) {
-      value = `${value.slice(0, 3)}-${value.slice(3)}`
+      value = value.slice(0, 3) + '-' + value.slice(3)
     } else if (value.length > 6 && value.length <= 10) {
-      value = `${value.slice(0, 3)}-${value.slice(3, 6)}-${value.slice(6)}`
+      value = value.slice(0, 3) + '-' + value.slice(3, 6) + '-' + value.slice(6)
     } else if (value.length > 10) {
-      value = `${value.slice(0, 3)}-${value.slice(3, 7)}-${value.slice(7, 11)}`
+      value = value.slice(0, 3) + '-' + value.slice(3, 7) + '-' + value.slice(7, 11)
     }
   }
-  
   form.phone = value
-  
-  // 전화번호 유효성 검사
   const phoneRegex = /^(010|011|016|017|018|019)-\d{3,4}-\d{4}$|^(02|0[3-9]{1}[0-9]{1})-\d{3,4}-\d{4}$/
   if (value.length > 0 && !phoneRegex.test(value) && value.length >= 12) {
     phoneError.value = '올바른 전화번호 형식이 아닙니다'
@@ -777,75 +706,43 @@ const formatPhoneNumber = (event: Event) => {
   }
 }
 
-// 비밀번호 강도 체크
-const checkPasswordStrength = () => {
+function checkPasswordStrength() {
   const password = form.password
   passwordErrors.value = []
   let strength = 0
-  
-  // 길이 체크
-  if (password.length >= 8) {
-    strength += 25
-  } else {
-    passwordErrors.value.push('최소 8자 이상')
-  }
-  
-  // 영문 체크
-  if (/[a-zA-Z]/.test(password)) {
-    strength += 25
-  } else {
-    passwordErrors.value.push('영문 포함')
-  }
-  
-  // 숫자 체크
-  if (/[0-9]/.test(password)) {
-    strength += 25
-  } else {
-    passwordErrors.value.push('숫자 포함')
-  }
-  
-  // 특수문자 체크
-  if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-    strength += 25
-  } else {
-    passwordErrors.value.push('특수문자 포함')
-  }
-  
+  if (password.length >= 8) { strength += 25 } else { passwordErrors.value.push('최소 8자 이상') }
+  if (/[a-zA-Z]/.test(password)) { strength += 25 } else { passwordErrors.value.push('영문 포함') }
+  if (/[0-9]/.test(password)) { strength += 25 } else { passwordErrors.value.push('숫자 포함') }
+  if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) { strength += 25 } else { passwordErrors.value.push('특수문자 포함') }
   passwordStrength.value = strength
 }
 
-// 비밀번호 강도 관련 계산 속성
-const passwordStrengthPercent = computed(() => passwordStrength.value)
-
-const passwordStrengthClass = computed(() => {
+const passwordStrengthPercent = computed(function () { return passwordStrength.value })
+const passwordStrengthClass = computed(function () {
   if (passwordStrength.value <= 25) return 'bg-red-500'
   if (passwordStrength.value <= 50) return 'bg-orange-500'
   if (passwordStrength.value <= 75) return 'bg-yellow-500'
   return 'bg-green-500'
 })
-
-const passwordStrengthText = computed(() => {
+const passwordStrengthText = computed(function () {
   if (passwordStrength.value <= 25) return '약함'
   if (passwordStrength.value <= 50) return '보통'
   if (passwordStrength.value <= 75) return '강함'
   return '매우 강함'
 })
-
-const passwordStrengthTextClass = computed(() => {
+const passwordStrengthTextClass = computed(function () {
   if (passwordStrength.value <= 25) return 'text-red-600'
   if (passwordStrength.value <= 50) return 'text-orange-600'
   if (passwordStrength.value <= 75) return 'text-yellow-600'
   return 'text-green-600'
 })
 
-const handleSubmit = async () => {
+async function handleSubmit() {
   try {
     loading.value = true
 
-    // 파일 업로드 처리 (실제 구현에서는 Supabase Storage 사용)
     let business_license_url = ''
     if (form.business_license_file) {
-      // TODO: Supabase Storage에 파일 업로드
       business_license_url = 'mock_url_' + Date.now()
     }
 
@@ -863,32 +760,25 @@ const handleSubmit = async () => {
       manager_contact: form.manager_contact,
       business_license_url,
       terms_agreed: form.terms_agreed,
-      privacy_agreed: form.privacy_agreed
+      privacy_agreed: form.privacy_agreed,
+      referralCode: form.referralCode || undefined
     }
 
-    // 토큰 인증이 완료된 경우, 바로 프로필 생성
     if (tokenVerified.value) {
-      const completeResponse = await AuthService.completeSignUp(registrationData)
-      if (completeResponse.success) {
-        toast.success('회원가입이 완료되었습니다!')
-        router.push({ name: 'Login' })
-      } else {
-        toast.error(completeResponse.error || '회원가입 완료에 실패했습니다.')
-      }
+      // 원본 UX: 인증 완료 시 로그인으로
+      toast.success('회원가입이 완료되었습니다! 로그인해주세요.')
+      router.push({ name: 'Login' })
       return
     }
 
-    // 첫 번째 회원가입 시도 (이메일 인증 토큰 발송)
     const response = await authStore.signUp(registrationData)
-    
     if (response.success) {
       if (response.requiresEmailVerification) {
-        // 이메일 인증이 필요한 경우
         registrationCompleted.value = true
         toast.success('이메일 인증 토큰을 발송했습니다. 이메일을 확인하여 6자리 토큰을 입력해주세요.')
       } else {
-        // 이메일 인증이 완료된 경우, 프로필 생성 시도
-        const completeResponse = await AuthService.completeSignUp(registrationData)
+        // 원본 흐름: 이메일 인증 없이 완료면 서버측 완료 처리
+        const completeResponse = await AuthService.completeSignUp(registrationData as any)
         if (completeResponse.success) {
           toast.success('회원가입이 완료되었습니다!')
           router.push({ name: 'Login' })
@@ -899,7 +789,7 @@ const handleSubmit = async () => {
     } else {
       toast.error(response.error || '회원가입 중 오류가 발생했습니다.')
     }
-  } catch (error: any) {
+  } catch (error) {
     toast.error('회원가입 중 오류가 발생했습니다.')
     console.error('Registration error:', error)
   } finally {
@@ -907,31 +797,27 @@ const handleSubmit = async () => {
   }
 }
 
-// Lifecycle
-onMounted(async () => {
-  // 회원가입 페이지 진입 시 기존 세션 클리어
+async function handleMounted() {
   await authStore.signOut()
   loadReferralInfo()
-  
-  // URL 쿼리 파라미터 확인 (이메일 인증 완료 후 리다이렉트)
   const urlParams = new URLSearchParams(window.location.search)
   const emailVerified = urlParams.get('emailVerified')
   const message = urlParams.get('message')
-  
   if (emailVerified === 'true') {
-    // 이메일 인증이 완료된 상태
     registrationCompleted.value = true
     if (message) {
       toast.success(message)
     }
   }
-})
-
-onUnmounted(() => {
+}
+function handleUnmounted() {
   if (cooldownTimer) {
     clearInterval(cooldownTimer)
   }
-})
+}
+
+onMounted(handleMounted)
+onUnmounted(handleUnmounted)
 </script>
 
 <style scoped>

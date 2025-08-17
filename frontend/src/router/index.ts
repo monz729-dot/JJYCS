@@ -27,7 +27,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'register',
         name: 'Register', 
-        component: () => import('@/modules/auth/views/PublicSignupView.vue'),
+        component: () => import('@/modules/auth/signup/PublicSignupView.vue'),
         meta: { 
           title: 'auth.register.title',
           requiresGuest: true 
@@ -99,7 +99,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/signup',
     name: 'Signup',
-    component: () => import('@/modules/auth/views/PublicSignupView.vue'),
+    component: () => import('@/modules/auth/signup/PublicSignupView.vue'),
     meta: { 
       title: '회원가입',
       requiresGuest: true 
@@ -514,7 +514,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/signup',
     name: 'PublicSignup',
-    component: () => import('@/modules/auth/views/PublicSignupView.vue'),
+    component: () => import('@/modules/auth/signup/PublicSignupView.vue'),
     meta: { 
       title: 'auth.register.title',
       requiresGuest: true 

@@ -188,4 +188,63 @@ public class AuthController {
                 .body(ApiResponse.error(e.getMessage()));
         }
     }
+
+    @GetMapping("/check-username")
+    @Operation(summary = "아이디 중복확인", description = "username(아이디) 사용 가능 여부 확인")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> checkUsername(@RequestParam String username) {
+        boolean available = false;
+        try {
+            if (username == null || !username.matches("^[a-zA-Z0-9_]{3,20}$")) {
+                return ResponseEntity.badRequest().body(ApiResponse.error("아이디는 영문/숫자/밑줄 3~20자"));
+            }
+            available = userService.isUsernameAvailable(username);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(ApiResponse.success(Map.of("available", available)));
+    }
+
+    @PostMapping(value = "/verify-email", consumes = "application/json")
+    @Operation(summary = "이메일 인증(JSON)", description = "본문 { token } 또는 { email, token }")
+    public ResponseEntity<ApiResponse<Void>> verifyEmailJson(@RequestBody Map<String, String> body) {
+        String token = body.get("token");
+        if (token == null || token.isBlank()) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("인증 토큰이 필요합니다."));
+        }
+        try {
+            userService.verifyEmail(token);
+            return ResponseEntity.ok(ApiResponse.success(null, "이메일 인증이 완료되었습니다."));
+        } catch (Exception e) {
+            log.error("Email verification failed", e);
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @PostMapping(value = "/verify-email/resend", consumes = "application/json")
+    @Operation(summary = "이메일 인증 재발송", description = "본문 { email } 로 인증 메일 재발송")
+    public ResponseEntity<ApiResponse<Void>> resendEmailVerification(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("이메일이 필요합니다."));
+        }
+        try {
+            userService.resendEmailVerificationByEmail(email);
+            return ResponseEntity.ok(ApiResponse.success(null, "인증 이메일을 재발송했습니다."));
+        } catch (Exception e) {
+            log.error("Resend verification failed", e);
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @PostMapping("/complete")
+    @Operation(summary = "가입 완료 훅", description = "프론트 호환용 마무리 엔드포인트(서버 작업 없으면 No-Op)")
+    public ResponseEntity<ApiResponse<Void>> completeSignup(@RequestBody Map<String, Object> body) {
+        return ResponseEntity.ok(ApiResponse.success(null, "가입 완료"));
+    }
+
+    @PostMapping("/logout")
+    @Operation(summary = "로그아웃", description = "클라이언트 토큰 폐기용 엔드포인트")
+    public ResponseEntity<ApiResponse<Void>> logout() {
+        return ResponseEntity.ok(ApiResponse.success(null, "로그아웃 완료"));
+    }
 }
