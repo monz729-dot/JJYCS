@@ -26,17 +26,12 @@
               <div
                   class="border rounded-lg p-4 cursor-pointer transition-all"
                   :class="{
-                  'border-blue-500 bg-blue-50': form.user_type === 'general',
-                  'border-gray-300 hover:border-gray-400': form.user_type !== 'general'
-                }"
-                  @click="selectUserType('general')"
+          'border-blue-500 bg-blue-50': form.role === 'INDIVIDUAL',
+          'border-gray-300 hover:border-gray-400': form.role !== 'INDIVIDUAL'
+        }"
+                  @click="selectRole('INDIVIDUAL')"
               >
-                <input
-                    v-model="form.user_type"
-                    value="general"
-                    type="radio"
-                    class="sr-only"
-                />
+                <input v-model="form.role" value="INDIVIDUAL" type="radio" class="sr-only" />
                 <div class="flex items-center">
                   <UserIcon class="w-6 h-6 text-blue-600 mr-3" />
                   <div>
@@ -49,17 +44,12 @@
               <div
                   class="border rounded-lg p-4 cursor-pointer transition-all"
                   :class="{
-                  'border-blue-500 bg-blue-50': form.user_type === 'corporate',
-                  'border-gray-300 hover:border-gray-400': form.user_type !== 'corporate'
-                }"
-                  @click="selectUserType('corporate')"
+          'border-blue-500 bg-blue-50': form.role === 'ENTERPRISE',
+          'border-gray-300 hover:border-gray-400': form.role !== 'ENTERPRISE'
+        }"
+                  @click="selectRole('ENTERPRISE')"
               >
-                <input
-                    v-model="form.user_type"
-                    value="corporate"
-                    type="radio"
-                    class="sr-only"
-                />
+                <input v-model="form.role" value="ENTERPRISE" type="radio" class="sr-only" />
                 <div class="flex items-center">
                   <BuildingOfficeIcon class="w-6 h-6 text-green-600 mr-3" />
                   <div>
@@ -72,17 +62,12 @@
               <div
                   class="border rounded-lg p-4 cursor-pointer transition-all"
                   :class="{
-                  'border-blue-500 bg-blue-50': form.user_type === 'partner',
-                  'border-gray-300 hover:border-gray-400': form.user_type !== 'partner'
-                }"
-                  @click="selectUserType('partner')"
+          'border-blue-500 bg-blue-50': form.role === 'PARTNER',
+          'border-gray-300 hover:border-gray-400': form.role !== 'PARTNER'
+        }"
+                  @click="selectRole('PARTNER')"
               >
-                <input
-                    v-model="form.user_type"
-                    value="partner"
-                    type="radio"
-                    class="sr-only"
-                />
+                <input v-model="form.role" value="PARTNER" type="radio" class="sr-only" />
                 <div class="flex items-center">
                   <UserGroupIcon class="w-6 h-6 text-purple-600 mr-3" />
                   <div>
@@ -93,6 +78,7 @@
               </div>
             </div>
           </div>
+
 
           <!-- 아이디 -->
           <div>
@@ -509,7 +495,7 @@ const form = reactive({
   password: '',
   passwordConfirm: '',
   address: '',
-  user_type: 'general' as 'general' | 'corporate' | 'partner',
+  role: 'INDIVIDUAL' as 'INDIVIDUAL' | 'ENTERPRISE' | 'PARTNER' | 'WAREHOUSE' | 'ADMIN',
   company_name: '',
   business_number: '',
   manager_name: '',
@@ -745,6 +731,13 @@ const passwordStrengthTextClass = computed(function () {
   return 'text-green-600'
 })
 
+function mapUserTypeToRole(type: 'general'|'corporate'|'partner'): string {
+  if (type === 'general') return 'GENERAL'
+  if (type === 'corporate') return 'CORPORATE'
+  if (type === 'partner') return 'PARTNER'
+  return ''
+}
+
 async function handleSubmit() {
   try {
     loading.value = true
@@ -761,7 +754,7 @@ async function handleSubmit() {
       phone: form.phone,
       password: form.password,
       address: form.address,
-      user_type: form.user_type,
+      role: form.role,   // ✅ Enum 값 그대로 전송
       company_name: form.company_name,
       business_number: form.business_number,
       manager_name: form.manager_name,
@@ -808,6 +801,10 @@ async function handleSubmit() {
 async function handleMounted() {
   await authStore.signOut()
   loadReferralInfo()
+
+  // ★ mock data 적용
+  applyMockData(mockRegistrationData)
+
   const urlParams = new URLSearchParams(window.location.search)
   const emailVerified = urlParams.get('emailVerified')
   const message = urlParams.get('message')
@@ -826,6 +823,34 @@ function handleUnmounted() {
 
 function togglePassword() {
   showPassword.value = !showPassword.value
+}
+
+// ===== mock data =====
+const mockRegistrationData = {
+  username: "mockuser01",
+  name: "홍길동",
+  email: "hong@example.com",
+  phone: "010-1234-5678",
+  password: "Passw0rd!",
+  passwordConfirm: "Passw0rd!",
+  address: "서울시 강남구 테헤란로 123",
+  role: "ENTERPRISE" as "INDIVIDUAL"|"ENTERPRISE"|"PARTNER"|"WAREHOUSE"|"ADMIN",
+  company_name: "Mock 주식회사",
+  business_number: "123-45-67890",
+  manager_name: "김담당",
+  manager_contact: "010-9876-5432",
+  terms_agreed: true,
+  privacy_agreed: true,
+  referralCode: "REF1234"
+}
+
+// ===== 함수 추가 =====
+function applyMockData(data: typeof mockRegistrationData) {
+  Object.assign(form, data)
+}
+
+function selectRole(role: 'INDIVIDUAL'|'ENTERPRISE'|'PARTNER'|'WAREHOUSE'|'ADMIN') {
+  form.role = role
 }
 
 onMounted(handleMounted)

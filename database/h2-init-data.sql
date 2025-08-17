@@ -208,5 +208,27 @@ ALTER TABLE users ALTER COLUMN username SET NOT NULL;
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_users_username ON users(username);
 
+ALTER TABLE users
+    ADD COLUMN email_verification_token VARCHAR(255);
+
+ALTER TABLE users
+    ADD COLUMN two_factor_enabled BOOLEAN DEFAULT FALSE;
+
+ALTER TABLE users
+    ADD COLUMN two_factor_secret VARCHAR(255);
+
+ALTER TABLE users
+    ADD COLUMN password_reset_token VARCHAR(255);
+
+ALTER TABLE users
+    ADD COLUMN password_reset_expires_at TIMESTAMP;
+
+
+ALTER TABLE users
+    ADD COLUMN login_attempts INT DEFAULT 0;
+
+ALTER TABLE users
+    ADD COLUMN locked_until TIMESTAMP;
+
 -- 데이터 삽입 완료
 COMMIT;
