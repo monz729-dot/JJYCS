@@ -1,190 +1,159 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { ApiService } from '@/services/apiService'
-import type { UserProfile, SignUpData, LoginData } from '@/lib/supabase'
+import SpringBootAuthService, { 
+  type SignUpRequest, 
+  type LoginRequest, 
+  type AuthResponse, 
+  type UserProfile 
+} from '@/services/authApiService'
 
-// Backend API 타입 정의
-interface BackendUser {
-  id: number
-  email: string
-  name: string
-  phone: string
-  role: string
-  status: string
-  memberCode: string
-  emailVerified: boolean
-  twoFactorEnabled: boolean
-  createdAt: string
-}
-
-interface BackendAuthResponse {
-  accessToken: string
-  tokenType: string
-  user: BackendUser
-  requiresEmailVerification?: boolean
-  requiresApproval?: boolean
-  message?: string
+interface AuthState {
+  user: UserProfile | null
+  accessToken: string | null
+  refreshToken: string | null
+  loading: boolean
+  error: string | null
 }
 
 export const useAuthStore = defineStore('auth', () => {
-  // 상태
+  // State
   const user = ref<UserProfile | null>(null)
+  const accessToken = ref<string | null>(null)
+  const refreshToken = ref<string | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
 
-  // 계산된 속성
-  const isAuthenticated = computed(() => !!user.value && !!localStorage.getItem('access_token'))
-  const isAdmin = computed(() => user.value?.user_type === 'admin' || user.value?.role === 'ADMIN')
-  const isApproved = computed(() => {
-    if (user.value?.approval_status) {
-      return user.value.approval_status === 'approved'
-    }
-    // Backend 응답의 경우 status 필드 사용
-    return user.value?.status === 'ACTIVE'
+  // Getters
+  const isAuthenticated = computed(() => {
+    return !!accessToken.value && !!user.value
   })
-  const isPending = computed(() => {
-    if (user.value?.approval_status) {
-      return user.value.approval_status === 'pending'
-    }
-    return user.value?.status === 'PENDING_APPROVAL'
-  })
-  const isRejected = computed(() => {
-    if (user.value?.approval_status) {
-      return user.value.approval_status === 'rejected'
-    }
-    return user.value?.status === 'SUSPENDED' || user.value?.status === 'INACTIVE'
-  })
+
   const userType = computed(() => {
-    if (user.value?.user_type) {
-      return user.value.user_type
-    }
-    // Backend role을 frontend user_type으로 변환
-    const roleMap: { [key: string]: string } = {
-      'ADMIN': 'admin',
-      'INDIVIDUAL': 'general',
-      'ENTERPRISE': 'corporate',
-      'PARTNER': 'partner',
-      'WAREHOUSE': 'warehouse'
-    }
-    return user.value?.role ? roleMap[user.value.role] || 'general' : null
+    return user.value?.role || null
   })
-  
-  // 역할 확인 함수
-  const hasRole = (role: string) => {
-    return userType.value === role
-  }
-  
-  const hasAnyRole = (roles: string[]) => {
-    return userType.value && roles.includes(userType.value)
+
+  const userStatus = computed(() => {
+    return user.value?.status || null
+  })
+
+  const isEmailVerified = computed(() => {
+    return user.value?.emailVerified || false
+  })
+
+  const isPendingApproval = computed(() => {
+    return user.value?.status === 'pending_approval'
+  })
+
+  const isActive = computed(() => {
+    return user.value?.status === 'active'
+  })
+
+  const isTwoFactorEnabled = computed(() => {
+    return user.value?.twoFactorEnabled || false
+  })
+
+  const hasRole = computed(() => (role: string) => {
+    return user.value?.role === role
+  })
+
+  const canAccessRoute = computed(() => (requiredRoles?: string[]) => {
+    if (!requiredRoles || requiredRoles.length === 0) return true
+    if (!user.value?.role) return false
+    return requiredRoles.includes(user.value.role)
+  })
+
+  const statusMessage = computed(() => {
+    if (!user.value) return ''
+    
+    switch (user.value.status) {
+      case 'pending_approval':
+        return '계정 승인 대기 중입니다. 승인까지 평일 1-2일이 소요됩니다.'
+      case 'active':
+        return user.value.emailVerified ? '' : '이메일 인증을 완료해주세요.'
+      case 'suspended':
+        return '계정이 일시 정지되었습니다. 관리자에게 문의하세요.'
+      case 'deactivated':
+        return '비활성화된 계정입니다.'
+      default:
+        return ''
+    }
+  })
+
+  const dashboardPath = computed(() => {
+    if (!user.value) return '/auth/login'
+    
+    switch (user.value.role) {
+      case 'admin':
+        return '/app/admin'
+      case 'warehouse':
+        return '/app/warehouse'
+      case 'partner':
+        return '/app/partner'
+      default:
+        return '/app/dashboard'
+    }
+  })
+
+  // Actions
+  const initializeAuth = async () => {
+    try {
+      // 로컬 스토리지에서 토큰과 사용자 정보 복원
+      const storedToken = localStorage.getItem('accessToken')
+      const storedRefreshToken = localStorage.getItem('refreshToken')
+      const storedUser = localStorage.getItem('user')
+
+      if (storedToken && storedUser) {
+        accessToken.value = storedToken
+        refreshToken.value = storedRefreshToken
+        user.value = JSON.parse(storedUser)
+
+        // 서버에서 최신 사용자 정보 가져오기
+        await fetchUserProfile()
+      }
+    } catch (error) {
+      console.error('Auth initialization failed:', error)
+      clearAuth()
+    }
   }
 
-  // 액션
-  const signUp = async (data: SignUpData) => {
+  const signUp = async (signUpData: SignUpRequest) => {
     loading.value = true
     error.value = null
-    
+
     try {
-      // SignUpData를 백엔드 형식으로 변환
-      const backendSignupData = {
-        email: data.email,
-        password: data.password,
-        name: data.name,
-        phone: data.phone || '',
-        role: data.user_type === 'general' ? 'INDIVIDUAL' : 
-              data.user_type === 'corporate' ? 'ENTERPRISE' : 
-              data.user_type === 'partner' ? 'PARTNER' : 'INDIVIDUAL',
-        memberCode: data.username, // 백엔드에서는 memberCode로 사용
-        agreeTerms: data.terms_agreed || false,
-        agreePrivacy: data.privacy_agreed || false,
-        agreeMarketing: false
-      }
-      
-      const result = await ApiService.post<BackendAuthResponse>('/auth/signup', backendSignupData)
+      const result = await SpringBootAuthService.signUp(signUpData)
       
       if (result.success && result.data) {
-        // JWT 토큰 저장
-        localStorage.setItem('access_token', result.data.accessToken)
-        
-        // 사용자 정보를 frontend 형식으로 변환해서 저장
-        user.value = {
-          id: result.data.user.id.toString(),
-          email: result.data.user.email,
-          name: result.data.user.name,
-          phone: result.data.user.phone,
-          user_type: data.user_type,
-          role: result.data.user.role,
-          status: result.data.user.status,
-          memberCode: result.data.user.memberCode,
-          email_verified: result.data.user.emailVerified,
-          approval_status: result.data.user.status === 'ACTIVE' ? 'approved' : 
-                          result.data.user.status === 'PENDING_APPROVAL' ? 'pending' : 'rejected',
-          created_at: result.data.user.createdAt
-        } as UserProfile
-        
-        const userTypeText = data.user_type === 'general' ? '일반회원' : 
-                           data.user_type === 'corporate' ? '기업회원' : '파트너회원'
-        
-        return { 
-          success: true, 
-          requiresEmailVerification: result.data.requiresEmailVerification,
-          userType: data.user_type,
-          message: result.data.message || `${userTypeText} 회원가입이 완료되었습니다.`
-        }
+        setAuthData(result.data)
+        return { success: true, data: result.data }
       } else {
         error.value = result.error || '회원가입에 실패했습니다.'
         return { success: false, error: error.value }
       }
-    } catch (err) {
-      error.value = err instanceof Error ? err.message : '회원가입 중 오류가 발생했습니다.'
+    } catch (err: any) {
+      error.value = err.message || '회원가입 중 오류가 발생했습니다.'
       return { success: false, error: error.value }
     } finally {
       loading.value = false
     }
   }
 
-  const signIn = async (data: LoginData) => {
+  const signIn = async (loginData: LoginRequest) => {
     loading.value = true
     error.value = null
-    
+
     try {
-      const loginData = {
-        email: data.email,
-        password: data.password
-      }
-      
-      const result = await ApiService.post<BackendAuthResponse>('/auth/login', loginData)
+      const result = await SpringBootAuthService.signIn(loginData)
       
       if (result.success && result.data) {
-        // JWT 토큰 저장
-        localStorage.setItem('access_token', result.data.accessToken)
-        
-        // 사용자 정보를 frontend 형식으로 변환해서 저장
-        user.value = {
-          id: result.data.user.id.toString(),
-          email: result.data.user.email,
-          name: result.data.user.name,
-          phone: result.data.user.phone,
-          role: result.data.user.role,
-          status: result.data.user.status,
-          memberCode: result.data.user.memberCode,
-          email_verified: result.data.user.emailVerified,
-          approval_status: result.data.user.status === 'ACTIVE' ? 'approved' : 
-                          result.data.user.status === 'PENDING_APPROVAL' ? 'pending' : 'rejected',
-          created_at: result.data.user.createdAt,
-          // user_type 매핑
-          user_type: result.data.user.role === 'ADMIN' ? 'admin' :
-                    result.data.user.role === 'INDIVIDUAL' ? 'general' :
-                    result.data.user.role === 'ENTERPRISE' ? 'corporate' :
-                    result.data.user.role === 'PARTNER' ? 'partner' : 'general'
-        } as UserProfile
-        
-        return { success: true }
+        setAuthData(result.data)
+        return { success: true, data: result.data }
       } else {
         error.value = result.error || '로그인에 실패했습니다.'
         return { success: false, error: error.value }
       }
-    } catch (err) {
-      error.value = err instanceof Error ? err.message : '로그인 중 오류가 발생했습니다.'
+    } catch (err: any) {
+      error.value = err.message || '로그인 중 오류가 발생했습니다.'
       return { success: false, error: error.value }
     } finally {
       loading.value = false
@@ -193,126 +162,96 @@ export const useAuthStore = defineStore('auth', () => {
 
   const signOut = async () => {
     loading.value = true
-    error.value = null
-    
+
     try {
-      // 백엔드 로그아웃 호출 (선택사항)
-      await ApiService.post('/auth/logout', {})
-      
-      // 로컬 토큰 제거
-      localStorage.removeItem('access_token')
-      user.value = null
-      
-      return { success: true }
+      await SpringBootAuthService.signOut()
     } catch (err) {
-      // 로그아웃은 실패해도 로컬 상태는 정리
-      localStorage.removeItem('access_token')
-      user.value = null
-      
-      error.value = err instanceof Error ? err.message : '로그아웃 중 오류가 발생했습니다.'
-      return { success: true } // 로컬 정리는 성공
+      console.error('Sign out error:', err)
     } finally {
+      clearAuth()
       loading.value = false
     }
   }
 
   const fetchUserProfile = async () => {
     try {
-      const token = localStorage.getItem('access_token')
-      if (!token) {
-        user.value = null
-        return { success: false, error: '로그인이 필요합니다.' }
-      }
-
-      const result = await ApiService.get<BackendUser>('/auth/me')
+      const result = await SpringBootAuthService.getCurrentUserProfile()
       
-      if (result.success && result.data) {
-        user.value = {
-          id: result.data.id.toString(),
-          email: result.data.email,
-          name: result.data.name,
-          phone: result.data.phone,
-          role: result.data.role,
-          status: result.data.status,
-          memberCode: result.data.memberCode,
-          email_verified: result.data.emailVerified,
-          approval_status: result.data.status === 'ACTIVE' ? 'approved' : 
-                          result.data.status === 'PENDING_APPROVAL' ? 'pending' : 'rejected',
-          created_at: result.data.createdAt,
-          user_type: result.data.role === 'ADMIN' ? 'admin' :
-                    result.data.role === 'INDIVIDUAL' ? 'general' :
-                    result.data.role === 'ENTERPRISE' ? 'corporate' :
-                    result.data.role === 'PARTNER' ? 'partner' : 'general'
-        } as UserProfile
-        
-        return { success: true }
+      if (result.data) {
+        user.value = result.data
+        return { success: true, data: result.data }
       } else {
-        error.value = result.error || '사용자 정보를 가져올 수 없습니다.'
-        return { success: false, error: error.value }
+        throw new Error(result.error || 'Failed to fetch user profile')
       }
-    } catch (err) {
-      error.value = err instanceof Error ? err.message : '사용자 정보 조회 중 오류가 발생했습니다.'
-      return { success: false, error: error.value }
+    } catch (err: any) {
+      console.error('Fetch user profile error:', err)
+      // 프로필 조회 실패시 로그아웃
+      clearAuth()
+      throw err
     }
   }
 
-  const updateProfile = async (updates: Partial<UserProfile>) => {
+  const updateProfile = async (profileData: { name?: string; phone?: string }) => {
     loading.value = true
     error.value = null
-    
+
     try {
-      const result = await ApiService.put<BackendUser>('/auth/profile', updates)
+      const result = await SpringBootAuthService.updateProfile(profileData)
       
       if (result.success) {
-        await fetchUserProfile() // 업데이트된 정보 다시 가져오기
+        // 업데이트된 프로필 정보 다시 가져오기
+        await fetchUserProfile()
         return { success: true }
       } else {
         error.value = result.error || '프로필 업데이트에 실패했습니다.'
         return { success: false, error: error.value }
       }
-    } catch (err) {
-      error.value = err instanceof Error ? err.message : '프로필 업데이트 중 오류가 발생했습니다.'
+    } catch (err: any) {
+      error.value = err.message || '프로필 업데이트 중 오류가 발생했습니다.'
       return { success: false, error: error.value }
     } finally {
       loading.value = false
     }
   }
 
-  const checkUsernameAvailability = async (username: string) => {
+  const verifyEmail = async (token: string) => {
+    loading.value = true
+    error.value = null
+
     try {
-      const result = await ApiService.get<{ available: boolean }>(`/auth/check-username?username=${encodeURIComponent(username)}`)
+      const result = await SpringBootAuthService.verifyEmail(token)
       
-      if (result.success && result.data) {
-        return { available: result.data.available }
+      if (result.success) {
+        // 이메일 인증 후 사용자 정보 업데이트
+        await fetchUserProfile()
+        return { success: true }
       } else {
-        return { 
-          available: false, 
-          error: result.error || '아이디 중복 확인에 실패했습니다.' 
-        }
+        error.value = result.error || '이메일 인증에 실패했습니다.'
+        return { success: false, error: error.value }
       }
-    } catch (err) {
-      return { 
-        available: false, 
-        error: err instanceof Error ? err.message : '아이디 중복 확인 중 오류가 발생했습니다.' 
-      }
+    } catch (err: any) {
+      error.value = err.message || '이메일 인증 중 오류가 발생했습니다.'
+      return { success: false, error: error.value }
+    } finally {
+      loading.value = false
     }
   }
 
   const resendEmailVerification = async () => {
     loading.value = true
     error.value = null
-    
+
     try {
-      const result = await ApiService.post('/auth/resend-verification', {})
+      const result = await SpringBootAuthService.resendEmailVerification()
       
       if (result.success) {
-        return { success: true, message: '이메일 인증 메일을 재발송했습니다.' }
+        return { success: true }
       } else {
-        error.value = result.error || '이메일 인증 재발송에 실패했습니다.'
+        error.value = result.error || '이메일 재발송에 실패했습니다.'
         return { success: false, error: error.value }
       }
-    } catch (err) {
-      error.value = err instanceof Error ? err.message : '이메일 인증 재발송 중 오류가 발생했습니다.'
+    } catch (err: any) {
+      error.value = err.message || '이메일 재발송 중 오류가 발생했습니다.'
       return { success: false, error: error.value }
     } finally {
       loading.value = false
@@ -322,114 +261,177 @@ export const useAuthStore = defineStore('auth', () => {
   const sendPasswordResetEmail = async (email: string) => {
     loading.value = true
     error.value = null
-    
+
     try {
-      const result = await ApiService.post('/auth/password-reset', { email })
+      const result = await SpringBootAuthService.requestPasswordReset(email)
       
       if (result.success) {
-        return { success: true, message: '비밀번호 재설정 이메일을 발송했습니다.' }
+        return { success: true }
       } else {
         error.value = result.error || '비밀번호 재설정 이메일 발송에 실패했습니다.'
         return { success: false, error: error.value }
       }
-    } catch (err) {
-      error.value = err instanceof Error ? err.message : '비밀번호 재설정 이메일 발송 중 오류가 발생했습니다.'
+    } catch (err: any) {
+      error.value = err.message || '비밀번호 재설정 이메일 발송 중 오류가 발생했습니다.'
       return { success: false, error: error.value }
     } finally {
       loading.value = false
     }
   }
 
-  const resetPassword = async (newPassword: string, token?: string) => {
+  const resetPassword = async (token: string, newPassword: string) => {
     loading.value = true
     error.value = null
-    
+
     try {
-      const result = await ApiService.post('/auth/reset-password', { newPassword, token })
+      const result = await SpringBootAuthService.resetPassword(token, newPassword)
       
       if (result.success) {
-        return { success: true, message: '비밀번호가 성공적으로 변경되었습니다.' }
+        return { success: true }
       } else {
         error.value = result.error || '비밀번호 재설정에 실패했습니다.'
         return { success: false, error: error.value }
       }
-    } catch (err) {
-      error.value = err instanceof Error ? err.message : '비밀번호 재설정 중 오류가 발생했습니다.'
+    } catch (err: any) {
+      error.value = err.message || '비밀번호 재설정 중 오류가 발생했습니다.'
       return { success: false, error: error.value }
     } finally {
       loading.value = false
     }
   }
 
-  const handleEmailVerification = async (token?: string) => {
+  const changePassword = async (currentPassword: string, newPassword: string) => {
     loading.value = true
     error.value = null
-    
+
     try {
-      const result = await ApiService.post('/auth/verify-email', { token })
+      const result = await SpringBootAuthService.changePassword(currentPassword, newPassword)
       
       if (result.success) {
-        await fetchUserProfile() // 사용자 정보 다시 가져오기
-        return { success: true, message: '이메일 인증이 완료되었습니다.' }
+        return { success: true }
       } else {
-        error.value = result.error || '이메일 인증 처리에 실패했습니다.'
+        error.value = result.error || '비밀번호 변경에 실패했습니다.'
         return { success: false, error: error.value }
       }
-    } catch (err) {
-      error.value = err instanceof Error ? err.message : '이메일 인증 처리 중 오류가 발생했습니다.'
+    } catch (err: any) {
+      error.value = err.message || '비밀번호 변경 중 오류가 발생했습니다.'
       return { success: false, error: error.value }
     } finally {
       loading.value = false
     }
+  }
+
+  const setup2FA = async () => {
+    loading.value = true
+    error.value = null
+
+    try {
+      const result = await SpringBootAuthService.setup2FA()
+      
+      if (result.success) {
+        return { success: true, data: result.data }
+      } else {
+        error.value = result.error || '2FA 설정에 실패했습니다.'
+        return { success: false, error: error.value }
+      }
+    } catch (err: any) {
+      error.value = err.message || '2FA 설정 중 오류가 발생했습니다.'
+      return { success: false, error: error.value }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const refreshAccessToken = async () => {
+    try {
+      const result = await SpringBootAuthService.refreshToken()
+      
+      if (result.success && result.data) {
+        accessToken.value = result.data.accessToken
+        if (result.data.refreshToken) {
+          refreshToken.value = result.data.refreshToken
+        }
+        return { success: true }
+      } else {
+        throw new Error(result.error || 'Token refresh failed')
+      }
+    } catch (err: any) {
+      console.error('Token refresh error:', err)
+      clearAuth()
+      throw err
+    }
+  }
+
+  // Helper functions
+  const setAuthData = (authData: AuthResponse) => {
+    user.value = authData.user
+    accessToken.value = authData.accessToken
+    refreshToken.value = authData.refreshToken
+
+    // 로컬 스토리지에 저장
+    localStorage.setItem('accessToken', authData.accessToken)
+    if (authData.refreshToken) {
+      localStorage.setItem('refreshToken', authData.refreshToken)
+    }
+    localStorage.setItem('user', JSON.stringify(authData.user))
+  }
+
+  const clearAuth = () => {
+    user.value = null
+    accessToken.value = null
+    refreshToken.value = null
+    error.value = null
+
+    // 로컬 스토리지 클리어
+    localStorage.removeItem('accessToken')
+    localStorage.removeItem('refreshToken')
+    localStorage.removeItem('user')
   }
 
   const clearError = () => {
     error.value = null
   }
 
-  const initializeAuth = () => {
-    // 토큰 존재 여부 확인하여 사용자 정보 로드
-    const token = localStorage.getItem('access_token')
-    if (token) {
-      fetchUserProfile().catch(() => {
-        // 토큰이 유효하지 않으면 제거
-        localStorage.removeItem('access_token')
-        user.value = null
-      })
-    }
-  }
+  // 초기화
+  initializeAuth()
 
   return {
-    // 상태
+    // State
     user,
+    accessToken,
+    refreshToken,
     loading,
     error,
-    
-    // 계산된 속성
+
+    // Getters
     isAuthenticated,
-    isAdmin,
-    isApproved,
-    isPending,
-    isRejected,
     userType,
-    
-    // 역할 확인 함수
+    userStatus,
+    isEmailVerified,
+    isPendingApproval,
+    isActive,
+    isTwoFactorEnabled,
     hasRole,
-    hasAnyRole,
-    
-    // 액션
+    canAccessRoute,
+    statusMessage,
+    dashboardPath,
+
+    // Actions
     signUp,
     signIn,
     signOut,
-    logout: signOut, // alias for logout
     fetchUserProfile,
     updateProfile,
-    checkUsernameAvailability,
+    verifyEmail,
     resendEmailVerification,
     sendPasswordResetEmail,
     resetPassword,
-    handleEmailVerification,
-    clearError,
-    initializeAuth
+    changePassword,
+    setup2FA,
+    refreshAccessToken,
+    clearAuth,
+    clearError
   }
 })
+
+export default useAuthStore

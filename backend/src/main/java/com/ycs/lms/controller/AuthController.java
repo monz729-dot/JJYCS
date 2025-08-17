@@ -18,7 +18,7 @@ import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 @RequiredArgsConstructor
 @Tag(name = "Authentication", description = "인증 관련 API")
 public class AuthController {
@@ -30,17 +30,23 @@ public class AuthController {
     public ResponseEntity<ApiResponse<AuthResponse>> signup(@Valid @RequestBody SignupRequest request) {
         log.info("User signup attempt: email={}, role={}", request.getEmail(), request.getRole());
         
-        AuthResponse response = userService.signup(request);
-        
-        String message = "회원가입이 완료되었습니다.";
-        if ("pending_approval".equals(response.getUser().getStatus())) {
-            message += " 승인은 평일 1-2일이 소요됩니다.";
-        } else {
-            message += " 이메일 인증을 진행해주세요.";
+        try {
+            AuthResponse response = userService.signup(request);
+            
+            String message = "회원가입이 완료되었습니다.";
+            if ("pending_approval".equals(response.getUser().getStatus())) {
+                message += " 승인은 평일 1-2일이 소요됩니다.";
+            } else {
+                message += " 이메일 인증을 진행해주세요.";
+            }
+            
+            return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(response, message));
+        } catch (Exception e) {
+            log.error("Signup failed", e);
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error(e.getMessage()));
         }
-        
-        return ResponseEntity.status(HttpStatus.CREATED)
-            .body(ApiResponse.success(response, message));
     }
 
     @PostMapping("/login")
@@ -48,13 +54,19 @@ public class AuthController {
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
         log.info("User login attempt: email={}", request.getEmail());
         
-        AuthResponse response = userService.login(request);
-        
-        if (response.isRequiresTwoFactor()) {
-            return ResponseEntity.ok(ApiResponse.success(response, "2단계 인증이 필요합니다."));
+        try {
+            AuthResponse response = userService.login(request);
+            
+            if (response.isRequiresTwoFactor()) {
+                return ResponseEntity.ok(ApiResponse.success(response, "2단계 인증이 필요합니다."));
+            }
+            
+            return ResponseEntity.ok(ApiResponse.success(response, "로그인 성공"));
+        } catch (Exception e) {
+            log.error("Login failed", e);
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error(e.getMessage()));
         }
-        
-        return ResponseEntity.ok(ApiResponse.success(response, "로그인 성공"));
     }
 
     @PostMapping("/refresh")
@@ -72,7 +84,7 @@ public class AuthController {
             
             Map<String, String> tokens = Map.of(
                 "accessToken", response.getAccessToken(),
-                "refreshToken", response.getRefreshToken(),
+                "refreshToken", response.getRefreshToken() != null ? response.getRefreshToken() : refreshToken,
                 "expiresIn", String.valueOf(response.getExpiresIn())
             );
             
@@ -89,9 +101,14 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Void>> verifyEmail(@RequestParam String token) {
         log.info("Email verification attempt: token={}", token.substring(0, 8) + "...");
         
-        userService.verifyEmail(token);
-        
-        return ResponseEntity.ok(ApiResponse.success(null, "이메일 인증이 완료되었습니다."));
+        try {
+            userService.verifyEmail(token);
+            return ResponseEntity.ok(ApiResponse.success(null, "이메일 인증이 완료되었습니다."));
+        } catch (Exception e) {
+            log.error("Email verification failed", e);
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error(e.getMessage()));
+        }
     }
 
     @PostMapping("/forgot-password")
@@ -162,8 +179,13 @@ public class AuthController {
             @RequestParam(required = false) String note) {
         log.info("User approval: userId={}, memberCode={}", userId, memberCode);
         
-        userService.approveUser(userId, memberCode, note);
-        
-        return ResponseEntity.ok(ApiResponse.success(null, "사용자 승인이 완료되었습니다."));
+        try {
+            userService.approveUser(userId, memberCode, note);
+            return ResponseEntity.ok(ApiResponse.success(null, "사용자 승인이 완료되었습니다."));
+        } catch (Exception e) {
+            log.error("User approval failed", e);
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error(e.getMessage()));
+        }
     }
 }

@@ -1,77 +1,105 @@
 @echo off
-echo ===============================================
-echo        YCS LMS Development Server Startup
-echo ===============================================
-echo.
+title YCS LMS Development Environment
 
-echo [1/4] Starting MySQL (if available)...
-net start mysql > nul 2>&1
-if %errorlevel% == 0 (
-    echo MySQL service started successfully
-) else (
-    echo MySQL service not available or already running
+echo 🚀 YCS LMS 개발 환경 시작
+echo =============================
+
+REM 현재 디렉토리 확인
+if not exist "backend\pom.xml" if not exist "frontend\package.json" (
+    echo ❌ 프로젝트 루트 디렉토리에서 실행해주세요
+    pause
+    exit /b 1
 )
 
-echo.
-echo [2/4] Building Backend...
+REM 명령어 파라미터 확인
+set COMMAND=%1
+if "%COMMAND%"=="" set COMMAND=start
+
+if "%COMMAND%"=="start" goto START_ALL
+if "%COMMAND%"=="backend" goto START_BACKEND
+if "%COMMAND%"=="frontend" goto START_FRONTEND
+if "%COMMAND%"=="stop" goto STOP_ALL
+if "%COMMAND%"=="help" goto SHOW_HELP
+
+echo ❌ 알 수 없는 명령어: %COMMAND%
+goto SHOW_HELP
+
+:START_ALL
+echo 📦 백엔드 서버 시작 중...
 cd backend
-call mvn clean compile > nul 2>&1
-if %errorlevel% == 0 (
-    echo Backend compiled successfully
-) else (
-    echo Backend compilation may have issues - continuing...
+start "YCS Backend" cmd /k "mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=local"
+cd ..
+
+timeout /t 10 /nobreak >nul
+
+echo 🎨 프론트엔드 서버 시작 중...
+cd frontend
+if not exist "node_modules" (
+    echo 📦 npm 패키지 설치 중...
+    npm install
 )
+start "YCS Frontend" cmd /k "npm run dev"
+cd ..
 
-echo.
-echo [3/4] Building Frontend...
-cd ..\frontend
-call npm install > nul 2>&1
-call npm run build > nul 2>&1
-if %errorlevel% == 0 (
-    echo Frontend built successfully
-) else (
-    echo Frontend build may have issues - continuing...
-)
+goto SHOW_INFO
 
-echo.
-echo [4/4] Starting Development Servers...
-echo.
-echo ===========================================
-echo          YCS LMS 개발용 계정 정보
-echo ===========================================
-echo.
-echo 1. 일반 사용자 (Individual):
-echo    Email: user@ycs.com ^| Password: password123
-echo    Email: user2@ycs.com ^| Password: password123
-echo.
-echo 2. 기업 사용자 (Enterprise):
-echo    Email: enterprise@ycs.com ^| Password: password123 [승인완료]
-echo    Email: company2@ycs.com ^| Password: password123 [승인대기]
-echo.
-echo 3. 파트너 사용자 (Partner):
-echo    Email: partner@ycs.com ^| Password: password123 [승인완료]
-echo    Email: affiliate@ycs.com ^| Password: password123 [승인대기]
-echo.
-echo 4. 창고 관리자 (Warehouse - 중간관리자):
-echo    Email: warehouse@ycs.com ^| Password: password123
-echo    Email: warehouse2@ycs.com ^| Password: password123
-echo.
-echo 5. 시스템 관리자 (Admin - 최고관리자):
-echo    Email: admin@ycs.com ^| Password: password123
-echo    Email: superadmin@ycs.com ^| Password: password123
-echo.
-echo ===========================================
-echo.
-echo Backend will run on: http://localhost:8080
-echo Frontend will run on: http://localhost:5173
-echo.
-echo Press Ctrl+C to stop servers
-echo.
+:START_BACKEND
+echo 📦 백엔드만 시작 중...
+cd backend
+mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=local
+cd ..
+goto END
 
-start "YCS LMS Backend" cmd /k "cd /d %~dp0backend && mvn spring-boot:run"
-timeout /t 5 > nul
-start "YCS LMS Frontend" cmd /k "cd /d %~dp0frontend && npm run dev"
+:START_FRONTEND
+echo 🎨 프론트엔드만 시작 중...
+cd frontend
+if not exist "node_modules" npm install
+npm run dev
+cd ..
+goto END
 
-echo Development servers are starting...
-echo Check the opened terminal windows for detailed logs.
+:STOP_ALL
+echo 🛑 서비스 종료 중...
+taskkill /f /im "java.exe" 2>nul
+taskkill /f /im "node.exe" 2>nul
+echo ✅ 모든 서비스가 종료되었습니다
+goto END
+
+:SHOW_INFO
+timeout /t 5 /nobreak >nul
+echo.
+echo 🎉 YCS LMS 개발 환경이 시작되었습니다!
+echo =====================================
+echo 📱 프론트엔드: http://localhost:5173
+echo 🔧 백엔드 API: http://localhost:8080
+echo 📚 API 문서: http://localhost:8080/swagger-ui.html
+echo.
+echo 📋 테스트 계정:
+echo    관리자: admin@ycs.com / password123
+echo    창고: warehouse@ycs.com / password123
+echo    개인: user1@example.com / password123
+echo    기업: company@corp.com / password123
+echo.
+echo ⏹️  종료하려면 stop-dev.bat를 실행하세요
+goto END
+
+:SHOW_HELP
+echo YCS LMS 개발 환경 스크립트
+echo.
+echo 사용법:
+echo   start-dev.bat [명령어]
+echo.
+echo 명령어:
+echo   start     - 백엔드와 프론트엔드 모두 시작 (기본값)
+echo   backend   - 백엔드만 시작
+echo   frontend  - 프론트엔드만 시작  
+echo   stop      - 모든 서비스 종료
+echo   help      - 도움말 표시
+echo.
+echo 예시:
+echo   start-dev.bat
+echo   start-dev.bat backend
+echo   start-dev.bat stop
+
+:END
 pause

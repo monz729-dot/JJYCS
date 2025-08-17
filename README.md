@@ -1,353 +1,216 @@
-# YSC 물류관리시스템 (LMS) 
+# YCS LMS (Logistics Management System) v2.0
 
-> 모바일 웹 중심의 물류 관리 시스템 - **CBM 자동계산, EMS/HS 검증, THB 1,500 초과 경고, QR 스캔** 등 핵심 비즈니스 룰 완전 구현
+물류 관리 시스템 - JWT 기반 인증, 역할별 접근 제어, 실시간 창고 관리
 
 ## 🚀 빠른 시작
 
-### 1. 시스템 요구사항
-- **Java 17** 이상
-- **Node.js 18** 이상  
-- **Docker Desktop** (MySQL, Redis, Kafka 실행용)
-- **Git**
+### 사전 요구사항
+- Java 17+
+- Node.js 18+
+- Maven 3.9+
 
-### 2. 전체 시스템 실행
+### 개발 환경 실행
 ```bash
-# Windows
-start-full-system.bat
+# 모든 서비스 시작
+./start-dev.sh
 
-# 또는 수동 실행
-docker-compose up -d
-cd backend && mvn spring-boot:run &
-cd frontend && npm run dev
+# 백엔드만 시작
+./start-dev.sh backend
+
+# 프론트엔드만 시작  
+./start-dev.sh frontend
+
+# 서비스 종료
+./start-dev.sh stop
 ```
 
-### 3. 접속 정보
-- 🌐 **프론트엔드**: http://localhost:5173
-- 🚀 **백엔드 API**: http://localhost:8080/api  
-- 📚 **API 문서**: http://localhost:8080/api/swagger-ui.html
-- 📊 **어드민 패널**: http://localhost:5173/admin
+### Windows
+```cmd
+REM 모든 서비스 시작
+start-dev.bat
 
-### 4. 기본 계정
-```
-관리자: admin@ysc-lms.com / admin123!
-개발용 계정들은 /docs/DEV_USERS.sql 참조
+REM 서비스 종료
+start-dev.bat stop
 ```
 
----
+## 📱 접속 주소
+- **프론트엔드**: http://localhost:5173
+- **백엔드 API**: http://localhost:8080
+- **API 문서**: http://localhost:8080/swagger-ui.html
 
-## 📋 주요 기능
+## 👥 테스트 계정
+| 역할 | 이메일 | 비밀번호 | 설명 |
+|------|--------|----------|------|
+| 관리자 | admin@ycs.com | password123 | 전체 시스템 관리 |
+| 창고 | warehouse@ycs.com | password123 | 창고 관리, QR 스캔 |
+| 개인 | user1@example.com | password123 | 개인 사용자 |
+| 기업 | company@corp.com | password123 | 기업 사용자 |
+| 파트너 | partner@affiliate.com | password123 | 파트너 |
 
-### ✅ 비즈니스 룰 (완전 구현)
-- **CBM 29 초과 시 자동 항공 전환** + 경고 알림
-- **THB 1,500 초과 시 수취인 추가 정보 입력 유도**
-- **회원코드 미기재 시 주문 지연 처리**
-- **EMS/HS 코드 실시간 검증** (data.go.kr API)
-
-### 📱 사용자 인터페이스
-- **모바일 우선 PWA** 설계
-- **다국어 지원** (한국어/영어)
-- **실시간 상태 업데이트**
-- **직관적 대시보드**
-
-### 📦 주문 관리
-- **4단계 주문 생성** (수취인 → 상품 → 박스 → 배송)
-- **실시간 CBM 계산** 및 배송 방법 추천
-- **주문 상태 추적** (12단계 상세 상태)
-- **견적서 자동 생성** (1차/2차 버전 관리)
-
-### 🏭 창고 관리  
-- **QR/바코드 스캔** (카메라 + 수동 입력)
-- **일괄 입출고 처리** (배치 스캔)
-- **실시간 재고 현황**
-- **믹스박스/보류 상태 관리**
-
-### 👥 사용자 관리
-- **5가지 역할** (개인/기업/파트너/창고/관리자)
-- **기업/파트너 승인 프로세스** (평일 1-2일)
-- **2단계 인증** (2FA)
-- **이메일 인증** 필수
-
-### 🤝 파트너 시스템
-- **추천 코드 시스템**
-- **커미션 자동 계산**
-- **실시간 성과 대시보드**
-- **정산 관리**
-
----
-
-## 🏗️ 기술 스택
-
-### Backend (Spring Boot 3)
-- **Java 17**, **Spring Boot 3.0.3**
-- **MyBatis 3.0.3** (MySQL 연동)
-- **Redis** (세션/캐시), **Kafka** (이벤트)
-- **JWT**, **bcrypt**, **2FA**
-- **Flyway** (DB 마이그레이션)
-- **Swagger/OpenAPI** (API 문서)
-
-### Frontend (Vue 3)
-- **Vue 3.4** + **TypeScript**
-- **Pinia** (상태관리), **Vue Router 4**
-- **Vite** + **PWA**
-- **TailwindCSS** + **PrimeVue**
-- **Vue-i18n** (다국어)
-- **html5-qrcode** (QR 스캔)
-
-### Infrastructure
-- **Docker Compose** (개발환경)
-- **MySQL 8.0**, **Redis 7**, **Kafka 3.2**
-- **Nginx** (프로덕션 배포)
-- **AWS/Azure** 배포 준비
-
----
-
-## 📊 데이터베이스 스키마
-
-### 핵심 테이블
-```sql
-users (사용자), enterprise_profiles (기업), partner_profiles (파트너)
-orders (주문), order_items (상품), order_boxes (박스/CBM)
-warehouses (창고), inventory (재고), scan_events (스캔로그)
-shipment_tracking (배송추적), estimates (견적), payments (결제)
-partner_referrals (추천), config (시스템설정), audit_logs (감사로그)
-```
-
-### 가상 컬럼 & 트리거
-- **CBM 자동계산**: `(width×height×depth)/1,000,000`
-- **29 초과 감지**: 트리거로 자동 `air` 전환
-- **THB 1,500 체크**: 주문 생성시 플래그 설정
-- **회원코드 검증**: NULL 시 `delayed` 상태
-
----
-
-## 🎯 MVP 스프린트 계획
-
-### Sprint 1 (백엔드 코어 + 회원/주문)
-- ✅ DB 마이그레이션 (Flyway)
-- ✅ 인증/인가 (JWT, 2FA, 이메일)
-- ✅ 주문 생성 API (CBM/EMS/HS/THB 룰)
-- ✅ 창고 스캔 API (입고 기초)
-- ✅ 사용자/관리자 대시보드
-
-### Sprint 2 (출고/라벨/정산/파트너)
-- ✅ 라벨/QR 생성·스캔·출력
-- ✅ 일괄 입출고, 보류/믹스박스
-- ✅ 견적(1차/2차) + 운임 합계
-- ✅ 파트너 대시보드/정산 기초
-
-**Done 정의**: 위 플로우가 **모바일 실제 기기**에서 E2E 동작, 오류 메시지 현지화 포함
-
----
-
-## 🔧 개발 명령어
-
-### 백엔드
+## 🛠️ 개발 가이드
+### 백엔드 (Spring Boot)
 ```bash
 cd backend
-mvn spring-boot:run                    # 개발 서버 실행
-mvn test                              # 단위 테스트
-mvn spring-boot:run -Dspring.profiles.active=prod  # 프로덕션 모드
+./mvnw spring-boot:run
 ```
 
-### 프론트엔드
+### 프론트엔드 (Vue.js + Vite)
 ```bash
-cd frontend  
-npm run dev                           # 개발 서버 실행
-npm run build                         # 프로덕션 빌드
-npm run preview                       # 빌드 미리보기
-npm run lint                          # ESLint 검사
+cd frontend
+npm install
+npm run dev
 ```
 
-### 전체 시스템
+## 📝 주요 기능
+- ✅ JWT 기반 인증/인가
+- ✅ 역할별 접근 제어 (관리자/창고/개인/기업/파트너)
+- ✅ 주문 관리 (생성/수정/조회/취소)
+- ✅ 창고 관리 (QR 스캔, 재고 관리)
+- ✅ 견적 관리 (생성/승인/거절)
+- ✅ 결제 관리 (결제 처리/취소/환불)
+- ✅ 배송 추적 (실시간 상태 업데이트)
+- ✅ 알림 시스템
+- ✅ 파일 업로드 (라벨, 사진)
+- ✅ PDF 생성 (견적서, 라벨)
+- ✅ QR 코드 생성/스캔
+
+## 🏗️ 시스템 아키텍처
+
+### 백엔드 (Spring Boot)
+```
+├── controller/          # REST API 컨트롤러
+│   ├── AuthController      # 인증 관련 API
+│   ├── UserController      # 사용자 프로필 API
+│   ├── OrdersController    # 주문 관리 API
+│   ├── WarehouseController # 창고 관리 API
+│   ├── PaymentsController  # 결제 관리 API
+│   ├── TrackingController  # 배송 추적 API
+│   ├── EstimatesController # 견적 관리 API
+│   └── AdminController     # 관리자 API
+├── service/             # 비즈니스 로직
+├── security/            # JWT 보안 설정
+├── dto/                 # 데이터 전송 객체
+└── util/                # 유틸리티 클래스
+```
+
+### 프론트엔드 (Vue.js)
+```
+├── modules/             # 기능별 모듈
+│   ├── auth/               # 인증 모듈
+│   ├── orders/             # 주문 관리 모듈
+│   ├── warehouse/          # 창고 관리 모듈
+│   ├── payments/           # 결제 관리 모듈
+│   ├── tracking/           # 배송 추적 모듈
+│   ├── estimates/          # 견적 관리 모듈
+│   ├── admin/              # 관리자 모듈
+│   ├── partner/            # 파트너 모듈
+│   └── profile/            # 프로필 모듈
+├── services/            # API 서비스
+├── stores/              # Pinia 상태 관리
+├── components/          # 재사용 컴포넌트
+└── layouts/             # 레이아웃 컴포넌트
+```
+
+## 🔧 API 엔드포인트
+
+### 인증 API
+- `POST /api/auth/signup` - 회원가입
+- `POST /api/auth/login` - 로그인  
+- `POST /api/auth/refresh` - 토큰 새로고침
+- `POST /api/auth/verify-email` - 이메일 인증
+- `POST /api/auth/forgot-password` - 비밀번호 찾기
+- `POST /api/auth/reset-password` - 비밀번호 재설정
+
+### 사용자 API
+- `GET /api/users/me` - 현재 사용자 프로필 조회
+- `PUT /api/users/me` - 프로필 업데이트
+- `POST /api/users/me/change-password` - 비밀번호 변경
+
+### 주문 API
+- `GET /api/orders` - 주문 목록 조회
+- `POST /api/orders` - 주문 생성
+- `GET /api/orders/{id}` - 주문 상세 조회
+- `PUT /api/orders/{id}` - 주문 수정
+- `POST /api/orders/{id}/cancel` - 주문 취소
+
+### 창고 API
+- `POST /api/warehouse/scan` - QR 스캔 처리
+- `POST /api/warehouse/batch-process` - 일괄 처리
+- `GET /api/warehouse/{id}/inventory` - 재고 조회
+- `POST /api/warehouse/generate-label` - 라벨 생성
+
+### 견적 API
+- `GET /api/estimates` - 견적 목록 조회
+- `POST /api/estimates` - 견적 생성
+- `GET /api/estimates/{id}` - 견적 상세 조회
+- `POST /api/estimates/{id}/respond` - 견적 응답
+
+### 결제 API
+- `GET /api/payments` - 결제 목록 조회
+- `POST /api/payments/process` - 결제 처리
+- `GET /api/payments/{id}` - 결제 상세 조회
+
+### 배송 추적 API
+- `GET /api/tracking` - 배송 추적 목록
+- `GET /api/tracking/{trackingNumber}` - 배송 상세 조회
+- `POST /api/tracking/register` - 운송장 번호 등록
+
+## 🔐 보안 기능
+
+### JWT 토큰 인증
+- 액세스 토큰 (24시간 유효)
+- 리프레시 토큰 (7일 유효)
+- 자동 토큰 갱신
+
+### 역할별 접근 제어
+- **ADMIN**: 모든 기능 접근
+- **WAREHOUSE**: 창고 관리, 견적 생성
+- **ENTERPRISE/INDIVIDUAL**: 주문 관리, 결제
+- **PARTNER**: 파트너 센터 기능
+
+### 보안 미들웨어
+- CORS 설정
+- 요청 검증
+- 에러 핸들링
+
+## 🎯 비즈니스 룰
+
+### CBM 계산
+- 29m³ 초과시 자동으로 해상 → 항공 전환
+- 실시간 CBM 계산 및 경고
+
+### 금액 제한
+- THB 1,500 초과시 추가 수취인 정보 필요
+- 자동 비즈니스 룰 검증
+
+### 회원 관리
+- member_code 검증
+- 기업/파트너 계정 승인 프로세스
+
+## 🚀 배포
+
+### 개발 환경
 ```bash
-docker-compose up -d                  # 인프라 시작 (MySQL, Redis, Kafka)
-docker-compose down                   # 인프라 종료
-docker-compose logs -f                # 로그 모니터링
+./start-dev.sh
 ```
 
----
-
-## 📈 성능 최적화
-
-### 백엔드
-- **HikariCP** 커넥션 풀 (최대 10개)
-- **Redis 캐시** (세션, 자주 조회되는 데이터)
-- **MyBatis** 페이징 (100개 단위)
-- **인덱스 최적화** (주문/박스/CBM/파트너 성과)
-
-### 프론트엔드
-- **Vite** 빠른 번들링
-- **코드 스플리팅** (모듈별 지연 로딩)
-- **PWA 캐싱** (오프라인 지원)
-- **이미지 최적화** (WebP, 압축)
-
----
-
-## 🔐 보안
-
-- **OAuth2** + **JWT** 토큰 (1시간 만료)
-- **bcrypt** 비밀번호 해싱
-- **2FA** (TOTP, Google Authenticator)
-- **ReCAPTCHA v3** (봇 방지)
-- **HTTPS** 강제 (프로덕션)
-- **PII 마스킹** (개인정보 보호)
-- **감사 로그** 전체 기록
-
----
-
-## 🌍 국제화
-
-### 지원 언어
-- **한국어** (기본)
-- **영어** (전체 번역 완료)
-- **태국어** (비즈니스 룰 관련)
-
-### 다국가 지원
-- **통화**: THB, KRW, USD, CNY, VND
-- **날짜/시간**: 현지 표준
-- **주소 형식**: 국가별 대응
-- **전화번호**: 국가 코드 자동 감지
-
----
-
-## 🧪 테스트
-
-### 테스트 전략
+### 프로덕션 빌드
 ```bash
-# 백엔드 테스트
-mvn test                              # 단위 테스트
-mvn integration-test                  # 통합 테스트
+# 백엔드
+cd backend
+./mvnw clean package -Pproduction
 
-# 프론트엔드 테스트  
-npm run test:unit                     # 유닛 테스트
-npm run test:e2e                      # E2E 테스트 (Cypress)
+# 프론트엔드  
+cd frontend
+npm run build
 ```
 
-### 테스트 범위
-- **비즈니스 룰**: CBM/THB/회원코드/EMS-HS 검증
-- **API 계약**: 요청/응답 스키마 검증
-- **UI 플로우**: 주문생성→입고→출고→추적 시나리오
-- **모바일**: BrowserStack 실제 디바이스
+## 📞 지원
 
-**목표 커버리지**: **80%+**
+문제가 발생하거나 질문이 있으시면:
+1. GitHub Issues에 등록
+2. 개발팀에 직접 문의
 
 ---
 
-## 📝 문서
-
-### API 문서
-- **Swagger UI**: http://localhost:8080/api/swagger-ui.html
-- **전체 API 스펙**: `/docs/API.md`
-- **에러 코드**: `/docs/ERROR_CODES.md`
-
-### 개발자 가이드  
-- **코딩 컨벤션**: Google Java Style + ESLint/Prettier
-- **커밋 규칙**: `feat(module): description` 형태
-- **브랜치 전략**: Git Flow
-- **배포 프로세스**: GitHub Actions
-
----
-
-## 🚨 트러블슈팅
-
-### 일반적인 문제
-
-**Q: Docker 컨테이너가 시작되지 않음**
-```bash
-# Windows에서 Docker Desktop 실행 확인
-docker --version
-docker-compose down
-docker system prune -f  # 캐시 정리
-docker-compose up -d
-```
-
-**Q: 백엔드 8080 포트 충돌**
-```bash
-# 포트 사용 프로세스 확인 및 종료
-netstat -ano | findstr :8080
-taskkill /PID [PID번호] /F
-```
-
-**Q: CBM 자동 전환이 작동하지 않음**
-- DB 트리거 확인: `SHOW TRIGGERS;`
-- 설정값 확인: `SELECT * FROM config WHERE config_key='cbm_threshold';`
-- 로그 확인: `tail -f logs/ycs-lms.log`
-
-**Q: QR 스캔 카메라 권한 문제**
-- HTTPS 환경에서만 카메라 접근 가능
-- 브라우저 설정에서 카메라 권한 허용 필요
-- 개발환경: `localhost`는 HTTP도 허용
-
-### 성능 문제
-```bash
-# DB 쿼리 성능 확인
-SHOW PROCESSLIST;
-EXPLAIN SELECT * FROM orders WHERE ...;
-
-# 캐시 상태 확인  
-redis-cli INFO memory
-redis-cli FLUSHDB  # 캐시 초기화
-```
-
----
-
-## 🤝 기여하기
-
-### 브랜치 전략
-```
-main (프로덕션)
-├── develop (개발)
-├── feature/order-management (기능 브랜치)
-├── hotfix/cbm-calculation-fix (핫픽스)
-└── release/v1.0.0 (릴리스)
-```
-
-### 커밋 메시지 규칙
-```bash
-feat(orders): add CBM auto-conversion logic
-fix(warehouse): resolve QR scan camera permission
-docs(api): update swagger documentation  
-style(frontend): apply consistent spacing
-refactor(backend): optimize order query performance
-test(integration): add warehouse scan scenarios
-```
-
-### PR 체크리스트
-- [ ] 비즈니스 룰 테스트 통과
-- [ ] API 문서 업데이트
-- [ ] 모바일 반응형 확인
-- [ ] 다국어 번역 추가
-- [ ] 보안 체크 완료
-
----
-
-## 📞 연락처
-
-- **프로젝트 관리자**: Claude Code Assistant  
-- **기술 지원**: claude.ai/code
-- **이슈 제보**: GitHub Issues
-- **문서 기여**: Pull Request 환영
-
----
-
-## ⚖️ 라이선스
-
-이 프로젝트는 **MIT 라이선스** 하에 배포됩니다.
-
----
-
-## 🎉 마무리
-
-> **YSC 물류관리시스템**은 모바일 중심의 현대적인 물류 솔루션입니다. 
-> CBM 자동 계산, EMS/HS 검증, QR 스캔 등 **실무에서 바로 사용 가능한** 핵심 기능들을 완전히 구현했습니다.
-
-**🚀 지금 바로 시작해보세요!**
-
-```bash
-git clone [repository-url]
-cd ycs-lms  
-start-full-system.bat  # Windows
-# 또는 ./start-full-system.sh  # Linux/Mac
-```
-
-**Happy Coding! 📦✨**
+**YCS LMS v2.0** - 완전한 물류 관리 솔루션 🚛

@@ -149,3 +149,6 @@ target/
 
 # Claude Code local settings
 .claude/settings.local.json
+
+/frontend/yarn.lock
+/documents/연습장.txt
