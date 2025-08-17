@@ -3,7 +3,6 @@ package com.ycs.lms.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
@@ -15,33 +14,43 @@ public class EmailService {
 
     @Autowired(required = false)
     private JavaMailSender emailSender;
-    
-    @Value("${spring.mail.username}")
+
+    // spring.mail.username이 없어도 부팅되도록 기본값 비움
+    @Value("${spring.mail.username:}")
     private String fromEmail;
-    
+
+    // 이메일 발송 on/off 스위치 (기본 false)
     @Value("${app.notification.email-enabled:false}")
     private boolean emailEnabled;
 
+    private boolean mailReady() {
+        if (!emailEnabled) {
+            log.info("Email disabled via config (app.notification.email-enabled=false)");
+            return false;
+        }
+        if (emailSender == null) {
+            log.warn("JavaMailSender bean not present. Skip sending emails.");
+            return false;
+        }
+        if (fromEmail == null || fromEmail.isBlank()) {
+            log.warn("spring.mail.username is empty. Skip sending emails.");
+            return false;
+        }
+        return true;
+    }
+
     @Async
     public void sendVerificationEmail(String toEmail, String name, String verificationLink) {
-        if (!emailEnabled || emailSender == null) {
-            log.info("Email service disabled or unavailable - skipping verification email to: {}", toEmail);
-            return;
-        }
-        
+        if (!mailReady()) return;
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(toEmail);
-            message.setSubject("[YCS LMS] 이메일 인증");
+            message.setSubject("[YCS LMS] 이메일 인증 안내");
             message.setText(String.format(
-                "안녕하세요 %s님!\n\n" +
-                "YCS LMS 서비스 이용을 위해 이메일 인증을 완료해주세요.\n\n" +
-                "인증 링크: %s\n\n" +
-                "감사합니다.",
-                name, verificationLink
+                    "안녕하세요 %s님!\n\n아래 링크를 클릭하여 이메일 인증을 완료해 주세요:\n%s\n\n감사합니다.",
+                    name, verificationLink
             ));
-            
             emailSender.send(message);
             log.info("Verification email sent to: {}", toEmail);
         } catch (Exception e) {
@@ -51,24 +60,16 @@ public class EmailService {
 
     @Async
     public void sendApprovalEmail(String toEmail, String name) {
-        if (!emailEnabled || emailSender == null) {
-            log.info("Email service disabled or unavailable - skipping approval email to: {}", toEmail);
-            return;
-        }
-        
+        if (!mailReady()) return;
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(toEmail);
-            message.setSubject("[YCS LMS] 회원 승인 완료");
+            message.setSubject("[YCS LMS] 회원 가입 승인 안내");
             message.setText(String.format(
-                "안녕하세요 %s님!\n\n" +
-                "YCS LMS 서비스 이용 승인이 완료되었습니다.\n\n" +
-                "이제 서비스를 정상적으로 이용하실 수 있습니다.\n\n" +
-                "감사합니다.",
-                name
+                    "안녕하세요 %s님!\n\nYCS LMS 서비스 회원 가입이 승인되었습니다.\n지금 바로 서비스를 이용하실 수 있습니다.\n\n감사합니다.",
+                    name
             ));
-            
             emailSender.send(message);
             log.info("Approval email sent to: {}", toEmail);
         } catch (Exception e) {
@@ -78,25 +79,17 @@ public class EmailService {
 
     @Async
     public void sendPasswordResetEmail(String toEmail, String name, String resetLink) {
-        if (!emailEnabled || emailSender == null) {
-            log.info("Email service disabled or unavailable - skipping password reset email to: {}", toEmail);
-            return;
-        }
-        
+        if (!mailReady()) return;
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(toEmail);
-            message.setSubject("[YCS LMS] 비밀번호 재설정");
+            message.setSubject("[YCS LMS] 비밀번호 재설정 안내");
             message.setText(String.format(
-                "안녕하세요 %s님!\n\n" +
-                "비밀번호 재설정을 요청하셨습니다.\n\n" +
-                "재설정 링크: %s\n\n" +
-                "링크는 24시간 동안 유효합니다.\n\n" +
-                "감사합니다.",
-                name, resetLink
+                    "안녕하세요 %s님!\n\n아래 링크를 클릭하여 비밀번호를 재설정해 주세요:\n%s\n\n" +
+                            "보안을 위해 이 링크는 일정 시간 후 만료됩니다.\n\n감사합니다.",
+                    name, resetLink
             ));
-            
             emailSender.send(message);
             log.info("Password reset email sent to: {}", toEmail);
         } catch (Exception e) {
@@ -106,25 +99,17 @@ public class EmailService {
 
     @Async
     public void sendRejectionEmail(String toEmail, String name, String reason) {
-        if (!emailEnabled || emailSender == null) {
-            log.info("Email service disabled or unavailable - skipping rejection email to: {}", toEmail);
-            return;
-        }
-        
+        if (!mailReady()) return;
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(toEmail);
             message.setSubject("[YCS LMS] 회원 가입 거부 안내");
             message.setText(String.format(
-                "안녕하세요 %s님!\n\n" +
-                "YCS LMS 서비스 회원 가입 승인이 거부되었습니다.\n\n" +
-                "거부 사유: %s\n\n" +
-                "문의사항이 있으시면 고객센터로 연락해주세요.\n\n" +
-                "감사합니다.",
-                name, reason != null ? reason : "승인 기준 미충족"
+                    "안녕하세요 %s님!\n\nYCS LMS 서비스 회원 가입 승인이 거부되었습니다.\n\n" +
+                            "거부 사유: %s\n\n문의사항이 있으시면 고객센터로 연락해주세요.\n\n감사합니다.",
+                    name, reason != null ? reason : "승인 기준 미충족"
             ));
-            
             emailSender.send(message);
             log.info("Rejection email sent to: {}", toEmail);
         } catch (Exception e) {

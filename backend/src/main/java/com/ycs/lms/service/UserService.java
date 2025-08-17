@@ -1,10 +1,14 @@
 package com.ycs.lms.service;
 
 import com.ycs.lms.dto.AuthResponse;
+import com.ycs.lms.dto.ChangePasswordRequest;
 import com.ycs.lms.dto.LoginRequest;
 import com.ycs.lms.dto.SignupRequest;
+import com.ycs.lms.dto.UpdateProfileRequest;
+import com.ycs.lms.dto.UserProfileResponse;
 import com.ycs.lms.entity.User;
 import com.ycs.lms.exception.BadRequestException;
+import com.ycs.lms.exception.InvalidPasswordException;
 import com.ycs.lms.exception.NotFoundException;
 import com.ycs.lms.mapper.UserMapper;
 import com.ycs.lms.security.JwtTokenProvider;
@@ -160,6 +164,84 @@ public class UserService {
 
         return userMapper.findByEmail(email)
             .orElseThrow(() -> new NotFoundException("사용자를 찾을 수 없습니다"));
+    }
+
+    /**
+     * 사용자 프로필 조회
+     */
+    @Transactional(readOnly = true)
+    public UserProfileResponse getUserProfile(Long userId) {
+        User user = getUserById(userId);
+        return UserProfileResponse.builder()
+            .id(user.getId())
+            .email(user.getEmail())
+            .name(user.getName())
+            .phone(user.getPhone())
+            .role(user.getRole().name())
+            .status(user.getStatus().name())
+            .memberCode(user.getMemberCode())
+            .emailVerified(user.isEmailVerified())
+            .twoFactorEnabled(user.isTwoFactorEnabled())
+            .createdAt(user.getCreatedAt())
+            .lastLoginAt(user.getLastLoginAt())
+            .build();
+    }
+
+    /**
+     * 사용자 프로필 업데이트
+     */
+    public UserProfileResponse updateProfile(Long userId, UpdateProfileRequest request) {
+        User user = getUserById(userId);
+
+        if (request.getName() != null) {
+            user.setName(request.getName());
+        }
+        if (request.getPhone() != null) {
+            user.setPhone(request.getPhone());
+        }
+        if (request.getMemberCode() != null && !request.getMemberCode().equals(user.getMemberCode())) {
+            if (userMapper.existsByMemberCode(request.getMemberCode())) {
+                throw new BadRequestException("이미 사용 중인 회원 코드입니다");
+            }
+            user.setMemberCode(request.getMemberCode());
+        }
+
+        user = userMapper.save(user);
+        return getUserProfile(user.getId());
+    }
+
+    /**
+     * 비밀번호 변경
+     */
+    public void changePassword(Long userId, String currentPassword, String newPassword) {
+        User user = getUserById(userId);
+
+        // 현재 비밀번호 확인
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new InvalidPasswordException("현재 비밀번호가 올바르지 않습니다");
+        }
+
+        // 새 비밀번호 설정
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userMapper.save(user);
+    }
+
+    /**
+     * 이메일 인증 재발송
+     */
+    public void resendEmailVerification(Long userId) {
+        User user = getUserById(userId);
+
+        if (user.isEmailVerified()) {
+            throw new BadRequestException("이미 인증된 이메일입니다");
+        }
+
+        // 새 인증 토큰 생성
+        user.setEmailVerificationToken(UUID.randomUUID().toString());
+        userMapper.save(user);
+
+        // 인증 이메일 재발송
+        sendVerificationEmail(user);
     }
 
     /**

@@ -1,3 +1,4 @@
+// backend/src/main/java/com/ycs/lms/security/JwtTokenProvider.java
 package com.ycs.lms.security;
 
 import io.jsonwebtoken.*;
@@ -5,6 +6,7 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
@@ -20,45 +22,127 @@ import java.util.stream.Collectors;
 public class JwtTokenProvider {
 
     @Value("${app.jwt.secret}")
-    private String jwtSecret;
+    private String secret;
 
-    @Value("${app.jwt.expiration}")
-    private long jwtExpiration;
+    @Value("${app.jwt.expiration:86400000}")
+    private long expirationMs;
 
-    @Value("${app.jwt.refresh-expiration}")
-    private long refreshExpiration;
-
-    @Value("${app.jwt.issuer}")
+    @Value("${app.jwt.issuer:ycs-lms}")
     private String issuer;
 
-    @Value("${app.jwt.clock-skew}")
+    @Value("${app.jwt.clock-skew:30}")
     private long clockSkew;
 
     private Key getSigningKey() {
-        if (jwtSecret == null || jwtSecret.trim().isEmpty()) {
-            throw new IllegalStateException("JWT secret key is not configured. Please set JWT_SECRET environment variable.");
+        byte[] keyBytes = Decoders.BASE64.decode(secret);
+        return Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    /* ===== 호환 API ===== */
+
+    public String generateToken(Authentication authentication) {
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof UserPrincipal up) {
+            return generateAccessToken(up);
         }
-        
+        UserPrincipal fallback = UserPrincipal.builder()
+                .id(null)
+                .email(authentication.getName())
+                .name(authentication.getName())
+                .role(authentication.getAuthorities().stream().findFirst()
+                        .map(GrantedAuthority::getAuthority).orElse("USER"))
+                .memberCode(null)
+                .password("")
+                .authorities(authentication.getAuthorities().stream()
+                        .map(GrantedAuthority::getAuthority).collect(java.util.stream.Collectors.toList()))
+                .build();
+        return generateAccessToken(fallback);
+    }
+
+    public String generateRefreshToken(Long userId) {
+        Date now = new Date();
+        Date expiry = new Date(now.getTime() + (expirationMs * 7));
+        return Jwts.builder()
+                .setSubject(String.valueOf(userId))
+                .setIssuer(issuer)
+                .setAudience("ycs-lms-refresh")
+                .setIssuedAt(now)
+                .setExpiration(expiry)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS512)
+                .compact();
+    }
+
+    public boolean validateRefreshToken(String token) {
         try {
-            byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
-            
-            // HMAC-SHA512를 위해 최소 512비트(64바이트) 키 길이 검증
-            if (keyBytes.length < 64) {
-                throw new IllegalStateException("JWT secret key must be at least 512 bits (64 bytes) for HMAC-SHA512");
-            }
-            
-            return Keys.hmacShaKeyFor(keyBytes);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalStateException("JWT secret key must be a valid Base64 encoded string", e);
+            Jwts.parserBuilder()
+                    .setSigningKey(getSigningKey())
+                    .requireIssuer(issuer)
+                    .setAllowedClockSkewSeconds(clockSkew)
+                    .build()
+                    .parseClaimsJws(token);
+            return true;
+        } catch (JwtException | IllegalArgumentException ex) {
+            log.error("Invalid refresh JWT: {}", ex.getMessage());
+            return false;
         }
     }
 
-    public String generateToken(Authentication authentication) {
-        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-        
-        Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtExpiration);
-        
+    public Long getUserIdFromToken(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .setAllowedClockSkewSeconds(clockSkew)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        try { return Long.valueOf(claims.getSubject()); } catch (NumberFormatException e) { return null; }
+    }
+
+    public String getEmailFromToken(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        return claims.get("email", String.class);
+    }
+
+    /** ← 새로 추가: 필터에서 사용하는 시그니처 */
+    public Authentication getAuthentication(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .setAllowedClockSkewSeconds(clockSkew)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+
+        Long id = null;
+        try { id = Long.valueOf(claims.getSubject()); } catch (NumberFormatException ignored) {}
+
+        String email = claims.get("email", String.class);
+        String name = claims.get("name", String.class);
+        String role = claims.get("role", String.class);
+        String memberCode = claims.get("memberCode", String.class);
+
+        @SuppressWarnings("unchecked")
+        var authorities = (java.util.List<String>) claims.getOrDefault("authorities",
+                role != null ? java.util.List.of(role) : java.util.List.of("USER"));
+
+        UserPrincipal principal = UserPrincipal.builder()
+                .id(id)
+                .email(email != null ? email : String.valueOf(id))
+                .name(name != null ? name : (email != null ? email : "user"))
+                .role(role != null ? role : "USER")
+                .memberCode(memberCode)
+                .password("")
+                .authorities(authorities)
+                .build();
+
+        return new UsernamePasswordAuthenticationToken(principal, token, principal.getAuthorities());
+    }
+
+    /* ===== 표준 API ===== */
+
+    public String generateAccessToken(UserPrincipal userPrincipal) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("id", userPrincipal.getId());
         claims.put("email", userPrincipal.getEmail());
@@ -66,105 +150,38 @@ public class JwtTokenProvider {
         claims.put("role", userPrincipal.getRole());
         claims.put("memberCode", userPrincipal.getMemberCode());
         claims.put("authorities", userPrincipal.getAuthorities().stream()
-            .map(GrantedAuthority::getAuthority)
-            .collect(Collectors.toList()));
-        
-        return Jwts.builder()
-            .setClaims(claims)
-            .setSubject(Long.toString(userPrincipal.getId()))
-            .setIssuer(issuer)
-            .setIssuedAt(now)
-            .setExpiration(expiryDate)
-            .setAudience("ycs-lms-client")
-            .signWith(getSigningKey(), SignatureAlgorithm.HS512)
-            .compact();
-    }
+                .map(GrantedAuthority::getAuthority).collect(Collectors.toList()));
 
-    public String generateRefreshToken(Long userId) {
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + refreshExpiration);
-        
+        Date expiry = new Date(now.getTime() + expirationMs);
+
         return Jwts.builder()
-            .setSubject(Long.toString(userId))
-            .setIssuer(issuer)
-            .setIssuedAt(now)
-            .setExpiration(expiryDate)
-            .setAudience("ycs-lms-refresh")
-            .signWith(getSigningKey(), SignatureAlgorithm.HS512)
-            .compact();
+                .setClaims(claims)
+                .setSubject(userPrincipal.getId() != null ? String.valueOf(userPrincipal.getId()) : userPrincipal.getEmail())
+                .setIssuer(issuer)
+                .setAudience("ycs-lms-access")
+                .setIssuedAt(now)
+                .setExpiration(expiry)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS512)
+                .compact();
     }
 
-    public Long getUserIdFromToken(String token) {
-        Claims claims = Jwts.parserBuilder()
-            .setSigningKey(getSigningKey())
-            .build()
-            .parseClaimsJws(token)
-            .getBody();
-        
-        return Long.parseLong(claims.getSubject());
+    public String generateRefreshToken(UserPrincipal userPrincipal) {
+        Long id = userPrincipal.getId();
+        return generateRefreshToken(id != null ? id : -1L);
     }
 
-    public String getEmailFromToken(String token) {
-        Claims claims = Jwts.parserBuilder()
-            .setSigningKey(getSigningKey())
-            .build()
-            .parseClaimsJws(token)
-            .getBody();
-        
-        return claims.get("email", String.class);
-    }
-
-    public boolean validateToken(String authToken) {
+    public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .requireIssuer(issuer)
-                .requireAudience("ycs-lms-client")
-                .setAllowedClockSkewSeconds(clockSkew)
-                .build()
-                .parseClaimsJws(authToken);
+                    .setSigningKey(getSigningKey())
+                    .requireIssuer(issuer)
+                    .setAllowedClockSkewSeconds(clockSkew)
+                    .build()
+                    .parseClaimsJws(token);
             return true;
-        } catch (SecurityException ex) {
-            log.error("Invalid JWT signature: {}", ex.getMessage());
-        } catch (MalformedJwtException ex) {
-            log.error("Invalid JWT token: {}", ex.getMessage());
-        } catch (ExpiredJwtException ex) {
-            log.error("Expired JWT token: {}", ex.getMessage());
-        } catch (UnsupportedJwtException ex) {
-            log.error("Unsupported JWT token: {}", ex.getMessage());
-        } catch (IllegalArgumentException ex) {
-            log.error("JWT claims string is empty: {}", ex.getMessage());
-        } catch (Exception ex) {
-            log.error("JWT validation failed: {}", ex.getMessage());
-        }
-        return false;
-    }
-
-    public Claims getClaimsFromToken(String token) {
-        return Jwts.parserBuilder()
-            .setSigningKey(getSigningKey())
-            .requireIssuer(issuer)
-            .setAllowedClockSkewSeconds(clockSkew)
-            .build()
-            .parseClaimsJws(token)
-            .getBody();
-    }
-    
-    /**
-     * 리프레시 토큰 검증
-     */
-    public boolean validateRefreshToken(String refreshToken) {
-        try {
-            Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .requireIssuer(issuer)
-                .requireAudience("ycs-lms-refresh")
-                .setAllowedClockSkewSeconds(clockSkew)
-                .build()
-                .parseClaimsJws(refreshToken);
-            return true;
-        } catch (Exception ex) {
-            log.error("Refresh token validation failed: {}", ex.getMessage());
+        } catch (JwtException | IllegalArgumentException ex) {
+            log.error("Invalid JWT: {}", ex.getMessage());
             return false;
         }
     }

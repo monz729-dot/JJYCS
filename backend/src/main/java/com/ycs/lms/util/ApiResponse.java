@@ -15,18 +15,32 @@ public class ApiResponse<T> {
     private String code;
     
     public static <T> ApiResponse<T> success(T data) {
-        return new ApiResponse<>(true, data, null, null, null);
+        ApiResponse<T> response = new ApiResponse<T>();
+        response.setSuccess(true);
+        response.setData(data);
+        return response;
     }
     
     public static <T> ApiResponse<T> success(T data, String message) {
-        return new ApiResponse<>(true, data, message, null, null);
+        ApiResponse<T> response = new ApiResponse<T>();
+        response.setSuccess(true);
+        response.setData(data);
+        response.setMessage(message);
+        return response;
     }
     
     public static <T> ApiResponse<T> error(String message) {
-        return new ApiResponse<>(false, null, null, message, null);
+        ApiResponse<T> response = new ApiResponse<T>();
+        response.setSuccess(false);
+        response.setError(message);
+        return response;
     }
     
     public static <T> ApiResponse<T> error(String code, String message) {
-        return new ApiResponse<>(false, null, null, message, code);
+        ApiResponse<T> response = new ApiResponse<T>();
+        response.setSuccess(false);
+        response.setError(message);
+        response.setCode(code);
+        return response;
     }
 }

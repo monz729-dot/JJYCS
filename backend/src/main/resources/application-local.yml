@@ -1,4 +1,4 @@
-# YCS LMS Local Development Configuration
+# YCS LMS Local Development Configuration (Patched)
 spring:
   datasource:
     url: jdbc:h2:mem:testdb
@@ -9,54 +9,33 @@ spring:
     console:
       enabled: true
       path: /h2-console
-      
-  # Data Initialization - 로컬 테스트 데이터 로딩
   sql:
     init:
       mode: always
-      data-locations: classpath:data-local.sql
+      # data.sql 또는 data-h2.sql 자동 탐색을 위해 platform 지정
       platform: h2
-          
-  # Mail Configuration (mock for local)
-  mail:
-    host: smtp.gmail.com
-    port: 587
-    username: ${SMTP_USER:local@gmail.com}
-    password: ${SMTP_PASS:localpassword}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
 
-# Server Configuration
-server:
-  port: 8080
-  servlet:
-    context-path: /api
-    
-# Logging Configuration
 logging:
   level:
     com.ycs.lms: DEBUG
     org.springframework.security: DEBUG
-    org.springframework.web: DEBUG
+    org.springframework.web: INFO
     org.mybatis: DEBUG
-    org.springframework.boot.autoconfigure.logging.ConditionEvaluationReportLogger: OFF
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
   file:
     name: logs/ycs-lms-local.log
 
-# Application Configuration
 app:
   jwt:
-    secret: ${JWT_SECRET:eWNzTG1zTG9jYWxTZWNyZXRLZXkyMDI0U3VwZXJTZWN1cmVUb2tlbkZvckpXVEFVVEhleHRyYUxvbmdTZWNyZXRLZXlGb3I1MTJCaXRzSE1BQ1NoYTUxMlN1cHBvcnQ=}
-    expiration: 86400000 # 24 hours
+    # Base64 인코딩된 64바이트(512bit) 이상 키 필요
+    secret: ${JWT_SECRET:eWNzTG1zTG9jYWxTZWNyZXRLZXkyMDI0U3VwZXJTZWN1cmVUb2tlbkZvckpXVFVBVVRIZXh0cmFMb25nU2VjcmV0S2V5Rm9yNTEyQml0c0hNQUNTaGE1MTJTdXBwb3J0}
+    expiration: 86400000        # 24 hours
     refresh-expiration: 604800000 # 7 days
-    
+    issuer: ${JWT_ISSUER:ycs-lms}
+    clock-skew: ${JWT_CLOCK_SKEW:30} # seconds
+
   cors:
     allowed-origins:
       - http://localhost:3000
@@ -66,85 +45,65 @@ app:
       - http://127.0.0.1:5173
       - http://localhost:*
       - http://127.0.0.1:*
-    allowed-methods:
-      - GET
-      - POST  
-      - PUT
-      - DELETE
-      - OPTIONS
-    allowed-headers:
-      - "*"
+    allowed-methods: [GET, POST, PUT, DELETE, OPTIONS]
+    allowed-headers: ["*"]
     allow-credentials: true
-    
+
   security:
-    bcrypt-strength: 4  # 로컬에서는 빠른 처리를 위해 낮은 강도
-    password-policy:
-      min-length: 4  # 로컬에서는 간단한 패스워드 허용
-      require-uppercase: false
-      require-lowercase: false
-      require-numbers: false
-      require-special-chars: false
-      
+    bcrypt-strength: 10
+
   business-rules:
     cbm-threshold: 29.0
     high-value-threshold-thb: 1500.0
     member-code-grace-period-days: 30
-    
+
   external-apis:
     ems:
-      url: ${EMS_API_URL:http://localhost:9001/mock/ems}
-      key: ${EMS_API_KEY:local-test-key}
-      timeout: 30000  # 로컬에서는 긴 타임아웃
+      url: ${EMS_API_URL:https://api.test.com/ems}
+      key: ${EMS_API_KEY:test-key}
+      timeout: 10000
       fallback-enabled: true
     hs-code:
-      url: ${HS_API_URL:http://localhost:9001/mock/hs}
-      key: ${HS_API_KEY:local-test-key}
-      timeout: 30000
+      url: ${HS_API_URL:https://api.test.com/hs}
+      key: ${HS_API_KEY:test-key}
+      timeout: 10000
       fallback-enabled: true
     exchange-rate:
-      url: ${EXCHANGE_API_URL:http://localhost:9001/mock/exchange}
-      timeout: 30000
-      
+      url: ${EXCHANGE_API_URL:https://api.exchangerate-api.com/v4/latest/THB}
+      timeout: 5000
+
   file-storage:
     type: local
-    base-path: ${java.io.tmpdir}/ycs-lms-local-uploads
-    max-file-size: 50MB  # 로컬에서는 큰 파일 허용
-    allowed-types:
-      - image/jpeg
-      - image/png  
-      - image/gif
-      - application/pdf
-      - text/plain
-      - application/json
-      
+    base-path: ${java.io.tmpdir}/ycs-lms-uploads
+    max-file-size: 10MB
+    allowed-types: [image/jpeg, image/png, image/gif, application/pdf, text/plain, application/json]
+
   notification:
     email-enabled: false
     sms-enabled: false
-    
-# MyBatis Configuration
+
 mybatis:
-  mapper-locations: classpath:mappers/*.xml
+  # 리소스 폴더 실제 경로와 일치하도록 수정 (mapper, not mappers)
+  mapper-locations: classpath:mapper/*.xml
   type-aliases-package: com.ycs.lms.entity
   configuration:
     map-underscore-to-camel-case: true
-    cache-enabled: false  # 로컬에서는 캐시 비활성화로 실시간 반영
+    cache-enabled: false
     lazy-loading-enabled: true
     multiple-result-sets-enabled: true
     use-column-label: true
     use-generated-keys: true
     default-executor-type: reuse
-    default-statement-timeout: 60000  # 로컬에서는 긴 타임아웃
+    default-statement-timeout: 60000
   config-location: classpath:mybatis-config.xml
 
-# Management Endpoints
 management:
   endpoints:
     web:
       exposure:
-        include: "*"  # 로컬에서는 모든 엔드포인트 노출
+        include: "*"
   endpoint:
     health:
       show-details: always
-      
-# Development Features
+
 debug: true

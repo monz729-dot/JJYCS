@@ -1,4 +1,4 @@
-# YCS LMS Development Configuration
+# YCS LMS Development Configuration (Patched)
 spring:
   datasource:
     url: jdbc:h2:tcp://localhost/~/ycs
@@ -8,34 +8,13 @@ spring:
   h2:
     console:
       enabled: true
-      
-  # Data Initialization - 개발 테스트 데이터 로딩
   sql:
     init:
       mode: embedded
-      data-locations: classpath:data-dev.sql
+      # 기존 data-dev.sql은 존재하지 않아 실패 → 실제 존재하는 파일로 교체
+      data-locations: classpath:data-h2.sql
       platform: h2
-          
-  # Mail Configuration (development SMTP)
-  mail:
-    host: smtp.gmail.com
-    port: 587
-    username: ${SMTP_USER:dev@ycs.com}
-    password: ${SMTP_PASS:devpassword}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
 
-# Server Configuration
-server:
-  port: 8080
-  servlet:
-    context-path: /api
-    
-# Logging Configuration
 logging:
   level:
     com.ycs.lms: DEBUG
@@ -49,78 +28,51 @@ logging:
   file:
     name: logs/ycs-lms-dev.log
 
-# Application Configuration
 app:
   jwt:
-    secret: ${JWT_SECRET:eWNzTG1zRGV2U2VjcmV0S2V5MjAyNFN1cGVyU2VjdXJlVG9rZW5Gb3JKV1RBVVRIZXh0cmFMb25nU2VjcmV0S2V5Rm9yNTEyQml0c0hNQUNTaGE1MTJTdXBwb3J0}
-    expiration: 86400000 # 24 hours
-    refresh-expiration: 604800000 # 7 days
-    
+    secret: ${JWT_SECRET:PLEASE_SET_BASE64_SECRET_64B_OR_MORE}
+    expiration: 86400000
+    refresh-expiration: 604800000
+    issuer: ${JWT_ISSUER:ycs-lms}
+    clock-skew: ${JWT_CLOCK_SKEW:30}
   cors:
     allowed-origins:
-      - http://localhost:3000
+      - ${DEV_FRONTEND_ORIGIN:https://dev.ycs.example.com}
       - http://localhost:5173
-      - http://localhost:5175
-      - http://127.0.0.1:3000
-      - http://127.0.0.1:5173
-      - http://dev.ycs.com
-      - https://dev.ycs.com
-    allowed-methods:
-      - GET
-      - POST  
-      - PUT
-      - DELETE
-      - OPTIONS
-    allowed-headers:
-      - "*"
+    allowed-methods: [GET, POST, PUT, DELETE, OPTIONS]
+    allowed-headers: ["*"]
     allow-credentials: true
-    
   security:
     bcrypt-strength: 10
-    password-policy:
-      min-length: 6
-      require-uppercase: false
-      require-lowercase: false
-      require-numbers: false
-      require-special-chars: false
-      
   business-rules:
     cbm-threshold: 29.0
     high-value-threshold-thb: 1500.0
     member-code-grace-period-days: 30
-    
   external-apis:
     ems:
-      url: ${EMS_API_URL:https://api.dev.ycs.com/ems}
-      key: ${EMS_API_KEY:dev-api-key}
+      url: ${EMS_API_URL:https://api.test.com/ems}
+      key: ${EMS_API_KEY:test-key}
       timeout: 10000
       fallback-enabled: true
     hs-code:
-      url: ${HS_API_URL:https://api.dev.ycs.com/hs}
-      key: ${HS_API_KEY:dev-api-key}
+      url: ${HS_API_URL:https://api.test.com/hs}
+      key: ${HS_API_KEY:test-key}
       timeout: 10000
       fallback-enabled: true
     exchange-rate:
       url: ${EXCHANGE_API_URL:https://api.exchangerate-api.com/v4/latest/THB}
       timeout: 5000
-      
   file-storage:
     type: local
-    base-path: /app/uploads/dev
+    base-path: ${java.io.tmpdir}/ycs-lms-uploads
     max-file-size: 10MB
-    allowed-types:
-      - image/jpeg
-      - image/png  
-      - image/gif
-      - application/pdf
-      
+    allowed-types: [image/jpeg, image/png, image/gif, application/pdf]
   notification:
-    email-enabled: true  # 개발 환경에서는 이메일 발송 활성화
+    email-enabled: false
     sms-enabled: false
-    
-# MyBatis Configuration
+
 mybatis:
-  mapper-locations: classpath:mappers/*.xml
+  mapper-locations: classpath:mapper/*.xml
   type-aliases-package: com.ycs.lms.entity
   configuration:
     map-underscore-to-camel-case: true
@@ -133,15 +85,13 @@ mybatis:
     default-statement-timeout: 25000
   config-location: classpath:mybatis-config.xml
 
-# Management Endpoints
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,env,loggers
+        include: health,info,metrics,env
   endpoint:
     health:
       show-details: always
-      
-# Development Features
+
 debug: true

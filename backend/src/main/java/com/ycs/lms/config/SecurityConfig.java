@@ -32,12 +32,18 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+    private final JwtAuthenticationEntryPoint unauthorizedHandler;
     private final UserDetailsService userDetailsService;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+        return configuration.getAuthenticationManager();
     }
 
     @Bean
@@ -49,69 +55,28 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
-        return authConfig.getAuthenticationManager();
-    }
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        JwtAuthenticationFilter jwtFilter = new JwtAuthenticationFilter(jwtTokenProvider);
 
-    @Bean
-    public JwtAuthenticationFilter jwtAuthenticationFilter(JwtTokenProvider tokenProvider) {
-        JwtAuthenticationFilter filter = new JwtAuthenticationFilter();
-        filter.setTokenProvider(tokenProvider);
-        filter.setUserDetailsService(userDetailsService);
-        return filter;
-    }
-
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, JwtTokenProvider tokenProvider) throws Exception {
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable())
-                .exceptionHandling(exception -> exception
-                        .authenticationEntryPoint(jwtAuthenticationEntryPoint))
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .headers(headers -> headers.frameOptions().disable()) // H2 콘솔용 프레임 옵션 비활성화
-                .authorizeHttpRequests(auth -> auth
-                        // 프리플라이트는 전부 허용
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+            .csrf(csrf -> csrf.disable())
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(ex -> ex.authenticationEntryPoint(unauthorizedHandler))
+            .authorizeHttpRequests(auth -> auth
+                    .requestMatchers("/auth/**").permitAll()
+                    .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                    .anyRequest().authenticated()
+            );
 
-                        .requestMatchers(HttpMethod.POST, "/health/healthCheck").permitAll()
-                        // Public endpoints
-                        .requestMatchers("/auth/signup", "/auth/login", "/auth/refresh", "/auth/verify-email").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
-                        .requestMatchers("/h2-console/**").permitAll()
-                        .requestMatchers("/api/h2-console/**").permitAll()
-                        .requestMatchers("/database/**").permitAll()
-                        .requestMatchers("/force-init/**").permitAll()
-                        .requestMatchers("/test-data/**").permitAll()
-                        .requestMatchers("/db-check/**").permitAll()
-                        .requestMatchers("/h2-info/**").permitAll()
-
-                        // Admin only endpoints
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-
-                        // Warehouse endpoints
-                        .requestMatchers("/warehouse/**").hasAnyRole("WAREHOUSE", "ADMIN")
-
-                        // Partner endpoints
-                        .requestMatchers("/partner/**").hasAnyRole("PARTNER", "ADMIN")
-
-                        // All other endpoints require authentication
-                        .anyRequest().authenticated()
-                );
-
-        http.authenticationProvider(authenticationProvider());
-        http.addFilterBefore(jwtAuthenticationFilter(tokenProvider), UsernamePasswordAuthenticationFilter.class);
-
+        http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // 개발 편의: 로컬 전체 포트 허용
         configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:*", "http://127.0.0.1:*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));

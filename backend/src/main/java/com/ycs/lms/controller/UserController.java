@@ -1,7 +1,9 @@
 package com.ycs.lms.controller;
 
+import com.ycs.lms.dto.ChangePasswordRequest;
 import com.ycs.lms.dto.UserProfileResponse;
 import com.ycs.lms.dto.UpdateProfileRequest;
+import com.ycs.lms.exception.InvalidPasswordException;
 import com.ycs.lms.service.UserService;
 import com.ycs.lms.util.ApiResponse;
 import com.ycs.lms.security.UserPrincipal;
@@ -78,7 +80,7 @@ public class UserController {
     @Operation(summary = "비밀번호 변경", description = "현재 비밀번호를 확인한 후 새 비밀번호로 변경합니다.")
     @PostMapping("/me/change-password")
     public ResponseEntity<ApiResponse<Void>> changePassword(
-            @RequestBody ChangePasswordRequest request,
+            @Valid @RequestBody ChangePasswordRequest request,
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
         
         log.info("Changing password for user: {}", userPrincipal.getId());
@@ -117,42 +119,5 @@ public class UserController {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error("이메일 재발송 중 오류가 발생했습니다."));
         }
-    }
-}
-
-// DTO 클래스들
-class UserProfileResponse {
-    private Long id;
-    private String email;
-    private String name;
-    private String phone;
-    private String role;
-    private String status;
-    private String memberCode;
-    private boolean emailVerified;
-    private boolean twoFactorEnabled;
-    private String createdAt;
-    private String updatedAt;
-    
-    // getters, setters, constructors
-}
-
-class UpdateProfileRequest {
-    private String name;
-    private String phone;
-    
-    // getters, setters, validation
-}
-
-class ChangePasswordRequest {
-    private String currentPassword;
-    private String newPassword;
-    
-    // getters, setters
-}
-
-class InvalidPasswordException extends RuntimeException {
-    public InvalidPasswordException(String message) {
-        super(message);
     }
 }
