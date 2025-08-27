@@ -24,11 +24,17 @@ public class Warehouse {
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(nullable = false, length = 50)
-    private String code;
+    @Column(name = "warehouse_code", nullable = false, length = 50, unique = true)
+    private String warehouseCode;
 
     @Column(length = 500)
     private String address;
+
+    @Column(length = 100)
+    private String country;
+
+    @Column(length = 100)
+    private String city;
 
     @Column(length = 20)
     private String phone;
@@ -36,9 +42,11 @@ public class Warehouse {
     @Column(length = 100)
     private String manager;
 
-    @Enumerated(EnumType.STRING)
+    @Column(name = "max_capacity_cbm")
+    private Double maxCapacityCbm;
+
     @Column(nullable = false)
-    private Status status = Status.ACTIVE;
+    private Boolean active = true;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "warehouse_type")
@@ -47,10 +55,6 @@ public class Warehouse {
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
-
-    public enum Status {
-        ACTIVE, INACTIVE, MAINTENANCE
-    }
 
     public enum WarehouseType {
         STANDARD, REFRIGERATED, HAZARDOUS, BONDED

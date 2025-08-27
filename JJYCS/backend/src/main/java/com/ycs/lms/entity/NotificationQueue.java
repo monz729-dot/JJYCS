@@ -25,8 +25,9 @@ public class NotificationQueue {
     @JoinColumn(name = "user_id")
     private User recipient;
     
-    @Column(name = "notification_type", nullable = false, length = 50)
-    private String notificationType;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type", nullable = false)
+    private NotificationTemplate.NotificationType type;
     
     @Column(name = "title", nullable = false, length = 200)
     private String title;
@@ -37,14 +38,18 @@ public class NotificationQueue {
     @Column(name = "channel", nullable = false, length = 20)
     private String channel; // EMAIL, SMS, PUSH, etc.
     
-    @Column(name = "status", nullable = false, length = 20)
-    private String status = "PENDING"; // PENDING, SENT, FAILED
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private SendStatus status = SendStatus.PENDING;
     
     @Column(name = "retry_count")
     private Integer retryCount = 0;
     
-    @Column(name = "max_retries")
-    private Integer maxRetries = 3;
+    @Column(name = "max_retry")
+    private Integer maxRetry = 3;
+    
+    @Column(name = "external_id", length = 100)
+    private String externalId;
     
     @Column(name = "scheduled_at")
     private LocalDateTime scheduledAt;
@@ -59,8 +64,11 @@ public class NotificationQueue {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
     
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+    
     public boolean canRetry() {
-        return retryCount < maxRetries;
+        return retryCount < maxRetry;
     }
     
     public void incrementRetryCount() {
@@ -68,14 +76,18 @@ public class NotificationQueue {
     }
     
     public boolean isPending() {
-        return "PENDING".equals(this.status);
+        return SendStatus.PENDING.equals(this.status);
     }
     
     public boolean isSent() {
-        return "SENT".equals(this.status);
+        return SendStatus.SENT.equals(this.status);
     }
     
     public boolean isFailed() {
-        return "FAILED".equals(this.status);
+        return SendStatus.FAILED.equals(this.status);
+    }
+    
+    public enum SendStatus {
+        PENDING, SENT, FAILED
     }
 }

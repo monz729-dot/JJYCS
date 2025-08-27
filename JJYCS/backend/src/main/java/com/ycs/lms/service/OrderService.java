@@ -31,7 +31,7 @@ public class OrderService {
     private final UserRepository userRepository;
     private final BusinessLogicService businessLogicService;
     private final OrderBusinessRuleService orderBusinessRuleService;
-    private final NotificationService notificationService;
+    // private final NotificationService notificationService; // TODO: Re-enable after fixing NotificationService
     
     // CBM 임계값 (29.0 m³)
     private static final BigDecimal CBM_THRESHOLD = new BigDecimal("29.0");
@@ -133,7 +133,8 @@ public class OrderService {
             savedOrder.getItems().add(orderItem);
         }
         
-        // 주문 생성 알림 발송
+        // 주문 생성 알림 발송 - TODO: Re-enable after fixing NotificationService
+        /*
         try {
             Map<String, Object> variables = new HashMap<>();
             variables.put("totalItems", savedOrder.getItems().size());
@@ -147,6 +148,7 @@ public class OrderService {
             log.error("Failed to send order creation notification for order: {}", 
                 savedOrder.getOrderNumber(), e);
         }
+        */
         
         return savedOrder;
     }
@@ -204,9 +206,9 @@ public class OrderService {
             tempOrder.setOrderBoxes(new ArrayList<>());
             for (CreateOrderRequest.OrderBoxRequest boxRequest : request.getOrderBoxes()) {
                 OrderBox box = new OrderBox();
-                box.setWidthCm(boxRequest.getWidthCm());
-                box.setHeightCm(boxRequest.getHeightCm());
-                box.setDepthCm(boxRequest.getDepthCm());
+                box.setWidth(boxRequest.getWidthCm());
+                box.setHeight(boxRequest.getHeightCm());
+                box.setDepth(boxRequest.getDepthCm());
                 tempOrder.getOrderBoxes().add(box);
             }
         }
@@ -258,7 +260,8 @@ public class OrderService {
             
             // 주문 완료 시 처리 (파트너 커미션 기능 제거됨)
             
-            // 주문 상태 변경 알림 발송
+            // 주문 상태 변경 알림 발송 - TODO: Re-enable after fixing NotificationService
+            /*
             try {
                 NotificationTemplate.TriggerEvent event = mapStatusToNotificationEvent(status);
                 if (event != null) {
@@ -273,6 +276,7 @@ public class OrderService {
                 log.error("Failed to send status change notification for order: {}", 
                     savedOrder.getOrderNumber(), e);
             }
+            */
             
             // TODO: OrderHistory 기록 추가 가능
             log.info("Order {} status updated from {} to {} by admin. Reason: {}", 
@@ -290,7 +294,7 @@ public class OrderService {
      */
     private String mapStatusToNotificationEvent(Order.OrderStatus status) {
         switch (status) {
-            case PREPARING:
+            case PROCESSING:
                 return "ORDER_PREPARING";
             case SHIPPED:
                 return "ORDER_SHIPPED";
@@ -338,6 +342,7 @@ public class OrderService {
         private String recipientPostalCode;
         private String specialRequests;
         private List<OrderItemRequest> orderItems;
+        private List<OrderBoxRequest> orderBoxes;
         
         // Getters and Setters
         public Long getUserId() { return userId; }
@@ -360,6 +365,8 @@ public class OrderService {
         public void setSpecialRequests(String specialRequests) { this.specialRequests = specialRequests; }
         public List<OrderItemRequest> getOrderItems() { return orderItems; }
         public void setOrderItems(List<OrderItemRequest> orderItems) { this.orderItems = orderItems; }
+        public List<OrderBoxRequest> getOrderBoxes() { return orderBoxes; }
+        public void setOrderBoxes(List<OrderBoxRequest> orderBoxes) { this.orderBoxes = orderBoxes; }
         
         public static class OrderItemRequest {
             private String hsCode;
@@ -422,6 +429,19 @@ public class OrderService {
             
             public BigDecimal getTotalAmountWithDuty() { return totalAmountWithDuty; }
             public void setTotalAmountWithDuty(BigDecimal totalAmountWithDuty) { this.totalAmountWithDuty = totalAmountWithDuty; }
+        }
+        
+        public static class OrderBoxRequest {
+            private BigDecimal widthCm;
+            private BigDecimal heightCm;
+            private BigDecimal depthCm;
+            
+            public BigDecimal getWidthCm() { return widthCm; }
+            public void setWidthCm(BigDecimal widthCm) { this.widthCm = widthCm; }
+            public BigDecimal getHeightCm() { return heightCm; }
+            public void setHeightCm(BigDecimal heightCm) { this.heightCm = heightCm; }
+            public BigDecimal getDepthCm() { return depthCm; }
+            public void setDepthCm(BigDecimal depthCm) { this.depthCm = depthCm; }
         }
     }
 }

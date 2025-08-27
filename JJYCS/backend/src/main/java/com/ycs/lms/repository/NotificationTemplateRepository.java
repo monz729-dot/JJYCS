@@ -12,36 +12,16 @@ import java.util.Optional;
 @Repository
 public interface NotificationTemplateRepository extends JpaRepository<NotificationTemplate, Long> {
     
-    Optional<NotificationTemplate> findByTemplateCode(String templateCode);
-    
-    List<NotificationTemplate> findByTriggerEventAndIsActiveTrue(NotificationTemplate.TriggerEvent triggerEvent);
+    Optional<NotificationTemplate> findByNameAndIsActiveTrue(String name);
     
     List<NotificationTemplate> findByTypeAndIsActiveTrue(NotificationTemplate.NotificationType type);
     
-    List<NotificationTemplate> findByTriggerEventAndTypeAndIsActiveTrue(
-        NotificationTemplate.TriggerEvent triggerEvent,
-        NotificationTemplate.NotificationType type
-    );
+    List<NotificationTemplate> findByCategoryAndIsActiveTrue(String category);
     
-    List<NotificationTemplate> findByLanguageCodeAndIsActiveTrue(String languageCode);
+    @Query("SELECT nt FROM NotificationTemplate nt WHERE nt.name = :name AND nt.type = :type AND nt.isActive = true")
+    Optional<NotificationTemplate> findByNameAndTypeAndActive(@Param("name") String name, @Param("type") NotificationTemplate.NotificationType type);
     
-    @Query("SELECT nt FROM NotificationTemplate nt WHERE nt.isActive = true " +
-           "AND nt.triggerEvent = :triggerEvent " +
-           "AND nt.languageCode = :languageCode " +
-           "ORDER BY nt.type")
-    List<NotificationTemplate> findActiveTemplatesForEvent(
-        @Param("triggerEvent") NotificationTemplate.TriggerEvent triggerEvent,
-        @Param("languageCode") String languageCode
-    );
+    List<NotificationTemplate> findByIsActiveTrueOrderByNameAsc();
     
-    @Query("SELECT COUNT(nt) FROM NotificationTemplate nt WHERE nt.isActive = true")
-    Long countActiveTemplates();
-    
-    @Query("SELECT nt.type, COUNT(nt) FROM NotificationTemplate nt " +
-           "WHERE nt.isActive = true GROUP BY nt.type")
-    List<Object[]> getTemplateCountByType();
-    
-    @Query("SELECT nt FROM NotificationTemplate nt WHERE nt.isActive = true " +
-           "AND nt.templateCode LIKE %:keyword%")
-    List<NotificationTemplate> searchByTemplateCode(@Param("keyword") String keyword);
+    boolean existsByNameAndType(String name, NotificationTemplate.NotificationType type);
 }

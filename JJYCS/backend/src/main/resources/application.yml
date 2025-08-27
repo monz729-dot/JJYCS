@@ -78,11 +78,11 @@ spring:
               LOG_QUERIES_SLOWER_THAN_MS: 10
     defer-datasource-initialization: true
     
-  # SQL Initialization
+  # SQL Initialization - Temporarily disabled for Phase 2 testing
   sql:
     init:
-      mode: always
-      data-locations: classpath:data.sql
+      mode: never
+      # data-locations: classpath:data.sql
       
   # Disable Flyway for now
   flyway:
@@ -93,6 +93,12 @@ spring:
     jwt:
       secret-key: YCS-LMS-2024-SECRET-KEY-FOR-JWT-TOKEN-GENERATION-MUST-BE-LONG-ENOUGH
       expiration-time: 86400000 # 24 hours in milliseconds
+
+# JWT Configuration (for JwtUtil)
+jwt:
+  secret: YCS-LMS-2024-SECRET-KEY-FOR-JWT-TOKEN-GENERATION-MUST-BE-LONG-ENOUGH
+  expiration: 86400000 # 24 hours in milliseconds
+  refresh-expiration: 604800000 # 7 days in milliseconds
       
   # Mail Configuration (disabled for development)
   mail:

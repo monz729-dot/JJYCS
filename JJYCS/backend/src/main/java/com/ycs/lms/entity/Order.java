@@ -130,9 +130,38 @@ public class Order {
     @JsonIgnoreProperties({"order"})
     private List<OrderItem> items = new ArrayList<>();
 
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties({"order"})
+    private List<OrderBox> boxes = new ArrayList<>();
+
     @OneToOne(mappedBy = "order", cascade = CascadeType.ALL)
     @JsonIgnoreProperties({"order"})
     private Billing billing;
+    
+    // 비즈니스 로직 메서드들
+    public List<OrderItem> getOrderItems() {
+        return items;
+    }
+    
+    public void setOrderItems(List<OrderItem> items) {
+        this.items = items;
+    }
+    
+    public List<OrderBox> getOrderBoxes() {
+        return boxes;
+    }
+    
+    public void setOrderBoxes(List<OrderBox> boxes) {
+        this.boxes = boxes;
+    }
+    
+    public void setRequiresExtraRecipient(boolean requiresExtraRecipient) {
+        this.requiresExtraRecipient = requiresExtraRecipient;
+    }
+    
+    public void setHasNoMemberCode(boolean hasNoMemberCode) {
+        this.noMemberCode = hasNoMemberCode;
+    }
 
     public enum OrderStatus {
         RECEIVED,           // 접수완료
@@ -156,6 +185,25 @@ public class Order {
     public enum ShippingType {
         SEA,  // 해상운송
         AIR   // 항공운송
+    }
+    
+    // OrderBusinessRuleService 호환을 위한 OrderType enum (ShippingType과 동일)
+    public enum OrderType {
+        SEA,  // 해상운송
+        AIR   // 항공운송
+    }
+    
+    @Enumerated(EnumType.STRING)
+    private OrderType orderType = OrderType.SEA;
+    
+    public OrderType getOrderType() {
+        return orderType;
+    }
+    
+    public void setOrderType(OrderType orderType) {
+        this.orderType = orderType;
+        // ShippingType과 동기화
+        this.shippingType = orderType == OrderType.AIR ? ShippingType.AIR : ShippingType.SEA;
     }
 
     // CBM 29 초과 시 항공 전환 로직

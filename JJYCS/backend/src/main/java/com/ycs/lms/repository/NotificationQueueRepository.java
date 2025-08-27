@@ -15,9 +15,10 @@ public interface NotificationQueueRepository extends JpaRepository<NotificationQ
     
     List<NotificationQueue> findByStatusOrderByScheduledAtAsc(NotificationQueue.SendStatus status);
     
-    List<NotificationQueue> findByRecipientIdOrderByCreatedAtDesc(Long recipientId);
+    @Query("SELECT nq FROM NotificationQueue nq WHERE nq.recipient.id = :recipientId ORDER BY nq.createdAt DESC")
+    List<NotificationQueue> findByRecipientIdOrderByCreatedAtDesc(@Param("recipientId") Long recipientId);
     
-    List<NotificationQueue> findByRelatedOrderIdOrderByCreatedAtDesc(Long orderId);
+    // List<NotificationQueue> findByRelatedOrderIdOrderByCreatedAtDesc(Long orderId); // Field removed from entity
     
     List<NotificationQueue> findByTypeAndStatusOrderByScheduledAtAsc(
         NotificationTemplate.NotificationType type, 

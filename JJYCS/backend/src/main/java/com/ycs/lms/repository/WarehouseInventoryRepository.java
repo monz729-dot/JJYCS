@@ -17,12 +17,14 @@ public interface WarehouseInventoryRepository extends JpaRepository<WarehouseInv
     /**
      * 주문 ID로 창고 재고 조회
      */
-    List<WarehouseInventory> findByOrderId(Long orderId);
+    @Query("SELECT wi FROM WarehouseInventory wi WHERE wi.order.id = :orderId")
+    List<WarehouseInventory> findByOrderId(@Param("orderId") Long orderId);
     
     /**
      * 창고 ID로 재고 조회
      */
-    List<WarehouseInventory> findByWarehouseId(Long warehouseId);
+    @Query("SELECT wi FROM WarehouseInventory wi WHERE wi.warehouse.id = :warehouseId")
+    List<WarehouseInventory> findByWarehouseId(@Param("warehouseId") Long warehouseId);
     
     /**
      * 재고 코드로 조회
@@ -47,7 +49,8 @@ public interface WarehouseInventoryRepository extends JpaRepository<WarehouseInv
     /**
      * 창고별 상태별 재고 조회
      */
-    List<WarehouseInventory> findByWarehouseIdAndStatus(Long warehouseId, InventoryStatus status);
+    @Query("SELECT wi FROM WarehouseInventory wi WHERE wi.warehouse.id = :warehouseId AND wi.status = :status")
+    List<WarehouseInventory> findByWarehouseIdAndStatus(@Param("warehouseId") Long warehouseId, @Param("status") InventoryStatus status);
     
     /**
      * 출고 준비 완료된 재고 목록

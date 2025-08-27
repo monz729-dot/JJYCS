@@ -3,7 +3,7 @@ package com.ycs.lms.controller;
 import com.ycs.lms.entity.EmailVerificationToken;
 import com.ycs.lms.entity.User;
 import com.ycs.lms.repository.EmailVerificationTokenRepository;
-import com.ycs.lms.service.EmailService;
+// import com.ycs.lms.service.EmailService; // Temporarily disabled - TODO: Re-enable with proper email config
 import com.ycs.lms.service.UserService;
 import com.ycs.lms.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +23,7 @@ public class AuthController {
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
-    private final EmailService emailService;
+    // private final EmailService emailService; // Temporarily disabled - TODO: Re-enable with proper email config
     private final EmailVerificationTokenRepository tokenRepository;
     
     @PostMapping("/signup")
@@ -44,15 +44,12 @@ public class AuthController {
                 user.setCompanyAddress(request.getCompanyAddress());
             }
             
-            // 파트너인 경우 지역 설정
-            if (user.getUserType() == User.UserType.PARTNER) {
-                user.setPartnerRegion(request.getPartnerRegion());
-            }
+            // 파트너인 경우 추가 설정 (파트너 지역 기능은 제거됨)
             
             User savedUser = userService.createUser(user);
             
-            // 이메일 인증 토큰 생성 및 발송
-            String verificationToken = emailService.generateVerificationToken();
+            // 이메일 인증 토큰 생성 및 발송 - TODO: Re-enable with proper email config
+            String verificationToken = java.util.UUID.randomUUID().toString(); // emailService.generateVerificationToken();
             EmailVerificationToken emailToken = new EmailVerificationToken();
             emailToken.setToken(verificationToken);
             emailToken.setEmail(savedUser.getEmail());
@@ -63,13 +60,16 @@ public class AuthController {
             
             tokenRepository.save(emailToken);
             
-            // 이메일 전송
+            // 이메일 전송 - TODO: Re-enable with proper email config
+            /*
             try {
                 emailService.sendVerificationEmail(savedUser.getEmail(), savedUser.getName(), verificationToken);
             } catch (Exception e) {
                 // 이메일 전송 실패해도 회원가입은 성공으로 처리
                 System.err.println("Failed to send verification email: " + e.getMessage());
             }
+            */
+            System.out.println("Email verification token generated (email sending disabled): " + verificationToken);
             
             // 비밀번호는 응답에서 제외
             savedUser.setPassword(null);
@@ -280,8 +280,8 @@ public class AuthController {
             tokenRepository.deleteByUserIdAndTokenType(user.getId(), 
                 EmailVerificationToken.TokenType.PASSWORD_RESET);
             
-            // 새 토큰 생성
-            String resetToken = emailService.generateResetToken();
+            // 새 토큰 생성 - TODO: Re-enable with proper email config
+            String resetToken = java.util.UUID.randomUUID().toString(); // emailService.generateResetToken();
             EmailVerificationToken emailToken = new EmailVerificationToken();
             emailToken.setToken(resetToken);
             emailToken.setEmail(user.getEmail());
@@ -292,13 +292,16 @@ public class AuthController {
             
             tokenRepository.save(emailToken);
             
-            // 이메일 전송
+            // 이메일 전송 - TODO: Re-enable with proper email config
+            /*
             try {
                 emailService.sendPasswordResetEmail(user.getEmail(), user.getName(), resetToken);
             } catch (Exception e) {
                 return ResponseEntity.internalServerError()
                     .body(Map.of("success", false, "error", "이메일 전송에 실패했습니다."));
             }
+            */
+            System.out.println("Password reset token generated (email sending disabled): " + resetToken);
             
             return ResponseEntity.ok(Map.of(
                 "success", true,

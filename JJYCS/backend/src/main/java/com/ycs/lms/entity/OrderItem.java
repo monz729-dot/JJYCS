@@ -110,4 +110,13 @@ public class OrderItem {
         }
         return BigDecimal.ZERO;
     }
+    
+    // OrderBusinessRuleService 호환 메서드들
+    public BigDecimal getThbValue() {
+        return unitPrice; // THB 단가
+    }
+    
+    public BigDecimal getQuantity() {
+        return new BigDecimal(quantity != null ? quantity : 0);
+    }
 }

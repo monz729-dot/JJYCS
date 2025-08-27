@@ -36,6 +36,24 @@ public class WarehouseInventory {
     @Column(name = "location", length = 100)
     private String location;
     
+    @Column(name = "location_zone", length = 50)
+    private String locationZone;
+    
+    @Column(name = "location_shelf", length = 50)
+    private String locationShelf;
+    
+    @Column(name = "location_position", length = 50)
+    private String locationPosition;
+    
+    @Column(name = "barcode", length = 100)
+    private String barcode;
+    
+    @Column(name = "qr_code", length = 100)
+    private String qrCode;
+    
+    @Column(name = "repack_required")
+    private Boolean repackRequired = false;
+    
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private InventoryStatus status;
@@ -72,9 +90,14 @@ public class WarehouseInventory {
     public enum InventoryStatus {
         PENDING("Pending Receive"),
         RECEIVED("Received"),
+        INSPECTING("Inspecting"),
         INSPECTED("Inspected"),
+        INSPECTION_COMPLETE("Inspection Complete"),
         HELD("Held"),
+        ON_HOLD("On Hold"),
         DAMAGED("Damaged"),
+        MISSING("Missing"),
+        READY_FOR_SHIPPING("Ready for Shipping"),
         READY_TO_SHIP("Ready to Ship"),
         SHIPPED("Shipped");
         

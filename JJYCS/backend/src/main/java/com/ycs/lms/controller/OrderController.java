@@ -170,21 +170,22 @@ public class OrderController {
             // 새로운 비즈니스 룰 엔진 사용
             OrderBusinessRuleService.OrderBusinessRuleResult result = orderService.validateBusinessRules(request);
             
+            Map<String, Object> resultMap = new HashMap<>();
+            resultMap.put("totalCbm", result.getTotalCbm());
+            resultMap.put("cbmExceedsThreshold", result.isCbmExceedsThreshold());
+            resultMap.put("totalThbValue", result.getTotalThbValue());
+            resultMap.put("thbValueExceedsThreshold", result.isThbValueExceedsThreshold());
+            resultMap.put("hasNoMemberCode", result.isHasNoMemberCode());
+            resultMap.put("recommendedShippingMethod", result.getRecommendedShippingMethod());
+            resultMap.put("requiresExtraRecipientInfo", result.isRequiresExtraRecipientInfo());
+            resultMap.put("warnings", result.getWarnings());
+            resultMap.put("errors", result.getErrors());
+            resultMap.put("hasWarnings", result.hasWarnings());
+            resultMap.put("hasErrors", result.hasErrors());
+            
             return ResponseEntity.ok(Map.of(
                 "success", true,
-                "result", Map.of(
-                    "totalCbm", result.getTotalCbm(),
-                    "cbmExceedsThreshold", result.isCbmExceedsThreshold(),
-                    "totalThbValue", result.getTotalThbValue(), 
-                    "thbValueExceedsThreshold", result.isThbValueExceedsThreshold(),
-                    "hasNoMemberCode", result.isHasNoMemberCode(),
-                    "recommendedShippingMethod", result.getRecommendedShippingMethod(),
-                    "requiresExtraRecipientInfo", result.isRequiresExtraRecipientInfo(),
-                    "warnings", result.getWarnings(),
-                    "errors", result.getErrors(),
-                    "hasWarnings", result.hasWarnings(),
-                    "hasErrors", result.hasErrors()
-                )
+                "result", resultMap
             ));
             
         } catch (Exception e) {

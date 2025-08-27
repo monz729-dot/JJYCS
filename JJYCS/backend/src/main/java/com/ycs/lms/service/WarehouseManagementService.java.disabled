@@ -1,0 +1,159 @@
+package com.ycs.lms.service;
+
+import com.ycs.lms.entity.*;
+import com.ycs.lms.repository.*;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+@Transactional
+public class WarehouseManagementService {
+    
+    private final WarehouseInventoryRepository inventoryRepository;
+    private final InventoryLogRepository logRepository;
+    private final OrderRepository orderRepository;
+    private final ScanEventRepository scanEventRepository;
+    
+    public WarehouseInventory findByBarcode(String barcode) {
+        return inventoryRepository.findByBarcode(barcode)
+                .orElseThrow(() -> new RuntimeException("Inventory not found: " + barcode));
+    }
+    
+    public List<WarehouseInventory> findPendingInbounds() {
+        return inventoryRepository.findByStatus(WarehouseInventory.InventoryStatus.PENDING_INBOUND);
+    }
+    
+    public List<WarehouseInventory> findReadyToShip() {
+        return inventoryRepository.findByStatus(WarehouseInventory.InventoryStatus.READY_TO_SHIP);
+    }
+    
+    public void processInbound(String barcode, String warehouseCode, String location) {
+        WarehouseInventory inventory = findByBarcode(barcode);
+        inventory.setWarehouseCode(warehouseCode);
+        inventory.setLocation(location);
+        inventory.setStatus(WarehouseInventory.InventoryStatus.IN_WAREHOUSE);
+        inventory.setInboundDate(LocalDateTime.now());
+        
+        inventoryRepository.save(inventory);
+        
+        createScanEvent(barcode, "INBOUND", warehouseCode, "Processed inbound");
+        logInventoryChange(inventory, "INBOUND", "Item processed into warehouse");
+        
+        log.info("Processed inbound for barcode: {}", barcode);
+    }
+    
+    public void processOutbound(String barcode, String carrierCode, String trackingNumber) {
+        WarehouseInventory inventory = findByBarcode(barcode);
+        inventory.setStatus(WarehouseInventory.InventoryStatus.SHIPPED);
+        inventory.setOutboundDate(LocalDateTime.now());
+        inventory.setCarrierCode(carrierCode);
+        inventory.setTrackingNumber(trackingNumber);
+        
+        inventoryRepository.save(inventory);
+        
+        createScanEvent(barcode, "OUTBOUND", inventory.getWarehouseCode(), "Shipped with tracking: " + trackingNumber);
+        logInventoryChange(inventory, "OUTBOUND", "Item shipped");
+        
+        log.info("Processed outbound for barcode: {} with tracking: {}", barcode, trackingNumber);
+    }
+    
+    public void holdInventory(String barcode, String reason) {
+        WarehouseInventory inventory = findByBarcode(barcode);
+        inventory.setStatus(WarehouseInventory.InventoryStatus.ON_HOLD);
+        inventory.setHoldReason(reason);
+        inventory.setHoldDate(LocalDateTime.now());
+        
+        inventoryRepository.save(inventory);
+        
+        createScanEvent(barcode, "HOLD", inventory.getWarehouseCode(), "Item placed on hold: " + reason);
+        logInventoryChange(inventory, "HOLD", reason);
+        
+        log.info("Placed inventory on hold: {} - {}", barcode, reason);
+    }
+    
+    public void releaseHold(String barcode, String releaseNote) {
+        WarehouseInventory inventory = findByBarcode(barcode);
+        
+        if (inventory.getStatus() != WarehouseInventory.InventoryStatus.ON_HOLD) {
+            throw new IllegalStateException("Item is not on hold: " + barcode);
+        }
+        
+        inventory.setStatus(WarehouseInventory.InventoryStatus.READY_TO_SHIP);
+        inventory.setHoldReason(null);
+        inventory.setHoldDate(null);
+        
+        inventoryRepository.save(inventory);
+        
+        createScanEvent(barcode, "RELEASE", inventory.getWarehouseCode(), "Hold released: " + releaseNote);
+        logInventoryChange(inventory, "RELEASE", releaseNote);
+        
+        log.info("Released hold for inventory: {} - {}", barcode, releaseNote);
+    }
+    
+    public void reportDamage(String barcode, String damageDescription) {
+        WarehouseInventory inventory = findByBarcode(barcode);
+        inventory.setStatus(WarehouseInventory.InventoryStatus.DAMAGED);
+        inventory.setDamageDescription(damageDescription);
+        inventory.setDamageDate(LocalDateTime.now());
+        
+        inventoryRepository.save(inventory);
+        
+        createScanEvent(barcode, "DAMAGE", inventory.getWarehouseCode(), "Damage reported: " + damageDescription);
+        logInventoryChange(inventory, "DAMAGE", damageDescription);
+        
+        log.warn("Damage reported for inventory: {} - {}", barcode, damageDescription);
+    }
+    
+    private void createScanEvent(String barcode, String eventType, String warehouseCode, String notes) {
+        ScanEvent scanEvent = new ScanEvent();
+        scanEvent.setBarcode(barcode);
+        scanEvent.setEventType(eventType);
+        scanEvent.setWarehouseCode(warehouseCode);
+        scanEvent.setNotes(notes);
+        scanEvent.setScanTime(LocalDateTime.now());
+        
+        scanEventRepository.save(scanEvent);
+    }
+    
+    public WarehouseInventory receiveOrder(Long orderId, com.ycs.lms.dto.ReceiveOrderRequest request) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+        
+        WarehouseInventory inventory = new WarehouseInventory();
+        inventory.setOrder(order);
+        inventory.setWarehouseCode(request.getWarehouseCode());
+        inventory.setLocation(request.getLocation());
+        inventory.setStatus(WarehouseInventory.InventoryStatus.IN_WAREHOUSE);
+        inventory.setInboundDate(LocalDateTime.now());
+        inventory.setNotes(request.getNotes());
+        
+        inventoryRepository.save(inventory);
+        
+        createScanEvent("ORDER-" + orderId, "RECEIVE", request.getWarehouseCode(), "Order received: " + request.getNotes());
+        logInventoryChange(inventory, "RECEIVE", "Order received into warehouse");
+        
+        log.info("Order received: orderId={}, warehouseCode={}", orderId, request.getWarehouseCode());
+        
+        return inventory;
+    }
+    
+    private void logInventoryChange(WarehouseInventory inventory, String changeType, String reason) {
+        InventoryLog log = new InventoryLog();
+        log.setInventoryId(inventory.getId());
+        log.setChangeType(changeType);
+        log.setPreviousStatus(inventory.getStatus().toString());
+        log.setNewStatus(inventory.getStatus().toString());
+        log.setReason(reason);
+        log.setChangedAt(LocalDateTime.now());
+        
+        logRepository.save(log);
+    }
+}

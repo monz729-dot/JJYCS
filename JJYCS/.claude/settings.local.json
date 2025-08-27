@@ -64,7 +64,14 @@
       "Bash(set MAVEN_OPTS=-Dfile.encoding=UTF-8)",
       "Bash(powershell:*)",
       "Bash(start \"http://localhost:3004/login\")",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(..mvnw.cmd spring-boot:run -X)",
+      "Bash(./mvnw.cmd package:*)",
+      "Bash(start \"http://localhost:3005\")",
+      "Bash(start \"http://localhost:3005/register\")",
+      "Bash(ren:*)"
     ],
     "deny": [],
     "ask": [],

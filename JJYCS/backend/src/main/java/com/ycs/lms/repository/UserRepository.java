@@ -30,8 +30,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByUserTypeAndStatus(@Param("userType") User.UserType userType, 
                                       @Param("status") User.UserStatus status);
     
-    @Query("SELECT u FROM User u WHERE u.userType = 'PARTNER' AND u.partnerRegion = :region")
-    List<User> findPartnersByRegion(@Param("region") String region);
+    // findPartnersByRegion method removed (partnerRegion field removed)
     
     Optional<User> findByEmailVerificationToken(String token);
     
@@ -56,13 +55,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT u FROM User u WHERE u.name LIKE %:keyword% OR u.email LIKE %:keyword% OR u.companyName LIKE %:keyword% ORDER BY u.createdAt DESC")
     Page<User> findByKeywordOrderByCreatedAtDesc(@Param("keyword") String keyword, Pageable pageable);
     
-    // 파트너 리퍼럴 관련
-    List<User> findByReferredBy(Long referredBy);
-    
-    Page<User> findByReferredBy(Long referredBy, Pageable pageable);
-    
-    Long countByReferredBy(Long referredBy);
-    
-    @Query("SELECT u FROM User u WHERE u.referredBy = :referredBy AND u.status = :status ORDER BY u.createdAt DESC")
-    List<User> findByReferredByAndStatus(@Param("referredBy") Long referredBy, @Param("status") User.UserStatus status);
+    // 파트너 리퍼럴 기능은 제거됨
 }

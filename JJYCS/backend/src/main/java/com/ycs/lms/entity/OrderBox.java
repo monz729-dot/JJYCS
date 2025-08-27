@@ -57,4 +57,21 @@ public class OrderBox {
                           .divide(new BigDecimal("1000000"), 6, BigDecimal.ROUND_HALF_UP);
         }
     }
+    
+    // OrderBusinessRuleService 호환 메서드들
+    public BigDecimal getWidthCm() {
+        return width;
+    }
+    
+    public BigDecimal getHeightCm() {
+        return height;
+    }
+    
+    public BigDecimal getDepthCm() {
+        return depth;
+    }
+    
+    public void setCbmM3(BigDecimal cbmM3) {
+        this.cbm = cbmM3;
+    }
 }

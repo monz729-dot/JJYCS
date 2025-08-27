@@ -2,6 +2,7 @@ package com.ycs.lms.controller;
 
 import com.ycs.lms.entity.WarehouseInventory;
 import com.ycs.lms.dto.warehouse.*;
+import com.ycs.lms.dto.ReceiveOrderRequest;
 import com.ycs.lms.service.WarehouseService;
 import com.ycs.lms.service.WarehouseService.ScanResult;
 import com.ycs.lms.service.WarehouseService.BatchResult;
