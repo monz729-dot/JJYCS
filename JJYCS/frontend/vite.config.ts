@@ -44,10 +44,10 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3000,
+    port: 3006, // 현재 사용 중인 포트로 유지
     proxy: {
       '/api': {
-        target: 'http://localhost:8081',
+        target: 'http://localhost:8080', // 백엔드 포트
         changeOrigin: true,
       },
     },
