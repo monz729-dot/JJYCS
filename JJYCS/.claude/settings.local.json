@@ -77,7 +77,10 @@
       "Bash(start \"YCS Backend\" cmd /c \"cd backend && ./mvnw.cmd spring-boot:run\")",
       "Bash(start \"YCS Frontend\" cmd /c \"cd frontend && npm run dev\")",
       "Bash(start \"H2 Console\" \"http://localhost:8080/api/h2-console\")",
-      "Bash(./mvnw.cmd:*)"
+      "Bash(./mvnw.cmd:*)",
+      "Bash(git commit:*)",
+      "Bash(start \"http://localhost:3006/login\")",
+      "Bash(start:*)"
     ],
     "deny": [],
     "ask": [],
