@@ -260,6 +260,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { adminApi } from '@/utils/api'
 
 const router = useRouter()
 const loading = ref(true)
@@ -340,16 +341,11 @@ const formatTimeKorean = (date: Date) => {
 const loadDashboardData = async () => {
   loading.value = true
   try {
-    // 실제 API 호출로 대체 예정
-    const ordersResponse = await fetch('http://localhost:8081/api/orders', {
-      headers: {
-        'Authorization': 'Bearer mock-jwt-token'
-      }
-    })
+    // 실제 API 호출
+    const ordersResponse = await adminApi.getAllOrders()
     
-    if (ordersResponse.ok) {
-      const ordersData = await ordersResponse.json()
-      const orders = ordersData.orders || []
+    if (ordersResponse.success) {
+      const orders = ordersResponse.data || []
       
       // 대시보드 통계 계산
       stats.value.totalOrders = orders.length
@@ -454,7 +450,7 @@ const navigateToOrders = () => {
 }
 
 const navigateToWarehouse = () => {
-  window.open('http://localhost:8081/warehouse-scan.html', '_blank')
+  window.open('/warehouse-scan.html', '_blank')
 }
 
 const navigateToUserApproval = () => {

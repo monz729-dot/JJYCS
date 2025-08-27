@@ -16,6 +16,7 @@ class ApiClient {
     })
 
     this.setupInterceptors()
+    this.setupDebugInterceptor()
   }
 
   private setupInterceptors() {
@@ -48,6 +49,13 @@ class ApiClient {
         return Promise.reject(error)
       }
     )
+  }
+
+  private setupDebugInterceptor() {
+    this.client.interceptors.request.use((cfg) => {
+      console.log('[API]', cfg.method?.toUpperCase(), (this.client.defaults.baseURL || '') + (cfg.url || ''))
+      return cfg
+    })
   }
 
   async get<T = any>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
