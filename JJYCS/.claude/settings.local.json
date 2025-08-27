@@ -71,7 +71,13 @@
       "Bash(./mvnw.cmd package:*)",
       "Bash(start \"http://localhost:3005\")",
       "Bash(start \"http://localhost:3005/register\")",
-      "Bash(ren:*)"
+      "Bash(ren:*)",
+      "Bash(start \"YCS Backend Server\" ./mvnw.cmd spring-boot:run)",
+      "Bash(start \"H2 Console\" \"http://localhost:8081/api/h2-console\")",
+      "Bash(start \"YCS Backend\" cmd /c \"cd backend && ./mvnw.cmd spring-boot:run\")",
+      "Bash(start \"YCS Frontend\" cmd /c \"cd frontend && npm run dev\")",
+      "Bash(start \"H2 Console\" \"http://localhost:8080/api/h2-console\")",
+      "Bash(./mvnw.cmd:*)"
     ],
     "deny": [],
     "ask": [],

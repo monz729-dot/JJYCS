@@ -103,15 +103,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-        String path = request.getRequestURI();
+        String path = request.getServletPath(); // 중요! getRequestURI() 대신 getServletPath() 사용
+        
+        // OPTIONS 요청은 항상 우회
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            return true;
+        }
         
         // 인증이 필요없는 경로들
         return path.startsWith("/auth/") ||
-               path.startsWith("/api/public/") ||
-               path.startsWith("/h2-console") ||
-               path.startsWith("/actuator/health") ||
+               path.startsWith("/h2-console") ||   // H2 콘솔 완전 우회
+               path.startsWith("/public/") ||
                path.startsWith("/v3/api-docs") ||
                path.startsWith("/swagger-ui") ||
+               path.startsWith("/actuator/health") ||
                path.equals("/favicon.ico");
     }
 }

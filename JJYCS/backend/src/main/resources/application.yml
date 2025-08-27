@@ -36,9 +36,9 @@ spring:
   h2:
     console:
       enabled: true
-      path: /h2-console
+      path: /h2-console  # 최종 URL은 /api/h2-console이 됨
       settings:
-        web-allow-others: true
+        web-allow-others: true   # 로컬 개발용
 
   # Production MySQL Configuration (activated by profile)
   profiles:

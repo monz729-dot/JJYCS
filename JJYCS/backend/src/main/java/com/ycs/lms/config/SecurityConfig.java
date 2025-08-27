@@ -3,6 +3,7 @@ package com.ycs.lms.config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -10,6 +11,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
@@ -25,8 +27,24 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    // 1) H2 콘솔 전용 체인 (항상 먼저 평가되도록 Order 낮게)
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    @Order(1)
+    public SecurityFilterChain h2ConsoleChain(HttpSecurity http) throws Exception {
+        http
+            // 컨텍스트 패스가 /api 여도 ServletPath는 /h2-console 로 잡힘
+            .securityMatcher(new AntPathRequestMatcher("/h2-console/**"))
+            .csrf(csrf -> csrf.disable())
+            .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
+            .authorizeHttpRequests(authz -> authz.anyRequest().permitAll());
+        
+        return http.build();
+    }
+
+    // 2) 나머지 API 체인
+    @Bean
+    @Order(2)
+    public SecurityFilterChain apiChain(HttpSecurity http) throws Exception {
         http
             // CORS 설정
             .cors(cors -> cors.configurationSource(corsConfigurationSource))
@@ -44,12 +62,15 @@ public class SecurityConfig {
             // 권한 설정
             .authorizeHttpRequests(authz -> authz
                 // 공개 경로
-                .requestMatchers("/h2-console/**").permitAll()
-                .requestMatchers("/auth/**").permitAll()
-                .requestMatchers("/public/**").permitAll()
-                .requestMatchers("/actuator/health").permitAll()
-                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                .requestMatchers("/favicon.ico").permitAll()
+                .requestMatchers(
+                    "/auth/**",
+                    "/public/**",
+                    "/v3/api-docs/**", 
+                    "/swagger-ui/**", 
+                    "/swagger-ui.html",
+                    "/actuator/health",
+                    "/favicon.ico"
+                ).permitAll()
                 
                 // 관리자 전용
                 .requestMatchers("/admin/**").hasRole("ADMIN")
@@ -68,10 +89,7 @@ public class SecurityConfig {
                 
                 // 기타 모든 요청은 인증 필요
                 .anyRequest().authenticated()
-            )
-            
-            // H2 콘솔 설정
-            .headers(headers -> headers.frameOptions().disable());
+            );
 
         return http.build();
     }
