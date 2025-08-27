@@ -1,0 +1,402 @@
+package com.ycs.lms.security;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import jakarta.servlet.http.HttpServletRequest;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class SecurityScanningService {
+
+    private final RestTemplate restTemplate;
+    
+    @Value("${ycs.security.scanning.enabled:true}")
+    private boolean scanningEnabled;
+    
+    @Value("${ycs.security.scanning.rate-limit:100}")
+    private int requestRateLimit;
+    
+    // Threat detection patterns
+    private static final Map<String, Pattern> THREAT_PATTERNS = Map.of(
+        "SQL_INJECTION", Pattern.compile("(?i)(union|select|insert|update|delete|drop|create|alter|exec|script)", Pattern.CASE_INSENSITIVE),
+        "XSS", Pattern.compile("(?i)(<script|javascript:|vbscript:|onload=|onerror=|onclick=)", Pattern.CASE_INSENSITIVE),
+        "PATH_TRAVERSAL", Pattern.compile("(\\.\\./|\\.\\\\\\.|/etc/passwd|/windows/system32)", Pattern.CASE_INSENSITIVE),
+        "COMMAND_INJECTION", Pattern.compile("(;|\\||&|\\$\\(|`|\\{|\\})", Pattern.CASE_INSENSITIVE),
+        "XXE", Pattern.compile("(?i)(<!ENTITY|<!DOCTYPE.*\\[|SYSTEM|PUBLIC)", Pattern.CASE_INSENSITIVE)
+    );
+
+    // Rate limiting tracking
+    private final Map<String, RateLimitInfo> rateLimitTracker = new ConcurrentHashMap<>();
+    
+    // Suspicious activity tracking
+    private final Map<String, SuspiciousActivity> suspiciousActivities = new ConcurrentHashMap<>();
+    
+    // Security violations log
+    private final List<SecurityViolation> securityViolations = Collections.synchronizedList(new ArrayList<>());
+
+    public SecurityScanResult scanRequest(HttpServletRequest request) {
+        if (!scanningEnabled) {
+            return SecurityScanResult.clean();
+        }
+
+        SecurityScanResult result = new SecurityScanResult();
+        String clientIp = getClientIp(request);
+        String userAgent = request.getHeader("User-Agent");
+        String requestUri = request.getRequestURI();
+        Map<String, String[]> parameters = request.getParameterMap();
+
+        // Rate limiting check
+        if (isRateLimitExceeded(clientIp)) {
+            result.addThreat("RATE_LIMIT_EXCEEDED", "Too many requests from IP: " + clientIp, "HIGH");
+            logSecurityViolation(clientIp, "RATE_LIMIT_EXCEEDED", requestUri);
+        }
+
+        // Malicious pattern detection
+        scanForMaliciousPatterns(requestUri, parameters, result, clientIp);
+
+        // User agent analysis
+        scanUserAgent(userAgent, result, clientIp);
+
+        // Suspicious behavior detection
+        detectSuspiciousBehavior(clientIp, requestUri, result);
+
+        // Update rate limiting
+        updateRateLimit(clientIp);
+
+        return result;
+    }
+
+    private void scanForMaliciousPatterns(String requestUri, Map<String, String[]> parameters, 
+                                        SecurityScanResult result, String clientIp) {
+        
+        // Scan URI
+        for (Map.Entry<String, Pattern> entry : THREAT_PATTERNS.entrySet()) {
+            if (entry.getValue().matcher(requestUri).find()) {
+                result.addThreat(entry.getKey(), "Malicious pattern detected in URI", "HIGH");
+                logSecurityViolation(clientIp, entry.getKey(), requestUri);
+            }
+        }
+
+        // Scan parameters
+        for (Map.Entry<String, String[]> param : parameters.entrySet()) {
+            String paramName = param.getKey();
+            String[] paramValues = param.getValue();
+            
+            for (String value : paramValues) {
+                if (value != null) {
+                    for (Map.Entry<String, Pattern> entry : THREAT_PATTERNS.entrySet()) {
+                        if (entry.getValue().matcher(value).find()) {
+                            result.addThreat(entry.getKey(), 
+                                String.format("Malicious pattern detected in parameter '%s'", paramName), "HIGH");
+                            logSecurityViolation(clientIp, entry.getKey(), 
+                                String.format("Parameter: %s, Value: %s", paramName, value));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void scanUserAgent(String userAgent, SecurityScanResult result, String clientIp) {
+        if (userAgent == null || userAgent.trim().isEmpty()) {
+            result.addThreat("MISSING_USER_AGENT", "Request missing User-Agent header", "MEDIUM");
+            return;
+        }
+
+        // Known malicious user agents
+        String[] maliciousAgents = {
+            "sqlmap", "nikto", "nmap", "masscan", "nessus", "openvas", 
+            "burpsuite", "havij", "sql power injector", "pangolin"
+        };
+
+        String userAgentLower = userAgent.toLowerCase();
+        for (String malicious : maliciousAgents) {
+            if (userAgentLower.contains(malicious)) {
+                result.addThreat("MALICIOUS_USER_AGENT", 
+                    "Known attack tool detected: " + malicious, "CRITICAL");
+                logSecurityViolation(clientIp, "MALICIOUS_USER_AGENT", userAgent);
+            }
+        }
+
+        // Suspicious patterns in user agent
+        if (userAgent.length() > 1000) {
+            result.addThreat("OVERSIZED_USER_AGENT", "Unusually long User-Agent header", "MEDIUM");
+        }
+    }
+
+    private void detectSuspiciousBehavior(String clientIp, String requestUri, SecurityScanResult result) {
+        SuspiciousActivity activity = suspiciousActivities.computeIfAbsent(clientIp, 
+            k -> new SuspiciousActivity());
+
+        activity.recordRequest(requestUri);
+
+        // Check for scanning behavior
+        if (activity.isScanning()) {
+            result.addThreat("SCANNING_BEHAVIOR", 
+                "Client appears to be scanning for vulnerabilities", "HIGH");
+            logSecurityViolation(clientIp, "SCANNING_BEHAVIOR", 
+                String.format("Requests: %d, Unique paths: %d", 
+                    activity.getRequestCount(), activity.getUniquePathCount()));
+        }
+
+        // Check for repeated failed attempts
+        if (activity.hasRepeatedFailures()) {
+            result.addThreat("REPEATED_FAILURES", 
+                "Multiple failed attempts detected", "MEDIUM");
+        }
+    }
+
+    private boolean isRateLimitExceeded(String clientIp) {
+        RateLimitInfo info = rateLimitTracker.get(clientIp);
+        if (info == null) {
+            return false;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime windowStart = now.minusMinutes(1);
+
+        // Clean old requests
+        info.getRequests().removeIf(timestamp -> timestamp.isBefore(windowStart));
+
+        return info.getRequests().size() > requestRateLimit;
+    }
+
+    private void updateRateLimit(String clientIp) {
+        rateLimitTracker.computeIfAbsent(clientIp, k -> new RateLimitInfo())
+                       .addRequest(LocalDateTime.now());
+    }
+
+    private String getClientIp(HttpServletRequest request) {
+        String[] headers = {
+            "X-Forwarded-For", "Proxy-Client-IP", "WL-Proxy-Client-IP", 
+            "HTTP_CLIENT_IP", "HTTP_X_FORWARDED_FOR"
+        };
+
+        for (String header : headers) {
+            String ip = request.getHeader(header);
+            if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
+                return ip.split(",")[0].trim();
+            }
+        }
+
+        return request.getRemoteAddr();
+    }
+
+    private void logSecurityViolation(String clientIp, String threatType, String details) {
+        SecurityViolation violation = new SecurityViolation();
+        violation.setClientIp(clientIp);
+        violation.setThreatType(threatType);
+        violation.setDetails(details);
+        violation.setTimestamp(LocalDateTime.now());
+        
+        securityViolations.add(violation);
+        
+        log.warn("Security violation detected - Type: {}, IP: {}, Details: {}", 
+                threatType, clientIp, details);
+    }
+
+    @Scheduled(fixedRate = 300000) // Every 5 minutes
+    public void cleanupOldData() {
+        LocalDateTime cutoff = LocalDateTime.now().minusHours(1);
+        
+        // Cleanup rate limit data
+        rateLimitTracker.entrySet().removeIf(entry -> {
+            entry.getValue().getRequests().removeIf(timestamp -> timestamp.isBefore(cutoff));
+            return entry.getValue().getRequests().isEmpty();
+        });
+        
+        // Cleanup suspicious activities
+        suspiciousActivities.entrySet().removeIf(entry -> 
+            entry.getValue().getLastActivity().isBefore(cutoff));
+        
+        // Keep only recent security violations (last 24 hours)
+        LocalDateTime violationCutoff = LocalDateTime.now().minusHours(24);
+        securityViolations.removeIf(violation -> 
+            violation.getTimestamp().isBefore(violationCutoff));
+    }
+
+    public List<SecurityViolation> getRecentViolations(int hours) {
+        LocalDateTime cutoff = LocalDateTime.now().minusHours(hours);
+        return securityViolations.stream()
+                .filter(violation -> violation.getTimestamp().isAfter(cutoff))
+                .sorted((a, b) -> b.getTimestamp().compareTo(a.getTimestamp()))
+                .toList();
+    }
+
+    public SecurityDashboard getSecurityDashboard() {
+        SecurityDashboard dashboard = new SecurityDashboard();
+        
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime last24h = now.minusHours(24);
+        LocalDateTime lastHour = now.minusHours(1);
+        
+        // Count violations by time period
+        long violationsLast24h = securityViolations.stream()
+                .filter(v -> v.getTimestamp().isAfter(last24h))
+                .count();
+                
+        long violationsLastHour = securityViolations.stream()
+                .filter(v -> v.getTimestamp().isAfter(lastHour))
+                .count();
+        
+        dashboard.setViolationsLast24h(violationsLast24h);
+        dashboard.setViolationsLastHour(violationsLastHour);
+        
+        // Count by threat type
+        Map<String, Long> threatTypeCounts = securityViolations.stream()
+                .filter(v -> v.getTimestamp().isAfter(last24h))
+                .collect(java.util.stream.Collectors.groupingBy(
+                    SecurityViolation::getThreatType,
+                    java.util.stream.Collectors.counting()));
+        dashboard.setThreatTypeCounts(threatTypeCounts);
+        
+        // Top attacking IPs
+        Map<String, Long> topAttackingIps = securityViolations.stream()
+                .filter(v -> v.getTimestamp().isAfter(last24h))
+                .collect(java.util.stream.Collectors.groupingBy(
+                    SecurityViolation::getClientIp,
+                    java.util.stream.Collectors.counting()));
+        dashboard.setTopAttackingIps(topAttackingIps);
+        
+        // Rate limit statistics
+        dashboard.setActiveRateLimits(rateLimitTracker.size());
+        dashboard.setSuspiciousActivities(suspiciousActivities.size());
+        
+        return dashboard;
+    }
+
+    public void blockIp(String ip, int durationHours, String reason) {
+        log.warn("IP {} blocked for {} hours. Reason: {}", ip, durationHours, reason);
+        // Implementation would add IP to blocked list with expiration
+    }
+
+    // DTO Classes
+    public static class SecurityScanResult {
+        private boolean clean = true;
+        private List<SecurityThreat> threats = new ArrayList<>();
+        
+        public static SecurityScanResult clean() {
+            return new SecurityScanResult();
+        }
+        
+        public void addThreat(String type, String description, String severity) {
+            this.clean = false;
+            this.threats.add(new SecurityThreat(type, description, severity));
+        }
+        
+        public boolean isClean() { return clean; }
+        public List<SecurityThreat> getThreats() { return threats; }
+    }
+
+    public static class SecurityThreat {
+        private String type;
+        private String description;
+        private String severity;
+        private LocalDateTime detectedAt;
+
+        public SecurityThreat(String type, String description, String severity) {
+            this.type = type;
+            this.description = description;
+            this.severity = severity;
+            this.detectedAt = LocalDateTime.now();
+        }
+
+        // Getters
+        public String getType() { return type; }
+        public String getDescription() { return description; }
+        public String getSeverity() { return severity; }
+        public LocalDateTime getDetectedAt() { return detectedAt; }
+    }
+
+    public static class SecurityViolation {
+        private String clientIp;
+        private String threatType;
+        private String details;
+        private LocalDateTime timestamp;
+
+        // Getters and Setters
+        public String getClientIp() { return clientIp; }
+        public void setClientIp(String clientIp) { this.clientIp = clientIp; }
+
+        public String getThreatType() { return threatType; }
+        public void setThreatType(String threatType) { this.threatType = threatType; }
+
+        public String getDetails() { return details; }
+        public void setDetails(String details) { this.details = details; }
+
+        public LocalDateTime getTimestamp() { return timestamp; }
+        public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
+    }
+
+    public static class RateLimitInfo {
+        private List<LocalDateTime> requests = Collections.synchronizedList(new ArrayList<>());
+
+        public void addRequest(LocalDateTime timestamp) {
+            requests.add(timestamp);
+        }
+
+        public List<LocalDateTime> getRequests() { return requests; }
+    }
+
+    public static class SuspiciousActivity {
+        private Set<String> uniquePaths = new HashSet<>();
+        private int requestCount = 0;
+        private LocalDateTime lastActivity = LocalDateTime.now();
+
+        public void recordRequest(String path) {
+            this.uniquePaths.add(path);
+            this.requestCount++;
+            this.lastActivity = LocalDateTime.now();
+        }
+
+        public boolean isScanning() {
+            return requestCount > 20 && uniquePaths.size() > 15;
+        }
+
+        public boolean hasRepeatedFailures() {
+            return requestCount > 10 && uniquePaths.size() < 3;
+        }
+
+        public int getRequestCount() { return requestCount; }
+        public int getUniquePathCount() { return uniquePaths.size(); }
+        public LocalDateTime getLastActivity() { return lastActivity; }
+    }
+
+    public static class SecurityDashboard {
+        private long violationsLast24h;
+        private long violationsLastHour;
+        private Map<String, Long> threatTypeCounts = new HashMap<>();
+        private Map<String, Long> topAttackingIps = new HashMap<>();
+        private int activeRateLimits;
+        private int suspiciousActivities;
+
+        // Getters and Setters
+        public long getViolationsLast24h() { return violationsLast24h; }
+        public void setViolationsLast24h(long violationsLast24h) { this.violationsLast24h = violationsLast24h; }
+
+        public long getViolationsLastHour() { return violationsLastHour; }
+        public void setViolationsLastHour(long violationsLastHour) { this.violationsLastHour = violationsLastHour; }
+
+        public Map<String, Long> getThreatTypeCounts() { return threatTypeCounts; }
+        public void setThreatTypeCounts(Map<String, Long> threatTypeCounts) { this.threatTypeCounts = threatTypeCounts; }
+
+        public Map<String, Long> getTopAttackingIps() { return topAttackingIps; }
+        public void setTopAttackingIps(Map<String, Long> topAttackingIps) { this.topAttackingIps = topAttackingIps; }
+
+        public int getActiveRateLimits() { return activeRateLimits; }
+        public void setActiveRateLimits(int activeRateLimits) { this.activeRateLimits = activeRateLimits; }
+
+        public int getSuspiciousActivities() { return suspiciousActivities; }
+        public void setSuspiciousActivities(int suspiciousActivities) { this.suspiciousActivities = suspiciousActivities; }
+    }
+}

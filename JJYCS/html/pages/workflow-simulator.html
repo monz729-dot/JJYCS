@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>워크플로우 시뮬레이터 - YCS 물류 시스템</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/umd/lucide.min.js"></script>
+    <style>
+        .shadow-blue {
+            box-shadow: 0 4px 14px -2px rgba(59, 130, 246, 0.15);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .tab-trigger {
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tab-trigger.active {
+            background-color: white;
+            color: #1d4ed8;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .workflow-step {
+            transition: all 0.3s ease;
+        }
+
+        .workflow-step.completed {
+            border-color: #bbf7d0;
+            background-color: rgba(34, 197, 94, 0.1);
+        }
+
+        .workflow-step.current {
+            border-color: #bfdbfe;
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+
+        .workflow-step.pending {
+            border-color: #e5e7eb;
+            background-color: rgba(156, 163, 175, 0.1);
+        }
+
+        .user-type-button {
+            transition: all 0.3s ease;
+        }
+
+        .user-type-button.active {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        .user-type-button:not(.active) {
+            border-color: rgba(229, 231, 235, 0.5);
+            color: #6b7280;
+        }
+
+        .user-type-button:not(.active):hover {
+            border-color: #93c5fd;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 0.5rem;
+            background-color: #e5e7eb;
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: #3b82f6;
+            border-radius: 9999px;
+            transition: width 0.3s ease;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 0.25rem 0.5rem;
+            border: 1px solid;
+        }
+
+        .badge-outline {
+            background-color: white;
+            color: #6b7280;
+            border-color: #d1d5db;
+        }
+
+        .badge-completed {
+            color: #059669;
+            background-color: #d1fae5;
+            border-color: #a7f3d0;
+        }
+
+        .badge-current {
+            color: #2563eb;
+            background-color: #dbeafe;
+            border-color: #93c5fd;
+        }
+
+        .badge-pending {
+            color: #6b7280;
+            background-color: #f3f4f6;
+            border-color: #d1d5db;
+        }
+
+        .stat-card {
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.2);
+        }
+
+        .qr-status-item {
+            transition: all 0.3s ease;
+        }
+
+        .qr-status-item:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+        }
+
+        .action-button {
+            transition: all 0.3s ease;
+        }
+
+        .action-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.2);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 p-4">
+    <div class="max-w-6xl mx-auto space-y-6">
+        <!-- 헤더 -->
+        <div class="bg-white rounded-lg shadow-blue border border-blue-100 p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-semibold text-blue-900">워크플로우 시뮬레이터</h1>
+                    <p class="text-blue-600 mt-2">YCS 물류 시스템의 전체 프로세스를 시뮬레이션합니다</p>
+                </div>
+                <button 
+                    onclick="navigateBack()"
+                    class="px-4 py-2 border border-blue-200/50 text-blue-600/70 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 rounded-md transition-all duration-300"
+                >
+                    대시보드로 돌아가기
+                </button>
+            </div>
+        </div>
+
+        <!-- 탭 컨테이너 -->
+        <div class="w-full">
+            <!-- 탭 목록 -->
+            <div class="grid grid-cols-3 bg-blue-50/50 rounded-lg p-1">
+                <button 
+                    class="tab-trigger px-4 py-2 rounded-md font-medium text-center transition-all duration-300 active" 
+                    onclick="switchTab('signup')"
+                    id="signup-tab"
+                >
+                    회원가입 프로세스
+                </button>
+                <button 
+                    class="tab-trigger px-4 py-2 rounded-md font-medium text-center transition-all duration-300" 
+                    onclick="switchTab('order')"
+                    id="order-tab"
+                >
+                    주문 처리 프로세스
+                </button>
+                <button 
+                    class="tab-trigger px-4 py-2 rounded-md font-medium text-center transition-all duration-300" 
+                    onclick="switchTab('monitoring')"
+                    id="monitoring-tab"
+                >
+                    실시간 모니터링
+                </button>
+            </div>
+
+            <!-- 회원가입 프로세스 탭 -->
+            <div id="signup-content" class="tab-content active mt-6 space-y-6">
+                <!-- 사용자 타입 선택 -->
+                <div class="bg-white rounded-lg shadow-blue border border-blue-100">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-blue-900">회원 유형 선택</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-3 gap-4">
+                            <button
+                                onclick="selectUserType('general')"
+                                id="general-btn"
+                                class="user-type-button p-4 rounded-lg border-2 flex flex-col items-center gap-3 active"
+                            >
+                                <i data-lucide="user" class="h-8 w-8"></i>
+                                <div class="text-center">
+                                    <div class="font-medium">일반 회원</div>
+                                    <div class="text-sm opacity-75">개인 사용자</div>
+                                </div>
+                            </button>
+                            <button
+                                onclick="selectUserType('corporate')"
+                                id="corporate-btn"
+                                class="user-type-button p-4 rounded-lg border-2 flex flex-col items-center gap-3"
+                            >
+                                <i data-lucide="building" class="h-8 w-8"></i>
+                                <div class="text-center">
+                                    <div class="font-medium">기업 회원</div>
+                                    <div class="text-sm opacity-75">기업 담당자</div>
+                                </div>
+                            </button>
+                            <button
+                                onclick="selectUserType('partner')"
+                                id="partner-btn"
+                                class="user-type-button p-4 rounded-lg border-2 flex flex-col items-center gap-3"
+                            >
+                                <i data-lucide="users" class="h-8 w-8"></i>
+                                <div class="text-center">
+                                    <div class="font-medium">파트너</div>
+                                    <div class="text-sm opacity-75">물류 파트너</div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 회원가입 워크플로우 -->
+                <div class="bg-white rounded-lg shadow-blue border border-blue-100">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 id="signup-workflow-title" class="text-lg font-semibold text-blue-900">일반 회원 가입 프로세스</h3>
+                    </div>
+                    <div class="p-6">
+                        <div id="signup-workflow" class="space-y-4">
+                            <!-- 워크플로우 단계가 여기에 동적으로 생성됩니다 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 주문 처리 프로세스 탭 -->
+            <div id="order-content" class="tab-content mt-6 space-y-6">
+                <!-- 주문 제어 패널 -->
+                <div class="bg-white rounded-lg shadow-blue border border-blue-100">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-blue-900">주문 시뮬레이션 제어</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex items-center gap-4 mb-4">
+                            <button 
+                                onclick="startNewOrder()"
+                                class="flex items-center gap-2 px-4 py-2 bg-blue-600/20 hover:bg-blue-600 border border-blue-300/50 hover:border-blue-500 text-blue-700 hover:text-white rounded-md transition-all duration-300"
+                            >
+                                <i data-lucide="package" class="h-4 w-4"></i>
+                                새 주문 시작
+                            </button>
+                            <button 
+                                onclick="processNextStep()"
+                                id="next-step-btn"
+                                class="flex items-center gap-2 px-4 py-2 border border-blue-200/50 text-blue-600/70 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 rounded-md transition-all duration-300"
+                            >
+                                <i data-lucide="arrow-right" class="h-4 w-4"></i>
+                                다음 단계
+                            </button>
+                            <button 
+                                onclick="resetWorkflow()"
+                                class="flex items-center gap-2 px-4 py-2 border border-blue-200/50 text-blue-600/70 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 rounded-md transition-all duration-300"
+                            >
+                                초기화
+                            </button>
+                        </div>
+                        
+                        <div id="order-alert" class="hidden bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="package" class="h-4 w-4 text-blue-600"></i>
+                                <span id="order-info" class="text-blue-800"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="progress-bar">
+                            <div id="progress-fill" class="progress-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 주문 처리 워크플로우 -->
+                <div class="bg-white rounded-lg shadow-blue border border-blue-100">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-blue-900">주문 처리 워크플로우</h3>
+                    </div>
+                    <div class="p-6">
+                        <div id="order-workflow" class="space-y-4">
+                            <!-- 주문 워크플로우 단계가 여기에 동적으로 생성됩니다 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 실시간 모니터링 탭 -->
+            <div id="monitoring-content" class="tab-content mt-6 space-y-6">
+                <!-- 시스템 현황 -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="stat-card bg-white rounded-lg shadow-blue border border-blue-100 p-6 text-center">
+                        <i data-lucide="user" class="h-8 w-8 text-blue-600 mx-auto mb-3"></i>
+                        <div class="text-2xl font-bold text-blue-900">156</div>
+                        <div class="text-sm text-blue-600">활성 사용자</div>
+                    </div>
+                    
+                    <div class="stat-card bg-white rounded-lg shadow-blue border border-blue-100 p-6 text-center">
+                        <i data-lucide="package" class="h-8 w-8 text-green-600 mx-auto mb-3"></i>
+                        <div class="text-2xl font-bold text-green-900">42</div>
+                        <div class="text-sm text-green-600">처리중 주문</div>
+                    </div>
+                    
+                    <div class="stat-card bg-white rounded-lg shadow-blue border border-blue-100 p-6 text-center">
+                        <i data-lucide="truck" class="h-8 w-8 text-orange-600 mx-auto mb-3"></i>
+                        <div class="text-2xl font-bold text-orange-900">18</div>
+                        <div class="text-sm text-orange-600">배송중</div>
+                    </div>
+                    
+                    <div class="stat-card bg-white rounded-lg shadow-blue border border-blue-100 p-6 text-center">
+                        <i data-lucide="check-circle" class="h-8 w-8 text-purple-600 mx-auto mb-3"></i>
+                        <div class="text-2xl font-bold text-purple-900">329</div>
+                        <div class="text-sm text-purple-600">완료된 배송</div>
+                    </div>
+                </div>
+
+                <!-- QR 코드 처리 현황 -->
+                <div class="bg-white rounded-lg shadow-blue border border-blue-100">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-blue-900">QR 코드 처리 현황</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4">
+                            <div class="qr-status-item flex items-center justify-between p-3 border border-blue-100 rounded-lg bg-blue-50/30">
+                                <div class="flex items-center gap-3">
+                                    <i data-lucide="qr-code" class="h-5 w-5 text-blue-600"></i>
+                                    <div>
+                                        <div class="font-medium text-blue-900">YCS-12345678</div>
+                                        <div class="text-sm text-blue-600">YCS 물류센터</div>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="badge text-blue-600 border-blue-300">입고 완료</span>
+                                    <div class="text-xs text-gray-500 mt-1">2분 전</div>
+                                </div>
+                            </div>
+
+                            <div class="qr-status-item flex items-center justify-between p-3 border border-blue-100 rounded-lg bg-blue-50/30">
+                                <div class="flex items-center gap-3">
+                                    <i data-lucide="qr-code" class="h-5 w-5 text-blue-600"></i>
+                                    <div>
+                                        <div class="font-medium text-blue-900">YCS-12345679</div>
+                                        <div class="text-sm text-blue-600">배송 파트너</div>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="badge text-blue-600 border-blue-300">픽업 완료</span>
+                                    <div class="text-xs text-gray-500 mt-1">15분 전</div>
+                                </div>
+                            </div>
+
+                            <div class="qr-status-item flex items-center justify-between p-3 border border-blue-100 rounded-lg bg-blue-50/30">
+                                <div class="flex items-center gap-3">
+                                    <i data-lucide="qr-code" class="h-5 w-5 text-blue-600"></i>
+                                    <div>
+                                        <div class="font-medium text-blue-900">YCS-12345680</div>
+                                        <div class="text-sm text-blue-600">태국 방콕</div>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="badge text-orange-600 border-orange-300">배송 중</span>
+                                    <div class="text-xs text-gray-500 mt-1">1시간 전</div>
+                                </div>
+                            </div>
+
+                            <div class="qr-status-item flex items-center justify-between p-3 border border-blue-100 rounded-lg bg-blue-50/30">
+                                <div class="flex items-center gap-3">
+                                    <i data-lucide="qr-code" class="h-5 w-5 text-blue-600"></i>
+                                    <div>
+                                        <div class="font-medium text-blue-900">YCS-12345681</div>
+                                        <div class="text-sm text-blue-600">최종 목적지</div>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="badge text-green-600 border-green-300">배송 완료</span>
+                                    <div class="text-xs text-gray-500 mt-1">3시간 전</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 액션 버튼들 -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <button 
+                        onclick="navigateToOrderForm()"
+                        class="action-button h-20 flex flex-col items-center justify-center gap-2 border border-blue-200/50 text-blue-600/70 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 rounded-lg transition-all duration-300"
+                    >
+                        <i data-lucide="file-text" class="h-6 w-6"></i>
+                        새 주문 등록
+                    </button>
+                    
+                    <button 
+                        onclick="navigateToOrderHistory()"
+                        class="action-button h-20 flex flex-col items-center justify-center gap-2 border border-blue-200/50 text-blue-600/70 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 rounded-lg transition-all duration-300"
+                    >
+                        <i data-lucide="package" class="h-6 w-6"></i>
+                        주문 내역
+                    </button>
+                    
+                    <button 
+                        onclick="navigateToAdminDashboard()"
+                        class="action-button h-20 flex flex-col items-center justify-center gap-2 border border-blue-200/50 text-blue-600/70 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 rounded-lg transition-all duration-300"
+                    >
+                        <i data-lucide="settings" class="h-6 w-6"></i>
+                        관리자 모드
+                    </button>
+                    
+                    <button 
+                        onclick="navigateToPartnerDashboard()"
+                        class="action-button h-20 flex flex-col items-center justify-center gap-2 border border-blue-200/50 text-blue-600/70 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 rounded-lg transition-all duration-300"
+                    >
+                        <i data-lucide="scan" class="h-6 w-6"></i>
+                        파트너 모드
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 하단 여백 -->
+        <div class="pb-20"></div>
+    </div>
+
+    <script>
+        // 전역 상태
+        let selectedUserType = 'general';
+        let currentOrderId = null;
+        let processingStep = 0;
+        let activeTab = 'signup';
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+            updateSignupWorkflow();
+            updateOrderWorkflow();
+        });
+
+        // 탭 전환
+        function switchTab(tabName) {
+            // 모든 탭 비활성화
+            document.querySelectorAll('.tab-trigger').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // 선택된 탭 활성화
+            document.getElementById(tabName + '-tab').classList.add('active');
+            document.getElementById(tabName + '-content').classList.add('active');
+            
+            activeTab = tabName;
+        }
+
+        // 사용자 타입 선택
+        function selectUserType(userType) {
+            selectedUserType = userType;
+            
+            // 모든 버튼 비활성화
+            document.querySelectorAll('.user-type-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // 선택된 버튼 활성화
+            document.getElementById(userType + '-btn').classList.add('active');
+            
+            updateSignupWorkflow();
+        }
+
+        // 회원가입 워크플로우 업데이트
+        function updateSignupWorkflow() {
+            const workflows = {
+                general: [
+                    {
+                        id: 'register',
+                        title: '회원가입 신청',
+                        description: '사용자가 회원가입 양식을 작성하고 제출',
+                        actor: 'user',
+                        status: 'completed',
+                        canProcess: true
+                    },
+                    {
+                        id: 'verification',
+                        title: '이메일 인증',
+                        description: '이메일 인증을 통한 계정 활성화',
+                        actor: 'user',
+                        status: 'current',
+                        canProcess: true
+                    },
+                    {
+                        id: 'complete',
+                        title: '가입 완료',
+                        description: '즉시 서비스 이용 가능',
+                        actor: 'user',
+                        status: 'pending',
+                        canProcess: false
+                    }
+                ],
+                corporate: [
+                    {
+                        id: 'register',
+                        title: '회원가입 신청',
+                        description: '사용자가 회원가입 양식을 작성하고 제출',
+                        actor: 'user',
+                        status: 'completed',
+                        canProcess: true
+                    },
+                    {
+                        id: 'document_upload',
+                        title: '서류 제출',
+                        description: '사업자등록증 등 서류 업로드',
+                        actor: 'user',
+                        status: 'current',
+                        canProcess: true
+                    },
+                    {
+                        id: 'admin_review',
+                        title: '관리자 검토',
+                        description: '제출된 서류 및 신청 내용 검토',
+                        actor: 'admin',
+                        status: 'pending',
+                        canProcess: true
+                    },
+                    {
+                        id: 'approval',
+                        title: '승인 완료',
+                        description: '승인 후 서비스 이용 가능',
+                        actor: 'admin',
+                        status: 'pending',
+                        canProcess: false
+                    }
+                ],
+                partner: [
+                    {
+                        id: 'register',
+                        title: '회원가입 신청',
+                        description: '사용자가 회원가입 양식을 작성하고 제출',
+                        actor: 'user',
+                        status: 'completed',
+                        canProcess: true
+                    },
+                    {
+                        id: 'document_upload',
+                        title: '서류 제출',
+                        description: '사업자등록증, 계약서 등 서류 업로드',
+                        actor: 'user',
+                        status: 'current',
+                        canProcess: true
+                    },
+                    {
+                        id: 'admin_review',
+                        title: '관리자 검토',
+                        description: '제출된 서류 및 신청 내용 검토',
+                        actor: 'admin',
+                        status: 'pending',
+                        canProcess: true
+                    },
+                    {
+                        id: 'approval',
+                        title: '승인 완료',
+                        description: '승인 후 서비스 이용 가능',
+                        actor: 'admin',
+                        status: 'pending',
+                        canProcess: false
+                    }
+                ]
+            };
+
+            const workflow = workflows[selectedUserType];
+            const container = document.getElementById('signup-workflow');
+            const title = document.getElementById('signup-workflow-title');
+            
+            // 제목 업데이트
+            const userTypeLabels = {
+                general: '일반 회원',
+                corporate: '기업 회원',
+                partner: '파트너'
+            };
+            title.textContent = `${userTypeLabels[selectedUserType]} 가입 프로세스`;
+            
+            // 워크플로우 렌더링
+            container.innerHTML = workflow.map(step => {
+                const actorInfo = getActorInfo(step.actor);
+                return `
+                    <div class="workflow-step p-4 rounded-lg border-2 ${step.status}">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center ${actorInfo.bg}">
+                                    ${getStatusIcon(step.status, actorInfo)}
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-gray-900">${step.title}</h4>
+                                    <p class="text-sm text-gray-600">${step.description}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="badge badge-${step.status}">
+                                    ${getStatusLabel(step.status)}
+                                </span>
+                                <span class="badge ${actorInfo.color} border-current">
+                                    ${actorInfo.label}
+                                </span>
+                                ${step.canProcess && step.status === 'current' ? 
+                                    `<button onclick="navigateToSignup()" class="px-3 py-1 bg-blue-600/20 hover:bg-blue-600 border border-blue-300/50 hover:border-blue-500 text-blue-700 hover:text-white rounded text-sm transition-all duration-300">처리하기</button>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            lucide.createIcons();
+        }
+
+        // 주문 워크플로우 업데이트
+        function updateOrderWorkflow() {
+            const steps = [
+                {
+                    id: 'order_submit',
+                    title: '주문 접수',
+                    description: '사용자가 배송 주문을 접수',
+                    actor: 'user',
+                    status: processingStep >= 0 ? 'completed' : 'current',
+                    canProcess: true
+                },
+                {
+                    id: 'quote_generate',
+                    title: '견적 생성',
+                    description: '시스템에서 자동으로 견적 계산',
+                    actor: 'ysc',
+                    status: processingStep >= 1 ? 'completed' : processingStep === 0 ? 'current' : 'pending',
+                    canProcess: processingStep >= 0
+                },
+                {
+                    id: 'order_confirm',
+                    title: '의뢰 확정',
+                    description: '사용자가 견적을 확인하고 주문 확정',
+                    actor: 'user',
+                    status: processingStep >= 2 ? 'completed' : processingStep === 1 ? 'current' : 'pending',
+                    canProcess: processingStep >= 1
+                },
+                {
+                    id: 'payment',
+                    title: '결제 처리',
+                    description: '선택한 결제 방식으로 결제 완료',
+                    actor: 'user',
+                    status: processingStep >= 3 ? 'completed' : processingStep === 2 ? 'current' : 'pending',
+                    canProcess: processingStep >= 2
+                },
+                {
+                    id: 'qr_generate',
+                    title: 'QR코드 생성',
+                    description: '접수용 QR코드 자동 생성',
+                    actor: 'ysc',
+                    status: processingStep >= 4 ? 'completed' : processingStep === 3 ? 'current' : 'pending',
+                    canProcess: processingStep >= 3
+                },
+                {
+                    id: 'warehouse_receive',
+                    title: '창고 입고',
+                    description: '물류센터에서 QR코드로 화물 접수',
+                    actor: 'ysc',
+                    status: processingStep >= 5 ? 'completed' : processingStep === 4 ? 'current' : 'pending',
+                    canProcess: processingStep >= 4
+                },
+                {
+                    id: 'partner_assign',
+                    title: '파트너 배정',
+                    description: '배송 파트너에게 주문 배정',
+                    actor: 'admin',
+                    status: processingStep >= 6 ? 'completed' : processingStep === 5 ? 'current' : 'pending',
+                    canProcess: processingStep >= 5
+                },
+                {
+                    id: 'partner_process',
+                    title: '파트너 처리',
+                    description: '파트너가 QR코드로 화물 픽업 및 배송',
+                    actor: 'partner',
+                    status: processingStep >= 7 ? 'completed' : processingStep === 6 ? 'current' : 'pending',
+                    canProcess: processingStep >= 6
+                },
+                {
+                    id: 'delivery_complete',
+                    title: '배송 완료',
+                    description: '최종 목적지 도착 및 배송 완료',
+                    actor: 'partner',
+                    status: processingStep >= 8 ? 'completed' : processingStep === 7 ? 'current' : 'pending',
+                    canProcess: processingStep >= 7
+                }
+            ];
+
+            const container = document.getElementById('order-workflow');
+            container.innerHTML = steps.map(step => {
+                const actorInfo = getActorInfo(step.actor);
+                return `
+                    <div class="workflow-step p-4 rounded-lg border-2 ${step.status}">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center ${actorInfo.bg}">
+                                    ${getStatusIcon(step.status, actorInfo)}
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-gray-900">${step.title}</h4>
+                                    <p class="text-sm text-gray-600">${step.description}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="badge badge-${step.status}">
+                                    ${getStatusLabel(step.status)}
+                                </span>
+                                <span class="badge ${actorInfo.color} border-current">
+                                    ${actorInfo.label}
+                                </span>
+                                ${step.canProcess && step.status === 'current' ? 
+                                    `<button onclick="handleStepAction('${step.id}', '${step.actor}')" class="px-3 py-1 bg-blue-600/20 hover:bg-blue-600 border border-blue-300/50 hover:border-blue-500 text-blue-700 hover:text-white rounded text-sm transition-all duration-300">
+                                        ${step.actor === 'user' ? '처리하기' : '대시보드 이동'}
+                                    </button>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // 다음 단계 버튼 상태 업데이트
+            const nextStepBtn = document.getElementById('next-step-btn');
+            if (processingStep >= 8) {
+                nextStepBtn.disabled = true;
+                nextStepBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                nextStepBtn.disabled = false;
+                nextStepBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+            
+            lucide.createIcons();
+        }
+
+        // 액터 정보 가져오기
+        function getActorInfo(actor) {
+            const actorInfos = {
+                user: { color: 'text-blue-600', bg: 'bg-blue-100', label: '사용자', icon: 'user' },
+                admin: { color: 'text-orange-600', bg: 'bg-orange-100', label: '관리자', icon: 'settings' },
+                partner: { color: 'text-green-600', bg: 'bg-green-100', label: '파트너', icon: 'truck' },
+                ysc: { color: 'text-purple-600', bg: 'bg-purple-100', label: 'YCS', icon: 'building' }
+            };
+            return actorInfos[actor] || actorInfos.user;
+        }
+
+        // 상태 아이콘 가져오기
+        function getStatusIcon(status, actorInfo) {
+            if (status === 'completed') {
+                return '<i data-lucide="check-circle" class="h-5 w-5 text-green-600"></i>';
+            } else if (status === 'current') {
+                return '<i data-lucide="clock" class="h-5 w-5 text-blue-600 animate-pulse"></i>';
+            } else {
+                return `<i data-lucide="${actorInfo.icon}" class="h-5 w-5 ${actorInfo.color}"></i>`;
+            }
+        }
+
+        // 상태 레이블 가져오기
+        function getStatusLabel(status) {
+            const labels = {
+                completed: '완료',
+                current: '진행중',
+                pending: '대기'
+            };
+            return labels[status] || '대기';
+        }
+
+        // 새 주문 시작
+        function startNewOrder() {
+            currentOrderId = `YCS-${Date.now().toString().slice(-8)}`;
+            processingStep = 0;
+            
+            const orderAlert = document.getElementById('order-alert');
+            const orderInfo = document.getElementById('order-info');
+            const progressFill = document.getElementById('progress-fill');
+            
+            orderAlert.classList.remove('hidden');
+            orderInfo.innerHTML = `<strong>주문번호: ${currentOrderId}</strong> | 진행률: 0%`;
+            progressFill.style.width = '0%';
+            
+            updateOrderWorkflow();
+        }
+
+        // 다음 단계 처리
+        function processNextStep() {
+            if (processingStep < 8) {
+                processingStep++;
+                const progress = Math.round((processingStep / 8) * 100);
+                
+                if (currentOrderId) {
+                    const orderInfo = document.getElementById('order-info');
+                    const progressFill = document.getElementById('progress-fill');
+                    
+                    orderInfo.innerHTML = `<strong>주문번호: ${currentOrderId}</strong> | 진행률: ${progress}%`;
+                    progressFill.style.width = `${progress}%`;
+                }
+                
+                updateOrderWorkflow();
+            }
+        }
+
+        // 워크플로우 초기화
+        function resetWorkflow() {
+            processingStep = 0;
+            currentOrderId = null;
+            
+            const orderAlert = document.getElementById('order-alert');
+            const progressFill = document.getElementById('progress-fill');
+            
+            orderAlert.classList.add('hidden');
+            progressFill.style.width = '0%';
+            
+            updateOrderWorkflow();
+        }
+
+        // 단계별 액션 처리
+        function handleStepAction(stepId, actor) {
+            if (stepId === 'order_submit') {
+                navigateToOrderForm();
+            } else if (actor === 'admin') {
+                navigateToAdminDashboard();
+            } else if (actor === 'partner') {
+                navigateToPartnerDashboard();
+            } else {
+                processNextStep();
+            }
+        }
+
+        // 네비게이션 함수들
+        function navigateBack() {
+            console.log('Navigate to dashboard');
+            alert('대시보드로 이동합니다.');
+        }
+
+        function navigateToSignup() {
+            console.log('Navigate to signup');
+            alert('회원가입 페이지로 이동합니다.');
+        }
+
+        function navigateToOrderForm() {
+            console.log('Navigate to order form');
+            alert('주문 등록 페이지로 이동합니다.');
+        }
+
+        function navigateToOrderHistory() {
+            console.log('Navigate to order history');
+            alert('주문 내역 페이지로 이동합니다.');
+        }
+
+        function navigateToAdminDashboard() {
+            console.log('Navigate to admin dashboard');
+            alert('관리자 대시보드로 이동합니다.');
+        }
+
+        function navigateToPartnerDashboard() {
+            console.log('Navigate to partner dashboard');
+            alert('파트너 대시보드로 이동합니다.');
+        }
+    </script>
+</body>
+</html>

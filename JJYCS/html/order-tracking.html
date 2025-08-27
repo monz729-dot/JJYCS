@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YCS 물류 시스템 - 주문 추적</title>
+    <link rel="stylesheet" href="css/globals.css">
+    <style>
+        .page-container {
+            background: var(--gray-50);
+            min-height: 100vh;
+            padding-bottom: 5rem;
+        }
+        
+        .header {
+            background: white;
+            border-bottom: 1px solid var(--primary-100);
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+        
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .logo {
+            width: 2.5rem;
+            height: 2.5rem;
+            background: var(--primary-500);
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+        
+        .header-info h1 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--primary-800);
+            margin: 0;
+        }
+        
+        .back-btn {
+            background: none;
+            border: 1px solid var(--primary-200);
+            color: var(--primary-600);
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .back-btn:hover {
+            background: var(--primary-50);
+            border-color: var(--primary-300);
+        }
+        
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+        
+        .search-section {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+        
+        .search-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary-800);
+            margin-bottom: 1.5rem;
+        }
+        
+        .search-form {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .search-input {
+            flex: 1;
+            padding: 1rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+        }
+        
+        .search-btn {
+            background: var(--primary-500);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .search-btn:hover {
+            background: var(--primary-600);
+        }
+        
+        .tracking-result {
+            display: none;
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+        
+        .order-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+        
+        .order-details h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary-800);
+            margin: 0 0 0.5rem 0;
+        }
+        
+        .order-meta {
+            color: var(--gray-600);
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+        
+        .order-status {
+            text-align: right;
+        }
+        
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+        
+        .status-preparing {
+            background: var(--primary-100);
+            color: var(--primary-700);
+        }
+        
+        .status-shipping {
+            background: #f3f4f6;
+            color: #8b5cf6;
+        }
+        
+        .status-delivered {
+            background: var(--success-100);
+            color: var(--success-700);
+        }
+        
+        .estimated-time {
+            font-size: 0.8rem;
+            color: var(--gray-600);
+        }
+        
+        .tracking-timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+        
+        .timeline-item {
+            position: relative;
+            padding-bottom: 2rem;
+        }
+        
+        .timeline-item:last-child {
+            padding-bottom: 0;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -1.875rem;
+            top: 0.5rem;
+            width: 0.75rem;
+            height: 0.75rem;
+            background: var(--primary-500);
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 0 0 2px var(--primary-500);
+        }
+        
+        .timeline-item:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            left: -1.5rem;
+            top: 1.25rem;
+            bottom: -1rem;
+            width: 2px;
+            background: var(--gray-200);
+        }
+        
+        .timeline-item.inactive::before {
+            background: var(--gray-300);
+            box-shadow: 0 0 0 2px var(--gray-300);
+        }
+        
+        .timeline-content {
+            background: var(--gray-50);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+        }
+        
+        .timeline-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--primary-800);
+            margin-bottom: 0.5rem;
+        }
+        
+        .timeline-time {
+            font-size: 0.8rem;
+            color: var(--gray-600);
+            margin-bottom: 0.75rem;
+        }
+        
+        .timeline-description {
+            font-size: 0.875rem;
+            color: var(--gray-700);
+            line-height: 1.5;
+        }
+        
+        .no-result {
+            display: none;
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--gray-600);
+        }
+        
+        .no-result-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 1rem 0.5rem;
+            }
+            
+            .search-form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .search-btn {
+                margin-top: 0;
+            }
+            
+            .order-info {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: left;
+            }
+            
+            .order-status {
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <!-- 헤더 -->
+        <div class="header">
+            <div class="header-content">
+                <div class="header-left">
+                    <div class="logo">YCS</div>
+                    <div class="header-info">
+                        <h1>주문 추적</h1>
+                    </div>
+                </div>
+                <button class="back-btn" onclick="window.history.back()">뒤로가기</button>
+            </div>
+        </div>
+        
+        <!-- 메인 콘텐츠 -->
+        <div class="main-content">
+            <!-- 검색 섹션 -->
+            <div class="search-section">
+                <h2 class="search-title">주문번호로 추적하기</h2>
+                <form class="search-form" onsubmit="trackOrder(event)">
+                    <input 
+                        type="text" 
+                        class="search-input" 
+                        id="orderNumber" 
+                        placeholder="주문번호를 입력하세요 (예: YCS202401001)" 
+                        required
+                    >
+                    <button type="submit" class="search-btn">추적하기</button>
+                </form>
+            </div>
+            
+            <!-- 추적 결과 -->
+            <div class="tracking-result" id="trackingResult">
+                <div class="order-info">
+                    <div class="order-details">
+                        <h2 id="orderTitle">주문번호: YCS202401001</h2>
+                        <div class="order-meta">
+                            <div>수취인: 홍길동</div>
+                            <div>배송지: 서울시 강남구 테헤란로 123</div>
+                            <div>주문일: 2024-01-15</div>
+                        </div>
+                    </div>
+                    <div class="order-status">
+                        <div class="status-badge status-shipping" id="statusBadge">배송 중</div>
+                        <div class="estimated-time" id="estimatedTime">예상 도착: 2024-01-20</div>
+                    </div>
+                </div>
+                
+                <div class="tracking-timeline" id="trackingTimeline">
+                    <div class="timeline-item">
+                        <div class="timeline-content">
+                            <div class="timeline-title">배송 시작</div>
+                            <div class="timeline-time">2024-01-18 09:00</div>
+                            <div class="timeline-description">
+                                한국 물류센터에서 배송을 시작했습니다.<br>
+                                운송장번호: KR1234567890
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-content">
+                            <div class="timeline-title">통관 진행</div>
+                            <div class="timeline-time">2024-01-17 14:30</div>
+                            <div class="timeline-description">
+                                태국 세관에서 통관 처리 중입니다.<br>
+                                예상 통관 완료: 2024-01-18 오전
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-content">
+                            <div class="timeline-title">출고 준비 완료</div>
+                            <div class="timeline-time">2024-01-16 16:45</div>
+                            <div class="timeline-description">
+                                모든 상품이 포장되어 출고 준비가 완료되었습니다.<br>
+                                총 박스 수: 2개
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-content">
+                            <div class="timeline-title">주문 접수</div>
+                            <div class="timeline-time">2024-01-15 11:20</div>
+                            <div class="timeline-description">
+                                주문이 정상적으로 접수되었습니다.<br>
+                                주문 확인 및 상품 준비를 시작합니다.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 결과 없음 -->
+            <div class="no-result" id="noResult">
+                <div class="no-result-icon">📦</div>
+                <h3>추적 결과를 찾을 수 없습니다</h3>
+                <p>입력하신 주문번호를 다시 확인해주세요.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 데모 주문 데이터
+        const orderData = {
+            'YCS202401001': {
+                title: 'YCS202401001',
+                recipient: '홍길동',
+                address: '서울시 강남구 테헤란로 123',
+                orderDate: '2024-01-15',
+                status: 'shipping',
+                statusText: '배송 중',
+                estimatedDelivery: '2024-01-20',
+                timeline: [
+                    {
+                        title: '배송 시작',
+                        time: '2024-01-18 09:00',
+                        description: '한국 물류센터에서 배송을 시작했습니다.<br>운송장번호: KR1234567890',
+                        active: true
+                    },
+                    {
+                        title: '통관 진행',
+                        time: '2024-01-17 14:30',
+                        description: '태국 세관에서 통관 처리 중입니다.<br>예상 통관 완료: 2024-01-18 오전',
+                        active: true
+                    },
+                    {
+                        title: '출고 준비 완료',
+                        time: '2024-01-16 16:45',
+                        description: '모든 상품이 포장되어 출고 준비가 완료되었습니다.<br>총 박스 수: 2개',
+                        active: true
+                    },
+                    {
+                        title: '주문 접수',
+                        time: '2024-01-15 11:20',
+                        description: '주문이 정상적으로 접수되었습니다.<br>주문 확인 및 상품 준비를 시작합니다.',
+                        active: true
+                    }
+                ]
+            },
+            'YCS202401002': {
+                title: 'YCS202401002',
+                recipient: '김영희',
+                address: '부산시 해운대구 해운대로 456',
+                orderDate: '2024-01-10',
+                status: 'delivered',
+                statusText: '배송 완료',
+                estimatedDelivery: '완료',
+                timeline: [
+                    {
+                        title: '배송 완료',
+                        time: '2024-01-15 14:20',
+                        description: '고객님께 성공적으로 배송되었습니다.<br>수령인: 김영희 (본인 수령)',
+                        active: true
+                    },
+                    {
+                        title: '배송 시작',
+                        time: '2024-01-13 08:30',
+                        description: '한국 물류센터에서 배송을 시작했습니다.<br>운송장번호: KR1234567891',
+                        active: true
+                    },
+                    {
+                        title: '통관 완료',
+                        time: '2024-01-12 10:15',
+                        description: '태국 세관 통관이 완료되었습니다.',
+                        active: true
+                    },
+                    {
+                        title: '주문 접수',
+                        time: '2024-01-10 15:30',
+                        description: '주문이 정상적으로 접수되었습니다.',
+                        active: true
+                    }
+                ]
+            }
+        };
+
+        function trackOrder(event) {
+            event.preventDefault();
+            
+            const orderNumber = document.getElementById('orderNumber').value.trim().toUpperCase();
+            const trackingResult = document.getElementById('trackingResult');
+            const noResult = document.getElementById('noResult');
+            
+            if (orderData[orderNumber]) {
+                const order = orderData[orderNumber];
+                
+                // 주문 정보 업데이트
+                document.getElementById('orderTitle').textContent = `주문번호: ${order.title}`;
+                document.querySelector('.order-meta').innerHTML = `
+                    <div>수취인: ${order.recipient}</div>
+                    <div>배송지: ${order.address}</div>
+                    <div>주문일: ${order.orderDate}</div>
+                `;
+                
+                // 상태 업데이트
+                const statusBadge = document.getElementById('statusBadge');
+                statusBadge.textContent = order.statusText;
+                statusBadge.className = `status-badge status-${order.status}`;
+                
+                document.getElementById('estimatedTime').textContent = 
+                    order.status === 'delivered' ? '배송 완료' : `예상 도착: ${order.estimatedDelivery}`;
+                
+                // 타임라인 업데이트
+                const timeline = document.getElementById('trackingTimeline');
+                timeline.innerHTML = order.timeline.map(item => `
+                    <div class="timeline-item ${item.active ? '' : 'inactive'}">
+                        <div class="timeline-content">
+                            <div class="timeline-title">${item.title}</div>
+                            <div class="timeline-time">${item.time}</div>
+                            <div class="timeline-description">${item.description}</div>
+                        </div>
+                    </div>
+                `).join('');
+                
+                trackingResult.style.display = 'block';
+                noResult.style.display = 'none';
+            } else {
+                trackingResult.style.display = 'none';
+                noResult.style.display = 'block';
+            }
+        }
+
+        // 페이지 로드 시 URL 파라미터 확인
+        window.addEventListener('load', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const orderNumber = urlParams.get('order');
+            
+            if (orderNumber) {
+                document.getElementById('orderNumber').value = orderNumber;
+                const event = new Event('submit');
+                document.querySelector('.search-form').dispatchEvent(event);
+                trackOrder(event);
+            }
+        });
+    </script>
+</body>
+</html>

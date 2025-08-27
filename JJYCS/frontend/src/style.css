@@ -1,0 +1,291 @@
+/* Import fonts first */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Tailwind directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(31, 41, 55, 0.87);
+  background-color: #ffffff;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Mobile-first responsive design */
+body {
+  margin: 0;
+  display: flex;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+#app {
+  max-width: 100%;
+  margin: 0 auto;
+  text-align: center;
+  width: 100%;
+}
+
+/* Custom utility classes */
+.container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .container {
+    max-width: 640px;
+  }
+}
+
+@media (min-width: 768px) {
+  .container {
+    max-width: 768px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1024px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .container {
+    max-width: 1280px;
+  }
+}
+
+/* PWA styles */
+.btn-primary {
+  @apply bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors;
+}
+
+.btn-secondary {
+  @apply bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors;
+}
+
+.card {
+  @apply bg-white rounded-lg shadow-sm border border-gray-200 p-4;
+}
+
+.input {
+  @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+}
+
+/* Status badges */
+.badge-received, .status-confirmed {
+  @apply bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium;
+}
+
+.badge-arrived, .status-delivered {
+  @apply bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium;
+}
+
+.badge-repacking, .status-processing {
+  @apply bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium;
+}
+
+.badge-shipping, .status-shipped {
+  @apply bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs font-medium;
+}
+
+.badge-pending, .status-pending {
+  @apply bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs font-medium;
+}
+
+.status-cancelled {
+  @apply bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-medium;
+}
+
+.status-badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+/* Loading spinner */
+.spinner {
+  @apply inline-block w-4 h-4 border-2 border-current border-r-transparent rounded-full animate-spin;
+}
+
+/* Mobile optimizations */
+.input-field {
+  @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+}
+
+@media (max-width: 640px) {
+  .container {
+    @apply px-4;
+  }
+  
+  /* Mobile navigation */
+  .mobile-nav-item {
+    @apply flex items-center px-3 py-3 text-base font-medium rounded-md transition-colors duration-200;
+  }
+  
+  /* Mobile form inputs - prevent zoom on iOS */
+  .input-field, input, select, textarea {
+    @apply text-base;
+    font-size: 16px !important;
+  }
+  
+  /* Mobile buttons - ensure proper touch targets */
+  .btn-primary, .btn-secondary {
+    @apply text-base px-6 py-3 min-h-[48px];
+    min-width: 48px;
+  }
+  
+  /* Mobile cards */
+  .card {
+    @apply mx-0 mb-4 shadow-sm;
+  }
+  
+  /* Mobile tables - stack vertically */
+  .mobile-table {
+    @apply block;
+  }
+  
+  .mobile-table thead {
+    @apply hidden;
+  }
+  
+  .mobile-table tbody {
+    @apply block;
+  }
+  
+  .mobile-table tr {
+    @apply block border-b border-gray-200 p-4 mb-4;
+  }
+  
+  .mobile-table td {
+    @apply block text-right py-2 pl-4;
+    border: none;
+  }
+  
+  .mobile-table td:before {
+    content: attr(data-label) ": ";
+    @apply float-left font-medium text-gray-500 uppercase tracking-wide text-xs;
+  }
+}
+
+/* PWA optimizations */
+@media (display-mode: standalone) {
+  .pwa-status-bar {
+    @apply h-6 bg-primary-600;
+  }
+  
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+  
+  /* Remove hover effects on touch devices */
+  .btn-primary:hover, .btn-secondary:hover, .card:hover {
+    @apply transform-none shadow-sm;
+  }
+  
+  /* Larger click areas for mobile */
+  button, .btn-primary, .btn-secondary, a[class*="btn"] {
+    @apply min-h-[48px] flex items-center justify-center;
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .border-gray-200 {
+    @apply border-gray-900;
+  }
+  
+  .text-gray-600 {
+    @apply text-gray-900;
+  }
+  
+  .bg-gray-50 {
+    @apply bg-white;
+  }
+}
+
+/* Responsive grid improvements */
+.responsive-grid {
+  @apply grid gap-4;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+@media (max-width: 480px) {
+  .responsive-grid {
+    grid-template-columns: 1fr;
+    @apply gap-2;
+  }
+  
+  /* Extra small screens adjustments */
+  .text-2xl {
+    @apply text-xl;
+  }
+  
+  .text-xl {
+    @apply text-lg;
+  }
+  
+  .p-6 {
+    @apply p-4;
+  }
+  
+  .space-x-4 > * + * {
+    @apply ml-2;
+  }
+  
+  .space-y-6 > * + * {
+    @apply mt-4;
+  }
+}
+
+/* Loading states */
+.skeleton {
+  @apply animate-pulse bg-gray-200 rounded;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color: #f1f5f9;
+    background-color: #0f172a;
+  }
+  
+  .card {
+    @apply bg-gray-800 border-gray-700;
+  }
+  
+  .input-field {
+    @apply bg-gray-700 border-gray-600 text-white;
+  }
+}

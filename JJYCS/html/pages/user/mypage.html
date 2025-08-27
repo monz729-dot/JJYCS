@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>마이페이지 - YCS 물류 시스템</title>
+    <link rel="stylesheet" href="../../css/globals.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f0f4ff 0%, #ffffff 50%, #f0f4ff 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            padding: 16px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-bottom: 80px;
+        }
+        
+        .alert-fixed {
+            position: fixed;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 50;
+            max-width: 400px;
+            animation: slideDown 0.3s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(37, 99, 235, 0.15);
+            border: 1px solid rgba(37, 99, 235, 0.1);
+            margin-bottom: 24px;
+        }
+        
+        .card-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(37, 99, 235, 0.1);
+        }
+        
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e3a8a;
+            margin: 0;
+        }
+        
+        .card-content {
+            padding: 20px;
+        }
+        
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .profile-avatar {
+            position: relative;
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+        
+        .profile-status {
+            position: absolute;
+            bottom: -4px;
+            right: -4px;
+            width: 24px;
+            height: 24px;
+            background: #22c55e;
+            border: 2px solid white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: white;
+        }
+        
+        .profile-info h2 {
+            font-size: 20px;
+            color: #1e3a8a;
+            margin-bottom: 4px;
+        }
+        
+        .profile-type {
+            color: #2563eb;
+            margin-bottom: 4px;
+        }
+        
+        .profile-date {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 14px;
+            color: #3b82f6;
+        }
+        
+        .tabs {
+            width: 100%;
+        }
+        
+        .tab-list {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            background: rgba(37, 99, 235, 0.05);
+            border-radius: 8px;
+            padding: 4px;
+            margin-bottom: 24px;
+        }
+        
+        .tab-trigger {
+            padding: 12px;
+            border: none;
+            background: transparent;
+            color: #2563eb;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+        
+        .tab-trigger.active {
+            background: white;
+            color: #1d4ed8;
+            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.1);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .form-section {
+            margin-bottom: 24px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1e3a8a;
+            margin-bottom: 8px;
+        }
+        
+        .form-control {
+            width: 100%;
+            height: 48px;
+            padding: 0 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 14px;
+            background: #f3f4f6;
+            transition: all 0.3s;
+        }
+        
+        .form-control:enabled {
+            background: rgba(37, 99, 235, 0.03);
+            border-color: #d1d5db;
+        }
+        
+        .form-control:enabled:hover {
+            background: rgba(37, 99, 235, 0.05);
+            border-color: #9ca3af;
+        }
+        
+        .form-control:enabled:focus {
+            outline: none;
+            border-color: #2563eb;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        .form-control:disabled {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+            color: #6b7280;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 0 20px;
+            height: 40px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            text-decoration: none;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+        }
+        
+        .btn-outline {
+            background: rgba(37, 99, 235, 0.05);
+            color: #1d4ed8;
+            border: 1px solid rgba(37, 99, 235, 0.2);
+        }
+        
+        .btn-outline:hover:not(:disabled) {
+            background: rgba(37, 99, 235, 0.1);
+            border-color: rgba(37, 99, 235, 0.3);
+        }
+        
+        .btn-sm {
+            height: 36px;
+            padding: 0 16px;
+            font-size: 13px;
+        }
+        
+        .btn-lg {
+            height: 48px;
+            padding: 0 24px;
+        }
+        
+        .edit-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .edit-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .file-upload {
+            position: relative;
+            height: 56px;
+        }
+        
+        .file-input {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 10;
+        }
+        
+        .file-display {
+            height: 56px;
+            padding: 0 16px;
+            border: 2px dashed #d1d5db;
+            border-radius: 6px;
+            background: rgba(37, 99, 235, 0.03);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .file-display:hover {
+            border-color: #3b82f6;
+            background: rgba(37, 99, 235, 0.05);
+        }
+        
+        .file-info {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 8px;
+        }
+        
+        .file-selected {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #16a34a;
+            margin-top: 8px;
+        }
+        
+        .orders-section .search-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .search-input-wrapper {
+            position: relative;
+            flex: 1;
+            max-width: 300px;
+        }
+        
+        .search-input {
+            width: 100%;
+            height: 40px;
+            padding: 0 16px 0 40px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #2563eb;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 48px;
+            color: #2563eb;
+        }
+        
+        .empty-icon {
+            font-size: 64px;
+            opacity: 0.5;
+            margin-bottom: 16px;
+        }
+        
+        .order-item {
+            padding: 16px;
+            border: 1px solid rgba(37, 99, 235, 0.1);
+            border-radius: 8px;
+            margin-bottom: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .order-item:hover {
+            background: rgba(37, 99, 235, 0.03);
+            border-color: rgba(37, 99, 235, 0.2);
+        }
+        
+        .order-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        
+        .order-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .order-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(37, 99, 235, 0.1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #2563eb;
+        }
+        
+        .order-id {
+            font-weight: 500;
+            color: #1e3a8a;
+            margin-bottom: 2px;
+        }
+        
+        .order-date {
+            font-size: 14px;
+            color: #2563eb;
+        }
+        
+        .order-status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-shipping {
+            background: rgba(37, 99, 235, 0.1);
+            color: #1e40af;
+        }
+        
+        .status-preparing {
+            background: rgba(251, 146, 60, 0.1);
+            color: #ea580c;
+        }
+        
+        .status-completed {
+            background: rgba(34, 197, 94, 0.1);
+            color: #166534;
+        }
+        
+        .order-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+        
+        .detail-label {
+            color: #2563eb;
+            margin-bottom: 2px;
+        }
+        
+        .detail-value {
+            font-weight: 500;
+            color: #1e3a8a;
+        }
+        
+        .order-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 12px;
+            border-top: 1px solid rgba(37, 99, 235, 0.1);
+            font-size: 14px;
+            color: #2563eb;
+        }
+        
+        .notification-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            border: 1px solid rgba(37, 99, 235, 0.1);
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+        
+        .notification-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .notification-icon {
+            color: #2563eb;
+        }
+        
+        .notification-info h4 {
+            font-weight: 500;
+            color: #1e3a8a;
+            margin-bottom: 4px;
+        }
+        
+        .notification-info p {
+            font-size: 14px;
+            color: #2563eb;
+        }
+        
+        .switch {
+            width: 44px;
+            height: 24px;
+            background: #d1d5db;
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .switch.active {
+            background: #2563eb;
+        }
+        
+        .switch-handle {
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: all 0.3s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .switch.active .switch-handle {
+            left: 22px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+        
+        .stat-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .stat-label {
+            font-weight: 500;
+        }
+        
+        .stat-value {
+            font-weight: 700;
+            font-size: 16px;
+        }
+        
+        .stat-blue { background: rgba(37, 99, 235, 0.1); color: #1d4ed8; }
+        .stat-green { background: rgba(34, 197, 94, 0.1); color: #166534; }
+        .stat-orange { background: rgba(251, 146, 60, 0.1); color: #ea580c; }
+        .stat-purple { background: rgba(147, 51, 234, 0.1); color: #7c3aed; }
+        .stat-gray { background: rgba(107, 114, 128, 0.1); color: #374151; }
+        
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e3a8a;
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .password-input-wrapper {
+            position: relative;
+        }
+        
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            color: #2563eb;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .password-strength {
+            margin-top: 8px;
+        }
+        
+        .strength-bar {
+            display: flex;
+            gap: 2px;
+            margin-bottom: 4px;
+        }
+        
+        .strength-segment {
+            height: 4px;
+            flex: 1;
+            border-radius: 2px;
+            background: #e5e7eb;
+            transition: background 0.3s;
+        }
+        
+        .strength-weak { background: #ef4444; }
+        .strength-medium { background: #f59e0b; }
+        .strength-strong { background: #22c55e; }
+        
+        .strength-text {
+            font-size: 12px;
+            color: #2563eb;
+        }
+        
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            border: 1px solid;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .alert-success {
+            background: rgba(34, 197, 94, 0.05);
+            border-color: #bbf7d0;
+            color: #166534;
+        }
+        
+        .alert-error {
+            background: rgba(239, 68, 68, 0.05);
+            border-color: #fecaca;
+            color: #991b1b;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 12px;
+            }
+            
+            .tab-list {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .order-details {
+                grid-template-columns: 1fr;
+            }
+            
+            .edit-actions {
+                flex-direction: column;
+                gap: 12px;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 알림 메시지 -->
+        <div id="alertMessage" class="alert-fixed hidden"></div>
+        
+        <!-- 프로필 카드 -->
+        <div class="card">
+            <div class="card-content">
+                <div class="profile-header">
+                    <div class="profile-avatar">
+                        👤
+                        <div class="profile-status">✓</div>
+                    </div>
+                    <div class="profile-info">
+                        <h2 id="userName">사용자명</h2>
+                        <div class="profile-type" id="userType">일반 회원</div>
+                        <div class="profile-date">
+                            📅 가입일: 2024.01.15
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 메인 탭 -->
+        <div class="tabs">
+            <div class="tab-list">
+                <button class="tab-trigger active" onclick="showTab('profile')">프로필</button>
+                <button class="tab-trigger" onclick="showTab('orders')">주문내역</button>
+                <button class="tab-trigger" onclick="showTab('notifications')">알림</button>
+                <button class="tab-trigger" onclick="showTab('stats')">통계</button>
+            </div>
+            
+            <!-- 프로필 탭 -->
+            <div class="tab-content active" id="profileTab">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="edit-actions">
+                            <h3 class="card-title">기본 정보</h3>
+                            <button class="btn btn-outline btn-sm" id="editToggleBtn" onclick="toggleEdit()">
+                                ✏️ 편집
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <div class="form-section">
+                            <div class="form-group">
+                                <label class="form-label">아이디</label>
+                                <input type="text" class="form-control" id="userId" disabled>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">이메일</label>
+                                <input type="email" class="form-control" id="userEmail" disabled>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label" id="nameLabel">이름</label>
+                                <input type="text" class="form-control" id="userNameInput" disabled>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label" id="phoneLabel">연락처</label>
+                                <input type="tel" class="form-control" id="userPhone" disabled>
+                            </div>
+                            
+                            <!-- 기업회원 전용 필드 -->
+                            <div id="corporateFields" class="hidden">
+                                <div class="form-group">
+                                    <label class="form-label">회사명</label>
+                                    <input type="text" class="form-control" id="companyName" disabled>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">사업자등록번호</label>
+                                    <input type="text" class="form-control" id="businessNumber" disabled>
+                                </div>
+                                
+                                <div class="form-group" id="businessCertificateGroup">
+                                    <label class="form-label">사업자등록증 <span style="color: #dc2626;">*</span></label>
+                                    <div class="file-upload">
+                                        <input type="file" class="file-input" id="businessCertificate" accept=".pdf,.jpg,.jpeg,.png" onchange="handleFileUpload(this)">
+                                        <div class="file-display">
+                                            <span>📄</span>
+                                            <span id="fileName">파일을 선택하세요</span>
+                                        </div>
+                                    </div>
+                                    <div class="file-info">PDF, JPG, PNG 파일 (최대 5MB)</div>
+                                    <div id="selectedFile" class="file-selected hidden"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 비밀번호 변경 -->
+                        <div class="form-section" style="border-top: 1px solid rgba(37, 99, 235, 0.1); padding-top: 24px;">
+                            <button class="btn btn-outline btn-lg" style="width: 100%; justify-content: flex-start;" onclick="openPasswordModal()">
+                                🔒 비밀번호 변경
+                            </button>
+                        </div>
+                        
+                        <!-- 편집 모드 버튼들 -->
+                        <div id="editActions" class="edit-buttons hidden" style="padding-top: 24px; border-top: 1px solid rgba(37, 99, 235, 0.1);">
+                            <button class="btn btn-outline" onclick="cancelEdit()" style="flex: 1;">취소</button>
+                            <button class="btn btn-primary" onclick="saveProfile()" style="flex: 1;" id="saveBtn">저장</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 주문내역 탭 -->
+            <div class="tab-content" id="ordersTab">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="orders-section">
+                            <div class="search-bar">
+                                <h3 class="card-title">주문 내역</h3>
+                                <div style="display: flex; gap: 12px;">
+                                    <div class="search-input-wrapper">
+                                        <input type="text" class="search-input" id="searchInput" placeholder="주문번호 또는 품목명 검색">
+                                        <span class="search-icon">🔍</span>
+                                    </div>
+                                    <button class="btn btn-outline btn-sm" onclick="navigateToPage('order-history')">전체보기</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <div id="ordersContainer">
+                            <!-- 주문 목록이 여기에 동적으로 생성됩니다 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 알림 설정 탭 -->
+            <div class="tab-content" id="notificationsTab">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">알림 설정</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="notification-item">
+                            <div class="notification-left">
+                                <span class="notification-icon">🔔</span>
+                                <div class="notification-info">
+                                    <h4>주문 상태 업데이트</h4>
+                                    <p>주문 처리 상태가 변경될 때 알림을 받습니다</p>
+                                </div>
+                            </div>
+                            <div class="switch active" onclick="toggleSwitch(this)">
+                                <div class="switch-handle"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="notification-item">
+                            <div class="notification-left">
+                                <span class="notification-icon">📧</span>
+                                <div class="notification-info">
+                                    <h4>이메일 알림</h4>
+                                    <p>중요한 알림을 이메일로 받습니다</p>
+                                </div>
+                            </div>
+                            <div class="switch active" onclick="toggleSwitch(this)">
+                                <div class="switch-handle"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="notification-item">
+                            <div class="notification-left">
+                                <span class="notification-icon">📱</span>
+                                <div class="notification-info">
+                                    <h4>SMS 알림</h4>
+                                    <p>긴급한 알림을 문자메시지로 받습니다</p>
+                                </div>
+                            </div>
+                            <div class="switch" onclick="toggleSwitch(this)">
+                                <div class="switch-handle"></div>
+                            </div>
+                        </div>
+                        
+                        <div style="padding-top: 24px; border-top: 1px solid rgba(37, 99, 235, 0.1);">
+                            <button class="btn btn-primary btn-lg" style="width: 100%;">설정 저장</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 통계 탭 -->
+            <div class="tab-content" id="statsTab">
+                <div class="stats-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">📊 이용 통계</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="stat-item stat-blue">
+                                <span class="stat-label">총 주문 수</span>
+                                <span class="stat-value" id="totalOrders">3건</span>
+                            </div>
+                            <div class="stat-item stat-green">
+                                <span class="stat-label">완료된 주문</span>
+                                <span class="stat-value" id="completedOrders">1건</span>
+                            </div>
+                            <div class="stat-item stat-orange">
+                                <span class="stat-label">진행 중인 주문</span>
+                                <span class="stat-value" id="pendingOrders">2건</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">🏆 배송 현황</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="stat-item stat-blue">
+                                <span class="stat-label">해상운송</span>
+                                <span class="stat-value" id="seaShipping">2건</span>
+                            </div>
+                            <div class="stat-item stat-purple">
+                                <span class="stat-label">항공운송</span>
+                                <span class="stat-value" id="airShipping">1건</span>
+                            </div>
+                            <div class="stat-item stat-gray">
+                                <span class="stat-label">평균 배송기간</span>
+                                <span class="stat-value">12일</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 비밀번호 변경 모달 -->
+        <div id="passwordModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">비밀번호 변경</h3>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">현재 비밀번호</label>
+                        <div class="password-input-wrapper">
+                            <input type="password" class="form-control" id="currentPassword">
+                            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('currentPassword')">👁️</button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">새 비밀번호</label>
+                        <div class="password-input-wrapper">
+                            <input type="password" class="form-control" id="newPassword" oninput="updatePasswordStrength()">
+                            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('newPassword')">👁️</button>
+                        </div>
+                        <div class="password-strength" id="passwordStrength" style="display: none;">
+                            <div class="strength-bar">
+                                <div class="strength-segment" id="strength1"></div>
+                                <div class="strength-segment" id="strength2"></div>
+                                <div class="strength-segment" id="strength3"></div>
+                                <div class="strength-segment" id="strength4"></div>
+                                <div class="strength-segment" id="strength5"></div>
+                            </div>
+                            <div class="strength-text" id="strengthText">약함</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">새 비밀번호 확인</label>
+                        <div class="password-input-wrapper">
+                            <input type="password" class="form-control" id="confirmPassword">
+                            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('confirmPassword')">👁️</button>
+                        </div>
+                    </div>
+                    
+                    <div class="edit-buttons">
+                        <button class="btn btn-outline" onclick="closePasswordModal()" style="flex: 1;">취소</button>
+                        <button class="btn btn-primary" onclick="changePassword()" style="flex: 1;" id="changePasswordBtn">비밀번호 변경</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="../../js/utils.js"></script>
+    <script>
+        // 상태 변수들
+        let currentUser = null;
+        let isEditing = false;
+        let selectedFile = null;
+        let showPasswordStates = {
+            currentPassword: false,
+            newPassword: false,
+            confirmPassword: false
+        };
+        
+        // Mock 주문 데이터
+        const orders = [
+            {
+                id: 'YCS-2024-001',
+                date: '2024-01-15',
+                status: '배송중',
+                statusClass: 'status-shipping',
+                estimatedArrival: '2024-01-22',
+                items: [{ name: '전자제품', quantity: 2, weight: 1.5, usd: 100 }],
+                shippingType: '해상',
+                trackingNumber: 'KR123456789',
+                destination: '태국 방콕'
+            },
+            {
+                id: 'YCS-2024-002',
+                date: '2024-01-14',
+                status: '준비중',
+                statusClass: 'status-preparing',
+                estimatedArrival: '2024-01-25',
+                items: [
+                    { name: '의류', quantity: 5, weight: 2.0, usd: 200 },
+                    { name: '액세서리', quantity: 3, weight: 0.5, usd: 50 }
+                ],
+                shippingType: '항공',
+                trackingNumber: 'KR987654321',
+                destination: '태국 치앙마이'
+            },
+            {
+                id: 'YCS-2024-003',
+                date: '2024-01-13',
+                status: '완료',
+                statusClass: 'status-completed',
+                estimatedArrival: '2024-01-20',
+                items: [{ name: '건강식품', quantity: 1, weight: 1.0, usd: 150 }],
+                shippingType: '해상',
+                trackingNumber: 'KR456789123',
+                destination: '태국 파타야'
+            }
+        ];
+        
+        // 사용자 타입별 라벨 반환
+        function getUserTypeLabel(type) {
+            const labels = {
+                'general': '일반 회원',
+                'corporate': '기업 회원',
+                'partner': '파트너',
+                'admin': '관리자'
+            };
+            return labels[type] || '일반 회원';
+        }
+        
+        // 사용자 정보 로드 및 UI 업데이트
+        function loadUserInfo() {
+            const user = storage.get('user');
+            if (!user) {
+                navigateToPage('login');
+                return;
+            }
+            
+            currentUser = user;
+            
+            // 기본 정보 업데이트
+            document.getElementById('userName').textContent = user.name;
+            document.getElementById('userType').textContent = getUserTypeLabel(user.type);
+            document.getElementById('userId').value = user.id || user.email;
+            document.getElementById('userEmail').value = user.email;
+            document.getElementById('userNameInput').value = user.name;
+            document.getElementById('userPhone').value = user.phone || '';
+            
+            // 라벨 업데이트
+            const nameLabel = document.getElementById('nameLabel');
+            const phoneLabel = document.getElementById('phoneLabel');
+            
+            if (user.type === 'general') {
+                nameLabel.textContent = '이름';
+                phoneLabel.textContent = '연락처';
+            } else {
+                nameLabel.textContent = '담당자 이름';
+                phoneLabel.textContent = '담당자 연락처';
+            }
+            
+            // 기업회원/파트너 전용 필드
+            if (user.type === 'corporate' || user.type === 'partner') {
+                document.getElementById('corporateFields').classList.remove('hidden');
+                document.getElementById('companyName').value = user.companyName || '';
+                document.getElementById('businessNumber').value = user.businessNumber || '';
+            }
+        }
+        
+        // 탭 전환
+        function showTab(tabName) {
+            // 모든 탭 비활성화
+            document.querySelectorAll('.tab-trigger').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // 선택된 탭 활성화
+            event.target.classList.add('active');
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            
+            // 주문내역 탭일 경우 주문 목록 렌더링
+            if (tabName === 'orders') {
+                renderOrders();
+            }
+        }
+        
+        // 편집 모드 토글
+        function toggleEdit() {
+            isEditing = !isEditing;
+            const editBtn = document.getElementById('editToggleBtn');
+            const editActions = document.getElementById('editActions');
+            const formControls = document.querySelectorAll('#profileTab .form-control:not(#userId)');
+            const businessCertificateGroup = document.getElementById('businessCertificateGroup');
+            
+            if (isEditing) {
+                editBtn.innerHTML = '❌ 취소';
+                editActions.classList.remove('hidden');
+                formControls.forEach(input => {
+                    if (input.id !== 'userId') {
+                        input.disabled = false;
+                    }
+                });
+                
+                // 기업회원인 경우 사업자등록증 업로드 필드 표시
+                if (currentUser.type === 'corporate') {
+                    businessCertificateGroup.classList.remove('hidden');
+                }
+            } else {
+                editBtn.innerHTML = '✏️ 편집';
+                editActions.classList.add('hidden');
+                formControls.forEach(input => input.disabled = true);
+                businessCertificateGroup.classList.add('hidden');
+            }
+        }
+        
+        // 편집 취소
+        function cancelEdit() {
+            isEditing = false;
+            selectedFile = null;
+            loadUserInfo(); // 원본 데이터로 복원
+            toggleEdit();
+            hideAlert();
+        }
+        
+        // 프로필 저장
+        async function saveProfile() {
+            const saveBtn = document.getElementById('saveBtn');
+            saveBtn.disabled = true;
+            saveBtn.textContent = '저장 중...';
+            
+            // 유효성 검사
+            const name = document.getElementById('userNameInput').value.trim();
+            const email = document.getElementById('userEmail').value.trim();
+            const phone = document.getElementById('userPhone').value.trim();
+            
+            if (!name) {
+                showAlert('이름을 입력해주세요.', 'error');
+                saveBtn.disabled = false;
+                saveBtn.textContent = '저장';
+                return;
+            }
+            
+            if (!email) {
+                showAlert('이메일을 입력해주세요.', 'error');
+                saveBtn.disabled = false;
+                saveBtn.textContent = '저장';
+                return;
+            }
+            
+            if (!phone) {
+                showAlert('연락처를 입력해주세요.', 'error');
+                saveBtn.disabled = false;
+                saveBtn.textContent = '저장';
+                return;
+            }
+            
+            // 기업회원 추가 검증
+            if (currentUser.type === 'corporate') {
+                const companyName = document.getElementById('companyName').value.trim();
+                const businessNumber = document.getElementById('businessNumber').value.trim();
+                
+                if (!companyName) {
+                    showAlert('회사명을 입력해주세요.', 'error');
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = '저장';
+                    return;
+                }
+                
+                if (!businessNumber) {
+                    showAlert('사업자등록번호를 입력해주세요.', 'error');
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = '저장';
+                    return;
+                }
+            }
+            
+            // Mock 저장 처리
+            setTimeout(() => {
+                // 사용자 정보 업데이트
+                currentUser.name = name;
+                currentUser.email = email;
+                currentUser.phone = phone;
+                
+                if (currentUser.type === 'corporate') {
+                    currentUser.companyName = document.getElementById('companyName').value.trim();
+                    currentUser.businessNumber = document.getElementById('businessNumber').value.trim();
+                }
+                
+                // localStorage에 저장
+                storage.set('user', currentUser);
+                
+                // 편집 모드 종료
+                isEditing = false;
+                toggleEdit();
+                
+                showAlert('정보가 성공적으로 저장되었습니다.', 'success');
+                
+                saveBtn.disabled = false;
+                saveBtn.textContent = '저장';
+                
+                // 3초 후 알림 자동 숨김
+                setTimeout(hideAlert, 3000);
+            }, 1000);
+        }
+        
+        // 파일 업로드 처리
+        function handleFileUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            // 파일 크기 확인 (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                showAlert('파일 크기는 5MB 이하로 업로드해주세요.', 'error');
+                input.value = '';
+                return;
+            }
+            
+            // 파일 형식 확인
+            const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+            if (!allowedTypes.includes(file.type)) {
+                showAlert('PDF, JPG, PNG 파일만 업로드 가능합니다.', 'error');
+                input.value = '';
+                return;
+            }
+            
+            selectedFile = file;
+            document.getElementById('fileName').textContent = file.name;
+            
+            const selectedFileDiv = document.getElementById('selectedFile');
+            selectedFileDiv.innerHTML = `📄 ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+            selectedFileDiv.classList.remove('hidden');
+            
+            hideAlert();
+        }
+        
+        // 비밀번호 변경 모달
+        function openPasswordModal() {
+            document.getElementById('passwordModal').classList.remove('hidden');
+        }
+        
+        function closePasswordModal() {
+            document.getElementById('passwordModal').classList.add('hidden');
+            // 모든 비밀번호 필드 초기화
+            document.getElementById('currentPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+            document.getElementById('passwordStrength').style.display = 'none';
+            hideAlert();
+        }
+        
+        // 비밀번호 보기/숨기기
+        function togglePasswordVisibility(fieldId) {
+            const field = document.getElementById(fieldId);
+            const button = field.nextElementSibling;
+            
+            showPasswordStates[fieldId] = !showPasswordStates[fieldId];
+            field.type = showPasswordStates[fieldId] ? 'text' : 'password';
+            button.textContent = showPasswordStates[fieldId] ? '🙈' : '👁️';
+        }
+        
+        // 비밀번호 강도 계산
+        function getPasswordStrength(password) {
+            let strength = 0;
+            if (password.length >= 8) strength++;
+            if (/[A-Z]/.test(password)) strength++;
+            if (/[a-z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[^A-Za-z0-9]/.test(password)) strength++;
+            return strength;
+        }
+        
+        // 비밀번호 강도 업데이트
+        function updatePasswordStrength() {
+            const password = document.getElementById('newPassword').value;
+            const strengthContainer = document.getElementById('passwordStrength');
+            const strengthText = document.getElementById('strengthText');
+            
+            if (!password) {
+                strengthContainer.style.display = 'none';
+                return;
+            }
+            
+            strengthContainer.style.display = 'block';
+            const strength = getPasswordStrength(password);
+            
+            // 강도 바 업데이트
+            for (let i = 1; i <= 5; i++) {
+                const segment = document.getElementById(`strength${i}`);
+                segment.className = 'strength-segment';
+                
+                if (i <= strength) {
+                    if (strength <= 2) {
+                        segment.classList.add('strength-weak');
+                    } else if (strength <= 3) {
+                        segment.classList.add('strength-medium');
+                    } else {
+                        segment.classList.add('strength-strong');
+                    }
+                }
+            }
+            
+            // 강도 텍스트 업데이트
+            if (strength <= 2) {
+                strengthText.textContent = '약함';
+            } else if (strength === 3) {
+                strengthText.textContent = '보통';
+            } else {
+                strengthText.textContent = '강함';
+            }
+        }
+        
+        // 비밀번호 변경
+        async function changePassword() {
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const changeBtn = document.getElementById('changePasswordBtn');
+            
+            hideAlert();
+            
+            if (!currentPassword) {
+                showAlert('현재 비밀번호를 입력해주세요.', 'error');
+                return;
+            }
+            
+            if (!newPassword) {
+                showAlert('새 비밀번호를 입력해주세요.', 'error');
+                return;
+            }
+            
+            if (newPassword.length < 8) {
+                showAlert('새 비밀번호는 8자 이상이어야 합니다.', 'error');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                showAlert('새 비밀번호가 일치하지 않습니다.', 'error');
+                return;
+            }
+            
+            changeBtn.disabled = true;
+            changeBtn.textContent = '변경 중...';
+            
+            // Mock 비밀번호 변경
+            setTimeout(() => {
+                closePasswordModal();
+                showAlert('비밀번호가 성공적으로 변경되었습니다.', 'success');
+                changeBtn.disabled = false;
+                changeBtn.textContent = '비밀번호 변경';
+                setTimeout(hideAlert, 3000);
+            }, 1500);
+        }
+        
+        // 주문 목록 렌더링
+        function renderOrders() {
+            const container = document.getElementById('ordersContainer');
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            const filteredOrders = orders.filter(order =>
+                order.id.toLowerCase().includes(searchTerm) ||
+                order.items.some(item => item.name.toLowerCase().includes(searchTerm))
+            );
+            
+            if (filteredOrders.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📦</div>
+                        <p style="font-size: 18px; margin-bottom: 8px;">주문 내역이 없습니다</p>
+                        <p style="font-size: 14px; margin-bottom: 16px;">아직 주문하신 내역이 없어요</p>
+                        <button class="btn btn-primary" onclick="navigateToPage('order-form')">첫 주문하기</button>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = filteredOrders.map(order => `
+                <div class="order-item" onclick="navigateToPage('order-detail', { orderId: '${order.id}' })">
+                    <div class="order-header">
+                        <div class="order-left">
+                            <div class="order-icon">
+                                ${order.shippingType === '해상' ? '🚢' : '✈️'}
+                            </div>
+                            <div>
+                                <div class="order-id">${order.id}</div>
+                                <div class="order-date">${order.date}</div>
+                            </div>
+                        </div>
+                        <div class="order-status ${order.statusClass}">${order.status}</div>
+                    </div>
+                    
+                    <div class="order-details">
+                        <div>
+                            <div class="detail-label">품목</div>
+                            <div class="detail-value">
+                                ${order.items[0].name}${order.items.length > 1 ? ` 외 ${order.items.length - 1}건` : ''}
+                            </div>
+                        </div>
+                        <div>
+                            <div class="detail-label">배송지</div>
+                            <div class="detail-value">${order.destination}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="order-footer">
+                        <div>송장번호: ${order.trackingNumber}</div>
+                        <div>예상도착: ${order.estimatedArrival}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // 스위치 토글
+        function toggleSwitch(switchElement) {
+            switchElement.classList.toggle('active');
+        }
+        
+        // 알림 표시
+        function showAlert(message, type = 'success') {
+            const alertDiv = document.getElementById('alertMessage');
+            const icon = type === 'success' ? '✅' : '❌';
+            const className = type === 'success' ? 'alert alert-success' : 'alert alert-error';
+            
+            alertDiv.className = `alert-fixed ${className}`;
+            alertDiv.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+        }
+        
+        // 알림 숨기기
+        function hideAlert() {
+            document.getElementById('alertMessage').classList.add('hidden');
+        }
+        
+        // 페이지 네비게이션
+        function navigateToPage(page, options = {}) {
+            if (window.parent !== window) {
+                window.parent.postMessage({
+                    type: 'NAVIGATE',
+                    page: page,
+                    options: options
+                }, '*');
+            } else {
+                let url = `../${page}.html`;
+                if (options.orderId) url += `?orderId=${options.orderId}`;
+                if (options.userType) url += `${options.orderId ? '&' : '?'}userType=${options.userType}`;
+                window.location.href = url;
+            }
+        }
+        
+        // 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserInfo();
+            
+            // 검색 입력 이벤트
+            document.getElementById('searchInput').addEventListener('input', renderOrders);
+        });
+    </script>
+</body>
+</html>

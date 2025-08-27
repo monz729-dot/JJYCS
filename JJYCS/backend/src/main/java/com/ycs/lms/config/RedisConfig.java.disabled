@@ -1,0 +1,132 @@
+package com.ycs.lms.config;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.CollectionType;
+import com.fasterxml.jackson.databind.type.TypeFactory;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.cache.RedisCacheConfiguration;
+import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.RedisSerializationContext;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisHttpSession;
+
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+
+@Configuration
+@EnableCaching
+@EnableRedisHttpSession(maxInactiveIntervalInSeconds = 3600) // 1시간 세션 유지
+@RequiredArgsConstructor
+public class RedisConfig {
+
+    @Value("${spring.redis.host:localhost}")
+    private String redisHost;
+
+    @Value("${spring.redis.port:6379}")
+    private int redisPort;
+
+    @Value("${spring.redis.password:}")
+    private String redisPassword;
+
+    @Value("${spring.redis.database:0}")
+    private int redisDatabase;
+
+    @Bean
+    public RedisConnectionFactory redisConnectionFactory() {
+        RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
+        config.setHostName(redisHost);
+        config.setPort(redisPort);
+        config.setDatabase(redisDatabase);
+        
+        if (!redisPassword.isEmpty()) {
+            config.setPassword(redisPassword);
+        }
+        
+        return new LettuceConnectionFactory(config);
+    }
+
+    @Bean
+    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
+        RedisTemplate<String, Object> template = new RedisTemplate<>();
+        template.setConnectionFactory(connectionFactory);
+        
+        // Key serializer
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setHashKeySerializer(new StringRedisSerializer());
+        
+        // Value serializer (JSON)
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer(objectMapper);
+        
+        template.setValueSerializer(jsonSerializer);
+        template.setHashValueSerializer(jsonSerializer);
+        
+        template.setDefaultSerializer(jsonSerializer);
+        template.afterPropertiesSet();
+        
+        return template;
+    }
+
+    @Bean
+    public RedisCacheManager redisCacheManager(RedisConnectionFactory connectionFactory) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer(objectMapper);
+        
+        RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
+            .entryTtl(Duration.ofMinutes(30)) // 기본 TTL 30분
+            .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+            .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(jsonSerializer))
+            .disableCachingNullValues();
+
+        // 캐시별 TTL 설정
+        Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
+        
+        // 사용자 정보 캐시 (1시간)
+        cacheConfigurations.put("users", defaultConfig.entryTtl(Duration.ofHours(1)));
+        
+        // 주문 목록 캐시 (10분)
+        cacheConfigurations.put("orders", defaultConfig.entryTtl(Duration.ofMinutes(10)));
+        
+        // 주문 상세 캐시 (30분)
+        cacheConfigurations.put("orderDetails", defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        
+        // 환율 정보 캐시 (1시간)
+        cacheConfigurations.put("exchangeRates", defaultConfig.entryTtl(Duration.ofHours(1)));
+        
+        // HS 코드 검증 캐시 (24시간)
+        cacheConfigurations.put("hsCodeValidation", defaultConfig.entryTtl(Duration.ofHours(24)));
+        
+        // EMS 추적 정보 캐시 (5분)
+        cacheConfigurations.put("emsTracking", defaultConfig.entryTtl(Duration.ofMinutes(5)));
+        
+        // 파일 통계 캐시 (1시간)
+        cacheConfigurations.put("fileStatistics", defaultConfig.entryTtl(Duration.ofHours(1)));
+        
+        // 시스템 메트릭 캐시 (1분)
+        cacheConfigurations.put("systemMetrics", defaultConfig.entryTtl(Duration.ofMinutes(1)));
+        
+        // 알림 캐시 (5분)
+        cacheConfigurations.put("notifications", defaultConfig.entryTtl(Duration.ofMinutes(5)));
+        
+        // 설정 캐시 (1시간)
+        cacheConfigurations.put("configurations", defaultConfig.entryTtl(Duration.ofHours(1)));
+
+        return RedisCacheManager.builder(connectionFactory)
+            .cacheDefaults(defaultConfig)
+            .withInitialCacheConfigurations(cacheConfigurations)
+            .build();
+    }
+}

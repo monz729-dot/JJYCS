@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 네비게이션 - YSC 물류관리 시스템</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/umd/lucide.min.js"></script>
+    <style>
+        .nav-item {
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .nav-item.active {
+            color: #2563eb;
+            background-color: #eff6ff;
+        }
+        
+        .nav-item.active .nav-icon {
+            transform: scale(1.1);
+        }
+        
+        .nav-item.active .nav-indicator {
+            opacity: 1;
+            transform: translateX(-50%) scaleX(1);
+        }
+        
+        .nav-item:not(.active) {
+            color: #60a5fa;
+        }
+        
+        .nav-item:not(.active):hover {
+            color: #2563eb;
+            background-color: #eff6ff;
+        }
+        
+        .nav-icon {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .nav-label {
+            transition: font-weight 0.3s ease;
+        }
+        
+        .nav-indicator {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 2rem;
+            height: 0.25rem;
+            background-color: #2563eb;
+            border-radius: 0 0 9999px 9999px;
+            opacity: 0;
+            transform: translateX(-50%) scaleX(0);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .bottom-nav {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            background-color: rgba(255, 255, 255, 0.95);
+        }
+        
+        @supports not (backdrop-filter: blur(20px)) {
+            .bottom-nav {
+                background-color: white;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- 관리자 하단 네비게이션 -->
+    <nav id="adminNavigation" class="fixed bottom-0 left-0 right-0 bottom-nav border-t border-blue-100 shadow-lg z-50">
+        <div class="grid grid-cols-5 h-16">
+            <!-- 대시보드 -->
+            <button
+                class="nav-item flex flex-col items-center justify-center gap-1"
+                data-page="admin-dashboard"
+                onclick="handleNavigate('admin-dashboard')"
+                aria-label="관리자 대시보드"
+            >
+                <div class="nav-indicator"></div>
+                <div class="nav-icon">
+                    <i data-lucide="home" class="h-5 w-5"></i>
+                </div>
+                <span class="nav-label text-xs">대시보드</span>
+            </button>
+
+            <!-- 주문관리 -->
+            <button
+                class="nav-item flex flex-col items-center justify-center gap-1"
+                data-page="admin-orders"
+                onclick="handleNavigate('admin-orders')"
+                aria-label="주문 관리"
+            >
+                <div class="nav-indicator"></div>
+                <div class="nav-icon">
+                    <i data-lucide="package" class="h-5 w-5"></i>
+                </div>
+                <span class="nav-label text-xs">주문관리</span>
+            </button>
+
+            <!-- 워크플로우 시뮬레이터 -->
+            <button
+                class="nav-item flex flex-col items-center justify-center gap-1"
+                data-page="workflow-simulator"
+                onclick="handleNavigate('workflow-simulator')"
+                aria-label="워크플로우 시뮬레이터"
+            >
+                <div class="nav-indicator"></div>
+                <div class="nav-icon">
+                    <i data-lucide="bar-chart-3" class="h-5 w-5"></i>
+                </div>
+                <span class="nav-label text-xs">시뮬레이터</span>
+            </button>
+
+            <!-- 전체페이지 -->
+            <button
+                class="nav-item flex flex-col items-center justify-center gap-1"
+                data-page="page-list"
+                onclick="handleNavigate('page-list')"
+                aria-label="전체 페이지 목록"
+            >
+                <div class="nav-indicator"></div>
+                <div class="nav-icon">
+                    <i data-lucide="list" class="h-5 w-5"></i>
+                </div>
+                <span class="nav-label text-xs">전체페이지</span>
+            </button>
+
+            <!-- 관리자 설정 -->
+            <button
+                class="nav-item flex flex-col items-center justify-center gap-1"
+                data-page="admin-mypage"
+                onclick="handleNavigate('admin-mypage')"
+                aria-label="관리자 설정"
+            >
+                <div class="nav-indicator"></div>
+                <div class="nav-icon">
+                    <i data-lucide="settings" class="h-5 w-5"></i>
+                </div>
+                <span class="nav-label text-xs">설정</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- 로그아웃 버튼 (필요시 표시) -->
+    <div id="logoutButton" class="fixed top-4 right-4 z-50 hidden">
+        <button
+            onclick="handleLogout()"
+            class="p-2 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-colors"
+            aria-label="로그아웃"
+        >
+            <i data-lucide="log-out" class="h-5 w-5"></i>
+        </button>
+    </div>
+
+    <script>
+        // 전역 변수
+        let currentPage = 'admin-dashboard';
+        let navigationItems = [
+            {
+                id: 'admin-dashboard',
+                label: '대시보드',
+                icon: 'home',
+                description: '관리자 메인'
+            },
+            {
+                id: 'admin-orders',
+                label: '주문관리',
+                icon: 'package',
+                description: '주문 관리'
+            },
+            {
+                id: 'workflow-simulator',
+                label: '시뮬레이터',
+                icon: 'bar-chart-3',
+                description: '워크플로우'
+            },
+            {
+                id: 'page-list',
+                label: '전체페이지',
+                icon: 'list',
+                description: '페이지 목록'
+            },
+            {
+                id: 'admin-mypage',
+                label: '설정',
+                icon: 'settings',
+                description: '관리자 설정'
+            }
+        ];
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+            initializeNavigation();
+            
+            // URL 파라미터에서 현재 페이지 확인
+            const urlParams = new URLSearchParams(window.location.search);
+            const page = urlParams.get('page');
+            if (page) {
+                setActivePage(page);
+            }
+        });
+
+        // 네비게이션 초기화
+        function initializeNavigation() {
+            // 기본적으로 admin-dashboard가 활성화됨
+            setActivePage(currentPage);
+        }
+
+        // 네비게이션 핸들러
+        function handleNavigate(page) {
+            setActivePage(page);
+            
+            // 부모 창에 메시지 전송 (iframe에서 사용하는 경우)
+            if (window.parent !== window) {
+                window.parent.postMessage({
+                    type: 'NAVIGATE',
+                    page: page
+                }, '*');
+            } else {
+                // 직접 페이지 이동 (독립적으로 사용하는 경우)
+                navigateToPage(page);
+            }
+        }
+
+        // 활성 페이지 설정
+        function setActivePage(page) {
+            currentPage = page;
+            
+            // 모든 네비게이션 아이템에서 active 클래스 제거
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+                const label = item.querySelector('.nav-label');
+                if (label) {
+                    label.classList.remove('font-medium');
+                }
+            });
+            
+            // 현재 페이지 버튼에 active 클래스 추가
+            const currentButton = document.querySelector(`[data-page="${page}"]`);
+            if (currentButton) {
+                currentButton.classList.add('active');
+                const label = currentButton.querySelector('.nav-label');
+                if (label) {
+                    label.classList.add('font-medium');
+                }
+            }
+        }
+
+        // 페이지 이동 (독립 실행 시)
+        function navigateToPage(page) {
+            console.log('Navigating to:', page);
+            
+            // 실제 구현에서는 여기에 라우팅 로직 추가
+            switch(page) {
+                case 'admin-dashboard':
+                    window.location.href = '../pages/admin/admin-dashboard.html';
+                    break;
+                case 'admin-orders':
+                    window.location.href = '../pages/admin/admin-order-management.html';
+                    break;
+                case 'workflow-simulator':
+                    window.location.href = '../pages/common/workflow-simulator.html';
+                    break;
+                case 'page-list':
+                    window.location.href = '../pages/common/page-list.html';
+                    break;
+                case 'admin-mypage':
+                    window.location.href = '../pages/admin/admin-mypage.html';
+                    break;
+                default:
+                    console.warn('Unknown page:', page);
+            }
+        }
+
+        // 로그아웃 핸들러
+        function handleLogout() {
+            if (confirm('정말 로그아웃 하시겠습니까?')) {
+                // 부모 창에 로그아웃 메시지 전송
+                if (window.parent !== window) {
+                    window.parent.postMessage({
+                        type: 'LOGOUT'
+                    }, '*');
+                } else {
+                    // 독립 실행 시 로그인 페이지로 이동
+                    sessionStorage.clear();
+                    localStorage.clear();
+                    window.location.href = '../pages/auth/login.html';
+                }
+            }
+        }
+
+        // 외부에서 현재 페이지 설정 (API)
+        function setCurrentPage(page) {
+            setActivePage(page);
+        }
+
+        // 로그아웃 버튼 표시/숨김
+        function showLogoutButton(show = true) {
+            const logoutBtn = document.getElementById('logoutButton');
+            if (show) {
+                logoutBtn.classList.remove('hidden');
+            } else {
+                logoutBtn.classList.add('hidden');
+            }
+        }
+
+        // 메시지 수신 처리 (부모 창에서 현재 페이지 정보 받음)
+        window.addEventListener('message', function(event) {
+            if (event.data.type === 'SET_CURRENT_PAGE') {
+                setActivePage(event.data.page);
+            } else if (event.data.type === 'SHOW_LOGOUT_BUTTON') {
+                showLogoutButton(event.data.show);
+            }
+        });
+
+        // 키보드 네비게이션 지원
+        document.addEventListener('keydown', function(event) {
+            const navItems = Array.from(document.querySelectorAll('.nav-item'));
+            const currentIndex = navItems.findIndex(item => 
+                item.getAttribute('data-page') === currentPage
+            );
+            
+            if (event.key === 'ArrowLeft' && currentIndex > 0) {
+                const prevPage = navItems[currentIndex - 1].getAttribute('data-page');
+                handleNavigate(prevPage);
+                event.preventDefault();
+            } else if (event.key === 'ArrowRight' && currentIndex < navItems.length - 1) {
+                const nextPage = navItems[currentIndex + 1].getAttribute('data-page');
+                handleNavigate(nextPage);
+                event.preventDefault();
+            }
+        });
+
+        // 전역 함수로 내보내기 (다른 스크립트에서 사용할 수 있도록)
+        window.AdminNavigation = {
+            setCurrentPage,
+            handleNavigate,
+            showLogoutButton,
+            handleLogout
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>모바일 네비게이션 - YCS 물류 시스템</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/umd/lucide.min.js"></script>
+    <style>
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 0.25rem 0.5rem;
+            border: 1px solid;
+        }
+
+        .badge-outline {
+            background-color: white;
+            border-color: currentColor;
+        }
+
+        .navigation-item {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .navigation-item.active {
+            color: #2563eb;
+            background-color: #eff6ff;
+        }
+
+        .navigation-item.active .nav-icon {
+            transform: scale(1.1);
+        }
+
+        .navigation-item.active .nav-label {
+            font-weight: 500;
+        }
+
+        .navigation-item:not(.active) {
+            color: #60a5fa;
+        }
+
+        .navigation-item:not(.active):hover {
+            color: #2563eb;
+            background-color: #eff6ff;
+        }
+
+        .nav-icon {
+            transition: transform 0.3s ease;
+        }
+
+        .nav-label {
+            transition: all 0.3s ease;
+        }
+
+        .active-indicator {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2rem;
+            height: 0.25rem;
+            background-color: #2563eb;
+            border-radius: 9999px;
+        }
+
+        .mobile-header {
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            background-color: white;
+            border-bottom: 1px solid #dbeafe;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+
+        .mobile-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: white;
+            border-top: 1px solid #dbeafe;
+            box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06);
+            z-index: 50;
+        }
+
+        .logo-gradient {
+            background: linear-gradient(to right, #3b82f6, #2563eb);
+            box-shadow: 0 4px 14px -2px rgba(59, 130, 246, 0.5);
+        }
+
+        .header-button {
+            transition: all 0.3s ease;
+        }
+
+        .header-button:hover {
+            transform: translateY(-1px);
+        }
+
+        /* 페이지 콘텐츠를 위한 패딩 */
+        .page-content {
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: calc(4rem + env(safe-area-inset-bottom)); /* 하단 네비게이션 높이만큼 */
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 50%, #f0f9ff 100%);
+        }
+
+        /* 사용자 타입별 색상 */
+        .user-corporate {
+            color: #ea580c;
+            border-color: #fed7aa;
+        }
+
+        .user-general {
+            color: #1d4ed8;
+            border-color: #93c5fd;
+        }
+
+        /* 반응형 디자인 */
+        @media (max-width: 640px) {
+            .mobile-header {
+                padding: 0.5rem;
+            }
+            
+            .nav-label {
+                font-size: 0.625rem;
+            }
+        }
+
+        /* 접근성 개선 */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- 상단 헤더 -->
+    <header class="mobile-header">
+        <div class="flex items-center justify-between px-4 py-3">
+            <div class="flex items-center gap-3">
+                <div class="logo-gradient w-10 h-10 rounded-full flex items-center justify-center">
+                    <span class="text-white font-bold text-sm">YCS</span>
+                </div>
+                <div>
+                    <h1 class="font-semibold text-blue-900 flex items-center">
+                        YCS 물류 시스템
+                        <span id="user-type-badge" class="badge badge-outline user-general ml-2">개인</span>
+                    </h1>
+                    <p id="page-description" class="text-xs text-blue-600">개인 고객 대시보드</p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button 
+                    onclick="navigateToPageList()"
+                    class="header-button text-sm text-purple-600 hover:text-purple-700 hover:bg-purple-50 px-3 py-1 rounded-full transition-colors"
+                >
+                    페이지목록
+                </button>
+                <button 
+                    onclick="handleLogout()"
+                    class="header-button text-sm text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-1 rounded-full transition-colors"
+                >
+                    <i data-lucide="log-out" class="h-4 w-4"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 페이지 콘텐츠 영역 -->
+    <main class="page-content">
+        <div class="p-4">
+            <!-- 데모 콘텐츠 -->
+            <div class="bg-white rounded-lg shadow-sm border border-blue-100 p-6 mb-6">
+                <div class="flex items-center gap-2 mb-4">
+                    <i data-lucide="smartphone" class="h-5 w-5 text-blue-600"></i>
+                    <h2 class="text-lg font-semibold text-blue-900">모바일 네비게이션 시스템</h2>
+                </div>
+                <div class="space-y-4">
+                    <div class="bg-blue-50 rounded-lg p-4">
+                        <h3 class="font-medium text-blue-900 mb-2">현재 페이지</h3>
+                        <p id="current-page-info" class="text-blue-700">대시보드 - 메인 대시보드</p>
+                    </div>
+                    
+                    <div class="bg-green-50 rounded-lg p-4">
+                        <h3 class="font-medium text-green-900 mb-2">사용자 정보</h3>
+                        <p id="current-user-info" class="text-green-700">김민수 (개인 고객)</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                        <div class="border border-blue-200 rounded-lg p-4">
+                            <h4 class="font-medium text-blue-900 mb-2">사용자 타입 변경 (데모)</h4>
+                            <div class="flex gap-2">
+                                <button 
+                                    onclick="changeUserType('general')"
+                                    class="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors"
+                                >
+                                    개인
+                                </button>
+                                <button 
+                                    onclick="changeUserType('corporate')"
+                                    class="px-3 py-1 text-xs bg-orange-100 text-orange-700 rounded-full hover:bg-orange-200 transition-colors"
+                                >
+                                    기업
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="border border-blue-200 rounded-lg p-4">
+                            <h4 class="font-medium text-blue-900 mb-2">네비게이션 기능</h4>
+                            <ul class="text-sm text-blue-700 space-y-1">
+                                <li>• 하단 탭 네비게이션</li>
+                                <li>• 활성 페이지 표시</li>
+                                <li>• 사용자별 맞춤 설명</li>
+                                <li>• 반응형 디자인</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 네비게이션 아이템 설명 -->
+            <div class="bg-white rounded-lg shadow-sm border border-blue-100 p-6">
+                <h3 class="text-lg font-semibold text-blue-900 mb-4">네비게이션 메뉴</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="flex items-center gap-3 p-3 border border-blue-100 rounded-lg">
+                        <i data-lucide="home" class="h-5 w-5 text-blue-600"></i>
+                        <div>
+                            <div class="font-medium text-blue-900">홈</div>
+                            <div class="text-sm text-blue-600">메인 대시보드</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 p-3 border border-blue-100 rounded-lg">
+                        <i data-lucide="package" class="h-5 w-5 text-blue-600"></i>
+                        <div>
+                            <div class="font-medium text-blue-900">접수</div>
+                            <div class="text-sm text-blue-600">배송 접수</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 p-3 border border-blue-100 rounded-lg">
+                        <i data-lucide="file-text" class="h-5 w-5 text-blue-600"></i>
+                        <div>
+                            <div class="font-medium text-blue-900">내역</div>
+                            <div class="text-sm text-blue-600">주문 내역</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 p-3 border border-blue-100 rounded-lg">
+                        <i data-lucide="user" class="h-5 w-5 text-blue-600"></i>
+                        <div>
+                            <div class="font-medium text-blue-900">내정보</div>
+                            <div class="text-sm text-blue-600">마이페이지</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 p-3 border border-blue-100 rounded-lg">
+                        <i data-lucide="list" class="h-5 w-5 text-blue-600"></i>
+                        <div>
+                            <div class="font-medium text-blue-900">전체</div>
+                            <div class="text-sm text-blue-600">전체 페이지</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 하단 네비게이션 -->
+    <nav class="mobile-nav">
+        <div class="grid grid-cols-5 h-16">
+            <button
+                onclick="navigateToPage('dashboard')"
+                id="nav-dashboard"
+                class="navigation-item flex flex-col items-center justify-center gap-1 active"
+            >
+                <div class="active-indicator"></div>
+                <div class="nav-icon">
+                    <i data-lucide="home" class="h-5 w-5"></i>
+                </div>
+                <span class="nav-label text-xs">홈</span>
+            </button>
+
+            <button
+                onclick="navigateToPage('order-form')"
+                id="nav-order-form"
+                class="navigation-item flex flex-col items-center justify-center gap-1"
+            >
+                <div class="nav-icon">
+                    <i data-lucide="package" class="h-5 w-5"></i>
+                </div>
+                <span class="nav-label text-xs">접수</span>
+            </button>
+
+            <button
+                onclick="navigateToPage('order-history')"
+                id="nav-order-history"
+                class="navigation-item flex flex-col items-center justify-center gap-1"
+            >
+                <div class="nav-icon">
+                    <i data-lucide="file-text" class="h-5 w-5"></i>
+                </div>
+                <span class="nav-label text-xs">내역</span>
+            </button>
+
+            <button
+                onclick="navigateToPage('mypage')"
+                id="nav-mypage"
+                class="navigation-item flex flex-col items-center justify-center gap-1"
+            >
+                <div class="nav-icon">
+                    <i data-lucide="user" class="h-5 w-5"></i>
+                </div>
+                <span class="nav-label text-xs">내정보</span>
+            </button>
+
+            <button
+                onclick="navigateToPage('page-list')"
+                id="nav-page-list"
+                class="navigation-item flex flex-col items-center justify-center gap-1"
+            >
+                <div class="nav-icon">
+                    <i data-lucide="list" class="h-5 w-5"></i>
+                </div>
+                <span class="nav-label text-xs">전체</span>
+            </button>
+        </div>
+    </nav>
+
+    <script>
+        // 전역 상태
+        let currentUser = {
+            name: '김민수',
+            type: 'general' // 'general', 'corporate'
+        };
+        let currentPage = 'dashboard';
+
+        // 네비게이션 아이템 정보
+        const navigationItems = [
+            {
+                id: 'dashboard',
+                label: '홈',
+                description: '메인 대시보드'
+            },
+            {
+                id: 'order-form',
+                label: '접수',
+                description: '배송 접수'
+            },
+            {
+                id: 'order-history',
+                label: '내역',
+                description: '주문 내역'
+            },
+            {
+                id: 'mypage',
+                label: '내정보',
+                description: '마이페이지'
+            },
+            {
+                id: 'page-list',
+                label: '전체',
+                description: '전체 페이지'
+            }
+        ];
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+            updateUserInterface();
+            updateCurrentPageInfo();
+        });
+
+        // 사용자 인터페이스 업데이트
+        function updateUserInterface() {
+            const userTypeBadge = document.getElementById('user-type-badge');
+            const currentUserInfo = document.getElementById('current-user-info');
+            
+            if (currentUser.type === 'corporate') {
+                userTypeBadge.textContent = '기업';
+                userTypeBadge.className = 'badge badge-outline user-corporate ml-2';
+                currentUserInfo.textContent = `${currentUser.name} (기업 고객)`;
+            } else {
+                userTypeBadge.textContent = '개인';
+                userTypeBadge.className = 'badge badge-outline user-general ml-2';
+                currentUserInfo.textContent = `${currentUser.name} (개인 고객)`;
+            }
+            
+            updatePageDescription();
+        }
+
+        // 페이지 설명 업데이트
+        function updatePageDescription() {
+            const pageDescription = document.getElementById('page-description');
+            const userTypeText = currentUser.type === 'corporate' ? '기업' : '개인';
+            
+            const descriptions = {
+                'dashboard': `${userTypeText} 고객 대시보드`,
+                'order-form': '배송 접수',
+                'order-history': '주문 내역',
+                'order-detail': '주문 상세',
+                'payment': '무통장 입금',
+                'mypage': `${userTypeText} 정보 관리`,
+                'notices': `${userTypeText} 고객 공지사항`,
+                'faq': `${userTypeText} 고객 FAQ`,
+                'workflow-simulator': '워크플로우 시뮬레이터',
+                'page-list': '전체 페이지 목록'
+            };
+            
+            pageDescription.textContent = descriptions[currentPage] || '페이지';
+        }
+
+        // 현재 페이지 정보 업데이트
+        function updateCurrentPageInfo() {
+            const currentPageInfo = document.getElementById('current-page-info');
+            const currentItem = navigationItems.find(item => item.id === currentPage);
+            
+            if (currentItem) {
+                currentPageInfo.textContent = `${currentItem.label} - ${currentItem.description}`;
+            } else {
+                currentPageInfo.textContent = `${currentPage} - 현재 페이지`;
+            }
+        }
+
+        // 페이지 네비게이션
+        function navigateToPage(pageId) {
+            // 이전 활성 상태 제거
+            document.querySelectorAll('.navigation-item').forEach(item => {
+                item.classList.remove('active');
+                const indicator = item.querySelector('.active-indicator');
+                if (indicator) {
+                    indicator.remove();
+                }
+            });
+            
+            // 새로운 활성 상태 설정
+            const newActiveItem = document.getElementById(`nav-${pageId}`);
+            if (newActiveItem) {
+                newActiveItem.classList.add('active');
+                const indicator = document.createElement('div');
+                indicator.className = 'active-indicator';
+                newActiveItem.insertBefore(indicator, newActiveItem.firstChild);
+            }
+            
+            currentPage = pageId;
+            updatePageDescription();
+            updateCurrentPageInfo();
+            
+            console.log(`Navigate to ${pageId}`);
+            // 실제 구현에서는 여기서 페이지 전환 로직을 처리
+        }
+
+        // 사용자 타입 변경
+        function changeUserType(userType) {
+            currentUser.type = userType;
+            
+            if (userType === 'corporate') {
+                currentUser.name = '김기업';
+            } else {
+                currentUser.name = '김민수';
+            }
+            
+            updateUserInterface();
+            updateCurrentPageInfo();
+        }
+
+        // 페이지 목록으로 네비게이션
+        function navigateToPageList() {
+            navigateToPage('page-list');
+            console.log('Navigate to page list');
+        }
+
+        // 로그아웃 처리
+        function handleLogout() {
+            if (confirm('로그아웃 하시겠습니까?')) {
+                console.log('Logout');
+                alert('로그아웃 되었습니다.');
+                // 실제 구현에서는 로그아웃 로직 처리
+            }
+        }
+
+        // 키보드 접근성 지원
+        document.addEventListener('keydown', function(e) {
+            if (e.key >= '1' && e.key <= '5') {
+                const pageIndex = parseInt(e.key) - 1;
+                const pageId = navigationItems[pageIndex]?.id;
+                if (pageId) {
+                    navigateToPage(pageId);
+                }
+            }
+        });
+
+        // 터치 제스처 지원 (기본적인 스와이프)
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        document.addEventListener('touchend', function(e) {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            const currentIndex = navigationItems.findIndex(item => item.id === currentPage);
+            
+            if (touchEndX < touchStartX - swipeThreshold) {
+                // 왼쪽 스와이프 - 다음 페이지
+                const nextIndex = (currentIndex + 1) % navigationItems.length;
+                navigateToPage(navigationItems[nextIndex].id);
+            }
+            
+            if (touchEndX > touchStartX + swipeThreshold) {
+                // 오른쪽 스와이프 - 이전 페이지
+                const prevIndex = (currentIndex - 1 + navigationItems.length) % navigationItems.length;
+                navigateToPage(navigationItems[prevIndex].id);
+            }
+        }
+
+        // PWA 지원을 위한 서비스 워커 등록 (선택사항)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                // 서비스 워커 파일이 있다면 등록
+                // navigator.serviceWorker.register('/sw.js');
+            });
+        }
+    </script>
+</body>
+</html>

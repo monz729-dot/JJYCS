@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YCS 물류 시스템 - 기업 고객 대시보드</title>
+    <link rel="stylesheet" href="css/globals.css">
+    <style>
+        .page-container {
+            background: var(--gray-50);
+            min-height: 100vh;
+            padding-bottom: 5rem;
+        }
+        
+        .header {
+            background: white;
+            border-bottom: 1px solid var(--primary-300);
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+        
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.5rem 1rem;
+        }
+        
+        .welcome-section {
+            background: linear-gradient(135deg, var(--primary-700), var(--primary-800));
+            color: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .welcome-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 200px;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .welcome-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .welcome-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .welcome-subtitle {
+            opacity: 0.9;
+            margin-bottom: 1.5rem;
+        }
+        
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+        }
+        
+        .quick-stat {
+            text-align: center;
+        }
+        
+        .quick-stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+        
+        .quick-stat-label {
+            font-size: 0.875rem;
+            opacity: 0.8;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
+            border: 1px solid var(--primary-200);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary-300);
+        }
+        
+        .content-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .section {
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 0.75rem;
+            overflow: hidden;
+        }
+        
+        .section-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+            background: var(--gray-50);
+        }
+        
+        .section-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin: 0;
+        }
+        
+        .section-content {
+            padding: 1.5rem;
+        }
+        
+        .order-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            border: 1px solid var(--gray-200);
+            border-radius: 0.5rem;
+            margin-bottom: 0.75rem;
+            transition: all 0.2s ease;
+        }
+        
+        .order-item:hover {
+            background: var(--primary-50);
+            border-color: var(--primary-300);
+        }
+        
+        .bulk-order-section {
+            background: var(--primary-50);
+            border: 2px dashed var(--primary-300);
+            border-radius: 0.75rem;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .bulk-icon {
+            width: 4rem;
+            height: 4rem;
+            background: var(--primary-100);
+            color: var(--primary-600);
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem auto;
+            font-size: 1.5rem;
+        }
+        
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .action-card {
+            background: white;
+            border: 1px solid var(--primary-200);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .action-card:hover {
+            border-color: var(--primary-400);
+            background: var(--primary-50);
+            transform: translateY(-1px);
+        }
+        
+        .action-icon {
+            width: 3rem;
+            height: 3rem;
+            background: var(--primary-100);
+            color: var(--primary-600);
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem auto;
+            font-size: 1.25rem;
+        }
+        
+        @media (max-width: 768px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .action-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body class="theme-corporate">
+    <div class="page-container">
+        <!-- 헤더 -->
+        <header class="header">
+            <div class="header-content">
+                <div class="header-left">
+                    <div class="logo ycs-logo">YCS</div>
+                    <div class="header-info">
+                        <h1>기업 대시보드</h1>
+                        <p class="header-subtitle">테크코퍼레이션 님 환영합니다</p>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="user-info">
+                        <div class="user-name">김기업</div>
+                        <div class="status-approved">CORP</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- 환영 섹션 -->
+            <div class="welcome-section">
+                <div class="welcome-content">
+                    <h2 class="welcome-title">테크코퍼레이션 대시보드</h2>
+                    <p class="welcome-subtitle">대량 주문 및 전용 서비스를 이용하세요</p>
+                    
+                    <div class="quick-stats">
+                        <div class="quick-stat">
+                            <div class="quick-stat-value">156</div>
+                            <div class="quick-stat-label">이번 달 주문</div>
+                        </div>
+                        <div class="quick-stat">
+                            <div class="quick-stat-value">₩45.2M</div>
+                            <div class="quick-stat-label">총 거래액</div>
+                        </div>
+                        <div class="quick-stat">
+                            <div class="quick-stat-value">12</div>
+                            <div class="quick-stat-label">배송 대기</div>
+                        </div>
+                        <div class="quick-stat">
+                            <div class="quick-stat-value">98.5%</div>
+                            <div class="quick-stat-label">정시 배송률</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 대량 주문 섹션 -->
+            <div class="bulk-order-section">
+                <div class="bulk-icon">📦</div>
+                <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--primary-800);">
+                    대량 주문 서비스
+                </h3>
+                <p style="color: var(--primary-600); margin-bottom: 1.5rem;">
+                    Excel 파일로 한 번에 여러 주문을 등록하고 할인 혜택을 받으세요
+                </p>
+                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                    <button class="btn btn-primary" onclick="bulkOrder()">대량 주문하기</button>
+                    <button class="btn btn-outline" onclick="downloadTemplate()">템플릿 다운로드</button>
+                </div>
+            </div>
+
+            <!-- 통계 카드 -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">이번 주 주문</div>
+                        <div class="stat-icon" style="background: var(--primary-100); color: var(--primary-600);">📊</div>
+                    </div>
+                    <div class="stat-value" style="color: var(--primary-600);">42</div>
+                    <div class="stat-change" style="color: var(--success-600);">+15% 지난 주 대비</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">평균 배송 시간</div>
+                        <div class="stat-icon" style="background: var(--success-100); color: var(--success-600);">🚚</div>
+                    </div>
+                    <div class="stat-value" style="color: var(--success-600);">3.2일</div>
+                    <div class="stat-change" style="color: var(--success-600);">-0.5일 개선</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">월 절약 금액</div>
+                        <div class="stat-icon" style="background: var(--warning-100); color: var(--warning-600);">💰</div>
+                    </div>
+                    <div class="stat-value" style="color: var(--warning-600);">₩2.8M</div>
+                    <div class="stat-change" style="color: var(--success-600);">기업 할인 적용</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">담당 매니저</div>
+                        <div class="stat-icon" style="background: var(--primary-100); color: var(--primary-600);">👤</div>
+                    </div>
+                    <div class="stat-value" style="color: var(--primary-600); font-size: 1.25rem;">이매니저</div>
+                    <div class="stat-change" style="color: var(--gray-600);">전담 지원</div>
+                </div>
+            </div>
+
+            <!-- 빠른 액션 -->
+            <div class="action-grid">
+                <div class="action-card" onclick="location.href='order-form-corporate.html'">
+                    <div class="action-icon">📝</div>
+                    <div class="action-title">새 주문</div>
+                    <div class="action-desc">단일 주문 등록</div>
+                </div>
+                
+                <div class="action-card" onclick="bulkOrder()">
+                    <div class="action-icon">📋</div>
+                    <div class="action-title">대량 주문</div>
+                    <div class="action-desc">Excel 파일 업로드</div>
+                </div>
+                
+                <div class="action-card" onclick="location.href='order-history-corporate.html'">
+                    <div class="action-icon">📊</div>
+                    <div class="action-title">주문 내역</div>
+                    <div class="action-desc">전체 주문 조회</div>
+                </div>
+                
+                <div class="action-card" onclick="location.href='billing-corporate.html'">
+                    <div class="action-icon">💳</div>
+                    <div class="action-title">정산 관리</div>
+                    <div class="action-desc">견적서, 청구서</div>
+                </div>
+            </div>
+
+            <!-- 컨텐츠 그리드 -->
+            <div class="content-grid">
+                <!-- 최근 주문 -->
+                <div class="section">
+                    <div class="section-header">
+                        <h2 class="section-title">최근 주문</h2>
+                    </div>
+                    <div class="section-content">
+                        <div class="order-item">
+                            <div class="order-info">
+                                <div class="order-number">#YCS240822002</div>
+                                <div class="order-customer">의류 25개 (8.3m³)</div>
+                            </div>
+                            <div class="order-actions">
+                                <span class="status-preparing">처리중</span>
+                            </div>
+                        </div>
+                        
+                        <div class="order-item">
+                            <div class="order-info">
+                                <div class="order-number">#YCS240821005</div>
+                                <div class="order-customer">산업자재 50개 (125.8m³)</div>
+                            </div>
+                            <div class="order-actions">
+                                <span class="status-shipping">배송중</span>
+                            </div>
+                        </div>
+                        
+                        <div class="order-item">
+                            <div class="order-info">
+                                <div class="order-number">#YCS240821003</div>
+                                <div class="order-customer">전자부품 100개 (45.2m³)</div>
+                            </div>
+                            <div class="order-actions">
+                                <span class="status-completed">완료</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 기업 전용 서비스 -->
+                <div class="section">
+                    <div class="section-header">
+                        <h2 class="section-title">전용 서비스</h2>
+                    </div>
+                    <div class="section-content">
+                        <div style="space-y: 1rem;">
+                            <button class="btn btn-primary w-full" onclick="contactManager()">
+                                전담 매니저 상담
+                            </button>
+                            <button class="btn btn-outline w-full" onclick="requestQuote()">
+                                대량 할인 문의
+                            </button>
+                            <button class="btn btn-outline w-full" onclick="scheduledDelivery()">
+                                정기 배송 설정
+                            </button>
+                            <button class="btn btn-outline w-full" onclick="customsSupport()">
+                                통관 지원 서비스
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 모바일 네비게이션 -->
+        <nav class="mobile-nav">
+            <a href="dashboard-corporate.html" class="nav-item active">
+                <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
+                </svg>
+                <span class="nav-label">대시보드</span>
+            </a>
+            <a href="order-form-corporate.html" class="nav-item">
+                <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/>
+                </svg>
+                <span class="nav-label">주문</span>
+            </a>
+            <a href="order-history-corporate.html" class="nav-item">
+                <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+                    <path fill-rule="evenodd" d="M4 5a2 2 0 012-2v1a1 1 0 001 1h6a1 1 0 001-1V3a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 3a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
+                </svg>
+                <span class="nav-label">내역</span>
+            </a>
+            <a href="billing-corporate.html" class="nav-item">
+                <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/>
+                    <path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/>
+                </svg>
+                <span class="nav-label">정산</span>
+            </a>
+            <a href="index.html" class="nav-item">
+                <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd"/>
+                </svg>
+                <span class="nav-label">메뉴</span>
+            </a>
+        </nav>
+    </div>
+
+    <script>
+        // 대량 주문
+        function bulkOrder() {
+            location.href = 'bulk-order.html';
+        }
+
+        // 템플릿 다운로드
+        function downloadTemplate() {
+            showToast('Excel 템플릿을 다운로드하고 있습니다...', 'info');
+            // 실제로는 파일 다운로드 구현
+            setTimeout(() => {
+                showToast('템플릿이 다운로드되었습니다.', 'success');
+            }, 1500);
+        }
+
+        // 전담 매니저 상담
+        function contactManager() {
+            showToast('전담 매니저에게 연결하고 있습니다...', 'info');
+            setTimeout(() => {
+                alert('전담 매니저 이매니저(02-1234-5678)에게 연락하시거나 manager@ycs.com으로 문의해주세요.');
+            }, 1000);
+        }
+
+        // 대량 할인 문의
+        function requestQuote() {
+            if (confirm('대량 할인 견적을 요청하시겠습니까? 24시간 내에 답변드리겠습니다.')) {
+                showToast('할인 견적 요청이 전송되었습니다.', 'success');
+            }
+        }
+
+        // 정기 배송 설정
+        function scheduledDelivery() {
+            location.href = 'scheduled-delivery.html';
+        }
+
+        // 통관 지원 서비스
+        function customsSupport() {
+            alert('통관 지원 서비스 문의는 전담 매니저에게 연락해주세요.\n추가 수수료 없이 지원해드립니다.');
+        }
+
+        // 토스트 메시지
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.textContent = message;
+            toast.style.cssText = `
+                position: fixed;
+                top: 2rem;
+                right: 2rem;
+                padding: 1rem 1.5rem;
+                border-radius: 0.5rem;
+                color: white;
+                font-weight: 500;
+                z-index: 9999;
+                opacity: 0;
+                transform: translateY(-1rem);
+                transition: all 0.3s ease;
+            `;
+            
+            if (type === 'success') {
+                toast.style.backgroundColor = 'var(--success-600)';
+            } else if (type === 'error') {
+                toast.style.backgroundColor = 'var(--danger-600)';
+            } else {
+                toast.style.backgroundColor = 'var(--primary-600)';
+            }
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateY(0)';
+            }, 100);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-1rem)';
+                setTimeout(() => document.body.removeChild(toast), 300);
+            }, 3000);
+        }
+
+        // 페이지 로드 시 애니메이션
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.stat-card, .action-card, .order-item');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(1rem)';
+                setTimeout(() => {
+                    card.style.transition = 'all 0.3s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+    </script>
+</body>
+</html>

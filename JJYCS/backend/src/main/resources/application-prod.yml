@@ -1,0 +1,289 @@
+spring:
+  application:
+    name: ycs-lms
+
+  # MySQL Database Configuration (Production)
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:ycs_lms}?useSSL=true&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${DB_USERNAME:ycs_user}
+    password: ${DB_PASSWORD:your_password}
+    
+    # HikariCP Configuration
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+      leak-detection-threshold: 60000
+      pool-name: YCS-HikariCP
+      data-source-properties:
+        cachePrepStmts: true
+        prepStmtCacheSize: 250
+        prepStmtCacheSqlLimit: 2048
+        useServerPrepStmts: true
+        useLocalSessionState: true
+        rewriteBatchedStatements: true
+        cacheResultSetMetadata: true
+        cacheServerConfiguration: true
+        elideSetAutoCommits: true
+        maintainTimeStats: false
+
+  # JPA Configuration (Production)
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
+    hibernate:
+      ddl-auto: validate # Production에서는 validate 사용
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.SnakeCasePhysicalNamingStrategy
+    show-sql: false # Production에서는 SQL 로깅 비활성화
+    properties:
+      hibernate:
+        format_sql: false
+        use_sql_comments: false
+        generate_statistics: false
+        default_batch_fetch_size: 16
+        jdbc:
+          batch_size: 20
+          order_inserts: true
+          order_updates: true
+        connection:
+          provider_disables_autocommit: true
+        query:
+          plan_cache_max_size: 2048
+          in_clause_parameter_padding: true
+    open-in-view: false # N+1 문제 방지
+    defer-datasource-initialization: false
+    
+  # Flyway Configuration
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    validate-on-migrate: true
+    clean-disabled: true # Production에서는 clean 비활성화
+      
+  # Mail Configuration (Production)
+  mail:
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          ssl:
+            trust: ${SMTP_HOST:smtp.gmail.com}
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+  # Spring Boot File Upload Configuration
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 50MB
+      max-request-size: 100MB
+      file-size-threshold: 2KB
+
+# Server Configuration (Production)
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /api
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+    min-response-size: 2048
+  http2:
+    enabled: true
+
+# Logging Configuration (Production)
+logging:
+  level:
+    root: WARN
+    com.ycs.lms: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+    org.springframework.web: WARN
+    org.apache.tomcat: WARN
+    SECURITY: INFO
+    PERFORMANCE: INFO
+    ERROR: ERROR
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-},%X{spanId:-}] %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-},%X{spanId:-}] %logger{36} - %msg%n"
+  file:
+    name: ./logs/ycs-lms.log
+    max-size: 100MB
+    max-history: 30
+    total-size-cap: 3GB
+
+# Actuator Configuration (Production)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,env,configprops,loggers
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+        step: 60s
+    web:
+      server:
+        request:
+          autotime:
+            enabled: true
+    jvm:
+      enabled: true
+    system:
+      enabled: true
+    hikaricp:
+      enabled: true
+  health:
+    db:
+      enabled: true
+    mail:
+      enabled: true
+    diskspace:
+      enabled: true
+      threshold: 10GB
+    external-apis:
+      enabled: true
+  server:
+    port: 8081
+
+# Business Rules (Production)
+business:
+  cbm:
+    threshold: 29.0 # CBM 임계값 (m³)
+  amount:
+    thb-threshold: 1500.0 # THB 임계값
+  warehouse:
+    auto-assign-location: true
+    default-location-prefix: "A"
+    
+# External APIs (Production)
+external-api:
+  ems:
+    base-url: ${EMS_API_BASE_URL:https://service.epost.go.kr}
+    api-key: ${EMS_API_KEY:}
+    timeout: 30s
+  hs-code:
+    base-url: ${HS_CODE_API_BASE_URL:https://unipass.customs.go.kr}
+    api-key: ${HS_CODE_API_KEY:}
+    timeout: 30s
+  exchange-rate:
+    base-url: ${EXCHANGE_RATE_API_BASE_URL:https://www.koreaexim.go.kr}
+    api-key: ${EXCHANGE_RATE_API_KEY:}
+    timeout: 30s
+    
+# Backup Configuration (Production)
+backup:
+  directory: ./backups
+  retention:
+    days: 30
+  mysql:
+    bin-path: /usr/bin  # mysqldump, mysql 바이너리 경로
+
+# Swagger/OpenAPI Configuration
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: method
+    doc-expansion: none
+    disable-swagger-default-url: true
+    display-request-duration: true
+  show-actuator: false
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+
+# Rate Limiting Configuration
+rate-limit:
+  global:
+    capacity: 1000
+    refill-period-minutes: 1
+  auth:
+    capacity: 5
+    refill-period-minutes: 1
+  api:
+    capacity: 100
+    refill-period-minutes: 1
+
+# File Upload Configuration (Production)
+file:
+  upload:
+    base-path: ${FILE_UPLOAD_PATH:/var/ycs-lms/uploads}
+    max-size: 50MB
+    max-request-size: 100MB
+    temp-cleanup-hours: 24
+    allowed-types:
+      image: ["jpg", "jpeg", "png", "gif", "webp", "bmp"]
+      document: ["pdf", "doc", "docx", "xls", "xlsx", "txt", "hwp"]
+      archive: ["zip", "rar", "7z", "tar", "gz"]
+      video: ["mp4", "avi", "mov", "wmv", "flv"]
+      audio: ["mp3", "wav", "flac", "aac"]
+    image:
+      thumbnail:
+        enabled: true
+        width: 200
+        height: 200
+        quality: 0.8
+      optimize:
+        enabled: true
+        max-width: 1920
+        max-height: 1080
+        quality: 0.85
+
+# Security Configuration (Production)
+security:
+  jwt:
+    secret-key: ${JWT_SECRET_KEY:}
+    expiration-time: ${JWT_EXPIRATION:3600000} # 1 hour
+    refresh-expiration-time: ${JWT_REFRESH_EXPIRATION:2592000000} # 30 days
+
+# Management and Monitoring (Production)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+  health:
+    db:
+      enabled: true
+    disk-space:
+      enabled: true
+
+# Cache Configuration
+spring.cache:
+  type: caffeine
+  caffeine:
+    spec: maximumSize=1000,expireAfterWrite=10m

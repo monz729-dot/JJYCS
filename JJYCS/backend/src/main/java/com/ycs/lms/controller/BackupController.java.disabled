@@ -1,0 +1,356 @@
+package com.ycs.lms.controller;
+
+import com.ycs.lms.service.backup.BackupService;
+import com.ycs.lms.service.backup.BackupResult;
+import com.ycs.lms.service.backup.DatabaseBackupService;
+import com.ycs.lms.service.backup.FileBackupService;
+import com.ycs.lms.service.backup.ConfigBackupService;
+import com.ycs.lms.service.backup.AuditArchivalService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+
+/**
+ * REST controller for backup operations
+ * 
+ * Provides endpoints for managing backups, monitoring backup health,
+ * and accessing backup statistics. Only available in backup/production profiles.
+ */
+@RestController
+@RequestMapping("/api/backup")
+@Profile({"backup", "production"})
+@PreAuthorize("hasRole('ADMIN')")
+public class BackupController {
+    
+    private static final Logger logger = LoggerFactory.getLogger(BackupController.class);
+    
+    @Autowired
+    private BackupService backupService;
+    
+    @Autowired(required = false)
+    private DatabaseBackupService databaseBackupService;
+    
+    @Autowired(required = false)
+    private FileBackupService fileBackupService;
+    
+    @Autowired(required = false)
+    private ConfigBackupService configBackupService;
+    
+    @Autowired(required = false)
+    private AuditArchivalService auditArchivalService;
+    
+    /**
+     * Trigger manual full backup
+     */
+    @PostMapping("/full")
+    public ResponseEntity<?> triggerFullBackup() {
+        try {
+            logger.info("Manual full backup triggered via API");
+            
+            CompletableFuture<BackupResult> future = backupService.performFullBackup();
+            
+            // For API response, we'll return immediately and let the backup run in background
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Full backup started");
+            response.put("timestamp", LocalDateTime.now());
+            
+            // You could optionally wait for completion:
+            // BackupResult result = future.get(5, TimeUnit.MINUTES);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("Failed to trigger full backup", e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("error", "Failed to trigger backup: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+    
+    /**
+     * Trigger manual backup with options
+     */
+    @PostMapping("/manual")
+    public ResponseEntity<?> triggerManualBackup(@RequestBody BackupService.BackupOptions options) {
+        try {
+            logger.info("Manual backup triggered with options: {}", options);
+            
+            CompletableFuture<BackupResult> future = backupService.performManualBackup(options);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Manual backup started");
+            response.put("options", options);
+            response.put("timestamp", LocalDateTime.now());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("Failed to trigger manual backup", e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("error", "Failed to trigger backup: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+    
+    /**
+     * Get backup health status
+     */
+    @GetMapping("/health")
+    public ResponseEntity<Map<String, Object>> getBackupHealth() {
+        try {
+            BackupService.BackupHealthStatus health = backupService.getBackupHealth();
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("healthy", health.isHealthy());
+            response.put("lastFullBackup", health.getLastFullBackupDate());
+            response.put("lastIncrementalBackup", health.getLastIncrementalBackupDate());
+            response.put("storageHealthy", health.isStorageHealthy());
+            response.put("schedulerHealthy", health.isSchedulerHealthy());
+            response.put("timestamp", LocalDateTime.now());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("Failed to get backup health", e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("error", "Failed to get backup health: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+    
+    /**
+     * Get backup statistics
+     */
+    @GetMapping("/statistics")
+    public ResponseEntity<Map<String, Object>> getBackupStatistics() {
+        try {
+            Map<String, Object> stats = new HashMap<>();
+            stats.put("success", true);
+            stats.put("timestamp", LocalDateTime.now());
+            
+            // File backup statistics
+            if (fileBackupService != null) {
+                FileBackupService.BackupStatistics fileStats = fileBackupService.getBackupStatistics();
+                Map<String, Object> fileData = new HashMap<>();
+                fileData.put("totalFiles", fileStats.getTotalFiles());
+                fileData.put("totalSize", fileStats.getTotalSize());
+                fileData.put("lastBackup", fileStats.getLastBackupDate());
+                fileData.put("oldestBackup", fileStats.getOldestBackupDate());
+                stats.put("files", fileData);
+            }
+            
+            // Configuration backup statistics
+            if (configBackupService != null) {
+                ConfigBackupService.ConfigurationSummary configStats = configBackupService.getConfigurationSummary();
+                Map<String, Object> configData = new HashMap<>();
+                configData.put("totalFiles", configStats.getTotalFiles());
+                configData.put("totalSize", configStats.getTotalSize());
+                configData.put("lastModified", configStats.getLastModified());
+                stats.put("config", configData);
+            }
+            
+            // Audit archival statistics
+            if (auditArchivalService != null) {
+                AuditArchivalService.AuditArchivalStatistics auditStats = auditArchivalService.getArchivalStatistics();
+                Map<String, Object> auditData = new HashMap<>();
+                auditData.put("totalAuditLogs", auditStats.getTotalAuditLogs());
+                auditData.put("logsForArchival", auditStats.getLogsForArchival());
+                auditData.put("logsForPurge", auditStats.getLogsForPurge());
+                auditData.put("archiveTotalSize", auditStats.getArchiveTotalSize());
+                stats.put("audit", auditData);
+            }
+            
+            return ResponseEntity.ok(stats);
+            
+        } catch (Exception e) {
+            logger.error("Failed to get backup statistics", e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("error", "Failed to get backup statistics: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+    
+    /**
+     * Trigger database backup only
+     */
+    @PostMapping("/database")
+    public ResponseEntity<?> triggerDatabaseBackup(@RequestParam(defaultValue = "false") boolean incremental) {
+        if (databaseBackupService == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("error", "Database backup service not available");
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(error);
+        }
+        
+        try {
+            String backupId = "manual-db-" + System.currentTimeMillis();
+            BackupResult result;
+            
+            if (incremental) {
+                logger.info("Triggering manual incremental database backup");
+                result = databaseBackupService.performIncrementalBackup(backupId);
+            } else {
+                logger.info("Triggering manual full database backup");
+                result = databaseBackupService.performBackup(backupId);
+            }
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", result.isSuccess());
+            response.put("backupId", result.getBackupId());
+            response.put("duration", result.getDurationFormatted());
+            response.put("size", result.getSizeFormatted());
+            response.put("type", incremental ? "incremental" : "full");
+            
+            if (result.isFailed()) {
+                response.put("error", result.getErrorMessage());
+            }
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("Failed to trigger database backup", e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("error", "Failed to trigger database backup: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+    
+    /**
+     * Trigger file backup only
+     */
+    @PostMapping("/files")
+    public ResponseEntity<?> triggerFileBackup() {
+        if (fileBackupService == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("error", "File backup service not available");
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(error);
+        }
+        
+        try {
+            logger.info("Triggering manual file backup");
+            String backupId = "manual-files-" + System.currentTimeMillis();
+            BackupResult result = fileBackupService.performBackup(backupId);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", result.isSuccess());
+            response.put("backupId", result.getBackupId());
+            response.put("duration", result.getDurationFormatted());
+            response.put("size", result.getSizeFormatted());
+            
+            if (result.isFailed()) {
+                response.put("error", result.getErrorMessage());
+            }
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("Failed to trigger file backup", e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("error", "Failed to trigger file backup: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+    
+    /**
+     * Trigger configuration backup only
+     */
+    @PostMapping("/config")
+    public ResponseEntity<?> triggerConfigBackup() {
+        if (configBackupService == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("error", "Config backup service not available");
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(error);
+        }
+        
+        try {
+            logger.info("Triggering manual configuration backup");
+            String backupId = "manual-config-" + System.currentTimeMillis();
+            BackupResult result = configBackupService.performBackup(backupId);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", result.isSuccess());
+            response.put("backupId", result.getBackupId());
+            response.put("duration", result.getDurationFormatted());
+            response.put("size", result.getSizeFormatted());
+            
+            if (result.isFailed()) {
+                response.put("error", result.getErrorMessage());
+            }
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("Failed to trigger config backup", e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("error", "Failed to trigger config backup: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+    
+    /**
+     * Trigger audit archival only
+     */
+    @PostMapping("/audit/archive")
+    public ResponseEntity<?> triggerAuditArchival() {
+        if (auditArchivalService == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("error", "Audit archival service not available");
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(error);
+        }
+        
+        try {
+            logger.info("Triggering manual audit archival");
+            String backupId = "manual-audit-" + System.currentTimeMillis();
+            BackupResult result = auditArchivalService.performArchival(backupId);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", result.isSuccess());
+            response.put("backupId", result.getBackupId());
+            response.put("duration", result.getDurationFormatted());
+            response.put("size", result.getSizeFormatted());
+            
+            if (result.getMetadata().containsKey("archived_records")) {
+                response.put("archivedRecords", result.getMetadata().get("archived_records"));
+            }
+            if (result.getMetadata().containsKey("purged_records")) {
+                response.put("purgedRecords", result.getMetadata().get("purged_records"));
+            }
+            
+            if (result.isFailed()) {
+                response.put("error", result.getErrorMessage());
+            }
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("Failed to trigger audit archival", e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("error", "Failed to trigger audit archival: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+}

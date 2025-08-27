@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인 테스트</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            overflow: hidden;
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .login-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .login-header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .login-header p {
+            opacity: 0.9;
+        }
+        
+        .login-form {
+            padding: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e6ed;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .login-button {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+        
+        .login-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .login-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .result.loading {
+            background: #e2e3e5;
+            border: 1px solid #d6d8db;
+            color: #383d41;
+        }
+        
+        .test-accounts {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .test-accounts h4 {
+            margin-bottom: 10px;
+            color: #495057;
+        }
+        
+        .test-accounts ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .test-accounts li {
+            margin-bottom: 5px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        
+        .test-accounts li:hover {
+            background: #e9ecef;
+        }
+        
+        .quick-fill {
+            color: #007bff;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        
+        .server-status {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 20px;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        
+        .status-dot.online {
+            background: #28a745;
+        }
+        
+        .status-dot.offline {
+            background: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>🔐 로그인 테스트</h1>
+            <p>YCS 물류관리 시스템</p>
+        </div>
+        
+        <div class="login-form">
+            <!-- 서버 상태 -->
+            <div class="server-status">
+                <div class="status-indicator">
+                    <span class="status-dot offline" id="backendStatus"></span>
+                    <span id="backendStatusText">백엔드: 확인 중...</span>
+                </div>
+                <div class="status-indicator">
+                    <span class="status-dot online" id="frontendStatus"></span>
+                    <span>프론트엔드: 실행 중</span>
+                </div>
+            </div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">이메일</label>
+                    <input type="email" id="email" name="email" placeholder="이메일을 입력하세요" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">비밀번호</label>
+                    <input type="password" id="password" name="password" placeholder="비밀번호를 입력하세요" required>
+                </div>
+                
+                <button type="submit" class="login-button" id="loginBtn">로그인</button>
+            </form>
+            
+            <div id="result" style="display: none;"></div>
+            
+            <!-- 테스트 계정들 -->
+            <div class="test-accounts">
+                <h4>📋 테스트 계정</h4>
+                <ul>
+                    <li onclick="fillLogin('admin@ycs.com', 'admin123')">
+                        <strong>관리자:</strong> <span class="quick-fill">admin@ycs.com / admin123</span>
+                    </li>
+                    <li onclick="fillLogin('user@ycs.com', 'user123')">
+                        <strong>일반 사용자:</strong> <span class="quick-fill">user@ycs.com / user123</span>
+                    </li>
+                    <li onclick="fillLogin('partner@ycs.com', 'partner123')">
+                        <strong>파트너:</strong> <span class="quick-fill">partner@ycs.com / partner123</span>
+                    </li>
+                    <li onclick="fillLogin('warehouse@ycs.com', 'warehouse123')">
+                        <strong>창고 관리자:</strong> <span class="quick-fill">warehouse@ycs.com / warehouse123</span>
+                    </li>
+                </ul>
+                
+                <p style="margin-top: 15px; color: #6c757d; font-size: 0.8rem;">
+                    💡 위의 계정들을 클릭하면 자동으로 입력됩니다.<br>
+                    현재 백엔드 서버가 실행되지 않아 프론트엔드만으로 테스트합니다.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8081/api';
+        const FRONTEND_BASE = 'http://localhost:3001';
+
+        // 서버 상태 확인
+        async function checkBackendStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/health`, { timeout: 3000 });
+                updateBackendStatus(response.ok, '백엔드: 정상 작동');
+            } catch (error) {
+                updateBackendStatus(false, '백엔드: 연결 실패');
+            }
+        }
+
+        function updateBackendStatus(isOnline, text) {
+            const statusDot = document.getElementById('backendStatus');
+            const statusText = document.getElementById('backendStatusText');
+            
+            statusDot.className = `status-dot ${isOnline ? 'online' : 'offline'}`;
+            statusText.textContent = text;
+        }
+
+        // 테스트 계정 자동 입력
+        function fillLogin(email, password) {
+            document.getElementById('email').value = email;
+            document.getElementById('password').value = password;
+            document.getElementById('email').focus();
+        }
+
+        // 로그인 폼 처리
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('loginBtn');
+            const result = document.getElementById('result');
+            
+            if (!email || !password) {
+                showResult('error', '이메일과 비밀번호를 모두 입력해주세요.');
+                return;
+            }
+            
+            // 버튼 비활성화 및 로딩 표시
+            loginBtn.disabled = true;
+            loginBtn.textContent = '로그인 중...';
+            showResult('loading', '로그인을 시도하고 있습니다...');
+            
+            try {
+                // 백엔드 서버가 실행 중이면 실제 API 호출
+                const backendOnline = document.getElementById('backendStatus').classList.contains('online');
+                
+                if (backendOnline) {
+                    const response = await fetch(`${API_BASE}/auth/login`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ email, password })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        showResult('success', `
+                            ✅ <strong>로그인 성공!</strong><br>
+                            사용자: ${data.user?.name || email}<br>
+                            역할: ${data.user?.role || 'USER'}<br>
+                            토큰: ${data.token ? '발급됨' : '없음'}<br>
+                            <br>
+                            <strong>다음 단계:</strong> 대시보드로 이동할 수 있습니다.
+                        `);
+                        
+                        // 로컬 스토리지에 토큰 저장 (실제 앱에서 사용)
+                        if (data.token) {
+                            localStorage.setItem('authToken', data.token);
+                            localStorage.setItem('userInfo', JSON.stringify(data.user));
+                        }
+                        
+                    } else {
+                        showResult('error', `
+                            ❌ <strong>로그인 실패</strong><br>
+                            ${data.message || '이메일 또는 비밀번호가 올바르지 않습니다.'}<br>
+                            오류 코드: ${response.status}
+                        `);
+                    }
+                } else {
+                    // 백엔드 서버가 오프라인이면 모의 로그인
+                    await simulateLogin(email, password);
+                }
+                
+            } catch (error) {
+                showResult('error', `
+                    ❌ <strong>네트워크 오류</strong><br>
+                    ${error.message}<br>
+                    <br>
+                    <strong>문제 해결:</strong><br>
+                    1. 백엔드 서버가 실행 중인지 확인<br>
+                    2. 포트 8081이 사용 가능한지 확인<br>
+                    3. 방화벽 설정 확인
+                `);
+            } finally {
+                // 버튼 복원
+                loginBtn.disabled = false;
+                loginBtn.textContent = '로그인';
+            }
+        });
+
+        // 모의 로그인 (백엔드가 오프라인일 때)
+        async function simulateLogin(email, password) {
+            // 1초 지연으로 실제 API 호출처럼 보이게 함
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // 테스트 계정 데이터
+            const testAccounts = {
+                'admin@ycs.com': { password: 'admin123', name: '관리자', role: 'ADMIN' },
+                'user@ycs.com': { password: 'user123', name: '일반사용자', role: 'USER' },
+                'partner@ycs.com': { password: 'partner123', name: '파트너', role: 'PARTNER' },
+                'warehouse@ycs.com': { password: 'warehouse123', name: '창고관리자', role: 'WAREHOUSE' }
+            };
+            
+            const account = testAccounts[email];
+            
+            if (account && account.password === password) {
+                showResult('success', `
+                    ✅ <strong>모의 로그인 성공!</strong><br>
+                    사용자: ${account.name}<br>
+                    이메일: ${email}<br>
+                    역할: ${account.role}<br>
+                    토큰: Mock-JWT-Token-${Date.now()}<br>
+                    <br>
+                    <strong>참고:</strong> 현재 백엔드 서버가 오프라인이므로<br>
+                    모의 데이터로 테스트되었습니다.<br>
+                    <br>
+                    <strong>실제 테스트:</strong> 백엔드 서버를 시작하고<br>
+                    다시 시도해주세요.
+                `);
+                
+                // 모의 토큰 저장
+                localStorage.setItem('authToken', `mock-token-${Date.now()}`);
+                localStorage.setItem('userInfo', JSON.stringify({
+                    name: account.name,
+                    email: email,
+                    role: account.role
+                }));
+                
+            } else {
+                showResult('error', `
+                    ❌ <strong>로그인 실패</strong><br>
+                    이메일 또는 비밀번호가 올바르지 않습니다.<br>
+                    <br>
+                    <strong>테스트 계정:</strong> 아래 제공된 계정을 사용해주세요.
+                `);
+            }
+        }
+
+        // 결과 표시
+        function showResult(type, content) {
+            const result = document.getElementById('result');
+            result.style.display = 'block';
+            result.className = `result ${type}`;
+            result.innerHTML = content;
+        }
+
+        // Vue.js 프론트엔드로 이동
+        function goToFrontend() {
+            window.open(FRONTEND_BASE, '_blank');
+        }
+
+        // 페이지 로드 시 서버 상태 확인
+        window.onload = function() {
+            checkBackendStatus();
+            
+            // 5초마다 백엔드 상태 확인
+            setInterval(checkBackendStatus, 5000);
+        };
+    </script>
+</body>
+</html>

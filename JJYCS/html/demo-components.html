@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YCS 디자인 시스템 - 컴포넌트 데모</title>
+    <link rel="stylesheet" href="css/globals.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/umd/lucide.min.js"></script>
+</head>
+<body>
+    <div class="page-content" style="max-width: 1200px; margin: 0 auto; padding: 2rem;">
+        <!-- 헤더 -->
+        <div class="mb-6">
+            <h1 class="text-3xl font-bold mb-2">YCS 디자인 시스템</h1>
+            <p class="text-lg">물류 시스템 UI 컴포넌트 데모</p>
+        </div>
+
+        <!-- 버튼 섹션 -->
+        <section class="mb-8">
+            <h2 class="text-2xl font-semibold mb-4">버튼 (Buttons)</h2>
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">기본 버튼</h3>
+                </div>
+                <div class="card-body">
+                    <div class="flex flex-wrap gap-4 mb-6">
+                        <button class="btn btn-primary">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            주문 접수
+                        </button>
+                        <button class="btn btn-secondary">취소</button>
+                        <button class="btn btn-success">
+                            <i data-lucide="check" class="w-4 h-4"></i>
+                            승인
+                        </button>
+                        <button class="btn btn-warning">
+                            <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                            경고
+                        </button>
+                        <button class="btn btn-danger">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            삭제
+                        </button>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-4 mb-6">
+                        <button class="btn btn-primary btn-sm">Small</button>
+                        <button class="btn btn-primary">Regular</button>
+                        <button class="btn btn-primary btn-lg">Large</button>
+                    </div>
+                    
+                    <div class="flex gap-4">
+                        <button class="btn btn-icon btn-primary">
+                            <i data-lucide="search" class="w-4 h-4"></i>
+                        </button>
+                        <button class="btn btn-primary btn-full">전체 너비 버튼</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 폼 요소 섹션 -->
+        <section class="mb-8">
+            <h2 class="text-2xl font-semibold mb-4">폼 요소 (Form Elements)</h2>
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">입력 필드</h3>
+                </div>
+                <div class="card-body">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="form-group">
+                            <label class="form-label">
+                                수취인 이름
+                                <span class="required">*</span>
+                            </label>
+                            <input type="text" class="form-input" placeholder="이름을 입력하세요">
+                            <span class="form-helper">한글 또는 영문으로 입력</span>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">배송 방법</label>
+                            <select class="form-input form-select">
+                                <option>항공 배송</option>
+                                <option>해상 배송</option>
+                                <option>특급 배송</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">오류 상태 예시</label>
+                            <input type="email" class="form-input error" value="invalid-email">
+                            <span class="form-error">올바른 이메일 주소를 입력해주세요</span>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">특이사항</label>
+                            <textarea class="form-input form-textarea" placeholder="특이사항을 입력하세요"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-4 mt-6">
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" class="form-checkbox">
+                            <span>개인정보 처리방침에 동의합니다</span>
+                        </label>
+                        <label class="flex items-center gap-2">
+                            <input type="radio" name="delivery" class="form-radio">
+                            <span>일반 배송</span>
+                        </label>
+                        <label class="flex items-center gap-2">
+                            <input type="radio" name="delivery" class="form-radio">
+                            <span>특급 배송</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 카드 섹션 -->
+        <section class="mb-8">
+            <h2 class="text-2xl font-semibold mb-4">카드 (Cards)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">주문번호: YCS-2024-001</h3>
+                        <span class="badge badge-progress">진행중</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="info-row">
+                            <span class="info-label">수취인:</span>
+                            <span class="info-value">김철수</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">배송지:</span>
+                            <span class="info-value">서울시 강남구</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">CBM:</span>
+                            <span class="info-value">15.2 m³</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">배송비:</span>
+                            <span class="info-value">₩125,000</span>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-sm btn-secondary">수정</button>
+                        <button class="btn btn-sm btn-primary">상세보기</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">파트너 정산</h3>
+                        <span class="badge badge-complete">완료</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="info-row">
+                            <span class="info-label">파트너:</span>
+                            <span class="info-value">물류파트너(주)</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">처리 건수:</span>
+                            <span class="info-value">24건</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">수수료:</span>
+                            <span class="info-value">₩480,000</span>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-sm btn-success">정산 완료</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 배지 섹션 -->
+        <section class="mb-8">
+            <h2 class="text-2xl font-semibold mb-4">배지 (Badges)</h2>
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">상태 배지</h3>
+                </div>
+                <div class="card-body">
+                    <div class="flex flex-wrap gap-4 mb-6">
+                        <span class="badge badge-waiting">대기중</span>
+                        <span class="badge badge-progress">진행중</span>
+                        <span class="badge badge-complete">완료</span>
+                        <span class="badge badge-delay">지연</span>
+                        <span class="badge badge-cancel">취소</span>
+                    </div>
+                    
+                    <h4 class="font-semibold mb-4">사용자 타입 배지</h4>
+                    <div class="flex flex-wrap gap-4">
+                        <span class="badge badge-general">일반 회원</span>
+                        <span class="badge badge-corporate">기업 회원</span>
+                        <span class="badge badge-partner">파트너</span>
+                        <span class="badge badge-admin">관리자</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CBM 계산기 섹션 -->
+        <section class="mb-8">
+            <h2 class="text-2xl font-semibold mb-4">CBM 계산기</h2>
+            <div class="cbm-calculator">
+                <h3 class="font-semibold mb-4">박스 치수 입력</h3>
+                <div class="cbm-inputs">
+                    <div class="form-group">
+                        <label class="form-label">가로(cm)</label>
+                        <input type="number" class="form-input" id="width" placeholder="30">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">세로(cm)</label>
+                        <input type="number" class="form-input" id="height" placeholder="20">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">높이(cm)</label>
+                        <input type="number" class="form-input" id="depth" placeholder="15">
+                    </div>
+                </div>
+                <div class="cbm-result">
+                    <span class="cbm-value" id="cbmValue">0.009</span>
+                    <div class="text-sm mt-2">m³</div>
+                    <div class="cbm-warning" id="cbmWarning" style="display: none;">
+                        29m³ 초과 - 항공배송으로 자동 전환됩니다
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 바텀 네비게이션 섹션 -->
+        <section class="mb-8">
+            <h2 class="text-2xl font-semibold mb-4">바텀 네비게이션</h2>
+            <div class="card">
+                <div class="card-body">
+                    <p class="mb-4">모바일 환경에서 하단에 고정되는 네비게이션 바입니다.</p>
+                    <div class="relative bg-gray-100 rounded-lg p-4">
+                        <div class="bottom-nav" style="position: relative; box-shadow: none; border: 1px solid #e5e7eb;">
+                            <div class="bottom-nav-list">
+                                <a href="#" class="bottom-nav-item active">
+                                    <i data-lucide="home" class="bottom-nav-icon"></i>
+                                    <span class="bottom-nav-text">홈</span>
+                                </a>
+                                <a href="#" class="bottom-nav-item">
+                                    <i data-lucide="package" class="bottom-nav-icon"></i>
+                                    <span class="bottom-nav-text">주문</span>
+                                    <span class="bottom-nav-badge">3</span>
+                                </a>
+                                <a href="#" class="bottom-nav-item">
+                                    <i data-lucide="truck" class="bottom-nav-icon"></i>
+                                    <span class="bottom-nav-text">배송</span>
+                                </a>
+                                <a href="#" class="bottom-nav-item">
+                                    <i data-lucide="user" class="bottom-nav-icon"></i>
+                                    <span class="bottom-nav-text">마이</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 토스트 메시지 섹션 -->
+        <section class="mb-8">
+            <h2 class="text-2xl font-semibold mb-4">토스트 메시지</h2>
+            <div class="card">
+                <div class="card-body">
+                    <div class="flex flex-wrap gap-4">
+                        <button class="btn btn-primary" onclick="showToast('success')">성공 메시지</button>
+                        <button class="btn btn-warning" onclick="showToast('warning')">경고 메시지</button>
+                        <button class="btn btn-danger" onclick="showToast('danger')">오류 메시지</button>
+                        <button class="btn btn-secondary" onclick="showToast('info')">정보 메시지</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 모달 섹션 -->
+        <section class="mb-8">
+            <h2 class="text-2xl font-semibold mb-4">모달</h2>
+            <div class="card">
+                <div class="card-body">
+                    <button class="btn btn-primary" onclick="showModal()">모달 열기</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- QR 스캔 영역 -->
+        <section class="mb-8">
+            <h2 class="text-2xl font-semibold mb-4">QR/바코드 스캔 영역</h2>
+            <div class="card">
+                <div class="card-body">
+                    <div class="scan-area">
+                        <div class="scan-overlay"></div>
+                        <div style="color: white; text-align: center;">
+                            <i data-lucide="camera" style="width: 48px; height: 48px; margin-bottom: 1rem;"></i>
+                            <p>QR 코드를 스캔하세요</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 스피너 섹션 -->
+        <section class="mb-8">
+            <h2 class="text-2xl font-semibold mb-4">로딩 스피너</h2>
+            <div class="card">
+                <div class="card-body">
+                    <div class="flex items-center gap-6">
+                        <div class="flex items-center gap-2">
+                            <span class="spinner"></span>
+                            <span>기본 크기</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="spinner spinner-lg"></span>
+                            <span>큰 크기</span>
+                        </div>
+                        <button class="btn btn-primary" disabled>
+                            <span class="spinner"></span>
+                            로딩 중...
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- 토스트 컨테이너 -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- 모달 -->
+    <div class="modal-overlay" id="modalOverlay" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">주문 확인</h3>
+                <button class="modal-close" onclick="hideModal()">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>정말로 이 주문을 처리하시겠습니까?</p>
+                <div class="mt-4 p-4 bg-gray-50 rounded-lg">
+                    <div class="info-row">
+                        <span class="info-label">주문번호:</span>
+                        <span class="info-value">YCS-2024-001</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">수취인:</span>
+                        <span class="info-value">김철수</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">배송비:</span>
+                        <span class="info-value">₩125,000</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideModal()">취소</button>
+                <button class="btn btn-primary" onclick="confirmOrder()">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Lucide 아이콘 초기화
+        lucide.createIcons();
+
+        // CBM 계산기
+        function calculateCBM() {
+            const width = parseFloat(document.getElementById('width').value) || 0;
+            const height = parseFloat(document.getElementById('height').value) || 0;
+            const depth = parseFloat(document.getElementById('depth').value) || 0;
+            
+            const cbm = (width * height * depth) / 1000000;
+            document.getElementById('cbmValue').textContent = cbm.toFixed(6);
+            
+            const warning = document.getElementById('cbmWarning');
+            if (cbm > 29) {
+                warning.style.display = 'block';
+            } else {
+                warning.style.display = 'none';
+            }
+        }
+
+        // CBM 입력 필드에 이벤트 리스너 추가
+        ['width', 'height', 'depth'].forEach(id => {
+            document.getElementById(id).addEventListener('input', calculateCBM);
+        });
+
+        // 초기 CBM 계산
+        calculateCBM();
+
+        // 토스트 메시지
+        function showToast(type) {
+            const container = document.getElementById('toastContainer');
+            const toastId = 'toast-' + Date.now();
+            
+            const messages = {
+                success: { title: '성공', message: '주문이 성공적으로 처리되었습니다.', icon: 'check-circle' },
+                warning: { title: '경고', message: 'CBM이 29m³를 초과했습니다.', icon: 'alert-triangle' },
+                danger: { title: '오류', message: '처리 중 오류가 발생했습니다.', icon: 'x-circle' },
+                info: { title: '정보', message: '새로운 알림이 있습니다.', icon: 'info' }
+            };
+            
+            const msg = messages[type];
+            
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.id = toastId;
+            toast.innerHTML = `
+                <i data-lucide="${msg.icon}" class="toast-icon"></i>
+                <div class="toast-content">
+                    <div class="toast-title">${msg.title}</div>
+                    <div class="toast-message">${msg.message}</div>
+                </div>
+                <button class="toast-close" onclick="removeToast('${toastId}')">
+                    <i data-lucide="x" class="w-3 h-3"></i>
+                </button>
+            `;
+            
+            container.appendChild(toast);
+            lucide.createIcons();
+            
+            // 5초 후 자동 제거
+            setTimeout(() => removeToast(toastId), 5000);
+        }
+
+        function removeToast(toastId) {
+            const toast = document.getElementById(toastId);
+            if (toast) {
+                toast.remove();
+            }
+        }
+
+        // 모달
+        function showModal() {
+            document.getElementById('modalOverlay').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideModal() {
+            document.getElementById('modalOverlay').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        function confirmOrder() {
+            hideModal();
+            showToast('success');
+        }
+
+        // 모달 오버레이 클릭 시 닫기
+        document.getElementById('modalOverlay').addEventListener('click', (e) => {
+            if (e.target.id === 'modalOverlay') {
+                hideModal();
+            }
+        });
+
+        // ESC 키로 모달 닫기
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                hideModal();
+            }
+        });
+    </script>
+</body>
+</html>

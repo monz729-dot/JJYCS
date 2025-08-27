@@ -1,0 +1,51 @@
+package com.ycs.lms.exception;
+
+import java.util.Map;
+
+// Additional Custom Exceptions
+public class ResourceNotFoundException extends RuntimeException {
+    public ResourceNotFoundException(String message) {
+        super(message);
+    }
+}
+
+class CustomValidationException extends RuntimeException {
+    private final Map<String, String> validationErrors;
+    
+    public CustomValidationException(String message, Map<String, String> validationErrors) {
+        super(message);
+        this.validationErrors = validationErrors;
+    }
+    
+    public Map<String, String> getValidationErrors() {
+        return validationErrors;
+    }
+}
+
+public class ExternalServiceException extends RuntimeException {
+    private final String serviceName;
+    private final String operation;
+    private final boolean retryable;
+    
+    public ExternalServiceException(String message, String serviceName, String operation, boolean retryable) {
+        super(message);
+        this.serviceName = serviceName;
+        this.operation = operation;
+        this.retryable = retryable;
+    }
+    
+    public String getServiceName() { return serviceName; }
+    public String getOperation() { return operation; }
+    public boolean isRetryable() { return retryable; }
+}
+
+public class CircuitBreakerException extends RuntimeException {
+    private final String serviceName;
+    
+    public CircuitBreakerException(String serviceName) {
+        super("Circuit breaker is open for service: " + serviceName);
+        this.serviceName = serviceName;
+    }
+    
+    public String getServiceName() { return serviceName; }
+}

@@ -1,0 +1,46 @@
+package com.ycs.lms.listener;
+
+import com.ycs.lms.entity.Order;
+import com.ycs.lms.event.SearchIndexEvent;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Component;
+
+import jakarta.persistence.*;
+
+@Component
+@Slf4j
+public class OrderEntityListener {
+
+    private static ApplicationEventPublisher eventPublisher;
+
+    @Autowired
+    public void setEventPublisher(ApplicationEventPublisher eventPublisher) {
+        OrderEntityListener.eventPublisher = eventPublisher;
+    }
+
+    @PostPersist
+    public void onPostPersist(Order order) {
+        log.debug("Order created: {}", order.getId());
+        if (eventPublisher != null) {
+            eventPublisher.publishEvent(SearchIndexEvent.indexOrder(this, order.getId(), order));
+        }
+    }
+
+    @PostUpdate
+    public void onPostUpdate(Order order) {
+        log.debug("Order updated: {}", order.getId());
+        if (eventPublisher != null) {
+            eventPublisher.publishEvent(SearchIndexEvent.updateOrder(this, order.getId(), order));
+        }
+    }
+
+    @PostRemove
+    public void onPostRemove(Order order) {
+        log.debug("Order deleted: {}", order.getId());
+        if (eventPublisher != null) {
+            eventPublisher.publishEvent(SearchIndexEvent.deleteOrder(this, order.getId()));
+        }
+    }
+}

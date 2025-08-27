@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 대시보드 - YCS 물류관리시스템</title>
+    <link rel="stylesheet" href="../../common/common.css">
+    <link rel="stylesheet" href="../../common/ui.css">
+    <style>
+        .dashboard-container {
+            min-height: 100vh;
+            background: linear-gradient(135deg, rgb(239 246 255) 0%, rgb(255 255 255) 50%, rgb(239 246 255) 100%);
+            padding: 1rem;
+            padding-bottom: 5rem;
+        }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .header-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .header-subtitle {
+            color: rgb(107 114 128);
+            margin: 0;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .header-button {
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: 1px solid rgb(209 213 219);
+            border-radius: 0.375rem;
+            color: rgb(55 65 81);
+            cursor: pointer;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .header-button:hover {
+            background: rgb(249 250 251);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 1rem;
+        }
+
+        .stat-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stat-info p {
+            margin: 0;
+        }
+
+        .stat-title {
+            color: rgb(107 114 128);
+            font-size: 0.875rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .stat-icon {
+            padding: 0.75rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stat-icon.orange {
+            background: rgb(255 247 237);
+        }
+
+        .stat-icon.blue {
+            background: rgb(239 246 255);
+        }
+
+        .stat-icon.red {
+            background: rgb(254 242 242);
+        }
+
+        .stat-icon.green {
+            background: rgb(240 253 244);
+        }
+
+        .tabs-container {
+            width: 100%;
+        }
+
+        .tabs-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            background: rgb(243 244 246);
+            border-radius: 0.375rem;
+            padding: 0.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .tab-trigger {
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: none;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .tab-trigger:hover {
+            background: rgb(229 231 235);
+        }
+
+        .tab-trigger.active {
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .card {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            padding: 1.5rem 1.5rem 0;
+        }
+
+        .card-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-content {
+            padding: 1.5rem;
+        }
+
+        .request-item {
+            border: 1px solid rgb(229 231 235);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .request-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+
+        .request-id {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .request-id-text {
+            font-weight: 500;
+        }
+
+        .badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge.outline {
+            background: transparent;
+            border: 1px solid rgb(209 213 219);
+            color: rgb(55 65 81);
+        }
+
+        .badge.orange {
+            background: rgb(255 237 213);
+            color: rgb(154 52 18);
+        }
+
+        .badge.green {
+            background: rgb(209 250 229);
+            color: rgb(22 101 52);
+        }
+
+        .badge.blue {
+            background: rgb(219 234 254);
+            color: rgb(30 64 175);
+        }
+
+        .badge.red {
+            background: rgb(254 226 226);
+            color: rgb(153 27 27);
+        }
+
+        .request-customer {
+            color: rgb(107 114 128);
+            font-size: 0.875rem;
+            margin: 0;
+        }
+
+        .request-details {
+            margin: 1rem 0;
+        }
+
+        .request-detail {
+            font-size: 0.875rem;
+            margin: 0.5rem 0;
+        }
+
+        .request-detail strong {
+            font-weight: 600;
+        }
+
+        .request-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .request-button {
+            flex: 1;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            border: none;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .request-button.primary {
+            background: rgb(37 99 235);
+            color: white;
+        }
+
+        .request-button.primary:hover {
+            background: rgb(29 78 216);
+        }
+
+        .request-button.outline {
+            background: transparent;
+            border: 1px solid rgb(209 213 219);
+            color: rgb(55 65 81);
+        }
+
+        .request-button.outline:hover {
+            background: rgb(249 250 251);
+        }
+
+        .request-button.ghost {
+            background: transparent;
+            border: none;
+            color: rgb(55 65 81);
+        }
+
+        .request-button.ghost:hover {
+            background: rgb(249 250 251);
+        }
+
+        .search-filter-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-input {
+            padding: 0.5rem 0.75rem 0.5rem 2.5rem;
+            border: 1px solid rgb(209 213 219);
+            border-radius: 0.375rem;
+            width: 12rem;
+            font-size: 0.875rem;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgb(107 114 128);
+            width: 1rem;
+            height: 1rem;
+        }
+
+        .filter-select {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid rgb(209 213 219);
+            border-radius: 0.375rem;
+            width: 8rem;
+            font-size: 0.875rem;
+        }
+
+        .order-item {
+            border: 1px solid rgb(229 231 235);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+
+        .order-cost-section {
+            text-align: right;
+        }
+
+        .order-cost {
+            font-weight: 500;
+            font-size: 0.875rem;
+            margin: 0 0 0.25rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .empty-icon {
+            width: 2rem;
+            height: 2rem;
+            color: rgb(34 197 94);
+            margin: 0 auto 0.5rem;
+        }
+
+        .empty-text {
+            color: rgb(107 114 128);
+            font-size: 0.875rem;
+            margin: 0 0 1rem;
+        }
+
+        .icon {
+            width: 1rem;
+            height: 1rem;
+        }
+
+        .icon-lg {
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <div class="header-section">
+            <div>
+                <h1 class="header-title">관리자 대시보드</h1>
+                <p class="header-subtitle">운송 의뢰 접수 및 관리</p>
+            </div>
+            <div class="header-buttons">
+                <button class="header-button">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                    통계
+                </button>
+                <button class="header-button">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+                    </svg>
+                    고객 관리
+                </button>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-content">
+                    <div class="stat-info">
+                        <p class="stat-title">접수 대기</p>
+                        <p class="stat-value">2</p>
+                    </div>
+                    <div class="stat-icon orange">
+                        <svg class="icon-lg" fill="none" stroke="rgb(249 115 22)" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-content">
+                    <div class="stat-info">
+                        <p class="stat-title">진행 중</p>
+                        <p class="stat-value">2</p>
+                    </div>
+                    <div class="stat-icon blue">
+                        <svg class="icon-lg" fill="none" stroke="rgb(59 130 246)" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-content">
+                    <div class="stat-info">
+                        <p class="stat-title">결제 대기</p>
+                        <p class="stat-value">1</p>
+                    </div>
+                    <div class="stat-icon red">
+                        <svg class="icon-lg" fill="none" stroke="rgb(239 68 68)" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-content">
+                    <div class="stat-info">
+                        <p class="stat-title">오늘 완료</p>
+                        <p class="stat-value">8</p>
+                    </div>
+                    <div class="stat-icon green">
+                        <svg class="icon-lg" fill="none" stroke="rgb(34 197 94)" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs-container">
+            <div class="tabs-list">
+                <button class="tab-trigger active" onclick="showTab('pending')">접수 대기</button>
+                <button class="tab-trigger" onclick="showTab('active')">진행 중</button>
+                <button class="tab-trigger" onclick="showTab('completed')">완료</button>
+            </div>
+
+            <!-- Pending Requests Tab -->
+            <div id="pending-tab" class="tab-content active">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <svg class="icon-lg" fill="none" stroke="rgb(249 115 22)" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.728-.833-2.498 0L4.316 15.5c-.77.833.192 2.5 1.732 2.5z"/>
+                            </svg>
+                            운송 의뢰 접수 대기
+                        </h2>
+                    </div>
+                    <div class="card-content">
+                        <!-- Request 1 -->
+                        <div class="request-item">
+                            <div class="request-header">
+                                <div>
+                                    <div class="request-id">
+                                        <span class="request-id-text">YCS-2024-004</span>
+                                        <span class="badge outline">일반</span>
+                                    </div>
+                                    <p class="request-customer">고객: 홍길동 | 접수일: 2024-01-22</p>
+                                </div>
+                                <span class="badge orange">접수대기</span>
+                            </div>
+
+                            <div class="request-details">
+                                <div class="request-detail">
+                                    <strong>배송 정보:</strong> 해상 | 태국 방콕
+                                </div>
+                                <div class="request-detail">
+                                    <strong>품목:</strong>
+                                    <span style="margin-left: 0.5rem;">전자제품 (1개, 2.5kg, 30x20x10cm)</span>
+                                </div>
+                                <div class="request-detail">
+                                    <strong>예상 비용:</strong> 85,000 THB
+                                </div>
+                                <div class="request-detail">
+                                    <strong>리패킹:</strong> 요청
+                                </div>
+                            </div>
+
+                            <div class="request-buttons">
+                                <button class="request-button primary" onclick="approveRequest('YCS-2024-004')">승인</button>
+                                <button class="request-button outline" onclick="rejectRequest('YCS-2024-004')">반려</button>
+                                <button class="request-button ghost">상세보기</button>
+                            </div>
+                        </div>
+
+                        <!-- Request 2 -->
+                        <div class="request-item">
+                            <div class="request-header">
+                                <div>
+                                    <div class="request-id">
+                                        <span class="request-id-text">YCS-2024-005</span>
+                                        <span class="badge outline">기업</span>
+                                    </div>
+                                    <p class="request-customer">고객: (주)ABC무역 | 접수일: 2024-01-22</p>
+                                </div>
+                                <span class="badge orange">접수대기</span>
+                            </div>
+
+                            <div class="request-details">
+                                <div class="request-detail">
+                                    <strong>배송 정보:</strong> 항공 | 태국 치앙마이
+                                </div>
+                                <div class="request-detail">
+                                    <strong>품목:</strong>
+                                    <span style="margin-left: 0.5rem;">의류 (50개, 25.0kg, 40x30x20cm)</span>
+                                    <span style="margin-left: 0.5rem;">액세서리 (30개, 5.0kg, 20x15x10cm)</span>
+                                </div>
+                                <div class="request-detail">
+                                    <strong>예상 비용:</strong> 450,000 THB
+                                </div>
+                                <div class="request-detail">
+                                    <strong>리패킹:</strong> 미요청
+                                </div>
+                            </div>
+
+                            <div class="request-buttons">
+                                <button class="request-button primary" onclick="approveRequest('YCS-2024-005')">승인</button>
+                                <button class="request-button outline" onclick="rejectRequest('YCS-2024-005')">반려</button>
+                                <button class="request-button ghost">상세보기</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Orders Tab -->
+            <div id="active-tab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="search-filter-section">
+                            <h2 class="card-title">
+                                <svg class="icon-lg" fill="none" stroke="rgb(59 130 246)" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                진행 중인 주문
+                            </h2>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <div class="search-box">
+                                    <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                    </svg>
+                                    <input type="text" class="search-input" placeholder="주문번호 검색" id="searchInput">
+                                </div>
+                                <select class="filter-select" id="statusFilter">
+                                    <option value="all">전체</option>
+                                    <option value="입고완료">입고완료</option>
+                                    <option value="배송중">배송중</option>
+                                    <option value="결제대기">결제대기</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <!-- Order 1 -->
+                        <div class="order-item">
+                            <div class="order-header">
+                                <div>
+                                    <div class="request-id">
+                                        <span class="request-id-text">YCS-2024-001</span>
+                                        <span class="badge green">입고완료</span>
+                                    </div>
+                                    <p class="request-customer">고객: 김철수 | 송장: KR123456789</p>
+                                </div>
+                                <div class="order-cost-section">
+                                    <p class="order-cost">87,500 THB</p>
+                                    <span class="badge blue">결제완료</span>
+                                </div>
+                            </div>
+
+                            <div class="request-details">
+                                <div class="request-detail">
+                                    <strong>배송 정보:</strong> 해상 | 태국 방콕
+                                </div>
+                                <div class="request-detail">
+                                    <strong>예상 도착:</strong> 2024-01-25
+                                </div>
+                            </div>
+
+                            <div class="request-buttons">
+                                <select class="filter-select" onchange="updateOrderStatus('YCS-2024-001', this.value)">
+                                    <option value="입고완료" selected>입고완료</option>
+                                    <option value="배송중">배송중</option>
+                                    <option value="배송완료">배송완료</option>
+                                    <option value="보류">보류</option>
+                                </select>
+                                <button class="request-button ghost">상세보기</button>
+                            </div>
+                        </div>
+
+                        <!-- Order 2 -->
+                        <div class="order-item">
+                            <div class="order-header">
+                                <div>
+                                    <div class="request-id">
+                                        <span class="request-id-text">YCS-2024-002</span>
+                                        <span class="badge blue">배송중</span>
+                                    </div>
+                                    <p class="request-customer">고객: 이영희 | 송장: KR987654321</p>
+                                </div>
+                                <div class="order-cost-section">
+                                    <p class="order-cost">125,000 THB</p>
+                                    <span class="badge red">결제대기</span>
+                                </div>
+                            </div>
+
+                            <div class="request-details">
+                                <div class="request-detail">
+                                    <strong>배송 정보:</strong> 항공 | 태국 치앙마이
+                                </div>
+                                <div class="request-detail">
+                                    <strong>예상 도착:</strong> 2024-01-24
+                                </div>
+                            </div>
+
+                            <div class="request-buttons">
+                                <select class="filter-select" onchange="updateOrderStatus('YCS-2024-002', this.value)">
+                                    <option value="입고완료">입고완료</option>
+                                    <option value="배송중" selected>배송중</option>
+                                    <option value="배송완료">배송완료</option>
+                                    <option value="보류">보류</option>
+                                </select>
+                                <button class="request-button outline" onclick="generateInvoice('YCS-2024-002')">
+                                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    </svg>
+                                    결제서 발송
+                                </button>
+                                <button class="request-button ghost">상세보기</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Completed Tab -->
+            <div id="completed-tab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <svg class="icon-lg" fill="none" stroke="rgb(34 197 94)" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            완료된 주문
+                        </h2>
+                    </div>
+                    <div class="card-content">
+                        <div class="empty-state">
+                            <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <p class="empty-text">오늘 완료된 주문 8건</p>
+                            <button class="request-button outline">완료 내역 전체보기</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../common/common.js"></script>
+    <script>
+        let statusFilter = 'all';
+        let searchTerm = '';
+
+        function showTab(tabName) {
+            // Hide all tabs
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+
+            // Remove active class from all triggers
+            const triggers = document.querySelectorAll('.tab-trigger');
+            triggers.forEach(trigger => trigger.classList.remove('active'));
+
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.add('active');
+
+            // Add active class to clicked trigger
+            event.target.classList.add('active');
+        }
+
+        function approveRequest(requestId) {
+            alert(`주문 ${requestId}이 승인되었습니다. 송장번호가 생성되었습니다.`);
+        }
+
+        function rejectRequest(requestId) {
+            alert(`주문 ${requestId}이 반려되었습니다. 고객에게 알림이 전송됩니다.`);
+        }
+
+        function updateOrderStatus(orderId, newStatus) {
+            alert(`주문 ${orderId}의 상태가 ${newStatus}로 업데이트되었습니다.`);
+        }
+
+        function generateInvoice(orderId) {
+            alert(`주문 ${orderId}의 결제서가 생성되어 고객에게 발송되었습니다.`);
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up search functionality
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', function(e) {
+                    searchTerm = e.target.value;
+                    // In a real app, this would filter the orders
+                    console.log('Searching for:', searchTerm);
+                });
+            }
+
+            // Set up filter functionality
+            const statusFilterSelect = document.getElementById('statusFilter');
+            if (statusFilterSelect) {
+                statusFilterSelect.addEventListener('change', function(e) {
+                    statusFilter = e.target.value;
+                    // In a real app, this would filter the orders
+                    console.log('Filter changed to:', statusFilter);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

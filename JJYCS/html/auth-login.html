@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YCS 물류 시스템 - 로그인</title>
+    <link rel="stylesheet" href="css/globals.css">
+    <style>
+        .auth-container {
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--gray-50) 0%, var(--gray-100) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        
+        .auth-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--primary-100);
+        }
+        
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .auth-logo {
+            width: 80px;
+            height: 80px;
+            background: var(--primary-500);
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem auto;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .auth-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-800);
+            margin-bottom: 0.5rem;
+        }
+        
+        .auth-subtitle {
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+        
+        .auth-form {
+            space-y: 1rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 1rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            background: white;
+            box-sizing: border-box;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-500);
+            box-shadow: 0 0 0 3px var(--primary-100);
+        }
+        
+        .form-input.error {
+            border-color: #e5e7eb !important;
+            box-shadow: none !important;
+        }
+        
+        .error-message {
+            color: #dc2626;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            display: none;
+            font-weight: 500;
+        }
+        
+        .error-message.show {
+            display: block !important;
+        }
+        
+        .form-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+        
+        .checkbox {
+            width: 1rem;
+            height: 1rem;
+            accent-color: var(--primary-500);
+        }
+        
+        .checkbox-label {
+            font-size: 0.875rem;
+            color: var(--gray-700);
+        }
+        
+        .login-btn {
+            width: 100%;
+            background: var(--primary-500);
+            color: white;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin: 1rem 0;
+        }
+        
+        .login-btn:hover {
+            background: var(--primary-600);
+            transform: translateY(-1px);
+        }
+        
+        .login-btn:active {
+            transform: translateY(0);
+        }
+        
+        .auth-links {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+        
+        .auth-link {
+            color: var(--primary-600);
+            text-decoration: none;
+            font-size: 0.875rem;
+            margin: 0 0.5rem;
+        }
+        
+        .auth-link:hover {
+            text-decoration: underline;
+        }
+        
+        
+        .demo-accounts {
+            background: var(--primary-50);
+            border: 1px solid var(--primary-200);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .demo-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--primary-700);
+            margin-bottom: 0.75rem;
+        }
+        
+        .demo-account {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            background: white;
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .demo-account:hover {
+            background: var(--primary-100);
+        }
+        
+        .demo-account:last-child {
+            margin-bottom: 0;
+        }
+        
+        .demo-info {
+            font-size: 0.8rem;
+        }
+        
+        .demo-type {
+            font-weight: 600;
+            color: var(--primary-700);
+        }
+        
+        .demo-email {
+            color: #6b7280;
+        }
+        
+        .demo-badge {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+        }
+        
+        .badge-general {
+            background: var(--primary-100);
+            color: var(--primary-700);
+        }
+        
+        .badge-corporate {
+            background: #fff7ed;
+            color: #ea580c;
+        }
+        
+        .badge-partner {
+            background: #f5f3ff;
+            color: #7c3aed;
+        }
+        
+        .badge-admin {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+        
+        @media (max-width: 768px) {
+            .auth-card {
+                padding: 1.5rem;
+                margin: 0.5rem;
+                border-radius: 0.75rem;
+            }
+            
+            .auth-logo {
+                width: 60px;
+                height: 60px;
+                font-size: 1.25rem;
+            }
+            
+            .auth-title {
+                font-size: 1.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="auth-logo">YCS</div>
+                <h1 class="auth-title">로그인</h1>
+                <p class="auth-subtitle">YCS 물류 시스템에 오신 것을 환영합니다</p>
+            </div>
+            
+            <form class="auth-form" id="loginForm">
+                <div class="form-group">
+                    <input type="email" class="form-input" id="email" placeholder="이메일 주소" required>
+                    <div class="error-message" id="emailError"></div>
+                </div>
+                
+                <div class="form-group">
+                    <input type="password" class="form-input" id="password" placeholder="비밀번호" required>
+                    <div class="error-message" id="passwordError"></div>
+                </div>
+                
+                <div class="form-checkbox">
+                    <input type="checkbox" class="checkbox" id="remember">
+                    <label class="checkbox-label" for="remember">로그인 상태 유지</label>
+                </div>
+                
+                <button type="submit" class="login-btn">로그인</button>
+            </form>
+            
+            <div class="auth-links">
+                <a href="auth-register.html" class="auth-link">회원가입</a>
+                <span style="color: #d1d5db;">|</span>
+                <a href="auth-forgot.html" class="auth-link">비밀번호 찾기</a>
+            </div>
+            
+            
+            <!-- 데모 계정 -->
+            <div class="demo-accounts">
+                <div class="demo-title">데모 계정으로 체험하기</div>
+                
+                <div class="demo-account" onclick="fillDemo('general@demo.com', 'demo123', 'general')">
+                    <div class="demo-info">
+                        <div class="demo-type">일반 고객</div>
+                        <div class="demo-email">general@demo.com</div>
+                    </div>
+                    <div class="demo-badge badge-general">개인</div>
+                </div>
+                
+                <div class="demo-account" onclick="fillDemo('corporate@demo.com', 'demo123', 'corporate')">
+                    <div class="demo-info">
+                        <div class="demo-type">기업 고객</div>
+                        <div class="demo-email">corporate@demo.com</div>
+                    </div>
+                    <div class="demo-badge badge-corporate">기업</div>
+                </div>
+                
+                <div class="demo-account" onclick="fillDemo('partner@demo.com', 'demo123', 'partner')">
+                    <div class="demo-info">
+                        <div class="demo-type">파트너</div>
+                        <div class="demo-email">partner@demo.com</div>
+                    </div>
+                    <div class="demo-badge badge-partner">파트너</div>
+                </div>
+                
+                <div class="demo-account" onclick="fillDemo('admin@demo.com', 'demo123', 'admin')">
+                    <div class="demo-info">
+                        <div class="demo-type">관리자</div>
+                        <div class="demo-email">admin@demo.com</div>
+                    </div>
+                    <div class="demo-badge badge-admin">관리자</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        // 데모 계정 정보
+        const demoAccounts = {
+            'kimcs@email.com': {
+                password: 'password123',
+                type: 'GENERAL',
+                name: '김철수',
+                phone: '010-1234-5678'
+            },
+            'lee@company.com': {
+                password: 'password123',
+                type: 'CORPORATE',
+                name: '이영희',
+                phone: '010-2345-6789',
+                company: '(주)ABC무역',
+                businessNumber: '123-45-67890'
+            },
+            'park@partner.com': {
+                password: 'password123',
+                type: 'PARTNER',
+                name: '박민수',
+                phone: '010-3456-7890',
+                company: '파트너마케팅(주)'
+            },
+            'admin@ycs.com': {
+                password: 'password123',
+                type: 'ADMIN',
+                name: '관리자',
+                phone: '02-1234-5678'
+            },
+            'user1@test.com': {
+                password: 'password123',
+                type: 'GENERAL',
+                name: '홍길동',
+                phone: '010-1111-2222'
+            }
+        };
+
+        // 입력 중 에러 메시지만 숨김 (테두리는 유지)
+        document.getElementById('email').addEventListener('input', function() {
+            const errorElement = document.getElementById('emailError');
+            if (errorElement.classList.contains('show')) {
+                errorElement.classList.remove('show');
+            }
+        });
+
+        document.getElementById('password').addEventListener('input', function() {
+            const errorElement = document.getElementById('passwordError');
+            if (errorElement.classList.contains('show')) {
+                errorElement.classList.remove('show');
+            }
+        });
+
+        // 데모 계정 자동 입력
+        function fillDemo(email, password, type) {
+            // 에러 상태 초기화
+            clearAllErrors();
+            
+            document.getElementById('email').value = email;
+            document.getElementById('password').value = password;
+            
+            // 자동 로그인 시뮬레이션
+            setTimeout(() => {
+                handleLogin(email, password);
+            }, 300);
+        }
+
+        // 에러 메시지만 관리 (입력 필드 테두리는 항상 밝은 회색 유지)
+        function showError(fieldId, errorId, message) {
+            const error = document.getElementById(errorId);
+            error.textContent = message;
+            error.classList.add('show');
+        }
+
+        function hideError(fieldId, errorId) {
+            const error = document.getElementById(errorId);
+            error.classList.remove('show');
+        }
+
+        function clearAllErrors() {
+            hideError('email', 'emailError');
+            hideError('password', 'passwordError');
+        }
+
+        function validateEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        function validateForm(email, password) {
+            let isValid = true;
+            
+            // 이메일 검증
+            if (!email.trim()) {
+                showError('email', 'emailError', '이메일을 입력해주세요.');
+                isValid = false;
+            } else if (!validateEmail(email)) {
+                showError('email', 'emailError', '올바른 이메일 형식을 입력해주세요.');
+                isValid = false;
+            } else {
+                hideError('email', 'emailError');
+            }
+            
+            // 비밀번호 검증
+            if (!password.trim()) {
+                showError('password', 'passwordError', '비밀번호를 입력해주세요.');
+                isValid = false;
+            } else if (password.length < 6) {
+                showError('password', 'passwordError', '비밀번호는 6자 이상이어야 합니다.');
+                isValid = false;
+            } else {
+                hideError('password', 'passwordError');
+            }
+            
+            return isValid;
+        }
+
+        // 로그인 처리
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            // 폼 유효성 검사 먼저 실행
+            if (!validateForm(email, password)) {
+                return;
+            }
+            
+            handleLogin(email, password);
+        });
+
+        async function handleLogin(email, password) {
+            // 로딩 상태 표시
+            const submitBtn = document.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = '로그인 중...';
+            submitBtn.disabled = true;
+            
+            try {
+                // 실제 API 호출로 로그인 시도
+                const result = await ycsAPI.login(email, password);
+                
+                if (result.success) {
+                    // 로그인 성공 시 에러 상태 초기화
+                    clearAllErrors();
+                    
+                    // 사용자 타입에 따라 리다이렉트
+                    switch(result.user.userType) {
+                        case 'GENERAL':
+                            window.location.href = 'dashboard-general.html';
+                            break;
+                        case 'CORPORATE':
+                            window.location.href = 'dashboard-corporate.html';
+                            break;
+                        case 'PARTNER':
+                            window.location.href = 'dashboard-partner.html';
+                            break;
+                        case 'ADMIN':
+                            window.location.href = 'dashboard-admin.html';
+                            break;
+                        default:
+                            window.location.href = 'index.html';
+                    }
+                } else {
+                    showError('password', 'passwordError', '로그인에 실패했습니다.');
+                }
+            } catch (error) {
+                console.error('로그인 오류:', error);
+                
+                // 데모 계정으로 폴백 (개발 중에만 사용)
+                const account = demoAccounts[email];
+                if (account && account.password === password) {
+                    console.log('API 연결 실패, 데모 계정으로 로그인');
+                    
+                    // 세션에 사용자 정보 저장 (API 형태로)
+                    const userData = {
+                        id: Math.floor(Math.random() * 1000),
+                        email: email,
+                        name: account.name,
+                        phone: account.phone,
+                        userType: account.type,
+                        status: 'ACTIVE',
+                        memberCode: account.type === 'GENERAL' ? 'GEN999' : account.type.substr(0, 3) + '999',
+                        emailVerified: true,
+                        companyName: account.company || null,
+                        businessNumber: account.businessNumber || null,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    };
+                    
+                    sessionStorage.setItem('currentUser', JSON.stringify(userData));
+                    
+                    // 리다이렉트
+                    switch(account.type) {
+                        case 'GENERAL':
+                            window.location.href = 'dashboard-general.html';
+                            break;
+                        case 'CORPORATE':
+                            window.location.href = 'dashboard-corporate.html';
+                            break;
+                        case 'PARTNER':
+                            window.location.href = 'dashboard-partner.html';
+                            break;
+                        case 'ADMIN':
+                            window.location.href = 'dashboard-admin.html';
+                            break;
+                        default:
+                            window.location.href = 'index.html';
+                    }
+                } else {
+                    showError('email', 'emailError', '서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.');
+                }
+            } finally {
+                // 버튼 상태 복원
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+
+        // 이미 로그인된 경우 리다이렉트
+        const currentUser = ycsAPI.getCurrentUser();
+        if (currentUser) {
+            switch(currentUser.userType) {
+                case 'GENERAL':
+                    window.location.href = 'dashboard-general.html';
+                    break;
+                case 'CORPORATE':
+                    window.location.href = 'dashboard-corporate.html';
+                    break;
+                case 'PARTNER':
+                    window.location.href = 'dashboard-partner.html';
+                    break;
+                case 'ADMIN':
+                    window.location.href = 'dashboard-admin.html';
+                    break;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+package com.ycs.lms.config;
+
+import io.github.bucket4j.Bandwidth;
+import io.github.bucket4j.Bucket;
+import io.github.bucket4j.BucketConfiguration;
+import io.github.bucket4j.distributed.BucketProxy;
+import io.github.bucket4j.distributed.proxy.ProxyManager;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.CacheManager;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.time.Duration;
+import java.util.concurrent.ConcurrentHashMap;
+
+@Configuration
+@RequiredArgsConstructor
+public class RateLimitingConfig {
+
+    private final CacheManager cacheManager;
+    
+    @Value("${rate-limit.global.capacity:1000}")
+    private long globalCapacity;
+    
+    @Value("${rate-limit.global.refill-period-minutes:1}")
+    private long globalRefillPeriod;
+    
+    @Value("${rate-limit.auth.capacity:5}")
+    private long authCapacity;
+    
+    @Value("${rate-limit.auth.refill-period-minutes:1}")
+    private long authRefillPeriod;
+    
+    @Value("${rate-limit.api.capacity:100}")
+    private long apiCapacity;
+    
+    @Value("${rate-limit.api.refill-period-minutes:1}")
+    private long apiRefillPeriod;
+
+    // In-memory bucket store for development
+    private final ConcurrentHashMap<String, Bucket> bucketStore = new ConcurrentHashMap<>();
+
+    @Bean
+    public RateLimitService rateLimitService() {
+        return new RateLimitService(this);
+    }
+
+    public Bucket createBucket(String key, RateLimitType type) {
+        return bucketStore.computeIfAbsent(key, k -> {
+            BucketConfiguration configuration = getBucketConfiguration(type);
+            return Bucket.builder()
+                .addLimit(configuration.getBandwidths().iterator().next())
+                .build();
+        });
+    }
+
+    private BucketConfiguration getBucketConfiguration(RateLimitType type) {
+        return switch (type) {
+            case GLOBAL -> BucketConfiguration.builder()
+                .addLimit(Bandwidth.simple(globalCapacity, Duration.ofMinutes(globalRefillPeriod)))
+                .build();
+            case AUTH -> BucketConfiguration.builder()
+                .addLimit(Bandwidth.simple(authCapacity, Duration.ofMinutes(authRefillPeriod)))
+                .build();
+            case API -> BucketConfiguration.builder()
+                .addLimit(Bandwidth.simple(apiCapacity, Duration.ofMinutes(apiRefillPeriod)))
+                .build();
+            case UPLOAD -> BucketConfiguration.builder()
+                .addLimit(Bandwidth.simple(10, Duration.ofMinutes(1))) // 파일 업로드: 분당 10회
+                .build();
+            case ADMIN -> BucketConfiguration.builder()
+                .addLimit(Bandwidth.simple(200, Duration.ofMinutes(1))) // 관리자: 분당 200회
+                .build();
+        };
+    }
+
+    public enum RateLimitType {
+        GLOBAL,    // 전체 요청 제한
+        AUTH,      // 인증 관련 요청 제한
+        API,       // 일반 API 요청 제한
+        UPLOAD,    // 파일 업로드 제한
+        ADMIN      // 관리자 요청 제한
+    }
+
+    public static class RateLimitService {
+        private final RateLimitingConfig config;
+
+        public RateLimitService(RateLimitingConfig config) {
+            this.config = config;
+        }
+
+        public boolean tryConsume(String key, RateLimitType type) {
+            return tryConsume(key, type, 1);
+        }
+
+        public boolean tryConsume(String key, RateLimitType type, long tokens) {
+            Bucket bucket = config.createBucket(key, type);
+            return bucket.tryConsume(tokens);
+        }
+
+        public long getAvailableTokens(String key, RateLimitType type) {
+            Bucket bucket = config.createBucket(key, type);
+            return bucket.getAvailableTokens();
+        }
+
+        public void reset(String key) {
+            config.bucketStore.remove(key);
+        }
+    }
+}

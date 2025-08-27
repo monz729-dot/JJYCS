@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>주문 내역 - YCS 물류 시스템</title>
+    <link rel="stylesheet" href="../../css/globals.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f0f4ff 0%, #ffffff 50%, #f0f4ff 100%);
+            min-height: 100vh;
+            padding: 16px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+        
+        .title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1e3a8a;
+        }
+        
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .tooltip-trigger {
+            cursor: help;
+            color: #ea580c;
+            font-size: 16px;
+            transition: color 0.3s;
+        }
+        
+        .tooltip-trigger:hover {
+            color: #c2410c;
+        }
+        
+        .tooltip-content {
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e3a8a;
+            color: white;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 4px solid #ea580c;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+            z-index: 100;
+            max-width: 300px;
+            white-space: normal;
+            width: max-content;
+        }
+        
+        .tooltip-content::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 4px solid transparent;
+            border-top-color: #1e3a8a;
+        }
+        
+        .tooltip:hover .tooltip-content {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(37, 99, 235, 0.15);
+            border: 1px solid rgba(37, 99, 235, 0.1);
+            margin-bottom: 24px;
+        }
+        
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .card-content {
+            padding: 16px;
+        }
+        
+        /* 검색 */
+        .search-container {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .search-wrapper {
+            position: relative;
+            flex: 1;
+        }
+        
+        .search-input {
+            width: 100%;
+            height: 40px;
+            padding: 0 16px 0 40px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 14px;
+            background: rgba(37, 99, 235, 0.03);
+            transition: all 0.3s;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #2563eb;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+            color: #9ca3af;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 0 16px;
+            height: 40px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            text-decoration: none;
+        }
+        
+        .btn-outline {
+            background: transparent;
+            color: #2563eb;
+            border: 1px solid #2563eb;
+        }
+        
+        .btn-outline:hover {
+            background: #2563eb;
+            color: white;
+        }
+        
+        .btn-ghost {
+            background: transparent;
+            color: #64748b;
+            border: none;
+        }
+        
+        .btn-ghost:hover {
+            background: #f1f5f9;
+        }
+        
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+        
+        .btn-sm {
+            height: 32px;
+            padding: 0 12px;
+            font-size: 12px;
+        }
+        
+        /* 탭 */
+        .tabs {
+            margin-bottom: 24px;
+        }
+        
+        .tab-list {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            background: rgba(37, 99, 235, 0.05);
+            border-radius: 8px;
+            padding: 4px;
+            margin-bottom: 20px;
+        }
+        
+        .tab-button {
+            padding: 12px 16px;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .tab-button.active {
+            background: white;
+            color: #1d4ed8;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tab-button:hover:not(.active) {
+            color: #475569;
+        }
+        
+        .badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        .badge-secondary {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+        
+        .badge-outline {
+            background: transparent;
+            border: 1px solid #e5e7eb;
+            color: #64748b;
+        }
+        
+        /* 상태 배지 */
+        .status-received { background: #dbeafe; color: #1d4ed8; }
+        .status-arrived { background: #dcfce7; color: #15803d; }
+        .status-repacking { background: #fed7aa; color: #ea580c; }
+        .status-billing { background: #e9d5ff; color: #9333ea; }
+        .status-payment_pending { background: #fef3c7; color: #d97706; }
+        .status-payment_confirmed { background: #e0e7ff; color: #6366f1; }
+        .status-shipping { background: #cffafe; color: #0891b2; }
+        .status-delivered { background: #d1fae5; color: #059669; }
+        
+        /* 주문 카드 */
+        .order-card {
+            transition: box-shadow 0.3s;
+        }
+        
+        .order-card:hover {
+            box-shadow: 0 12px 24px rgba(37, 99, 235, 0.2);
+        }
+        
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 12px;
+        }
+        
+        .order-info {
+            flex: 1;
+        }
+        
+        .order-number {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 4px;
+        }
+        
+        .order-meta {
+            font-size: 14px;
+            color: #64748b;
+        }
+        
+        .order-actions {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+        
+        .order-details {
+            margin-bottom: 12px;
+        }
+        
+        .detail-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .detail-icon {
+            font-size: 16px;
+            color: #64748b;
+        }
+        
+        /* 상태별 알림 박스 */
+        .status-alert {
+            margin-top: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .alert-billing {
+            background: #faf5ff;
+            border: 1px solid #e9d5ff;
+            color: #7c3aed;
+        }
+        
+        .alert-payment {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            color: #d97706;
+        }
+        
+        .alert-repacking {
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            color: #ea580c;
+        }
+        
+        .alert-shipping {
+            background: #ecfeff;
+            border: 1px solid #a5f3fc;
+            color: #0891b2;
+        }
+        
+        .alert-delivered {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #059669;
+        }
+        
+        .payment-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .btn-payment {
+            background: #059669;
+            color: white;
+            border: none;
+        }
+        
+        .btn-payment:hover {
+            background: #047857;
+        }
+        
+        /* 모달 */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 16px;
+        }
+        
+        .modal.show {
+            display: flex;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .modal-close {
+            background: transparent;
+            border: none;
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 4px;
+            color: #64748b;
+            font-size: 20px;
+        }
+        
+        .modal-close:hover {
+            background: #f1f5f9;
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .section {
+            margin-bottom: 24px;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .section-icon {
+            font-size: 16px;
+            color: #2563eb;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .info-label {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 500;
+        }
+        
+        .info-value {
+            font-size: 14px;
+            color: #1e293b;
+            font-weight: 500;
+        }
+        
+        .item-card {
+            padding: 12px;
+            background: #f0f9ff;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .item-name {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+        
+        .item-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            font-size: 14px;
+            color: #64748b;
+        }
+        
+        .warehouse-info {
+            padding: 12px;
+            background: #f0fdf4;
+            border-radius: 8px;
+        }
+        
+        .billing-info {
+            padding: 12px;
+            background: #faf5ff;
+            border-radius: 8px;
+        }
+        
+        .cost-breakdown {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .cost-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        
+        .cost-total {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            font-size: 16px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .modal-footer {
+            padding: 16px 20px;
+            border-top: 1px solid #f1f5f9;
+            background: #f8fafc;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn-full {
+            flex: 1;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .tab-list {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 4px;
+            }
+            
+            .order-header {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .order-actions {
+                align-self: stretch;
+                justify-content: flex-end;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .item-details {
+                grid-template-columns: 1fr;
+            }
+            
+            .modal-content {
+                margin: 0;
+                border-radius: 12px 12px 0 0;
+                max-height: 95vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 헤더 -->
+        <div class="header">
+            <h1 class="title">주문 내역</h1>
+            <div class="tooltip">
+                <div class="tooltip-trigger">📊</div>
+                <div class="tooltip-content">
+                    <div style="color: #ea580c; font-weight: 600; margin-bottom: 8px;">📊 주문 내역 관리</div>
+                    <div style="font-size: 11px; line-height: 1.4;">
+                        <p>새로운 워크플로우가 적용되었습니다:</p>
+                        <div style="background: #374151; padding: 8px; border-radius: 4px; margin-top: 8px;">
+                            <p>• 접수완료 → YCS창고도착 → 리패킹진행</p>
+                            <p>• 청구서발행 → 입금대기 → 입금확인</p>
+                            <p>• 배송중 → 배송완료</p>
+                            <p>• 무통장 입금만 지원</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 검색 -->
+        <div class="card">
+            <div class="card-content">
+                <div class="search-container">
+                    <div class="search-wrapper">
+                        <span class="search-icon">🔍</span>
+                        <input 
+                            type="text" 
+                            id="searchInput"
+                            class="search-input" 
+                            placeholder="주문번호 또는 품목명으로 검색"
+                        >
+                    </div>
+                    <div class="tooltip">
+                        <button class="btn btn-outline tooltip-trigger">검색</button>
+                        <div class="tooltip-content">
+                            <div style="color: #10b981; font-weight: 600; margin-bottom: 8px;">🔍 실시간 검색</div>
+                            <p style="font-size: 11px;">입력과 동시에 목록이 필터링됩니다</p>
+                            <div style="background: #374151; padding: 6px; border-radius: 4px; margin-top: 8px; font-size: 10px;">
+                                검색 대상: 주문번호, 품목명
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 탭 -->
+        <div class="tabs">
+            <div class="tab-list">
+                <button class="tab-button active" data-tab="all">
+                    <span>전체</span>
+                    <span class="badge badge-secondary" id="allCount">3</span>
+                </button>
+                <button class="tab-button" data-tab="processing">
+                    <span>진행중</span>
+                    <span class="badge badge-secondary" id="processingCount">2</span>
+                </button>
+                <button class="tab-button" data-tab="payment">
+                    <span>결제</span>
+                    <span class="badge badge-secondary" id="paymentCount">1</span>
+                </button>
+                <button class="tab-button" data-tab="completed">
+                    <span>완료</span>
+                    <span class="badge badge-secondary" id="completedCount">1</span>
+                </button>
+            </div>
+            
+            <!-- 탭 콘텐츠 -->
+            <div id="ordersList">
+                <!-- 주문이 여기에 동적으로 생성됩니다 -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- 주문 상세 모달 -->
+    <div id="orderModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <span>📋</span>
+                    <span>주문 상세 정보</span>
+                    <div class="tooltip">
+                        <span class="tooltip-trigger" style="color: #2563eb; margin-left: 8px;">ℹ️</span>
+                        <div class="tooltip-content">
+                            <div style="color: #2563eb; font-weight: 600; margin-bottom: 8px;">ℹ️ 상세 정보 모달</div>
+                            <p style="font-size: 11px;">주문의 모든 정보를 확인할 수 있습니다</p>
+                            <div style="background: #374151; padding: 6px; border-radius: 4px; margin-top: 8px; font-size: 10px;">
+                                품목, 배송, 창고, 청구서 정보 포함
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="modalContent">
+                    <!-- 모달 내용이 여기에 동적으로 생성됩니다 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline btn-full" onclick="viewFullDetail()">
+                    👁️ 전체 상세보기
+                </button>
+                <button class="btn btn-outline btn-full" id="downloadBillBtn" style="border-color: #a855f7; color: #a855f7;">
+                    📄 청구서 다운로드
+                </button>
+                <button class="btn btn-payment btn-full" id="paymentBtn">
+                    💳 입금하기
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="../../js/utils.js"></script>
+    <script>
+        // 상태 변수
+        let orders = [];
+        let filteredOrders = [];
+        let currentTab = 'all';
+        let selectedOrder = null;
+        
+        // 주문 상태 정의
+        const orderStatuses = {
+            'received': { label: '접수완료', color: 'status-received', description: '우체국 송장번호 등록, 주문 생성됨' },
+            'arrived': { label: 'YCS창고도착', color: 'status-arrived', description: '창고 도착, 무게 확인' },
+            'repacking': { label: '리패킹진행', color: 'status-repacking', description: '리패킹 작업 및 사진 업로드' },
+            'billing': { label: '청구서발행', color: 'status-billing', description: '최종 비용 산정 및 청구서 발행' },
+            'payment_pending': { label: '입금대기', color: 'status-payment_pending', description: '무통장 입금 대기 중' },
+            'payment_confirmed': { label: '입금확인', color: 'status-payment_confirmed', description: '입금 확인 완료' },
+            'shipping': { label: '배송중', color: 'status-shipping', description: '태국 현지 배송 진행' },
+            'delivered': { label: '배송완료', color: 'status-delivered', description: '최종 배송 완료' }
+        };
+        
+        // Mock 주문 데이터
+        const mockOrders = [
+            {
+                id: 'YCS-2024-001',
+                orderNumber: 'YCS-240115-001',
+                date: '2024-01-15',
+                status: 'payment_pending',
+                items: [
+                    { name: '빼빼로 초콜릿', quantity: 10, weight: 1.5, unitPrice: 25, cbm: 0.015 }
+                ],
+                shippingType: '해상',
+                trackingNumber: 'EE123456789KR',
+                destination: '태국 방콕',
+                recipient: {
+                    name: '김수취',
+                    phone: '+66-123-456-789',
+                    address: '방콕시 중심가 123번지',
+                    postalCode: '10110'
+                },
+                warehouse: {
+                    arrivedDate: '2024-01-18',
+                    actualWeight: 1.8,
+                    repackingRequested: true,
+                    repackingCompleted: true,
+                    photos: ['arrival_photo.jpg', 'repacking_photo.jpg']
+                },
+                billing: {
+                    proformaIssued: true,
+                    finalIssued: false,
+                    localDeliveryFee: 25000,
+                    shippingFee: 85000,
+                    tax: 7700,
+                    total: 117700,
+                    paymentMethod: 'manual_deposit',
+                    paymentStatus: 'pending'
+                }
+            },
+            {
+                id: 'YCS-2024-002',
+                orderNumber: 'YCS-240114-002',
+                date: '2024-01-14',
+                status: 'billing',
+                items: [
+                    { name: '전자제품', quantity: 2, weight: 2.0, unitPrice: 1200, cbm: 0.032 },
+                    { name: '액세서리', quantity: 5, weight: 0.5, unitPrice: 300, cbm: 0.008 }
+                ],
+                shippingType: '항공',
+                trackingNumber: 'EE987654321KR',
+                destination: '태국 치앙마이',
+                recipient: {
+                    name: '이수취',
+                    phone: '+66-987-654-321',
+                    address: '치앙마이시 올드타운 456번지',
+                    postalCode: '50200'
+                },
+                warehouse: {
+                    arrivedDate: '2024-01-16',
+                    actualWeight: 2.3,
+                    repackingRequested: false,
+                    repackingCompleted: false,
+                    photos: ['arrival_photo_2.jpg']
+                },
+                billing: {
+                    proformaIssued: true,
+                    finalIssued: false,
+                    localDeliveryFee: 30000,
+                    shippingFee: 125000,
+                    tax: 10850,
+                    total: 165850,
+                    paymentMethod: 'manual_deposit',
+                    paymentStatus: 'not_ready'
+                }
+            },
+            {
+                id: 'YCS-2024-003',
+                orderNumber: 'YCS-240113-003',
+                date: '2024-01-13',
+                status: 'delivered',
+                items: [
+                    { name: '건강식품', quantity: 1, weight: 1.0, unitPrice: 150, cbm: 0.012 }
+                ],
+                shippingType: '해상',
+                trackingNumber: 'EE456789123KR',
+                destination: '태국 파타야',
+                recipient: {
+                    name: '박수취',
+                    phone: '+66-456-789-123',
+                    address: '파타야시 해변로 789번지',
+                    postalCode: '20150'
+                },
+                warehouse: {
+                    arrivedDate: '2024-01-15',
+                    actualWeight: 1.2,
+                    repackingRequested: false,
+                    repackingCompleted: false,
+                    photos: ['arrival_photo_3.jpg']
+                },
+                billing: {
+                    proformaIssued: true,
+                    finalIssued: true,
+                    localDeliveryFee: 20000,
+                    shippingFee: 75000,
+                    tax: 6650,
+                    total: 101650,
+                    paymentMethod: 'manual_deposit',
+                    paymentStatus: 'completed'
+                }
+            }
+        ];
+        
+        // 상태 정보 가져오기
+        function getStatusInfo(status) {
+            return orderStatuses[status] || orderStatuses['received'];
+        }
+        
+        // 주문 카드 생성
+        function createOrderCard(order) {
+            const statusInfo = getStatusInfo(order.status);
+            const itemsText = order.items.map(item => `${item.name} (${item.quantity}개)`).join(', ');
+            
+            let statusAlert = '';
+            
+            // 상태별 알림 박스
+            if (order.status === 'billing') {
+                statusAlert = `
+                    <div class="status-alert alert-billing">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span>📄</span>
+                            <span>청구서가 발행되었습니다. 총 결제금액: ${order.billing.total.toLocaleString()} THB</span>
+                        </div>
+                    </div>
+                `;
+            } else if (order.status === 'payment_pending') {
+                statusAlert = `
+                    <div class="status-alert alert-payment">
+                        <div class="payment-section">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span>💳</span>
+                                <span>무통장 입금 대기 중입니다. 결제금액: ${order.billing.total.toLocaleString()} THB</span>
+                            </div>
+                            <button class="btn btn-payment btn-sm" onclick="navigateToPayment('${order.id}')">
+                                💳 입금하기
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else if (order.status === 'repacking') {
+                const message = order.warehouse.repackingRequested 
+                    ? '리패킹 작업이 진행 중입니다.'
+                    : '창고에서 상품을 검수 중입니다.';
+                statusAlert = `
+                    <div class="status-alert alert-repacking">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span>🔧</span>
+                            <span>${message}</span>
+                        </div>
+                    </div>
+                `;
+            } else if (order.status === 'shipping') {
+                statusAlert = `
+                    <div class="status-alert alert-shipping">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span>🚚</span>
+                            <span>태국 현지에서 배송이 진행 중입니다.</span>
+                        </div>
+                    </div>
+                `;
+            } else if (order.status === 'delivered') {
+                statusAlert = `
+                    <div class="status-alert alert-delivered">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span>✅</span>
+                            <span>배송이 완료되었습니다. 최종 결제금액: ${order.billing.total.toLocaleString()} THB</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            return `
+                <div class="card order-card">
+                    <div class="card-content">
+                        <div class="order-header">
+                            <div class="order-info">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                    <span class="order-number">${order.orderNumber}</span>
+                                    <span class="badge ${statusInfo.color}">${statusInfo.label}</span>
+                                    ${order.billing.proformaIssued ? `
+                                        <span class="badge badge-outline" style="border-color: #a855f7; color: #a855f7;">
+                                            📄 청구서
+                                        </span>
+                                    ` : ''}
+                                </div>
+                                <div class="order-meta">
+                                    ${order.date} | ${order.shippingType} | ${order.trackingNumber}
+                                </div>
+                            </div>
+                            <div class="order-actions">
+                                ${order.warehouse?.photos && order.warehouse.photos.length > 0 ? `
+                                    <div class="tooltip">
+                                        <span class="badge badge-outline tooltip-trigger">📷 사진</span>
+                                        <div class="tooltip-content">
+                                            창고 도착 및 리패킹 사진 있음
+                                        </div>
+                                    </div>
+                                ` : ''}
+                                <div class="tooltip">
+                                    <button class="btn btn-ghost btn-sm tooltip-trigger" onclick="showOrderDetail('${order.id}')">👁️</button>
+                                    <div class="tooltip-content">
+                                        주문 상세정보 보기
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="order-details">
+                            <div class="detail-row">
+                                <span class="detail-icon">📦</span>
+                                <span>${itemsText}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-icon">🚚</span>
+                                <span>${order.destination}</span>
+                            </div>
+                        </div>
+                        
+                        ${statusAlert}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 주문 목록 렌더링
+        function renderOrders() {
+            const ordersList = document.getElementById('ordersList');
+            
+            if (filteredOrders.length === 0) {
+                ordersList.innerHTML = `
+                    <div style="text-align: center; padding: 60px 20px; color: #64748b;">
+                        <div style="font-size: 64px; margin-bottom: 16px; opacity: 0.5;">📦</div>
+                        <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">조건에 맞는 주문이 없습니다</h3>
+                        <p style="margin-bottom: 24px;">다른 검색어나 필터를 사용해보세요</p>
+                        <button class="btn btn-primary" onclick="navigateToPage('order-form')">새 주문하기</button>
+                    </div>
+                `;
+                return;
+            }
+            
+            ordersList.innerHTML = filteredOrders.map(order => createOrderCard(order)).join('');
+        }
+        
+        // 주문 상세 모달 표시
+        function showOrderDetail(orderId) {
+            const order = orders.find(o => o.id === orderId);
+            if (!order) return;
+            
+            selectedOrder = order;
+            const statusInfo = getStatusInfo(order.status);
+            
+            const modalContent = document.getElementById('modalContent');
+            modalContent.innerHTML = `
+                <!-- 기본 정보 -->
+                <div class="section">
+                    <h4 class="section-title">기본 정보</h4>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">주문번호</div>
+                            <div class="info-value">${order.orderNumber}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">접수일</div>
+                            <div class="info-value">${order.date}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">현재 상태</div>
+                            <div class="info-value">
+                                <span class="badge ${statusInfo.color}">${statusInfo.label}</span>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">송장번호</div>
+                            <div class="info-value" style="font-family: monospace;">${order.trackingNumber}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 품목 정보 -->
+                <div class="section">
+                    <h4 class="section-title">
+                        <span class="section-icon">📦</span>
+                        품목 정보
+                    </h4>
+                    ${order.items.map(item => `
+                        <div class="item-card">
+                            <div class="item-name">${item.name}</div>
+                            <div class="item-details">
+                                <div>수량: ${item.quantity}개</div>
+                                <div>중량: ${item.weight}kg</div>
+                                <div>단가: ${item.unitPrice?.toLocaleString()} THB</div>
+                                <div>CBM: ${item.cbm} m³</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <!-- 창고 정보 -->
+                ${order.warehouse ? `
+                    <div class="section">
+                        <h4 class="section-title">
+                            <span class="section-icon">📦</span>
+                            창고 정보
+                        </h4>
+                        <div class="warehouse-info">
+                            ${order.warehouse.arrivedDate ? `
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                    <span>창고 도착일:</span>
+                                    <span>${order.warehouse.arrivedDate}</span>
+                                </div>
+                            ` : ''}
+                            ${order.warehouse.actualWeight ? `
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                    <span>실제 무게:</span>
+                                    <span>${order.warehouse.actualWeight}kg</span>
+                                </div>
+                            ` : ''}
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span>리패킹 신청:</span>
+                                <span>${order.warehouse.repackingRequested ? '신청함' : '신청안함'}</span>
+                            </div>
+                            ${order.warehouse.repackingRequested ? `
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                    <span>리패킹 완료:</span>
+                                    <span class="badge ${order.warehouse.repackingCompleted ? 'status-delivered' : 'badge-secondary'}">
+                                        ${order.warehouse.repackingCompleted ? '완료' : '진행중'}
+                                    </span>
+                                </div>
+                            ` : ''}
+                            ${order.warehouse.photos && order.warehouse.photos.length > 0 ? `
+                                <div>
+                                    <span style="font-size: 14px; font-weight: 600;">사진:</span>
+                                    <div style="display: flex; gap: 8px; margin-top: 8px;">
+                                        ${order.warehouse.photos.map(photo => `
+                                            <span class="badge badge-outline">
+                                                📷 ${photo.includes('arrival') ? '도착' : '리패킹'}
+                                            </span>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                ` : ''}
+                
+                <!-- 수취인 정보 -->
+                <div class="section">
+                    <h4 class="section-title">수취인 정보</h4>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">이름</div>
+                            <div class="info-value">${order.recipient.name}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">연락처</div>
+                            <div class="info-value">${order.recipient.phone}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">우편번호</div>
+                            <div class="info-value">${order.recipient.postalCode}</div>
+                        </div>
+                        <div class="info-item" style="grid-column: 1 / -1;">
+                            <div class="info-label">주소</div>
+                            <div class="info-value">${order.recipient.address}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 청구서 정보 -->
+                <div class="section">
+                    <h4 class="section-title">
+                        <span class="section-icon">📄</span>
+                        청구서 정보
+                    </h4>
+                    <div class="billing-info">
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 12px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span>Proforma 청구서:</span>
+                                <span class="badge ${order.billing.proformaIssued ? 'status-delivered' : 'badge-secondary'}">
+                                    ${order.billing.proformaIssued ? '발행완료' : '미발행'}
+                                </span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span>Final 청구서:</span>
+                                <span class="badge ${order.billing.finalIssued ? 'status-delivered' : 'badge-secondary'}">
+                                    ${order.billing.finalIssued ? '발행완료' : '미발행'}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        ${order.billing.total > 0 ? `
+                            <div class="cost-breakdown">
+                                <div class="cost-row">
+                                    <span>배송비:</span>
+                                    <span>${order.billing.shippingFee.toLocaleString()} THB</span>
+                                </div>
+                                ${order.billing.localDeliveryFee > 0 ? `
+                                    <div class="cost-row">
+                                        <span>현지 배송비:</span>
+                                        <span>${order.billing.localDeliveryFee.toLocaleString()} THB</span>
+                                    </div>
+                                ` : ''}
+                                <div class="cost-row">
+                                    <span>TAX 7%:</span>
+                                    <span>${order.billing.tax.toLocaleString()} THB</span>
+                                </div>
+                                <div class="cost-total">
+                                    <span>총 결제금액:</span>
+                                    <span>${order.billing.total.toLocaleString()} THB</span>
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 12px;">
+                            <span>결제 방식:</span>
+                            <span class="badge badge-outline">무통장 입금</span>
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
+                            <span>결제 상태:</span>
+                            <span class="badge ${
+                                order.billing.paymentStatus === 'completed' ? 'status-delivered' :
+                                order.billing.paymentStatus === 'pending' ? 'badge-secondary' : 'badge-outline'
+                            }">
+                                ${order.billing.paymentStatus === 'completed' ? '입금완료' :
+                                  order.billing.paymentStatus === 'pending' ? '입금대기' : '미준비'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // 버튼 상태 설정
+            const downloadBtn = document.getElementById('downloadBillBtn');
+            const paymentBtn = document.getElementById('paymentBtn');
+            
+            downloadBtn.style.display = order.billing.proformaIssued ? 'flex' : 'none';
+            paymentBtn.style.display = (order.status === 'payment_pending' && order.billing.paymentStatus === 'pending') ? 'flex' : 'none';
+            
+            document.getElementById('orderModal').classList.add('show');
+        }
+        
+        // 모달 닫기
+        function closeModal() {
+            document.getElementById('orderModal').classList.remove('show');
+            selectedOrder = null;
+        }
+        
+        // 전체 상세보기
+        function viewFullDetail() {
+            if (selectedOrder) {
+                closeModal();
+                navigateToPage('order-detail', { orderId: selectedOrder.id });
+            }
+        }
+        
+        // 입금하기
+        function navigateToPayment(orderId) {
+            navigateToPage('payment', { orderId: orderId });
+        }
+        
+        // 검색 및 필터링
+        function applyFilters() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            let filtered = orders.filter(order => {
+                const matchesSearch = !searchTerm || 
+                    order.id.toLowerCase().includes(searchTerm) ||
+                    order.orderNumber.toLowerCase().includes(searchTerm) ||
+                    order.items.some(item => item.name.toLowerCase().includes(searchTerm));
+                
+                // 탭 필터링
+                if (currentTab === 'processing') {
+                    return matchesSearch && ['received', 'arrived', 'repacking', 'billing'].includes(order.status);
+                } else if (currentTab === 'payment') {
+                    return matchesSearch && ['payment_pending', 'payment_confirmed'].includes(order.status);
+                } else if (currentTab === 'completed') {
+                    return matchesSearch && order.status === 'delivered';
+                }
+                
+                return matchesSearch;
+            });
+            
+            filteredOrders = filtered;
+            renderOrders();
+        }
+        
+        // 탭 카운트 업데이트
+        function updateTabCounts() {
+            const all = orders.length;
+            const processing = orders.filter(o => ['received', 'arrived', 'repacking', 'billing'].includes(o.status)).length;
+            const payment = orders.filter(o => ['payment_pending', 'payment_confirmed'].includes(o.status)).length;
+            const completed = orders.filter(o => o.status === 'delivered').length;
+            
+            document.getElementById('allCount').textContent = all;
+            document.getElementById('processingCount').textContent = processing;
+            document.getElementById('paymentCount').textContent = payment;
+            document.getElementById('completedCount').textContent = completed;
+        }
+        
+        // 페이지 네비게이션
+        function navigateToPage(page, options = {}) {
+            if (window.parent !== window) {
+                window.parent.postMessage({
+                    type: 'NAVIGATE',
+                    page: page,
+                    options: options
+                }, '*');
+            } else {
+                let url = `../${page}.html`;
+                if (options.orderId) url += `?orderId=${options.orderId}`;
+                window.location.href = url;
+            }
+        }
+        
+        // 이벤트 리스너 설정
+        document.addEventListener('DOMContentLoaded', function() {
+            // 데이터 초기화
+            orders = mockOrders;
+            filteredOrders = [...orders];
+            
+            // 탭 카운트 업데이트
+            updateTabCounts();
+            
+            // 초기 렌더링
+            renderOrders();
+            
+            // 검색 이벤트
+            document.getElementById('searchInput').addEventListener('input', applyFilters);
+            
+            // 탭 이벤트
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    // 활성 탭 변경
+                    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // 현재 탭 업데이트
+                    currentTab = this.dataset.tab;
+                    
+                    // 필터 적용
+                    applyFilters();
+                });
+            });
+            
+            // 모달 외부 클릭 시 닫기
+            document.getElementById('orderModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeModal();
+                }
+            });
+            
+            // ESC 키로 모달 닫기
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeModal();
+                }
+            });
+            
+            // 모달 버튼 이벤트
+            document.getElementById('downloadBillBtn').addEventListener('click', function() {
+                if (selectedOrder) {
+                    alert('청구서 다운로드 기능이 실행됩니다.');
+                }
+            });
+            
+            document.getElementById('paymentBtn').addEventListener('click', function() {
+                if (selectedOrder) {
+                    closeModal();
+                    navigateToPayment(selectedOrder.id);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

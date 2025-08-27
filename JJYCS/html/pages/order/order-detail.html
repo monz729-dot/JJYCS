@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>주문 상세 - YCS 물류 시스템</title>
+    <link rel="stylesheet" href="../../css/globals.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f0f4ff 0%, #ffffff 50%, #f0f4ff 100%);
+            min-height: 100vh;
+            padding: 16px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            space-y: 24px;
+        }
+        
+        /* 헤더 스타일 */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: transparent;
+            color: #2563eb;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .back-btn:hover {
+            background: rgba(37, 99, 235, 0.1);
+            color: #1d4ed8;
+        }
+        
+        .page-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1e3a8a;
+        }
+        
+        .page-subtitle {
+            font-size: 14px;
+            color: #2563eb;
+        }
+        
+        /* 카드 스타일 */
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(37, 99, 235, 0.15);
+            border: 1px solid rgba(37, 99, 235, 0.1);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+        
+        .card-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid rgba(37, 99, 235, 0.1);
+        }
+        
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1e3a8a;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .card-title .title-with-icon {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .card-content {
+            padding: 24px;
+        }
+        
+        /* 워크플로우 스타일 */
+        .progress-container {
+            margin-bottom: 24px;
+        }
+        
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        
+        .progress-bar {
+            height: 12px;
+            background: #e5e7eb;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            transition: width 0.5s ease;
+        }
+        
+        .workflow-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+        
+        .workflow-item {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid;
+            transition: all 0.3s;
+        }
+        
+        .workflow-item.completed {
+            background: rgba(34, 197, 94, 0.05);
+            border-color: #bbf7d0;
+        }
+        
+        .workflow-item.active {
+            background: rgba(37, 99, 235, 0.05);
+            border-color: #93c5fd;
+        }
+        
+        .workflow-item.pending {
+            background: #f9fafb;
+            border-color: #e5e7eb;
+        }
+        
+        .workflow-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .workflow-icon {
+            width: 16px;
+            height: 16px;
+        }
+        
+        .workflow-label {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .workflow-description {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+        
+        .workflow-date {
+            font-size: 11px;
+            color: #9ca3af;
+        }
+        
+        /* 배지 스타일 */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            font-size: 12px;
+            font-weight: 500;
+            border-radius: 6px;
+            border: 1px solid;
+        }
+        
+        .badge.default {
+            background: #22c55e;
+            color: white;
+            border-color: #22c55e;
+        }
+        
+        .badge.secondary {
+            background: #f3f4f6;
+            color: #6b7280;
+            border-color: #e5e7eb;
+        }
+        
+        .badge.outline {
+            background: transparent;
+            color: #2563eb;
+            border-color: #93c5fd;
+        }
+        
+        .badge.active {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+        
+        /* 정보 그리드 */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        
+        @media (max-width: 768px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+        }
+        
+        .info-row:not(:last-child) {
+            border-bottom: 1px solid rgba(37, 99, 235, 0.05);
+        }
+        
+        .info-label {
+            color: #2563eb;
+            font-size: 14px;
+        }
+        
+        .info-value {
+            font-weight: 500;
+            font-size: 14px;
+            color: #374151;
+        }
+        
+        .info-value.mono {
+            font-family: 'Courier New', monospace;
+        }
+        
+        /* 테이블 스타일 */
+        .table-container {
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        thead {
+            background: rgba(37, 99, 235, 0.03);
+        }
+        
+        th {
+            padding: 12px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            color: #1e3a8a;
+            border-bottom: 1px solid rgba(37, 99, 235, 0.1);
+        }
+        
+        th.center {
+            text-align: center;
+        }
+        
+        th.right {
+            text-align: right;
+        }
+        
+        td {
+            padding: 12px;
+            font-size: 14px;
+            border-bottom: 1px solid rgba(37, 99, 235, 0.05);
+        }
+        
+        td.center {
+            text-align: center;
+        }
+        
+        td.right {
+            text-align: right;
+        }
+        
+        /* 비용 상세 */
+        .cost-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .cost-label {
+            color: #4b5563;
+            font-size: 14px;
+        }
+        
+        .cost-amount {
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .cost-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: rgba(37, 99, 235, 0.05);
+            border-radius: 8px;
+            margin-top: 16px;
+        }
+        
+        .cost-total-label {
+            font-weight: 700;
+            font-size: 18px;
+            color: #1e3a8a;
+        }
+        
+        .cost-total-amount {
+            font-weight: 700;
+            font-size: 20px;
+            color: #1e3a8a;
+        }
+        
+        /* 알림 박스 */
+        .alert-box {
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        
+        .alert-box.warning {
+            background: rgba(251, 191, 36, 0.05);
+            border-color: #fcd34d;
+        }
+        
+        .alert-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .alert-icon {
+            width: 20px;
+            height: 20px;
+            color: #f59e0b;
+        }
+        
+        .alert-text {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .alert-title {
+            font-weight: 500;
+            color: #92400e;
+        }
+        
+        .alert-description {
+            font-size: 14px;
+            color: #b45309;
+        }
+        
+        /* 버튼 그룹 */
+        .button-group {
+            display: flex;
+            gap: 16px;
+            padding-bottom: 80px;
+            margin-top: 24px;
+        }
+        
+        .btn {
+            flex: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 0 24px;
+            height: 56px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            text-decoration: none;
+        }
+        
+        .btn-outline {
+            background: white;
+            color: #2563eb;
+            border: 1px solid #93c5fd;
+        }
+        
+        .btn-outline:hover {
+            background: rgba(37, 99, 235, 0.05);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            color: white;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+        }
+        
+        .btn-success {
+            background: #22c55e;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #16a34a;
+        }
+        
+        /* 사진 리스트 */
+        .photo-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .photo-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            font-size: 11px;
+            background: rgba(37, 99, 235, 0.05);
+            border: 1px solid #93c5fd;
+            border-radius: 4px;
+            color: #2563eb;
+        }
+        
+        /* 메모 박스 */
+        .memo-box {
+            padding: 12px;
+            background: rgba(37, 99, 235, 0.05);
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+        
+        .memo-text {
+            font-size: 14px;
+            color: #1e3a8a;
+        }
+        
+        /* 특별 요청사항 */
+        .special-request {
+            padding: 12px;
+            background: rgba(251, 191, 36, 0.05);
+            border: 1px solid #fcd34d;
+            border-radius: 8px;
+            color: #92400e;
+            font-size: 14px;
+        }
+        
+        .icon {
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 헤더 -->
+        <div class="header">
+            <button class="back-btn" onclick="navigateToPage('order-history')">
+                ← 주문내역으로
+            </button>
+            <div>
+                <h1 class="page-title">주문 상세</h1>
+                <p class="page-subtitle" id="orderNumber">YCS-240115-001 - 청구서 및 배송 정보</p>
+            </div>
+        </div>
+        
+        <!-- 워크플로우 현황 -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <div class="title-with-icon">
+                        🚚 배송 워크플로우
+                    </div>
+                    <span class="badge outline" id="workflowProgress">4/8 단계 완료</span>
+                </div>
+            </div>
+            <div class="card-content">
+                <div class="progress-container">
+                    <div class="progress-info">
+                        <span>진행률</span>
+                        <span id="progressPercent">50%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressBar" style="width: 50%"></div>
+                    </div>
+                </div>
+                
+                <div class="workflow-grid" id="workflowGrid">
+                    <!-- 워크플로우 항목들이 여기에 동적으로 추가됩니다 -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- 기본 정보 -->
+        <div class="info-grid">
+            <!-- 주문 정보 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="title-with-icon">
+                            # 주문 정보
+                        </div>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="info-row">
+                        <span class="info-label">주문번호</span>
+                        <span class="info-value mono" id="orderNum">YCS-240115-001</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">고객 아이디</span>
+                        <span class="info-value mono" id="customerId">KYP001</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">접수일</span>
+                        <span class="info-value" id="orderDate">2024-01-15</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">송장번호</span>
+                        <span class="info-value mono" id="trackingNum">EE123456789KR</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">배송유형</span>
+                        <span class="badge outline" id="shippingType">해상운송</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">목적지</span>
+                        <span class="info-value" id="destination">태국 (10110)</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 고객 정보 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="title-with-icon">
+                            👤 고객 정보
+                        </div>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="info-row">
+                        <span class="info-label">이름</span>
+                        <span class="info-value" id="customerName">김철수</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">이메일</span>
+                        <span class="info-value" id="customerEmail">kimcs@email.com</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">연락처</span>
+                        <span class="info-value" id="customerPhone">010-1234-5678</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">회원유형</span>
+                        <span class="badge outline" id="customerType">일반회원</span>
+                    </div>
+                    <div class="info-row" id="companyNameRow" style="display: none;">
+                        <span class="info-label">회사명</span>
+                        <span class="info-value" id="companyName"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 창고 정보 -->
+        <div class="card" id="warehouseCard" style="display: none;">
+            <div class="card-header">
+                <div class="card-title">
+                    <div class="title-with-icon">
+                        📦 YCS 창고 정보
+                    </div>
+                </div>
+            </div>
+            <div class="card-content">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+                    <div class="info-row">
+                        <span class="info-label">창고도착일</span>
+                        <span class="info-value" id="arrivedDate">2024-01-18</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">실제무게</span>
+                        <span class="info-value" id="actualWeight">2.5kg</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">리패킹</span>
+                        <div style="display: flex; gap: 8px;">
+                            <span class="badge default" id="repackingStatus">신청함</span>
+                            <span class="badge default" id="repackingComplete" style="font-size: 10px;">완료</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="photo-list" id="photoList">
+                    <!-- 사진 배지들이 여기에 추가됩니다 -->
+                </div>
+                
+                <div class="memo-box" id="warehouseMemo" style="display: none;">
+                    <p class="memo-text">
+                        <strong>창고 메모:</strong> <span id="warehouseNotes"></span>
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 청구서 정보 -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <div class="title-with-icon">
+                        📄 청구서 (Invoice)
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <span class="badge default" id="proformaStatus" style="display: none;">Proforma 발행</span>
+                        <span class="badge default" id="finalStatus" style="display: none;">Final 발행</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-content">
+                <!-- 청구서 발행 현황 -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                    <div style="padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-weight: 500; color: #7c3aed;">Proforma 청구서</span>
+                            <span class="badge" id="proformaBadge">미발행</span>
+                        </div>
+                        <p style="font-size: 14px; color: #6b7280;" id="proformaDate"></p>
+                    </div>
+                    
+                    <div style="padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-weight: 500; color: #7c3aed;">Final 청구서</span>
+                            <span class="badge secondary" id="finalBadge">미발행</span>
+                        </div>
+                        <p style="font-size: 14px; color: #6b7280;" id="finalDate"></p>
+                    </div>
+                </div>
+                
+                <!-- 비용 상세 -->
+                <div id="costDetails" style="display: none;">
+                    <h4 style="font-weight: 500; color: #1e3a8a; margin-bottom: 16px;">비용 상세</h4>
+                    <div id="costItems">
+                        <!-- 비용 항목들이 여기에 추가됩니다 -->
+                    </div>
+                </div>
+                
+                <!-- 결제 정보 -->
+                <div style="margin-top: 24px;">
+                    <h4 style="font-weight: 500; color: #1e3a8a; margin-bottom: 16px;">결제 정보</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="info-row">
+                            <span class="info-label">결제 방식</span>
+                            <span class="badge outline">무통장 입금</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">결제 상태</span>
+                            <span class="badge secondary" id="paymentStatus">입금대기</span>
+                        </div>
+                        <div class="info-row" id="depositorRow" style="display: none;">
+                            <span class="info-label">입금자명</span>
+                            <span class="info-value" id="depositorName"></span>
+                        </div>
+                        <div class="info-row" id="paymentDateRow" style="display: none;">
+                            <span class="info-label">입금일</span>
+                            <span class="info-value" id="paymentDate"></span>
+                        </div>
+                    </div>
+                    
+                    <!-- 입금 대기 알림 -->
+                    <div class="alert-box warning" id="paymentAlert" style="display: none;">
+                        <div class="alert-content">
+                            <span class="alert-icon">⏰</span>
+                            <div class="alert-text">
+                                <p class="alert-title">무통장 입금 대기 중</p>
+                                <p class="alert-description" id="paymentAmount"></p>
+                            </div>
+                        </div>
+                        <button class="btn btn-success" onclick="navigateToPayment()">
+                            💳 입금하기
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 품목 정보 -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <div class="title-with-icon">
+                        📦 품목 정보
+                    </div>
+                </div>
+            </div>
+            <div class="card-content">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>품목</th>
+                                <th class="center">수량</th>
+                                <th class="center">중량</th>
+                                <th class="center">크기(cm)</th>
+                                <th class="center">CBM</th>
+                                <th class="center">부피무게</th>
+                                <th class="right" id="priceHeader" style="display: none;">단가</th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemsTableBody">
+                            <!-- 품목들이 여기에 추가됩니다 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 수취인 정보 -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <div class="title-with-icon">
+                        📍 수취인 정보
+                    </div>
+                </div>
+            </div>
+            <div class="card-content">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="info-row">
+                        <span class="info-label">수취인 이름</span>
+                        <span class="info-value" id="recipientName">Somchai Jaidee</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">연락처</span>
+                        <span class="info-value" id="recipientPhone">+66-81-234-5678</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">우편번호</span>
+                        <span class="info-value" id="recipientPostalCode">10110</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">국가</span>
+                        <span class="info-value" id="recipientCountry">태국</span>
+                    </div>
+                </div>
+                <div style="margin-top: 16px;">
+                    <p class="info-label" style="margin-bottom: 8px;">배송지 주소</p>
+                    <p style="padding: 12px; background: #f9fafb; border-radius: 8px; font-weight: 500;" id="recipientAddress">
+                        123 Sukhumvit Road, Watthana District, Bangkok
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 특별 요청사항 -->
+        <div class="card" id="specialRequestCard" style="display: none;">
+            <div class="card-header">
+                <div class="card-title">
+                    <div class="title-with-icon">
+                        ⚠️ 특별 요청사항
+                    </div>
+                </div>
+            </div>
+            <div class="card-content">
+                <p class="special-request" id="specialRequest"></p>
+            </div>
+        </div>
+        
+        <!-- 하단 버튼 -->
+        <div class="button-group">
+            <button class="btn btn-outline" onclick="navigateToPage('order-history')">
+                주문내역으로
+            </button>
+            <button class="btn btn-outline" id="downloadBtn" style="display: none;" onclick="downloadInvoice()">
+                ⬇ 청구서 다운로드
+            </button>
+            <button class="btn btn-success" id="paymentBtn" style="display: none;" onclick="navigateToPayment()">
+                💳 입금하기
+            </button>
+        </div>
+    </div>
+    
+    <script src="../../js/utils.js"></script>
+    <script>
+        // 주문 상세 데이터
+        let orderDetail = null;
+        
+        // 페이지 초기화
+        function initPage() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const orderId = urlParams.get('orderId') || 'YCS-2024-001';
+            
+            loadOrderDetail(orderId);
+        }
+        
+        // 주문 상세 데이터 로드
+        function loadOrderDetail(orderId) {
+            // Mock 데이터
+            orderDetail = {
+                orderId: orderId,
+                orderNumber: 'YCS-240115-001',
+                customerId: 'KYP001',
+                orderDate: '2024-01-15',
+                status: 'payment_pending',
+                shippingType: 'sea',
+                country: 'thailand',
+                postalCode: '10110',
+                
+                customerName: '김철수',
+                customerEmail: 'kimcs@email.com',
+                customerPhone: '010-1234-5678',
+                customerType: 'general',
+                
+                recipientName: 'Somchai Jaidee',
+                recipientPhone: '+66-81-234-5678',
+                recipientAddress: '123 Sukhumvit Road, Watthana District, Bangkok',
+                recipientPostalCode: '10110',
+                
+                items: [
+                    {
+                        id: '1',
+                        hscode: '1905.31',
+                        description: '빼빼로 초콜릿',
+                        quantity: 10,
+                        weight: 1.5,
+                        width: 30,
+                        height: 20,
+                        depth: 5,
+                        unitPrice: 25.00,
+                        cbm: 0.003
+                    },
+                    {
+                        id: '2',
+                        hscode: '1806.32',
+                        description: '초콜릿 과자',
+                        quantity: 5,
+                        weight: 0.8,
+                        width: 20,
+                        height: 15,
+                        depth: 3,
+                        unitPrice: 15.00,
+                        cbm: 0.0009
+                    }
+                ],
+                
+                trackingNumber: 'EE123456789KR',
+                
+                warehouse: {
+                    arrivedDate: '2024-01-18',
+                    actualWeight: 2.5,
+                    repackingRequested: true,
+                    repackingCompleted: true,
+                    photos: ['arrival_240118.jpg', 'repacking_240118_1.jpg', 'repacking_240118_2.jpg'],
+                    notes: '상품 상태 양호, 1kg씩 3개 포장으로 분할 완료'
+                },
+                
+                billing: {
+                    proformaIssued: true,
+                    proformaDate: '2024-01-19',
+                    finalIssued: false,
+                    shippingFee: 85000,
+                    localDeliveryFee: 25000,
+                    repackingFee: 15000,
+                    handlingFee: 10000,
+                    insuranceFee: 2000,
+                    customsFee: 5000,
+                    tax: 9975,
+                    total: 151975,
+                    paymentMethod: 'manual_deposit',
+                    paymentStatus: 'pending',
+                    depositorName: '김철수'
+                },
+                
+                specialRequests: '깨지기 쉬운 상품이므로 신중히 포장 부탁드립니다.'
+            };
+            
+            renderOrderDetail();
+        }
+        
+        // 주문 상세 화면 렌더링
+        function renderOrderDetail() {
+            // 기본 정보 업데이트
+            document.getElementById('orderNumber').textContent = `${orderDetail.orderNumber} - 청구서 및 배송 정보`;
+            document.getElementById('orderNum').textContent = orderDetail.orderNumber;
+            document.getElementById('customerId').textContent = orderDetail.customerId;
+            document.getElementById('orderDate').textContent = orderDetail.orderDate;
+            document.getElementById('trackingNum').textContent = orderDetail.trackingNumber;
+            document.getElementById('shippingType').textContent = orderDetail.shippingType === 'air' ? '항공운송' : '해상운송';
+            document.getElementById('destination').textContent = `${getCountryName(orderDetail.country)} (${orderDetail.postalCode})`;
+            
+            // 고객 정보
+            document.getElementById('customerName').textContent = orderDetail.customerName;
+            document.getElementById('customerEmail').textContent = orderDetail.customerEmail;
+            document.getElementById('customerPhone').textContent = orderDetail.customerPhone;
+            document.getElementById('customerType').textContent = orderDetail.customerType === 'corporate' ? '기업회원' : '일반회원';
+            
+            if (orderDetail.companyName) {
+                document.getElementById('companyNameRow').style.display = 'flex';
+                document.getElementById('companyName').textContent = orderDetail.companyName;
+            }
+            
+            // 워크플로우 렌더링
+            renderWorkflow();
+            
+            // 창고 정보
+            if (orderDetail.warehouse.arrivedDate) {
+                document.getElementById('warehouseCard').style.display = 'block';
+                document.getElementById('arrivedDate').textContent = orderDetail.warehouse.arrivedDate;
+                document.getElementById('actualWeight').textContent = `${orderDetail.warehouse.actualWeight}kg`;
+                
+                if (orderDetail.warehouse.repackingRequested) {
+                    document.getElementById('repackingStatus').textContent = '신청함';
+                    document.getElementById('repackingComplete').style.display = orderDetail.warehouse.repackingCompleted ? 'inline-block' : 'none';
+                }
+                
+                // 사진 배지
+                const photoList = document.getElementById('photoList');
+                orderDetail.warehouse.photos.forEach((photo, index) => {
+                    const badge = document.createElement('div');
+                    badge.className = 'photo-badge';
+                    badge.innerHTML = `📷 ${photo.includes('arrival') ? '도착사진' : '리패킹사진'} ${index + 1}`;
+                    photoList.appendChild(badge);
+                });
+                
+                // 창고 메모
+                if (orderDetail.warehouse.notes) {
+                    document.getElementById('warehouseMemo').style.display = 'block';
+                    document.getElementById('warehouseNotes').textContent = orderDetail.warehouse.notes;
+                }
+            }
+            
+            // 청구서 정보
+            renderBilling();
+            
+            // 품목 정보
+            renderItems();
+            
+            // 수취인 정보
+            document.getElementById('recipientName').textContent = orderDetail.recipientName;
+            document.getElementById('recipientPhone').textContent = orderDetail.recipientPhone;
+            document.getElementById('recipientPostalCode').textContent = orderDetail.recipientPostalCode;
+            document.getElementById('recipientCountry').textContent = getCountryName(orderDetail.country);
+            document.getElementById('recipientAddress').textContent = orderDetail.recipientAddress;
+            
+            // 특별 요청사항
+            if (orderDetail.specialRequests) {
+                document.getElementById('specialRequestCard').style.display = 'block';
+                document.getElementById('specialRequest').textContent = orderDetail.specialRequests;
+            }
+            
+            // 버튼 표시
+            if (orderDetail.billing.proformaIssued) {
+                document.getElementById('downloadBtn').style.display = 'flex';
+            }
+            
+            if (orderDetail.status === 'payment_pending' && orderDetail.billing.paymentStatus === 'pending') {
+                document.getElementById('paymentBtn').style.display = 'flex';
+            }
+        }
+        
+        // 워크플로우 렌더링
+        function renderWorkflow() {
+            const workflowStatuses = [
+                { key: 'received', label: '접수완료', icon: '✅', description: '우체국 송장번호 등록', completed: true, active: false, date: orderDetail.orderDate },
+                { key: 'arrived', label: 'YCS창고도착', icon: '📦', description: '창고 도착, 무게 확인', completed: !!orderDetail.warehouse.arrivedDate, active: orderDetail.status === 'arrived', date: orderDetail.warehouse.arrivedDate },
+                { key: 'repacking', label: '리패킹진행', icon: '🔧', description: '리패킹 작업 및 사진 업로드', completed: orderDetail.warehouse.repackingCompleted, active: orderDetail.status === 'repacking' },
+                { key: 'billing', label: '청구서발행', icon: '📄', description: '최종 비용 산정', completed: orderDetail.billing.proformaIssued, active: orderDetail.status === 'billing', date: orderDetail.billing.proformaDate },
+                { key: 'payment_pending', label: '입금대기', icon: '⏰', description: '무통장 입금 대기', completed: orderDetail.billing.paymentStatus === 'confirmed' || orderDetail.billing.paymentStatus === 'completed', active: orderDetail.status === 'payment_pending' },
+                { key: 'payment_confirmed', label: '입금확인', icon: '💳', description: '입금 확인 완료', completed: orderDetail.billing.paymentStatus === 'completed', active: orderDetail.status === 'payment_confirmed', date: orderDetail.billing.paymentDate },
+                { key: 'shipping', label: '배송중', icon: '🚚', description: '태국 현지 배송', completed: orderDetail.status === 'delivered', active: orderDetail.status === 'shipping' },
+                { key: 'delivered', label: '배송완료', icon: '✅', description: '최종 배송 완료', completed: orderDetail.status === 'delivered', active: false }
+            ];
+            
+            const completedSteps = workflowStatuses.filter(s => s.completed).length;
+            const progressValue = (completedSteps / workflowStatuses.length) * 100;
+            
+            document.getElementById('workflowProgress').textContent = `${completedSteps}/${workflowStatuses.length} 단계 완료`;
+            document.getElementById('progressPercent').textContent = `${Math.round(progressValue)}%`;
+            document.getElementById('progressBar').style.width = `${progressValue}%`;
+            
+            const workflowGrid = document.getElementById('workflowGrid');
+            workflowGrid.innerHTML = '';
+            
+            workflowStatuses.forEach(status => {
+                const item = document.createElement('div');
+                item.className = `workflow-item ${status.completed ? 'completed' : status.active ? 'active' : 'pending'}`;
+                
+                let statusBadge = '';
+                if (status.active) {
+                    statusBadge = '<span class="badge active" style="font-size: 10px;">진행중</span>';
+                } else if (status.completed && !status.active) {
+                    statusBadge = '<span class="badge default" style="font-size: 10px;">완료</span>';
+                }
+                
+                item.innerHTML = `
+                    <div class="workflow-header">
+                        <span class="workflow-icon">${status.icon}</span>
+                        <span class="workflow-label" style="color: ${status.completed ? '#059669' : status.active ? '#2563eb' : '#6b7280'}">
+                            ${status.label}
+                        </span>
+                    </div>
+                    <p class="workflow-description">${status.description}</p>
+                    ${status.date ? `<p class="workflow-date">${status.date}</p>` : ''}
+                    ${statusBadge ? `<div style="margin-top: 8px;">${statusBadge}</div>` : ''}
+                `;
+                
+                workflowGrid.appendChild(item);
+            });
+        }
+        
+        // 청구서 정보 렌더링
+        function renderBilling() {
+            // 청구서 발행 상태
+            if (orderDetail.billing.proformaIssued) {
+                document.getElementById('proformaStatus').style.display = 'inline-block';
+                document.getElementById('proformaBadge').className = 'badge default';
+                document.getElementById('proformaBadge').textContent = '발행완료';
+                if (orderDetail.billing.proformaDate) {
+                    document.getElementById('proformaDate').textContent = `발행일: ${orderDetail.billing.proformaDate}`;
+                }
+            } else {
+                document.getElementById('proformaBadge').className = 'badge secondary';
+                document.getElementById('proformaBadge').textContent = '미발행';
+            }
+            
+            if (orderDetail.billing.finalIssued) {
+                document.getElementById('finalStatus').style.display = 'inline-block';
+                document.getElementById('finalBadge').className = 'badge default';
+                document.getElementById('finalBadge').textContent = '발행완료';
+                if (orderDetail.billing.finalDate) {
+                    document.getElementById('finalDate').textContent = `발행일: ${orderDetail.billing.finalDate}`;
+                }
+            }
+            
+            // 비용 상세
+            if (orderDetail.billing.proformaIssued) {
+                document.getElementById('costDetails').style.display = 'block';
+                const costItems = document.getElementById('costItems');
+                
+                const costs = [
+                    { label: '기본 배송비', amount: orderDetail.billing.shippingFee },
+                    { label: '현지 배송비', amount: orderDetail.billing.localDeliveryFee }
+                ];
+                
+                if (orderDetail.billing.repackingFee > 0) {
+                    costs.push({ label: '리패킹 비용', amount: orderDetail.billing.repackingFee });
+                }
+                
+                costs.push(
+                    { label: '취급 수수료', amount: orderDetail.billing.handlingFee },
+                    { label: '보험료', amount: orderDetail.billing.insuranceFee },
+                    { label: '통관 수수료', amount: orderDetail.billing.customsFee }
+                );
+                
+                let html = '';
+                costs.forEach(item => {
+                    html += `
+                        <div class="cost-item">
+                            <span class="cost-label">${item.label}</span>
+                            <span class="cost-amount">${formatCurrency(item.amount)}</span>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                    <div class="cost-item">
+                        <span class="cost-label">TAX 7%</span>
+                        <span class="cost-amount">${formatCurrency(orderDetail.billing.tax)}</span>
+                    </div>
+                    <div class="cost-total">
+                        <span class="cost-total-label">총 결제금액</span>
+                        <span class="cost-total-amount">${formatCurrency(orderDetail.billing.total)}</span>
+                    </div>
+                `;
+                
+                costItems.innerHTML = html;
+            }
+            
+            // 결제 상태
+            const paymentStatusBadge = document.getElementById('paymentStatus');
+            switch (orderDetail.billing.paymentStatus) {
+                case 'completed':
+                    paymentStatusBadge.className = 'badge default';
+                    paymentStatusBadge.textContent = '입금완료';
+                    break;
+                case 'confirmed':
+                    paymentStatusBadge.className = 'badge default';
+                    paymentStatusBadge.textContent = '입금확인';
+                    break;
+                case 'pending':
+                    paymentStatusBadge.className = 'badge secondary';
+                    paymentStatusBadge.textContent = '입금대기';
+                    break;
+                default:
+                    paymentStatusBadge.className = 'badge outline';
+                    paymentStatusBadge.textContent = '미준비';
+            }
+            
+            if (orderDetail.billing.depositorName) {
+                document.getElementById('depositorRow').style.display = 'flex';
+                document.getElementById('depositorName').textContent = orderDetail.billing.depositorName;
+            }
+            
+            if (orderDetail.billing.paymentDate) {
+                document.getElementById('paymentDateRow').style.display = 'flex';
+                document.getElementById('paymentDate').textContent = orderDetail.billing.paymentDate;
+            }
+            
+            // 입금 대기 알림
+            if (orderDetail.status === 'payment_pending' && orderDetail.billing.paymentStatus === 'pending') {
+                document.getElementById('paymentAlert').style.display = 'flex';
+                document.getElementById('paymentAmount').textContent = `결제금액: ${formatCurrency(orderDetail.billing.total)}`;
+            }
+        }
+        
+        // 품목 정보 렌더링
+        function renderItems() {
+            const tbody = document.getElementById('itemsTableBody');
+            let html = '';
+            
+            if (orderDetail.customerType === 'corporate') {
+                document.getElementById('priceHeader').style.display = 'table-cell';
+            }
+            
+            orderDetail.items.forEach(item => {
+                const volumetricWeight = (item.width * item.height * item.depth) / 6000;
+                
+                html += `
+                    <tr>
+                        <td>
+                            ${orderDetail.customerType === 'corporate' ? `<p style="font-size: 11px; color: #9ca3af; margin-bottom: 4px; font-family: monospace;">${item.hscode}</p>` : ''}
+                            <p style="font-weight: 500;">${item.description}</p>
+                        </td>
+                        <td class="center">${item.quantity}개</td>
+                        <td class="center">${item.weight}kg</td>
+                        <td class="center">${item.width}×${item.height}×${item.depth}</td>
+                        <td class="center">
+                            <span class="badge outline" style="font-size: 11px;">
+                                🧮 ${item.cbm}m³
+                            </span>
+                        </td>
+                        <td class="center">${volumetricWeight.toFixed(2)}kg</td>
+                        ${orderDetail.customerType === 'corporate' ? `<td class="right">$${item.unitPrice.toFixed(2)}</td>` : ''}
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+        
+        // 국가명 변환
+        function getCountryName(country) {
+            const countries = {
+                'thailand': '태국',
+                'vietnam': '베트남',
+                'philippines': '필리핀',
+                'indonesia': '인도네시아'
+            };
+            return countries[country] || country;
+        }
+        
+        // 통화 포맷
+        function formatCurrency(amount, currency = 'THB') {
+            if (currency === 'KRW') {
+                return new Intl.NumberFormat('ko-KR').format(amount) + '원';
+            }
+            return new Intl.NumberFormat('ko-KR').format(amount) + ' THB';
+        }
+        
+        // 페이지 네비게이션
+        function navigateToPage(page, options = {}) {
+            if (window.parent !== window) {
+                window.parent.postMessage({
+                    type: 'NAVIGATE',
+                    page: page,
+                    options: options
+                }, '*');
+            } else {
+                window.location.href = `../${page}.html`;
+            }
+        }
+        
+        // 결제 페이지로 이동
+        function navigateToPayment() {
+            navigateToPage('payment', { orderId: orderDetail.orderId });
+        }
+        
+        // 청구서 다운로드
+        function downloadInvoice() {
+            window.print();
+        }
+        
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', initPage);
+    </script>
+</body>
+</html>

@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>파트너 네비게이션 - YCS 파트너 시스템</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/umd/lucide.min.js"></script>
+    <style>
+        .gradient-logo {
+            background: linear-gradient(to right, #3b82f6, #2563eb);
+        }
+        
+        .nav-active {
+            color: #2563eb;
+            background-color: #eff6ff;
+        }
+        
+        .nav-inactive {
+            color: #60a5fa;
+        }
+        
+        .nav-inactive:hover {
+            color: #2563eb;
+            background-color: #eff6ff;
+        }
+        
+        .nav-icon-active {
+            transform: scale(1.1);
+        }
+        
+        .nav-icon-inactive {
+            transform: scale(1.0);
+        }
+        
+        .active-indicator {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2rem;
+            height: 0.25rem;
+            background-color: #2563eb;
+            border-radius: 9999px;
+        }
+        
+        .page-title-mapping {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- 상단 헤더 -->
+    <header class="bg-white border-b border-blue-100 shadow-sm sticky top-0 z-40">
+        <div class="flex items-center justify-between px-4 py-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 gradient-logo rounded-full flex items-center justify-center shadow-lg">
+                    <span class="text-white font-bold">YCS</span>
+                </div>
+                <div>
+                    <h1 class="font-semibold text-blue-900">YCS 파트너 시스템</h1>
+                    <p id="currentPageTitle" class="text-xs text-blue-600">파트너 대시보드</p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button 
+                    onclick="navigateToPage('page-list')"
+                    class="text-sm text-purple-600 hover:text-purple-700 hover:bg-purple-50 px-3 py-1 rounded-full transition-colors"
+                >
+                    페이지목록
+                </button>
+                <button 
+                    onclick="handleLogout()"
+                    class="text-sm text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-1 rounded-full transition-colors flex items-center gap-1"
+                >
+                    <i data-lucide="log-out" class="h-4 w-4"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 메인 콘텐츠 영역 (데모용) -->
+    <main class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 p-4">
+        <div class="max-w-4xl mx-auto">
+            <div class="bg-white rounded-lg shadow-sm border border-blue-100 p-6">
+                <div class="text-center">
+                    <div class="w-16 h-16 gradient-logo rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i id="currentPageIcon" data-lucide="home" class="h-8 w-8 text-white"></i>
+                    </div>
+                    <h2 id="currentPageHeading" class="text-2xl font-bold text-blue-900 mb-2">파트너 대시보드</h2>
+                    <p id="currentPageDescription" class="text-blue-600 mb-6">파트너 대시보드</p>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-8">
+                        <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <i data-lucide="home" class="h-6 w-6 text-blue-600 mx-auto mb-2"></i>
+                            <p class="text-sm text-blue-700 font-medium">홈</p>
+                            <p class="text-xs text-blue-600">대시보드</p>
+                        </div>
+                        <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <i data-lucide="truck" class="h-6 w-6 text-blue-600 mx-auto mb-2"></i>
+                            <p class="text-sm text-blue-700 font-medium">업무</p>
+                            <p class="text-xs text-blue-600">창고 및 청구서</p>
+                        </div>
+                        <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <i data-lucide="package" class="h-6 w-6 text-blue-600 mx-auto mb-2"></i>
+                            <p class="text-sm text-blue-700 font-medium">주문</p>
+                            <p class="text-xs text-blue-600">주문 관리</p>
+                        </div>
+                        <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <i data-lucide="list" class="h-6 w-6 text-blue-600 mx-auto mb-2"></i>
+                            <p class="text-sm text-blue-700 font-medium">전체</p>
+                            <p class="text-xs text-blue-600">전체 페이지</p>
+                        </div>
+                        <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <i data-lucide="settings" class="h-6 w-6 text-blue-600 mx-auto mb-2"></i>
+                            <p class="text-sm text-blue-700 font-medium">내정보</p>
+                            <p class="text-xs text-blue-600">파트너 설정</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 하단 여백 (네비게이션 공간) -->
+        <div class="pb-20"></div>
+    </main>
+
+    <!-- 하단 네비게이션 -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-blue-100 shadow-lg z-50">
+        <div class="grid grid-cols-5 h-16">
+            <button
+                id="nav-partner-dashboard"
+                onclick="navigateToPage('partner-dashboard')"
+                class="nav-item flex flex-col items-center justify-center gap-1 transition-all duration-300 nav-active relative"
+            >
+                <div class="nav-icon transition-transform duration-300 nav-icon-active">
+                    <i data-lucide="home" class="h-5 w-5"></i>
+                </div>
+                <span class="text-xs transition-all duration-300 font-medium">홈</span>
+                <div class="active-indicator"></div>
+            </button>
+            
+            <button
+                id="nav-partner-tasks"
+                onclick="navigateToPage('partner-tasks')"
+                class="nav-item flex flex-col items-center justify-center gap-1 transition-all duration-300 nav-inactive relative"
+            >
+                <div class="nav-icon transition-transform duration-300 nav-icon-inactive">
+                    <i data-lucide="truck" class="h-5 w-5"></i>
+                </div>
+                <span class="text-xs transition-all duration-300">업무</span>
+            </button>
+            
+            <button
+                id="nav-partner-orders"
+                onclick="navigateToPage('partner-orders')"
+                class="nav-item flex flex-col items-center justify-center gap-1 transition-all duration-300 nav-inactive relative"
+            >
+                <div class="nav-icon transition-transform duration-300 nav-icon-inactive">
+                    <i data-lucide="package" class="h-5 w-5"></i>
+                </div>
+                <span class="text-xs transition-all duration-300">주문</span>
+            </button>
+            
+            <button
+                id="nav-page-list"
+                onclick="navigateToPage('page-list')"
+                class="nav-item flex flex-col items-center justify-center gap-1 transition-all duration-300 nav-inactive relative"
+            >
+                <div class="nav-icon transition-transform duration-300 nav-icon-inactive">
+                    <i data-lucide="list" class="h-5 w-5"></i>
+                </div>
+                <span class="text-xs transition-all duration-300">전체</span>
+            </button>
+            
+            <button
+                id="nav-mypage"
+                onclick="navigateToPage('mypage')"
+                class="nav-item flex flex-col items-center justify-center gap-1 transition-all duration-300 nav-inactive relative"
+            >
+                <div class="nav-icon transition-transform duration-300 nav-icon-inactive">
+                    <i data-lucide="settings" class="h-5 w-5"></i>
+                </div>
+                <span class="text-xs transition-all duration-300">내정보</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- 페이지 제목 매핑 데이터 (숨김) -->
+    <div class="page-title-mapping">
+        <div data-page="partner-dashboard" data-title="파트너 대시보드" data-icon="home" data-heading="파트너 대시보드" data-description="파트너 대시보드"></div>
+        <div data-page="partner-tasks" data-title="파트너 업무" data-icon="truck" data-heading="파트너 업무" data-description="창고 및 청구서 업무"></div>
+        <div data-page="partner-orders" data-title="주문 관리" data-icon="package" data-heading="주문 관리" data-description="주문 관리"></div>
+        <div data-page="partner-history" data-title="업무 이력" data-icon="clock" data-heading="업무 이력" data-description="업무 이력"></div>
+        <div data-page="partner-settlement" data-title="정산 관리" data-icon="bar-chart-3" data-heading="정산 관리" data-description="정산 관리"></div>
+        <div data-page="mypage" data-title="파트너 설정" data-icon="settings" data-heading="파트너 설정" data-description="파트너 설정"></div>
+        <div data-page="page-list" data-title="전체 페이지 목록" data-icon="list" data-heading="전체 페이지 목록" data-description="전체 페이지"></div>
+    </div>
+
+    <script>
+        // 전역 변수
+        let currentPage = 'partner-dashboard';
+
+        // 네비게이션 아이템 정의
+        const navigationItems = [
+            {
+                id: 'partner-dashboard',
+                label: '홈',
+                icon: 'home',
+                description: '파트너 대시보드'
+            },
+            {
+                id: 'partner-tasks',
+                label: '업무',
+                icon: 'truck',
+                description: '창고 및 청구서 업무'
+            },
+            {
+                id: 'partner-orders',
+                label: '주문',
+                icon: 'package',
+                description: '주문 관리'
+            },
+            {
+                id: 'page-list',
+                label: '전체',
+                icon: 'list',
+                description: '전체 페이지'
+            },
+            {
+                id: 'mypage',
+                label: '내정보',
+                icon: 'settings',
+                description: '파트너 설정'
+            }
+        ];
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+            updatePageInfo(currentPage);
+        });
+
+        // 페이지 네비게이션 함수
+        function navigateToPage(pageId) {
+            if (currentPage === pageId) return;
+            
+            currentPage = pageId;
+            updateNavigation();
+            updatePageInfo(pageId);
+            
+            // 실제 앱에서는 여기서 페이지 라우팅 또는 콘텐츠 변경
+            console.log(`Navigate to: ${pageId}`);
+        }
+
+        // 네비게이션 상태 업데이트
+        function updateNavigation() {
+            // 모든 네비게이션 아이템 비활성화
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('nav-active', 'font-medium');
+                item.classList.add('nav-inactive');
+                
+                const icon = item.querySelector('.nav-icon');
+                icon.classList.remove('nav-icon-active');
+                icon.classList.add('nav-icon-inactive');
+                
+                const text = item.querySelector('span');
+                text.classList.remove('font-medium');
+                
+                // 기존 active indicator 제거
+                const existingIndicator = item.querySelector('.active-indicator');
+                if (existingIndicator) {
+                    existingIndicator.remove();
+                }
+            });
+
+            // 현재 페이지 활성화
+            const activeItem = document.getElementById(`nav-${currentPage}`);
+            if (activeItem) {
+                activeItem.classList.remove('nav-inactive');
+                activeItem.classList.add('nav-active');
+                
+                const icon = activeItem.querySelector('.nav-icon');
+                icon.classList.remove('nav-icon-inactive');
+                icon.classList.add('nav-icon-active');
+                
+                const text = activeItem.querySelector('span');
+                text.classList.add('font-medium');
+                
+                // active indicator 추가
+                const indicator = document.createElement('div');
+                indicator.className = 'active-indicator';
+                activeItem.appendChild(indicator);
+            }
+        }
+
+        // 페이지 정보 업데이트
+        function updatePageInfo(pageId) {
+            const mappingElement = document.querySelector(`[data-page="${pageId}"]`);
+            if (mappingElement) {
+                const title = mappingElement.getAttribute('data-title');
+                const icon = mappingElement.getAttribute('data-icon');
+                const heading = mappingElement.getAttribute('data-heading');
+                const description = mappingElement.getAttribute('data-description');
+                
+                // 헤더 제목 업데이트
+                document.getElementById('currentPageTitle').textContent = title;
+                
+                // 메인 콘텐츠 업데이트
+                const iconElement = document.getElementById('currentPageIcon');
+                iconElement.setAttribute('data-lucide', icon);
+                document.getElementById('currentPageHeading').textContent = heading;
+                document.getElementById('currentPageDescription').textContent = description;
+                
+                // 아이콘 다시 생성
+                lucide.createIcons();
+            }
+        }
+
+        // 로그아웃 처리
+        function handleLogout() {
+            if (confirm('로그아웃 하시겠습니까?')) {
+                // 실제 앱에서는 세션 정리 및 로그인 페이지로 이동
+                alert('로그아웃 되었습니다.');
+                console.log('Logout requested');
+            }
+        }
+
+        // 데모용 - 키보드 네비게이션
+        document.addEventListener('keydown', function(e) {
+            const currentIndex = navigationItems.findIndex(item => item.id === currentPage);
+            
+            if (e.key === 'ArrowLeft' && currentIndex > 0) {
+                e.preventDefault();
+                navigateToPage(navigationItems[currentIndex - 1].id);
+            } else if (e.key === 'ArrowRight' && currentIndex < navigationItems.length - 1) {
+                e.preventDefault();
+                navigateToPage(navigationItems[currentIndex + 1].id);
+            }
+        });
+
+        // 터치 스와이프 지원 (모바일)
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        document.addEventListener('touchend', function(e) {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            const diff = touchStartX - touchEndX;
+            
+            if (Math.abs(diff) > swipeThreshold) {
+                const currentIndex = navigationItems.findIndex(item => item.id === currentPage);
+                
+                if (diff > 0 && currentIndex < navigationItems.length - 1) {
+                    // 왼쪽으로 스와이프 (다음 페이지)
+                    navigateToPage(navigationItems[currentIndex + 1].id);
+                } else if (diff < 0 && currentIndex > 0) {
+                    // 오른쪽으로 스와이프 (이전 페이지)
+                    navigateToPage(navigationItems[currentIndex - 1].id);
+                }
+            }
+        }
+    </script>
+</body>
+</html>

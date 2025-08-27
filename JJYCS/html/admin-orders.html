@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YCS 물류 시스템 - 주문 관리</title>
+    <link rel="stylesheet" href="css/globals.css">
+    <style>
+        .page-container {
+            background: var(--gray-50);
+            min-height: 100vh;
+            padding-bottom: 5rem;
+        }
+        
+        .header {
+            background: white;
+            border-bottom: 1px solid var(--danger-200);
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+        
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.5rem 1rem;
+        }
+        
+        .filters {
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .filter-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        
+        .orders-section {
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 0.75rem;
+            overflow: hidden;
+        }
+        
+        .section-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+            background: var(--gray-50);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .section-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin: 0;
+        }
+        
+        .bulk-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .orders-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .orders-table th {
+            background: var(--gray-50);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-700);
+            border-bottom: 1px solid var(--gray-200);
+        }
+        
+        .orders-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--gray-100);
+            vertical-align: middle;
+        }
+        
+        .orders-table tr:hover {
+            background: var(--gray-50);
+        }
+        
+        .order-checkbox {
+            width: 1rem;
+            height: 1rem;
+            accent-color: var(--danger-600);
+        }
+        
+        .order-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .order-number {
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+        
+        .order-customer {
+            font-size: 0.875rem;
+            color: var(--gray-600);
+        }
+        
+        .order-items {
+            font-size: 0.875rem;
+            color: var(--gray-600);
+        }
+        
+        .order-value {
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+        
+        .order-date {
+            font-size: 0.875rem;
+            color: var(--gray-600);
+        }
+        
+        .order-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        
+        .mobile-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid var(--gray-200);
+            display: flex;
+            padding: 0.75rem 0;
+            z-index: 50;
+        }
+        
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.5rem;
+            text-decoration: none;
+            color: var(--gray-600);
+            transition: color 0.2s ease;
+        }
+        
+        .nav-item.active {
+            color: var(--danger-600);
+        }
+        
+        .nav-icon {
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+        
+        .nav-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        @media (max-width: 768px) {
+            .orders-table {
+                display: none;
+            }
+            
+            .mobile-orders {
+                display: block;
+                padding: 1rem;
+            }
+            
+            .mobile-order-card {
+                background: white;
+                border: 1px solid var(--gray-200);
+                border-radius: 0.5rem;
+                padding: 1rem;
+                margin-bottom: 0.75rem;
+                box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            }
+            
+            .mobile-order-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 0.75rem;
+            }
+            
+            .mobile-order-content {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 0.5rem;
+                margin-bottom: 1rem;
+            }
+            
+            .mobile-order-field {
+                display: flex;
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+            
+            .mobile-field-label {
+                font-size: 0.75rem;
+                color: var(--gray-600);
+                font-weight: 500;
+            }
+            
+            .mobile-field-value {
+                font-size: 0.875rem;
+                color: var(--gray-900);
+            }
+            
+            .mobile-order-actions {
+                display: flex;
+                gap: 0.5rem;
+                padding-top: 0.75rem;
+                border-top: 1px solid var(--gray-200);
+            }
+        }
+        
+        @media (min-width: 769px) {
+            .mobile-orders {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body class="theme-admin">
+    <div class="page-container">
+        <!-- 헤더 -->
+        <header class="header">
+            <div class="header-content">
+                <div class="header-left">
+                    <div class="logo ycs-logo">YCS</div>
+                    <div class="header-info">
+                        <h1>주문 관리</h1>
+                        <p class="header-subtitle">주문 승인 및 배송 처리</p>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <button class="btn btn-primary" onclick="exportOrders()">내보내기</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- 필터 -->
+            <div class="filters">
+                <div class="filter-grid">
+                    <div class="form-group">
+                        <label class="form-label">상태</label>
+                        <select class="form-select" id="statusFilter">
+                            <option value="">전체</option>
+                            <option value="requested">접수</option>
+                            <option value="preparing">처리중</option>
+                            <option value="shipping">배송중</option>
+                            <option value="completed">완료</option>
+                            <option value="delayed">지연</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">고객 유형</label>
+                        <select class="form-select" id="customerTypeFilter">
+                            <option value="">전체</option>
+                            <option value="general">개인</option>
+                            <option value="corporate">기업</option>
+                            <option value="partner">파트너</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">날짜 범위</label>
+                        <input type="date" class="form-input" id="dateFrom">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">~</label>
+                        <input type="date" class="form-input" id="dateTo">
+                    </div>
+                </div>
+                
+                <div class="filter-actions">
+                    <button class="btn btn-primary" onclick="applyFilters()">필터 적용</button>
+                    <button class="btn btn-outline" onclick="resetFilters()">초기화</button>
+                    <input type="text" class="form-input" placeholder="주문번호 또는 고객명 검색" id="searchInput" style="min-width: 250px;">
+                </div>
+            </div>
+
+            <!-- 주문 목록 -->
+            <div class="orders-section">
+                <div class="section-header">
+                    <h2 class="section-title">주문 목록 (234개)</h2>
+                    <div class="bulk-actions">
+                        <button class="btn btn-sm btn-primary" onclick="bulkApprove()" id="bulkApproveBtn" disabled>
+                            선택 승인
+                        </button>
+                        <button class="btn btn-sm btn-outline" onclick="bulkExport()" id="bulkExportBtn" disabled>
+                            선택 내보내기
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 데스크톱 테이블 -->
+                <table class="orders-table">
+                    <thead>
+                        <tr>
+                            <th>
+                                <input type="checkbox" class="order-checkbox" id="selectAll" onchange="toggleSelectAll()">
+                            </th>
+                            <th>주문 정보</th>
+                            <th>고객</th>
+                            <th>품목</th>
+                            <th>배송비</th>
+                            <th>상태</th>
+                            <th>주문일</th>
+                            <th>작업</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ordersTableBody">
+                        <!-- 주문 데이터가 여기에 동적으로 삽입됩니다 -->
+                    </tbody>
+                </table>
+                
+                <!-- 모바일 카드 -->
+                <div class="mobile-orders" id="mobileOrdersList">
+                    <!-- 모바일 주문 카드가 여기에 동적으로 삽입됩니다 -->
+                </div>
+            </div>
+        </main>
+
+        <!-- 모바일 네비게이션 -->
+        <nav class="mobile-nav">
+            <a href="dashboard-admin.html" class="nav-item">
+                <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
+                </svg>
+                <span class="nav-label">대시보드</span>
+            </a>
+            <a href="admin-orders.html" class="nav-item active">
+                <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                <span class="nav-label">주문</span>
+            </a>
+            <a href="admin-users.html" class="nav-item">
+                <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
+                </svg>
+                <span class="nav-label">사용자</span>
+            </a>
+            <a href="admin-warehouse.html" class="nav-item">
+                <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
+                </svg>
+                <span class="nav-label">창고</span>
+            </a>
+            <a href="index.html" class="nav-item">
+                <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd"/>
+                </svg>
+                <span class="nav-label">메뉴</span>
+            </a>
+        </nav>
+    </div>
+
+    <script>
+        // 샘플 주문 데이터
+        const orders = [
+            {
+                id: 'YCS240822001',
+                customer: '김개발',
+                customerType: 'general',
+                items: '전자제품 5개',
+                value: '₩125,000',
+                status: 'requested',
+                date: '2024-08-22',
+                cbm: '2.5m³'
+            },
+            {
+                id: 'YCS240822002',
+                customer: '테크코퍼레이션',
+                customerType: 'corporate',
+                items: '의류 25개',
+                value: '₩450,000',
+                status: 'preparing',
+                date: '2024-08-22',
+                cbm: '8.3m³'
+            },
+            {
+                id: 'YCS240822003',
+                customer: '마케팅파트너스',
+                customerType: 'partner',
+                items: '생활용품 12개',
+                value: '₩280,000',
+                status: 'shipping',
+                date: '2024-08-21',
+                cbm: '15.7m³'
+            },
+            {
+                id: 'YCS240821001',
+                customer: '이디자인',
+                customerType: 'general',
+                items: '가전제품 3개',
+                value: '₩890,000',
+                status: 'completed',
+                date: '2024-08-21',
+                cbm: '45.2m³'
+            },
+            {
+                id: 'YCS240821002',
+                customer: '글로벌트레이딩',
+                customerType: 'corporate',
+                items: '산업자재 50개',
+                value: '₩1,250,000',
+                status: 'delayed',
+                date: '2024-08-20',
+                cbm: '125.8m³'
+            }
+        ];
+
+        const statusLabels = {
+            requested: { label: '접수', class: 'status-requested' },
+            preparing: { label: '처리중', class: 'status-preparing' },
+            shipping: { label: '배송중', class: 'status-shipping' },
+            completed: { label: '완료', class: 'status-completed' },
+            delayed: { label: '지연', class: 'status-delayed' }
+        };
+
+        const customerTypeLabels = {
+            general: '개인',
+            corporate: '기업',
+            partner: '파트너'
+        };
+
+        let selectedOrders = new Set();
+
+        // 페이지 로드 시 주문 목록 렌더링
+        document.addEventListener('DOMContentLoaded', function() {
+            renderOrders(orders);
+        });
+
+        // 주문 목록 렌더링
+        function renderOrders(orderList) {
+            const tableBody = document.getElementById('ordersTableBody');
+            const mobileList = document.getElementById('mobileOrdersList');
+            
+            // 데스크톱 테이블 렌더링
+            tableBody.innerHTML = orderList.map(order => `
+                <tr>
+                    <td>
+                        <input type="checkbox" class="order-checkbox" value="${order.id}" onchange="toggleOrderSelection('${order.id}')">
+                    </td>
+                    <td>
+                        <div class="order-info">
+                            <div class="order-number">${order.id}</div>
+                            <div class="order-items">${order.cbm}</div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="order-customer">${order.customer}</div>
+                        <div style="font-size: 0.75rem; color: var(--gray-500);">${customerTypeLabels[order.customerType]}</div>
+                    </td>
+                    <td class="order-items">${order.items}</td>
+                    <td class="order-value">${order.value}</td>
+                    <td>
+                        <span class="${statusLabels[order.status].class}">${statusLabels[order.status].label}</span>
+                    </td>
+                    <td class="order-date">${order.date}</td>
+                    <td>
+                        <div class="order-actions">
+                            ${order.status === 'requested' ? 
+                                `<button class="btn btn-sm btn-primary" onclick="approveOrder('${order.id}')">승인</button>` :
+                                `<button class="btn btn-sm btn-outline" onclick="viewOrder('${order.id}')">상세</button>`
+                            }
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+            
+            // 모바일 카드 렌더링
+            mobileList.innerHTML = orderList.map(order => `
+                <div class="mobile-order-card">
+                    <div class="mobile-order-header">
+                        <div>
+                            <input type="checkbox" class="order-checkbox" value="${order.id}" onchange="toggleOrderSelection('${order.id}')">
+                            <span class="order-number" style="margin-left: 0.5rem;">${order.id}</span>
+                        </div>
+                        <span class="${statusLabels[order.status].class}">${statusLabels[order.status].label}</span>
+                    </div>
+                    <div class="mobile-order-content">
+                        <div class="mobile-order-field">
+                            <div class="mobile-field-label">고객</div>
+                            <div class="mobile-field-value">${order.customer} (${customerTypeLabels[order.customerType]})</div>
+                        </div>
+                        <div class="mobile-order-field">
+                            <div class="mobile-field-label">배송비</div>
+                            <div class="mobile-field-value">${order.value}</div>
+                        </div>
+                        <div class="mobile-order-field">
+                            <div class="mobile-field-label">품목</div>
+                            <div class="mobile-field-value">${order.items}</div>
+                        </div>
+                        <div class="mobile-order-field">
+                            <div class="mobile-field-label">주문일</div>
+                            <div class="mobile-field-value">${order.date}</div>
+                        </div>
+                    </div>
+                    <div class="mobile-order-actions">
+                        ${order.status === 'requested' ? 
+                            `<button class="btn btn-sm btn-primary" onclick="approveOrder('${order.id}')">승인</button>` :
+                            `<button class="btn btn-sm btn-outline" onclick="viewOrder('${order.id}')">상세</button>`
+                        }
+                        <button class="btn btn-sm btn-outline" onclick="trackOrder('${order.id}')">추적</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 전체 선택/해제
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll');
+            const checkboxes = document.querySelectorAll('input[type="checkbox"][value]');
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAll.checked;
+                if (selectAll.checked) {
+                    selectedOrders.add(checkbox.value);
+                } else {
+                    selectedOrders.delete(checkbox.value);
+                }
+            });
+            
+            updateBulkActions();
+        }
+
+        // 개별 주문 선택/해제
+        function toggleOrderSelection(orderId) {
+            if (selectedOrders.has(orderId)) {
+                selectedOrders.delete(orderId);
+            } else {
+                selectedOrders.add(orderId);
+            }
+            updateBulkActions();
+        }
+
+        // 일괄 작업 버튼 상태 업데이트
+        function updateBulkActions() {
+            const bulkApproveBtn = document.getElementById('bulkApproveBtn');
+            const bulkExportBtn = document.getElementById('bulkExportBtn');
+            const hasSelection = selectedOrders.size > 0;
+            
+            bulkApproveBtn.disabled = !hasSelection;
+            bulkExportBtn.disabled = !hasSelection;
+        }
+
+        // 주문 승인
+        function approveOrder(orderId) {
+            if (confirm(`주문 ${orderId}을(를) 승인하시겠습니까?`)) {
+                const order = orders.find(o => o.id === orderId);
+                if (order) {
+                    order.status = 'preparing';
+                    renderOrders(orders);
+                    showToast('주문이 승인되었습니다.', 'success');
+                }
+            }
+        }
+
+        // 일괄 승인
+        function bulkApprove() {
+            if (selectedOrders.size === 0) return;
+            
+            if (confirm(`선택된 ${selectedOrders.size}개 주문을 승인하시겠습니까?`)) {
+                orders.forEach(order => {
+                    if (selectedOrders.has(order.id) && order.status === 'requested') {
+                        order.status = 'preparing';
+                    }
+                });
+                
+                selectedOrders.clear();
+                renderOrders(orders);
+                showToast(`${selectedOrders.size}개 주문이 승인되었습니다.`, 'success');
+            }
+        }
+
+        // 주문 상세 보기
+        function viewOrder(orderId) {
+            location.href = `admin-order-detail.html?order=${orderId}`;
+        }
+
+        // 주문 추적
+        function trackOrder(orderId) {
+            location.href = `admin-tracking.html?order=${orderId}`;
+        }
+
+        // 필터 적용
+        function applyFilters() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const customerTypeFilter = document.getElementById('customerTypeFilter').value;
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+            const searchInput = document.getElementById('searchInput').value.toLowerCase();
+            
+            let filteredOrders = orders.filter(order => {
+                const matchesStatus = !statusFilter || order.status === statusFilter;
+                const matchesCustomerType = !customerTypeFilter || order.customerType === customerTypeFilter;
+                const matchesDateFrom = !dateFrom || order.date >= dateFrom;
+                const matchesDateTo = !dateTo || order.date <= dateTo;
+                const matchesSearch = !searchInput || 
+                    order.id.toLowerCase().includes(searchInput) || 
+                    order.customer.toLowerCase().includes(searchInput);
+                
+                return matchesStatus && matchesCustomerType && matchesDateFrom && matchesDateTo && matchesSearch;
+            });
+            
+            renderOrders(filteredOrders);
+            showToast(`${filteredOrders.length}개 주문이 검색되었습니다.`, 'info');
+        }
+
+        // 필터 초기화
+        function resetFilters() {
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('customerTypeFilter').value = '';
+            document.getElementById('dateFrom').value = '';
+            document.getElementById('dateTo').value = '';
+            document.getElementById('searchInput').value = '';
+            renderOrders(orders);
+        }
+
+        // 주문 내보내기
+        function exportOrders() {
+            showToast('주문 데이터를 내보내고 있습니다...', 'info');
+            setTimeout(() => {
+                showToast('주문 데이터가 내보내졌습니다.', 'success');
+            }, 1500);
+        }
+
+        // 선택 내보내기
+        function bulkExport() {
+            if (selectedOrders.size === 0) return;
+            
+            showToast(`선택된 ${selectedOrders.size}개 주문을 내보내고 있습니다...`, 'info');
+            setTimeout(() => {
+                showToast('선택된 주문이 내보내졌습니다.', 'success');
+            }, 1500);
+        }
+
+        // 토스트 메시지
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.textContent = message;
+            toast.style.cssText = `
+                position: fixed;
+                top: 2rem;
+                right: 2rem;
+                padding: 1rem 1.5rem;
+                border-radius: 0.5rem;
+                color: white;
+                font-weight: 500;
+                z-index: 9999;
+                opacity: 0;
+                transform: translateY(-1rem);
+                transition: all 0.3s ease;
+            `;
+            
+            if (type === 'success') {
+                toast.style.backgroundColor = 'var(--success-600)';
+            } else if (type === 'error') {
+                toast.style.backgroundColor = 'var(--danger-600)';
+            } else {
+                toast.style.backgroundColor = 'var(--primary-600)';
+            }
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateY(0)';
+            }, 100);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-1rem)';
+                setTimeout(() => document.body.removeChild(toast), 300);
+            }, 3000);
+        }
+
+        // 검색 입력 시 실시간 필터링
+        document.getElementById('searchInput').addEventListener('input', function() {
+            applyFilters();
+        });
+    </script>
+</body>
+</html>

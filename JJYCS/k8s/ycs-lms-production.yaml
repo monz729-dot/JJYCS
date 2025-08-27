@@ -1,0 +1,681 @@
+# YCS LMS Kubernetes Production Deployment
+# Optimized for high availability, scalability, and performance
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ycs-lms
+  labels:
+    name: ycs-lms
+    environment: production
+
+---
+# ConfigMap for application configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ycs-lms-config
+  namespace: ycs-lms
+data:
+  # Application configuration
+  SPRING_PROFILES_ACTIVE: "production,backup,monitoring"
+  SERVER_PORT: "8081"
+  
+  # Database configuration
+  DB_HOST: "ycs-lms-mysql"
+  DB_PORT: "3306"
+  DB_NAME: "ycs_lms"
+  
+  # Redis configuration
+  REDIS_HOST: "ycs-lms-redis"
+  REDIS_PORT: "6379"
+  
+  # Monitoring
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,metrics,prometheus,info"
+  MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: "when_authorized"
+  
+  # JVM optimization
+  JAVA_OPTS: >-
+    -Xms1g
+    -Xmx2g
+    -XX:+UseG1GC
+    -XX:MaxGCPauseMillis=200
+    -XX:+UseStringDeduplication
+    -XX:+OptimizeStringConcat
+    -XX:+UseCompressedOops
+    -XX:+UseCompressedClassPointers
+    -Djava.awt.headless=true
+    -Dfile.encoding=UTF-8
+    -Duser.timezone=Asia/Seoul
+    
+  # Application tuning
+  SERVER_TOMCAT_THREADS_MAX: "200"
+  SERVER_TOMCAT_THREADS_MIN_SPARE: "20"
+  SERVER_TOMCAT_MAX_CONNECTIONS: "8192"
+  SERVER_TOMCAT_CONNECTION_TIMEOUT: "20s"
+  
+  # Database connection pool
+  SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "50"
+  SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "10"
+  SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT: "30000"
+  SPRING_DATASOURCE_HIKARI_IDLE_TIMEOUT: "300000"
+  SPRING_DATASOURCE_HIKARI_MAX_LIFETIME: "1800000"
+
+---
+# Secret for sensitive configuration
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ycs-lms-secrets
+  namespace: ycs-lms
+type: Opaque
+stringData:
+  DB_USERNAME: "ycs_user"
+  DB_PASSWORD: "your-secure-db-password"
+  JWT_SECRET: "your-256-bit-jwt-secret-key"
+  REDIS_PASSWORD: "your-redis-password"
+  SMTP_USER: "your-email@gmail.com"
+  SMTP_PASS: "your-app-password"
+  BACKUP_ENCRYPTION_KEY: "your-backup-encryption-key"
+  AWS_ACCESS_KEY_ID: "your-aws-access-key"
+  AWS_SECRET_ACCESS_KEY: "your-aws-secret-key"
+
+---
+# MySQL Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ycs-lms-mysql
+  namespace: ycs-lms
+  labels:
+    app: ycs-lms-mysql
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: ycs-lms-mysql
+  template:
+    metadata:
+      labels:
+        app: ycs-lms-mysql
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:8.0
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ycs-lms-secrets
+              key: DB_PASSWORD
+        - name: MYSQL_DATABASE
+          value: ycs_lms
+        - name: MYSQL_USER
+          valueFrom:
+            secretKeyRef:
+              name: ycs-lms-secrets
+              key: DB_USERNAME
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ycs-lms-secrets
+              key: DB_PASSWORD
+        args:
+          - --innodb-buffer-pool-size=1G
+          - --innodb-log-file-size=256M
+          - --max-connections=1000
+          - --log-bin=mysql-bin
+          - --binlog-format=ROW
+          - --expire-logs-days=7
+          - --slow-query-log=1
+          - --long-query-time=2
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: mysql-storage
+          mountPath: /var/lib/mysql
+        - name: mysql-config
+          mountPath: /etc/mysql/conf.d
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "2"
+        livenessProbe:
+          exec:
+            command:
+            - mysqladmin
+            - ping
+            - -h
+            - localhost
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - mysqladmin
+            - ping
+            - -h
+            - localhost
+          initialDelaySeconds: 30
+          periodSeconds: 5
+      volumes:
+      - name: mysql-storage
+        persistentVolumeClaim:
+          claimName: mysql-pvc
+      - name: mysql-config
+        configMap:
+          name: mysql-config
+
+---
+# MySQL Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: ycs-lms-mysql
+  namespace: ycs-lms
+spec:
+  selector:
+    app: ycs-lms-mysql
+  ports:
+  - port: 3306
+    targetPort: 3306
+    name: mysql
+  type: ClusterIP
+
+---
+# MySQL PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pvc
+  namespace: ycs-lms
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: fast-ssd
+
+---
+# Redis Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ycs-lms-redis
+  namespace: ycs-lms
+  labels:
+    app: ycs-lms-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ycs-lms-redis
+  template:
+    metadata:
+      labels:
+        app: ycs-lms-redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        command:
+          - redis-server
+          - --appendonly yes
+          - --maxmemory 1gb
+          - --maxmemory-policy allkeys-lru
+        ports:
+        - containerPort: 6379
+          name: redis
+        volumeMounts:
+        - name: redis-storage
+          mountPath: /data
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: redis-storage
+        persistentVolumeClaim:
+          claimName: redis-pvc
+
+---
+# Redis Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: ycs-lms-redis
+  namespace: ycs-lms
+spec:
+  selector:
+    app: ycs-lms-redis
+  ports:
+  - port: 6379
+    targetPort: 6379
+    name: redis
+  type: ClusterIP
+
+---
+# Redis PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+  namespace: ycs-lms
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: fast-ssd
+
+---
+# Backend Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ycs-lms-backend
+  namespace: ycs-lms
+  labels:
+    app: ycs-lms-backend
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: ycs-lms-backend
+  template:
+    metadata:
+      labels:
+        app: ycs-lms-backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8081"
+        prometheus.io/path: "/api/actuator/prometheus"
+    spec:
+      containers:
+      - name: backend
+        image: ycs-lms-backend:1.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8081
+          name: http
+        envFrom:
+        - configMapRef:
+            name: ycs-lms-config
+        - secretRef:
+            name: ycs-lms-secrets
+        env:
+        - name: DB_URL
+          value: "jdbc:mysql://ycs-lms-mysql:3306/ycs_lms?useSSL=true&serverTimezone=Asia/Seoul"
+        - name: REDIS_URL
+          value: "redis://ycs-lms-redis:6379"
+        volumeMounts:
+        - name: app-logs
+          mountPath: /app/logs
+        - name: app-uploads
+          mountPath: /app/uploads
+        - name: backup-storage
+          mountPath: /app/backups
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1"
+        livenessProbe:
+          httpGet:
+            path: /api/actuator/health/liveness
+            port: 8081
+          initialDelaySeconds: 120
+          periodSeconds: 30
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/actuator/health/readiness
+            port: 8081
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 15"]
+      volumes:
+      - name: app-logs
+        persistentVolumeClaim:
+          claimName: app-logs-pvc
+      - name: app-uploads
+        persistentVolumeClaim:
+          claimName: app-uploads-pvc
+      - name: backup-storage
+        persistentVolumeClaim:
+          claimName: backup-storage-pvc
+      terminationGracePeriodSeconds: 30
+
+---
+# Backend Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: ycs-lms-backend
+  namespace: ycs-lms
+  labels:
+    app: ycs-lms-backend
+spec:
+  selector:
+    app: ycs-lms-backend
+  ports:
+  - port: 8081
+    targetPort: 8081
+    name: http
+  type: ClusterIP
+
+---
+# Frontend Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ycs-lms-frontend
+  namespace: ycs-lms
+  labels:
+    app: ycs-lms-frontend
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: ycs-lms-frontend
+  template:
+    metadata:
+      labels:
+        app: ycs-lms-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: ycs-lms-frontend:1.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+          name: http
+        env:
+        - name: API_BASE_URL
+          value: "https://api.ycs.com"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+
+---
+# Frontend Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: ycs-lms-frontend
+  namespace: ycs-lms
+  labels:
+    app: ycs-lms-frontend
+spec:
+  selector:
+    app: ycs-lms-frontend
+  ports:
+  - port: 80
+    targetPort: 80
+    name: http
+  type: ClusterIP
+
+---
+# Horizontal Pod Autoscaler for Backend
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ycs-lms-backend-hpa
+  namespace: ycs-lms
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ycs-lms-backend
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 30
+
+---
+# Ingress for external access
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ycs-lms-ingress
+  namespace: ycs-lms
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+spec:
+  tls:
+  - hosts:
+    - ycs.com
+    - api.ycs.com
+    secretName: ycs-lms-tls
+  rules:
+  - host: ycs.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ycs-lms-frontend
+            port:
+              number: 80
+  - host: api.ycs.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ycs-lms-backend
+            port:
+              number: 8081
+
+---
+# Network Policy for security
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ycs-lms-network-policy
+  namespace: ycs-lms
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+  - from: []
+    ports:
+    - protocol: TCP
+      port: 8081
+    - protocol: TCP
+      port: 80
+  egress:
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 53
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 3306
+    - protocol: TCP
+      port: 6379
+    - protocol: TCP
+      port: 80
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 587
+
+---
+# PodDisruptionBudget for high availability
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ycs-lms-backend-pdb
+  namespace: ycs-lms
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: ycs-lms-backend
+
+---
+# ServiceMonitor for Prometheus monitoring
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: ycs-lms-backend-metrics
+  namespace: ycs-lms
+  labels:
+    app: ycs-lms-backend
+spec:
+  selector:
+    matchLabels:
+      app: ycs-lms-backend
+  endpoints:
+  - port: http
+    path: /api/actuator/prometheus
+    interval: 30s
+    scrapeTimeout: 10s
+
+---
+# Storage PVCs
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: app-logs-pvc
+  namespace: ycs-lms
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: shared-storage
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: app-uploads-pvc
+  namespace: ycs-lms
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 200Gi
+  storageClassName: shared-storage
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: backup-storage-pvc
+  namespace: ycs-lms
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 500Gi
+  storageClassName: backup-storage

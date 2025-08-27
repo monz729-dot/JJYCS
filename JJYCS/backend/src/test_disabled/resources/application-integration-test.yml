@@ -1,0 +1,123 @@
+# Integration Test Configuration
+spring:
+  application:
+    name: ycs-lms-integration-test
+
+  # Test Database (Testcontainers will override)
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+    
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 300000
+      connection-timeout: 20000
+      leak-detection-threshold: 60000
+      pool-name: YCS-Test-Pool
+
+  # JPA Test Configuration
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        generate_statistics: false
+
+  # Redis Test Configuration
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+
+  # Elasticsearch Test Configuration
+  elasticsearch:
+    uris: http://localhost:9200
+    connection-timeout: 30s
+    socket-timeout: 30s
+
+  # Kafka Test Configuration
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: ycs-lms-test
+      auto-offset-reset: earliest
+    producer:
+      retries: 0
+      batch-size: 16384
+      buffer-memory: 33554432
+
+  # Mail Test Configuration (Mock)
+  mail:
+    host: localhost
+    port: 3025
+    username: test
+    password: test
+    test-connection: false
+
+  # Security Test Configuration
+  security:
+    jwt:
+      secret-key: TEST-SECRET-KEY-FOR-JWT-TOKEN-GENERATION-MUST-BE-LONG-ENOUGH-FOR-TESTING
+      expiration-time: 3600000 # 1 hour for tests
+
+# Server Test Configuration
+server:
+  port: 0 # Random port for tests
+
+# Logging for Tests
+logging:
+  level:
+    com.ycs.lms: INFO
+    org.springframework.test: INFO
+    org.testcontainers: INFO
+    org.springframework.security: WARN
+    org.hibernate: WARN
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+# YCS Specific Test Configuration
+ycs:
+  external-api:
+    ems:
+      enabled: false
+      base-url: http://localhost:8080/mock-ems
+    hs-code:
+      enabled: false
+      base-url: http://localhost:8080/mock-hs
+    exchange-rate:
+      enabled: false
+      base-url: http://localhost:8080/mock-exchange
+  
+  test:
+    containers:
+      mysql:
+        image: mysql:8.0
+        database: ycs_lms_test
+      redis:
+        image: redis:7-alpine
+      elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.8.0
+      kafka:
+        image: confluentinc/cp-kafka:7.4.0
+
+# Management endpoints for testing
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always

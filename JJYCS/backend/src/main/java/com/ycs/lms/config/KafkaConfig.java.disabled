@@ -1,0 +1,156 @@
+package com.ycs.lms.config;
+
+import lombok.RequiredArgsConstructor;
+import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.annotation.EnableKafka;
+import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.config.TopicBuilder;
+import org.springframework.kafka.core.*;
+import org.springframework.kafka.listener.ContainerProperties;
+import org.springframework.kafka.support.serializer.JsonDeserializer;
+import org.springframework.kafka.support.serializer.JsonSerializer;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@Configuration
+@EnableKafka
+@RequiredArgsConstructor
+public class KafkaConfig {
+
+    @Value("${spring.kafka.bootstrap-servers:localhost:9092}")
+    private String bootstrapServers;
+
+    @Value("${spring.kafka.consumer.group-id:ycs-lms-group}")
+    private String consumerGroupId;
+
+    // ===== Producer Configuration =====
+    
+    @Bean
+    public ProducerFactory<String, Object> producerFactory() {
+        Map<String, Object> configProps = new HashMap<>();
+        configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        configProps.put(ProducerConfig.ACKS_CONFIG, "all"); // 모든 리플리카 확인
+        configProps.put(ProducerConfig.RETRIES_CONFIG, 3);
+        configProps.put(ProducerConfig.BATCH_SIZE_CONFIG, 16384);
+        configProps.put(ProducerConfig.LINGER_MS_CONFIG, 5); // 5ms 대기 후 배치 전송
+        configProps.put(ProducerConfig.BUFFER_MEMORY_CONFIG, 33554432);
+        configProps.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true); // 중복 방지
+        
+        return new DefaultKafkaProducerFactory<>(configProps);
+    }
+
+    @Bean
+    public KafkaTemplate<String, Object> kafkaTemplate() {
+        return new KafkaTemplate<>(producerFactory());
+    }
+
+    // ===== Consumer Configuration =====
+    
+    @Bean
+    public ConsumerFactory<String, Object> consumerFactory() {
+        Map<String, Object> configProps = new HashMap<>();
+        configProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        configProps.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroupId);
+        configProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        configProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+        configProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        configProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false); // 수동 커밋
+        configProps.put(JsonDeserializer.TRUSTED_PACKAGES, "com.ycs.lms.*");
+        configProps.put(JsonDeserializer.VALUE_DEFAULT_TYPE, "com.ycs.lms.event.BaseEvent");
+        
+        return new DefaultKafkaConsumerFactory<>(configProps);
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, Object> kafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, Object> factory = 
+            new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(consumerFactory());
+        factory.setConcurrency(3); // 3개의 컨슈머 스레드
+        factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
+        factory.setErrorHandler((exception, data) -> {
+            // 에러 처리 로직
+            System.err.println("Error in process with Exception {} and the record is {}" + 
+                exception + " " + data);
+        });
+        
+        return factory;
+    }
+
+    // ===== Admin Configuration =====
+    
+    @Bean
+    public KafkaAdmin kafkaAdmin() {
+        Map<String, Object> configs = new HashMap<>();
+        configs.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        return new KafkaAdmin(configs);
+    }
+
+    // ===== Topic Definitions =====
+    
+    @Bean
+    public NewTopic orderEventsTopic() {
+        return TopicBuilder.name("order-events")
+            .partitions(3)
+            .replicas(1)
+            .config("retention.ms", "604800000") // 7일 보관
+            .build();
+    }
+
+    @Bean
+    public NewTopic userEventsTopic() {
+        return TopicBuilder.name("user-events")
+            .partitions(2)
+            .replicas(1)
+            .config("retention.ms", "2592000000") // 30일 보관
+            .build();
+    }
+
+    @Bean
+    public NewTopic notificationEventsTopic() {
+        return TopicBuilder.name("notification-events")
+            .partitions(2)
+            .replicas(1)
+            .config("retention.ms", "86400000") // 1일 보관
+            .build();
+    }
+
+    @Bean
+    public NewTopic auditEventsTopic() {
+        return TopicBuilder.name("audit-events")
+            .partitions(1)
+            .replicas(1)
+            .config("retention.ms", "7776000000") // 90일 보관
+            .config("cleanup.policy", "compact") // 로그 압축
+            .build();
+    }
+
+    @Bean
+    public NewTopic systemEventsTopic() {
+        return TopicBuilder.name("system-events")
+            .partitions(1)
+            .replicas(1)
+            .config("retention.ms", "604800000") // 7일 보관
+            .build();
+    }
+
+    @Bean
+    public NewTopic deadLetterTopic() {
+        return TopicBuilder.name("dead-letter-queue")
+            .partitions(1)
+            .replicas(1)
+            .config("retention.ms", "2592000000") // 30일 보관
+            .build();
+    }
+}

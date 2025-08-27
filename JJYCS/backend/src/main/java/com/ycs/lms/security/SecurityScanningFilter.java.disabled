@@ -1,0 +1,122 @@
+package com.ycs.lms.security;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
+
+import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+@Component
+@Order(1)
+@RequiredArgsConstructor
+@Slf4j
+public class SecurityScanningFilter implements Filter {
+
+    private final SecurityScanningService securityScanningService;
+
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+            throws IOException, ServletException {
+
+        HttpServletRequest httpRequest = (HttpServletRequest) request;
+        HttpServletResponse httpResponse = (HttpServletResponse) response;
+
+        try {
+            // Perform security scan
+            SecurityScanningService.SecurityScanResult scanResult = 
+                securityScanningService.scanRequest(httpRequest);
+
+            if (!scanResult.isClean()) {
+                handleSecurityThreat(scanResult, httpRequest, httpResponse);
+                return;
+            }
+
+            // Continue with request processing if clean
+            chain.doFilter(request, response);
+
+        } catch (Exception e) {
+            log.error("Error during security scanning", e);
+            // Continue with request processing on scan failure
+            chain.doFilter(request, response);
+        }
+    }
+
+    private void handleSecurityThreat(SecurityScanningService.SecurityScanResult scanResult,
+                                    HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+
+        String clientIp = getClientIp(request);
+        boolean hasCriticalThreat = scanResult.getThreats().stream()
+                .anyMatch(threat -> "CRITICAL".equals(threat.getSeverity()));
+
+        boolean hasHighThreat = scanResult.getThreats().stream()
+                .anyMatch(threat -> "HIGH".equals(threat.getSeverity()));
+
+        if (hasCriticalThreat) {
+            log.error("Critical security threat detected from IP: {} - Blocking request", clientIp);
+            sendSecurityResponse(response, HttpStatus.FORBIDDEN, "Request blocked due to security policy");
+            // Optionally block IP for extended period
+            securityScanningService.blockIp(clientIp, 24, "Critical threat detected");
+            return;
+        }
+
+        if (hasHighThreat) {
+            log.warn("High security threat detected from IP: {} - Blocking request", clientIp);
+            sendSecurityResponse(response, HttpStatus.TOO_MANY_REQUESTS, "Request blocked due to security policy");
+            return;
+        }
+
+        // For medium/low threats, log but allow request to continue
+        log.info("Security threat detected from IP: {} - Allowing request with monitoring", clientIp);
+        // Could add rate limiting or additional monitoring here
+    }
+
+    private void sendSecurityResponse(HttpServletResponse response, HttpStatus status, String message)
+            throws IOException {
+        
+        response.setStatus(status.value());
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        
+        String jsonResponse = String.format(
+            "{\"error\": \"%s\", \"message\": \"%s\", \"timestamp\": \"%s\"}", 
+            status.getReasonPhrase(), 
+            message,
+            java.time.LocalDateTime.now()
+        );
+        
+        response.getWriter().write(jsonResponse);
+        response.getWriter().flush();
+    }
+
+    private String getClientIp(HttpServletRequest request) {
+        String[] headers = {
+            "X-Forwarded-For", "Proxy-Client-IP", "WL-Proxy-Client-IP", 
+            "HTTP_CLIENT_IP", "HTTP_X_FORWARDED_FOR"
+        };
+
+        for (String header : headers) {
+            String ip = request.getHeader(header);
+            if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
+                return ip.split(",")[0].trim();
+            }
+        }
+
+        return request.getRemoteAddr();
+    }
+
+    @Override
+    public void init(FilterConfig filterConfig) throws ServletException {
+        log.info("Security Scanning Filter initialized");
+    }
+
+    @Override
+    public void destroy() {
+        log.info("Security Scanning Filter destroyed");
+    }
+}

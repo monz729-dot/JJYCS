@@ -1,0 +1,315 @@
+package com.ycs.lms.config;
+
+import com.ycs.lms.service.backup.BackupService;
+import com.ycs.lms.service.backup.DatabaseBackupService;
+import com.ycs.lms.service.backup.FileBackupService;
+import com.ycs.lms.service.backup.ConfigBackupService;
+import com.ycs.lms.service.backup.AuditArchivalService;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+
+/**
+ * Backup and Data Persistence Configuration
+ * 
+ * This configuration manages all backup-related services and scheduling
+ * for the YCS LMS system including database backups, file backups,
+ * configuration backups, and audit log archival.
+ */
+@Configuration
+@EnableScheduling
+@Profile({"backup", "production"})
+public class BackupConfiguration {
+
+    @Bean
+    @ConfigurationProperties(prefix = "ycs.backup")
+    public BackupProperties backupProperties() {
+        return new BackupProperties();
+    }
+
+    @Bean("backupTaskScheduler")
+    public ThreadPoolTaskScheduler backupTaskScheduler() {
+        ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
+        scheduler.setPoolSize(5);
+        scheduler.setThreadNamePrefix("backup-");
+        scheduler.setWaitForTasksToCompleteOnShutdown(true);
+        scheduler.setAwaitTerminationSeconds(60);
+        scheduler.setRejectedExecutionHandler((r, executor) -> {
+            throw new RuntimeException("Backup task rejected: " + r.toString());
+        });
+        return scheduler;
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "ycs.backup.database", name = "enabled", havingValue = "true")
+    public DatabaseBackupService databaseBackupService(BackupProperties properties) {
+        return new DatabaseBackupService(properties);
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "ycs.backup.files", name = "enabled", havingValue = "true")
+    public FileBackupService fileBackupService(BackupProperties properties) {
+        return new FileBackupService(properties);
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "ycs.backup.config", name = "enabled", havingValue = "true")
+    public ConfigBackupService configBackupService(BackupProperties properties) {
+        return new ConfigBackupService(properties);
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "ycs.backup.audit", name = "enabled", havingValue = "true")
+    public AuditArchivalService auditArchivalService(BackupProperties properties) {
+        return new AuditArchivalService(properties);
+    }
+
+    @Bean
+    public BackupService backupService(
+            BackupProperties properties,
+            DatabaseBackupService databaseBackupService,
+            FileBackupService fileBackupService,
+            ConfigBackupService configBackupService,
+            AuditArchivalService auditArchivalService) {
+        return new BackupService(properties, databaseBackupService, fileBackupService, 
+                                configBackupService, auditArchivalService);
+    }
+
+    /**
+     * Configuration properties for backup operations
+     */
+    public static class BackupProperties {
+        private Database database = new Database();
+        private Files files = new Files();
+        private Config config = new Config();
+        private Audit audit = new Audit();
+        private Monitoring monitoring = new Monitoring();
+
+        // Getters and setters
+        public Database getDatabase() { return database; }
+        public void setDatabase(Database database) { this.database = database; }
+        
+        public Files getFiles() { return files; }
+        public void setFiles(Files files) { this.files = files; }
+        
+        public Config getConfig() { return config; }
+        public void setConfig(Config config) { this.config = config; }
+        
+        public Audit getAudit() { return audit; }
+        public void setAudit(Audit audit) { this.audit = audit; }
+        
+        public Monitoring getMonitoring() { return monitoring; }
+        public void setMonitoring(Monitoring monitoring) { this.monitoring = monitoring; }
+
+        public static class Database {
+            private boolean enabled = true;
+            private String type = "mysql";
+            private String fullBackupSchedule = "0 0 3 * * SUN";
+            private String incrementalBackupSchedule = "0 0 2 * * MON-SAT";
+            private Retention retention = new Retention();
+            private String compression = "gzip";
+            private Encryption encryption = new Encryption();
+
+            public static class Retention {
+                private int daily = 7;
+                private int weekly = 4;
+                private int monthly = 12;
+                private int yearly = 5;
+
+                // Getters and setters
+                public int getDaily() { return daily; }
+                public void setDaily(int daily) { this.daily = daily; }
+                public int getWeekly() { return weekly; }
+                public void setWeekly(int weekly) { this.weekly = weekly; }
+                public int getMonthly() { return monthly; }
+                public void setMonthly(int monthly) { this.monthly = monthly; }
+                public int getYearly() { return yearly; }
+                public void setYearly(int yearly) { this.yearly = yearly; }
+            }
+
+            public static class Encryption {
+                private boolean enabled = true;
+                private String key;
+                private String algorithm = "AES-256-CBC";
+
+                // Getters and setters
+                public boolean isEnabled() { return enabled; }
+                public void setEnabled(boolean enabled) { this.enabled = enabled; }
+                public String getKey() { return key; }
+                public void setKey(String key) { this.key = key; }
+                public String getAlgorithm() { return algorithm; }
+                public void setAlgorithm(String algorithm) { this.algorithm = algorithm; }
+            }
+
+            // Getters and setters for Database
+            public boolean isEnabled() { return enabled; }
+            public void setEnabled(boolean enabled) { this.enabled = enabled; }
+            public String getType() { return type; }
+            public void setType(String type) { this.type = type; }
+            public String getFullBackupSchedule() { return fullBackupSchedule; }
+            public void setFullBackupSchedule(String fullBackupSchedule) { this.fullBackupSchedule = fullBackupSchedule; }
+            public String getIncrementalBackupSchedule() { return incrementalBackupSchedule; }
+            public void setIncrementalBackupSchedule(String incrementalBackupSchedule) { this.incrementalBackupSchedule = incrementalBackupSchedule; }
+            public Retention getRetention() { return retention; }
+            public void setRetention(Retention retention) { this.retention = retention; }
+            public String getCompression() { return compression; }
+            public void setCompression(String compression) { this.compression = compression; }
+            public Encryption getEncryption() { return encryption; }
+            public void setEncryption(Encryption encryption) { this.encryption = encryption; }
+        }
+
+        public static class Files {
+            private boolean enabled = true;
+            private String schedule = "0 30 2 * * ?";
+            private String[] sourceDirectories = {"/app/uploads", "/app/logs", "/app/config"};
+            private String[] excludePatterns = {"*.tmp", "*.log.gz", "cache/*"};
+            private int retentionDays = 90;
+            private boolean syncToS3 = true;
+            private String s3Bucket;
+
+            // Getters and setters
+            public boolean isEnabled() { return enabled; }
+            public void setEnabled(boolean enabled) { this.enabled = enabled; }
+            public String getSchedule() { return schedule; }
+            public void setSchedule(String schedule) { this.schedule = schedule; }
+            public String[] getSourceDirectories() { return sourceDirectories; }
+            public void setSourceDirectories(String[] sourceDirectories) { this.sourceDirectories = sourceDirectories; }
+            public String[] getExcludePatterns() { return excludePatterns; }
+            public void setExcludePatterns(String[] excludePatterns) { this.excludePatterns = excludePatterns; }
+            public int getRetentionDays() { return retentionDays; }
+            public void setRetentionDays(int retentionDays) { this.retentionDays = retentionDays; }
+            public boolean isSyncToS3() { return syncToS3; }
+            public void setSyncToS3(boolean syncToS3) { this.syncToS3 = syncToS3; }
+            public String getS3Bucket() { return s3Bucket; }
+            public void setS3Bucket(String s3Bucket) { this.s3Bucket = s3Bucket; }
+        }
+
+        public static class Config {
+            private boolean enabled = true;
+            private String schedule = "0 0 1 * * ?";
+            private String[] include = {"application*.yml", "application*.properties", "logback*.xml"};
+            private GitBackup gitBackup = new GitBackup();
+
+            public static class GitBackup {
+                private boolean enabled = true;
+                private String repository;
+                private String branch = "config-backup";
+
+                // Getters and setters
+                public boolean isEnabled() { return enabled; }
+                public void setEnabled(boolean enabled) { this.enabled = enabled; }
+                public String getRepository() { return repository; }
+                public void setRepository(String repository) { this.repository = repository; }
+                public String getBranch() { return branch; }
+                public void setBranch(String branch) { this.branch = branch; }
+            }
+
+            // Getters and setters
+            public boolean isEnabled() { return enabled; }
+            public void setEnabled(boolean enabled) { this.enabled = enabled; }
+            public String getSchedule() { return schedule; }
+            public void setSchedule(String schedule) { this.schedule = schedule; }
+            public String[] getInclude() { return include; }
+            public void setInclude(String[] include) { this.include = include; }
+            public GitBackup getGitBackup() { return gitBackup; }
+            public void setGitBackup(GitBackup gitBackup) { this.gitBackup = gitBackup; }
+        }
+
+        public static class Audit {
+            private boolean enabled = true;
+            private String archiveSchedule = "0 0 4 * * ?";
+            private int archiveAfterDays = 90;
+            private String archiveLocation;
+            private int purgeAfterDays = 2555; // 7 years
+
+            // Getters and setters
+            public boolean isEnabled() { return enabled; }
+            public void setEnabled(boolean enabled) { this.enabled = enabled; }
+            public String getArchiveSchedule() { return archiveSchedule; }
+            public void setArchiveSchedule(String archiveSchedule) { this.archiveSchedule = archiveSchedule; }
+            public int getArchiveAfterDays() { return archiveAfterDays; }
+            public void setArchiveAfterDays(int archiveAfterDays) { this.archiveAfterDays = archiveAfterDays; }
+            public String getArchiveLocation() { return archiveLocation; }
+            public void setArchiveLocation(String archiveLocation) { this.archiveLocation = archiveLocation; }
+            public int getPurgeAfterDays() { return purgeAfterDays; }
+            public void setPurgeAfterDays(int purgeAfterDays) { this.purgeAfterDays = purgeAfterDays; }
+        }
+
+        public static class Monitoring {
+            private boolean enabled = true;
+            private Notification notification = new Notification();
+            private Metrics metrics = new Metrics();
+
+            public static class Notification {
+                private Email email = new Email();
+                private Slack slack = new Slack();
+
+                public static class Email {
+                    private boolean enabled = true;
+                    private String[] recipients = {"admin@ycs.com"};
+                    private boolean onFailure = true;
+                    private boolean onSuccess = false;
+
+                    // Getters and setters
+                    public boolean isEnabled() { return enabled; }
+                    public void setEnabled(boolean enabled) { this.enabled = enabled; }
+                    public String[] getRecipients() { return recipients; }
+                    public void setRecipients(String[] recipients) { this.recipients = recipients; }
+                    public boolean isOnFailure() { return onFailure; }
+                    public void setOnFailure(boolean onFailure) { this.onFailure = onFailure; }
+                    public boolean isOnSuccess() { return onSuccess; }
+                    public void setOnSuccess(boolean onSuccess) { this.onSuccess = onSuccess; }
+                }
+
+                public static class Slack {
+                    private boolean enabled = false;
+                    private String webhookUrl;
+                    private String channel = "#ops";
+
+                    // Getters and setters
+                    public boolean isEnabled() { return enabled; }
+                    public void setEnabled(boolean enabled) { this.enabled = enabled; }
+                    public String getWebhookUrl() { return webhookUrl; }
+                    public void setWebhookUrl(String webhookUrl) { this.webhookUrl = webhookUrl; }
+                    public String getChannel() { return channel; }
+                    public void setChannel(String channel) { this.channel = channel; }
+                }
+
+                // Getters and setters
+                public Email getEmail() { return email; }
+                public void setEmail(Email email) { this.email = email; }
+                public Slack getSlack() { return slack; }
+                public void setSlack(Slack slack) { this.slack = slack; }
+            }
+
+            public static class Metrics {
+                private boolean enabled = true;
+                private String exportTo = "prometheus";
+                private long backupSizeThresholdMb = 10240;
+                private long backupDurationThresholdMinutes = 120;
+
+                // Getters and setters
+                public boolean isEnabled() { return enabled; }
+                public void setEnabled(boolean enabled) { this.enabled = enabled; }
+                public String getExportTo() { return exportTo; }
+                public void setExportTo(String exportTo) { this.exportTo = exportTo; }
+                public long getBackupSizeThresholdMb() { return backupSizeThresholdMb; }
+                public void setBackupSizeThresholdMb(long backupSizeThresholdMb) { this.backupSizeThresholdMb = backupSizeThresholdMb; }
+                public long getBackupDurationThresholdMinutes() { return backupDurationThresholdMinutes; }
+                public void setBackupDurationThresholdMinutes(long backupDurationThresholdMinutes) { this.backupDurationThresholdMinutes = backupDurationThresholdMinutes; }
+            }
+
+            // Getters and setters
+            public boolean isEnabled() { return enabled; }
+            public void setEnabled(boolean enabled) { this.enabled = enabled; }
+            public Notification getNotification() { return notification; }
+            public void setNotification(Notification notification) { this.notification = notification; }
+            public Metrics getMetrics() { return metrics; }
+            public void setMetrics(Metrics metrics) { this.metrics = metrics; }
+        }
+    }
+}

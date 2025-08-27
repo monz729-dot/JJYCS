@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>주문 상세 - YCS 물류관리 시스템</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .shadow-blue { box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06); }
+        .border-blue-100 { border-color: rgb(219 234 254); }
+        .text-blue-900 { color: rgb(30 58 138); }
+        .text-blue-800 { color: rgb(30 64 175); }
+        .text-blue-700 { color: rgb(29 78 216); }
+        .text-blue-600 { color: rgb(37 99 235); }
+        .hover\:bg-blue-50:hover { background-color: rgb(239 246 255); }
+        .bg-blue-50 { background-color: rgb(239 246 255); }
+        .animate-spin { animation: spin 1s linear infinite; }
+        .animate-bounce { animation: bounce 1s infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes bounce { 0%, 100% { transform: translateY(-25%); animation-timing-function: cubic-bezier(0.8,0,1,1); } 50% { transform: none; animation-timing-function: cubic-bezier(0,0,0.2,1); } }
+        
+        .progress-bar {
+            background: linear-gradient(90deg, rgb(34 197 94) var(--progress), rgb(229 231 235) var(--progress));
+            --progress: 0%;
+        }
+        
+        .workflow-step {
+            transition: all 0.3s ease;
+        }
+        
+        .table {
+            width: 100%;
+            caption-side: bottom;
+            font-size: 0.875rem;
+        }
+        
+        .table th,
+        .table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid rgb(229 231 235);
+        }
+        
+        .table th {
+            font-weight: 600;
+            color: rgb(75 85 99);
+        }
+        
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .badge-outline {
+            border: 1px solid rgb(209 213 219);
+            background: transparent;
+            color: rgb(75 85 99);
+        }
+        
+        .badge-default {
+            background: rgb(59 130 246);
+            color: white;
+        }
+        
+        .badge-secondary {
+            background: rgb(243 244 246);
+            color: rgb(55 65 81);
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 50;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 2rem;
+            max-width: 32rem;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100">
+    <!-- 로딩 화면 -->
+    <div id="loading" class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center">
+        <div class="text-center">
+            <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
+                <div class="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            </div>
+            <p class="text-blue-600">주문 정보를 불러오는 중...</p>
+        </div>
+    </div>
+
+    <!-- 메인 컨텐츠 -->
+    <div id="main-content" class="hidden min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 p-4 space-y-6">
+        <!-- 헤더 -->
+        <div class="flex items-center gap-4 mb-6">
+            <button id="back-button" class="px-3 py-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md flex items-center gap-2 transition-colors">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+                주문내역으로
+            </button>
+            <div>
+                <h1 class="text-xl text-blue-900">주문 상세</h1>
+                <p class="text-sm text-blue-600"><span id="order-number"></span> - 청구서 및 배송 정보</p>
+            </div>
+        </div>
+
+        <!-- 워크플로우 현황 -->
+        <div class="bg-white rounded-lg shadow-blue border border-blue-100 p-6 space-y-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <svg class="h-5 w-5 text-blue-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <h2 class="text-lg font-semibold text-blue-900">배송 워크플로우</h2>
+                </div>
+                <span id="workflow-progress" class="badge badge-outline text-sm"></span>
+            </div>
+            
+            <div class="space-y-2">
+                <div class="flex justify-between text-sm">
+                    <span>진행률</span>
+                    <span id="progress-percentage">0%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-3">
+                    <div id="progress-bar" class="progress-bar h-3 rounded-full transition-all duration-500" style="--progress: 0%;"></div>
+                </div>
+            </div>
+            
+            <div id="workflow-steps" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+        </div>
+
+        <!-- 기본 정보 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- 주문 정보 -->
+            <div class="bg-white rounded-lg shadow-blue border border-blue-100 p-6 space-y-3">
+                <h3 class="text-lg font-semibold text-blue-900 flex items-center gap-2">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
+                    </svg>
+                    주문 정보
+                </h3>
+                <div id="order-info" class="space-y-3"></div>
+            </div>
+
+            <!-- 고객 정보 -->
+            <div class="bg-white rounded-lg shadow-blue border border-blue-100 p-6 space-y-3">
+                <h3 class="text-lg font-semibold text-blue-900 flex items-center gap-2">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                    고객 정보
+                </h3>
+                <div id="customer-info" class="space-y-3"></div>
+            </div>
+        </div>
+
+        <!-- 창고 정보 -->
+        <div id="warehouse-section" class="bg-white rounded-lg shadow-blue border border-blue-100 p-6 space-y-4 hidden">
+            <h3 class="text-lg font-semibold text-blue-900 flex items-center gap-2">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                </svg>
+                YCS 창고 정보
+            </h3>
+            <div id="warehouse-info" class="space-y-4"></div>
+        </div>
+
+        <!-- 청구서 정보 -->
+        <div class="bg-white rounded-lg shadow-blue border border-blue-100 p-6 space-y-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <svg class="h-5 w-5 text-blue-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <h3 class="text-lg font-semibold text-blue-900">청구서 (Invoice)</h3>
+                </div>
+                <div id="invoice-badges" class="flex items-center gap-2"></div>
+            </div>
+            
+            <!-- 청구서 발행 현황 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div id="proforma-status" class="p-3 border rounded-lg">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-medium text-purple-700">Proforma 청구서</span>
+                        <span id="proforma-badge" class="badge"></span>
+                    </div>
+                    <p id="proforma-date" class="text-sm text-gray-600 hidden"></p>
+                </div>
+                
+                <div id="final-status" class="p-3 border rounded-lg">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-medium text-purple-700">Final 청구서</span>
+                        <span id="final-badge" class="badge"></span>
+                    </div>
+                    <p id="final-date" class="text-sm text-gray-600 hidden"></p>
+                </div>
+            </div>
+
+            <!-- 비용 상세 -->
+            <div id="billing-details" class="space-y-4 hidden">
+                <h4 class="font-medium text-blue-900">비용 상세</h4>
+                <div id="cost-breakdown" class="space-y-3"></div>
+            </div>
+
+            <!-- 결제 정보 -->
+            <div class="space-y-4">
+                <h4 class="font-medium text-blue-900">결제 정보</h4>
+                <div id="payment-info" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+
+                <!-- 입금 대기 알림 -->
+                <div id="payment-alert" class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg hidden">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <svg class="h-5 w-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <div>
+                                <p class="font-medium text-yellow-900">무통장 입금 대기 중</p>
+                                <p class="text-sm text-yellow-700">
+                                    결제금액: <span id="payment-amount"></span>
+                                </p>
+                            </div>
+                        </div>
+                        <button id="payment-button" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md flex items-center gap-2 transition-colors">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                            </svg>
+                            입금하기
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 품목 정보 -->
+        <div class="bg-white rounded-lg shadow-blue border border-blue-100 p-6">
+            <h3 class="text-lg font-semibold text-blue-900 flex items-center gap-2 mb-4">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                </svg>
+                품목 정보
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="table w-full">
+                    <thead>
+                        <tr class="bg-blue-50/50">
+                            <th class="text-blue-800">품목</th>
+                            <th class="text-blue-800 text-center">수량</th>
+                            <th class="text-blue-800 text-center">중량</th>
+                            <th class="text-blue-800 text-center">크기(cm)</th>
+                            <th class="text-blue-800 text-center">CBM</th>
+                            <th class="text-blue-800 text-center">부피무게</th>
+                            <th id="unit-price-header" class="text-blue-800 text-right hidden">단가</th>
+                        </tr>
+                    </thead>
+                    <tbody id="items-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 수취인 정보 -->
+        <div class="bg-white rounded-lg shadow-blue border border-blue-100 p-6 space-y-4">
+            <h3 class="text-lg font-semibold text-blue-900 flex items-center gap-2">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                수취인 정보
+            </h3>
+            <div id="recipient-info" class="space-y-4"></div>
+        </div>
+
+        <!-- 특별 요청사항 -->
+        <div id="special-requests-section" class="bg-white rounded-lg shadow-blue border border-blue-100 p-6 hidden">
+            <h3 class="text-lg font-semibold text-blue-900 flex items-center gap-2">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                </svg>
+                특별 요청사항
+            </h3>
+            <p id="special-requests-text" class="text-gray-700 bg-yellow-50 p-3 rounded-lg border border-yellow-200"></p>
+        </div>
+
+        <!-- 하단 버튼 -->
+        <div class="flex gap-4 pb-20">
+            <button id="back-to-history" class="flex-1 h-14 px-4 py-2 border border-gray-300 bg-white text-gray-700 rounded-md hover:bg-gray-50 transition-colors">
+                주문내역으로
+            </button>
+            <button id="download-invoice" class="flex-1 h-14 px-4 py-2 border border-gray-300 bg-white text-gray-700 rounded-md hover:bg-gray-50 transition-colors hidden">
+                <div class="flex items-center justify-center gap-2">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path>
+                    </svg>
+                    청구서 다운로드
+                </div>
+            </button>
+            <button id="make-payment" class="flex-1 h-14 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors hidden">
+                <div class="flex items-center justify-center gap-2">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                    </svg>
+                    입금하기
+                </div>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 주문 상태 정의
+        const orderStatuses = {
+            received: { label: '접수완료', description: '우체국 송장번호 등록' },
+            arrived: { label: 'YCS창고도착', description: '창고 도착, 무게 확인' },
+            repacking: { label: '리패킹진행', description: '리패킹 작업 및 사진 업로드' },
+            billing: { label: '청구서발행', description: '최종 비용 산정' },
+            payment_pending: { label: '입금대기', description: '무통장 입금 대기' },
+            payment_confirmed: { label: '입금확인', description: '입금 확인 완료' },
+            shipping: { label: '배송중', description: '태국 현지 배송' },
+            delivered: { label: '배송완료', description: '최종 배송 완료' }
+        };
+
+        // Mock 주문 상세 데이터
+        let orderDetail = {
+            orderId: 'YCS-2024-001',
+            orderNumber: 'YCS-240115-001',
+            customerId: 'KYP001',
+            orderDate: '2024-01-15',
+            status: 'payment_pending',
+            shippingType: 'sea',
+            country: 'thailand',
+            postalCode: '10110',
+            
+            customerName: '김철수',
+            customerEmail: 'kimcs@email.com',
+            customerPhone: '010-1234-5678',
+            customerType: 'general',
+            
+            recipientName: 'Somchai Jaidee',
+            recipientPhone: '+66-81-234-5678',
+            recipientAddress: '123 Sukhumvit Road, Watthana District, Bangkok',
+            recipientPostalCode: '10110',
+            
+            items: [
+                {
+                    id: '1',
+                    hscode: '1905.31',
+                    description: '빼빼로 초콜릿',
+                    quantity: 10,
+                    weight: 1.5,
+                    width: 30,
+                    height: 20,
+                    depth: 5,
+                    unitPrice: 25.00,
+                    cbm: 0.003
+                },
+                {
+                    id: '2',
+                    hscode: '1806.32',
+                    description: '초콜릿 과자',
+                    quantity: 5,
+                    weight: 0.8,
+                    width: 20,
+                    height: 15,
+                    depth: 3,
+                    unitPrice: 15.00,
+                    cbm: 0.0009
+                }
+            ],
+            
+            trackingNumber: 'EE123456789KR',
+            
+            warehouse: {
+                arrivedDate: '2024-01-18',
+                actualWeight: 2.5,
+                repackingRequested: true,
+                repackingCompleted: true,
+                photos: ['arrival_240118.jpg', 'repacking_240118_1.jpg', 'repacking_240118_2.jpg'],
+                notes: '상품 상태 양호, 1kg씩 3개 포장으로 분할 완료'
+            },
+            
+            billing: {
+                proformaIssued: true,
+                proformaDate: '2024-01-19',
+                finalIssued: false,
+                shippingFee: 85000,
+                localDeliveryFee: 25000,
+                repackingFee: 15000,
+                handlingFee: 10000,
+                insuranceFee: 2000,
+                customsFee: 5000,
+                tax: 9975,
+                total: 151975,
+                paymentMethod: 'manual_deposit',
+                paymentStatus: 'pending',
+                depositorName: '김철수'
+            },
+            
+            specialRequests: '깨지기 쉬운 상품이므로 신중히 포장 부탁드립니다.'
+        };
+
+        // 유틸리티 함수들
+        function getCountryName(country) {
+            const countries = {
+                thailand: '태국',
+                vietnam: '베트남',
+                philippines: '필리핀',
+                indonesia: '인도네시아'
+            };
+            return countries[country] || country;
+        }
+
+        function formatCurrency(amount, currency = 'THB') {
+            if (currency === 'KRW') {
+                return new Intl.NumberFormat('ko-KR').format(amount) + '원';
+            }
+            return new Intl.NumberFormat('ko-KR').format(amount) + ' THB';
+        }
+
+        function formatUSD(amount) {
+            return '$' + amount.toFixed(2);
+        }
+
+        function calculateVolumetricWeight(item) {
+            return (item.width * item.height * item.depth) / 6000;
+        }
+
+        // 워크플로우 상태 생성
+        function getWorkflowStatuses() {
+            const statuses = [
+                {
+                    key: 'received',
+                    label: '접수완료',
+                    description: '우체국 송장번호 등록',
+                    completed: true,
+                    active: false,
+                    date: orderDetail.orderDate
+                },
+                {
+                    key: 'arrived',
+                    label: 'YCS창고도착',
+                    description: '창고 도착, 무게 확인',
+                    completed: !!orderDetail.warehouse.arrivedDate,
+                    active: orderDetail.status === 'arrived',
+                    date: orderDetail.warehouse.arrivedDate
+                },
+                {
+                    key: 'repacking',
+                    label: '리패킹진행',
+                    description: '리패킹 작업 및 사진 업로드',
+                    completed: orderDetail.warehouse.repackingCompleted,
+                    active: orderDetail.status === 'repacking'
+                },
+                {
+                    key: 'billing',
+                    label: '청구서발행',
+                    description: '최종 비용 산정',
+                    completed: orderDetail.billing.proformaIssued,
+                    active: orderDetail.status === 'billing',
+                    date: orderDetail.billing.proformaDate
+                },
+                {
+                    key: 'payment_pending',
+                    label: '입금대기',
+                    description: '무통장 입금 대기',
+                    completed: orderDetail.billing.paymentStatus === 'confirmed' || orderDetail.billing.paymentStatus === 'completed',
+                    active: orderDetail.status === 'payment_pending'
+                },
+                {
+                    key: 'payment_confirmed',
+                    label: '입금확인',
+                    description: '입금 확인 완료',
+                    completed: orderDetail.billing.paymentStatus === 'completed',
+                    active: orderDetail.status === 'payment_confirmed',
+                    date: orderDetail.billing.paymentDate
+                },
+                {
+                    key: 'shipping',
+                    label: '배송중',
+                    description: '태국 현지 배송',
+                    completed: orderDetail.status === 'delivered',
+                    active: orderDetail.status === 'shipping'
+                },
+                {
+                    key: 'delivered',
+                    label: '배송완료',
+                    description: '최종 배송 완료',
+                    completed: orderDetail.status === 'delivered',
+                    active: false
+                }
+            ];
+
+            return statuses;
+        }
+
+        // 워크플로우 렌더링
+        function renderWorkflow() {
+            const workflowStatuses = getWorkflowStatuses();
+            const completedSteps = workflowStatuses.filter(s => s.completed).length;
+            const progressValue = (completedSteps / workflowStatuses.length) * 100;
+
+            document.getElementById('workflow-progress').textContent = `${completedSteps}/${workflowStatuses.length} 단계 완료`;
+            document.getElementById('progress-percentage').textContent = `${Math.round(progressValue)}%`;
+            document.getElementById('progress-bar').style.setProperty('--progress', `${progressValue}%`);
+
+            const stepsContainer = document.getElementById('workflow-steps');
+            stepsContainer.innerHTML = workflowStatuses.map(status => `
+                <div class="workflow-step p-3 rounded-lg border transition-all ${
+                    status.completed 
+                        ? 'bg-green-50 border-green-200' 
+                        : status.active 
+                            ? 'bg-blue-50 border-blue-200' 
+                            : 'bg-gray-50 border-gray-200'
+                }">
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="${
+                            status.completed 
+                                ? 'text-green-600' 
+                                : status.active 
+                                    ? 'text-blue-600' 
+                                    : 'text-gray-400'
+                        }">
+                            ${getStatusIcon(status.key)}
+                        </div>
+                        <span class="font-medium text-sm ${
+                            status.completed 
+                                ? 'text-green-800' 
+                                : status.active 
+                                    ? 'text-blue-800' 
+                                    : 'text-gray-600'
+                        }">
+                            ${status.label}
+                        </span>
+                    </div>
+                    <p class="text-xs text-gray-600 mb-1">${status.description}</p>
+                    ${status.date ? `<p class="text-xs text-gray-500">${status.date}</p>` : ''}
+                    ${status.active ? '<div class="mt-2"><span class="badge badge-secondary text-xs">진행중</span></div>' : ''}
+                    ${status.completed && !status.active ? '<div class="mt-2"><span class="badge badge-default text-xs" style="background: rgb(34 197 94);">완료</span></div>' : ''}
+                </div>
+            `).join('');
+        }
+
+        function getStatusIcon(key) {
+            const icons = {
+                received: '<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
+                arrived: '<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>',
+                repacking: '<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>',
+                billing: '<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>',
+                payment_pending: '<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
+                payment_confirmed: '<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>',
+                shipping: '<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
+                delivered: '<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+            };
+            return icons[key] || icons.received;
+        }
+
+        // 주문 정보 렌더링
+        function renderOrderInfo() {
+            document.getElementById('order-number').textContent = orderDetail.orderNumber;
+            
+            const orderInfoHtml = `
+                <div class="flex justify-between items-center">
+                    <span class="text-blue-700">주문번호</span>
+                    <span class="font-medium font-mono">${orderDetail.orderNumber}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-blue-700">고객 아이디</span>
+                    <span class="font-medium font-mono">${orderDetail.customerId}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-blue-700">접수일</span>
+                    <span class="font-medium">${orderDetail.orderDate}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-blue-700">송장번호</span>
+                    <span class="font-medium font-mono">${orderDetail.trackingNumber}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-blue-700">배송유형</span>
+                    <span class="badge badge-outline">
+                        ${orderDetail.shippingType === 'air' ? '항공운송' : '해상운송'}
+                    </span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-blue-700">목적지</span>
+                    <span class="font-medium">${getCountryName(orderDetail.country)} (${orderDetail.postalCode})</span>
+                </div>
+            `;
+            
+            document.getElementById('order-info').innerHTML = orderInfoHtml;
+        }
+
+        // 고객 정보 렌더링
+        function renderCustomerInfo() {
+            let customerInfoHtml = `
+                <div class="flex justify-between items-center">
+                    <span class="text-blue-700">이름</span>
+                    <span class="font-medium">${orderDetail.customerName}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-blue-700">이메일</span>
+                    <span class="font-medium text-sm">${orderDetail.customerEmail}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-blue-700">연락처</span>
+                    <span class="font-medium">${orderDetail.customerPhone}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-blue-700">회원유형</span>
+                    <span class="badge badge-outline">
+                        ${orderDetail.customerType === 'corporate' ? '기업회원' : '일반회원'}
+                    </span>
+                </div>
+            `;
+            
+            if (orderDetail.companyName) {
+                customerInfoHtml += `
+                    <div class="flex justify-between items-center">
+                        <span class="text-blue-700">회사명</span>
+                        <span class="font-medium">${orderDetail.companyName}</span>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('customer-info').innerHTML = customerInfoHtml;
+        }
+
+        // 창고 정보 렌더링
+        function renderWarehouseInfo() {
+            if (orderDetail.warehouse.arrivedDate) {
+                document.getElementById('warehouse-section').classList.remove('hidden');
+                
+                let warehouseInfoHtml = `
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-blue-700">창고도착일</span>
+                            <span class="font-medium">${orderDetail.warehouse.arrivedDate}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-blue-700">실제무게</span>
+                            <span class="font-medium">${orderDetail.warehouse.actualWeight}kg</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-blue-700">리패킹</span>
+                            <div class="flex items-center gap-2">
+                                <span class="badge ${orderDetail.warehouse.repackingRequested ? 'badge-default' : 'badge-secondary'}">
+                                    ${orderDetail.warehouse.repackingRequested ? '신청함' : '신청안함'}
+                                </span>
+                                ${orderDetail.warehouse.repackingRequested ? 
+                                    `<span class="badge ${orderDetail.warehouse.repackingCompleted ? 'badge-default' : 'badge-outline'} text-xs">
+                                        ${orderDetail.warehouse.repackingCompleted ? '완료' : '진행중'}
+                                    </span>` : ''
+                                }
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                if (orderDetail.warehouse.photos.length > 0) {
+                    warehouseInfoHtml += `
+                        <div class="space-y-2">
+                            <span class="text-blue-700 font-medium">업로드된 사진</span>
+                            <div class="flex flex-wrap gap-2">
+                                ${orderDetail.warehouse.photos.map((photo, index) => `
+                                    <span class="badge badge-outline text-xs flex items-center gap-1">
+                                        <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        </svg>
+                                        ${photo.includes('arrival') ? '도착사진' : 
+                                         photo.includes('repacking') ? '리패킹사진' : '사진'}
+                                        ${index + 1}
+                                    </span>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                if (orderDetail.warehouse.notes) {
+                    warehouseInfoHtml += `
+                        <div class="p-3 bg-blue-50 rounded-lg">
+                            <p class="text-sm text-blue-800">
+                                <strong>창고 메모:</strong> ${orderDetail.warehouse.notes}
+                            </p>
+                        </div>
+                    `;
+                }
+
+                document.getElementById('warehouse-info').innerHTML = warehouseInfoHtml;
+            }
+        }
+
+        // 청구서 정보 렌더링
+        function renderBillingInfo() {
+            // 청구서 상태 badges
+            let invoiceBadgesHtml = '';
+            if (orderDetail.billing.proformaIssued) {
+                invoiceBadgesHtml += '<span class="badge badge-default text-xs">Proforma 발행</span>';
+            }
+            if (orderDetail.billing.finalIssued) {
+                invoiceBadgesHtml += '<span class="badge badge-default text-xs">Final 발행</span>';
+            }
+            document.getElementById('invoice-badges').innerHTML = invoiceBadgesHtml;
+
+            // Proforma 상태
+            document.getElementById('proforma-badge').className = `badge ${orderDetail.billing.proformaIssued ? 'badge-default' : 'badge-secondary'}`;
+            document.getElementById('proforma-badge').textContent = orderDetail.billing.proformaIssued ? '발행완료' : '미발행';
+            if (orderDetail.billing.proformaIssued && orderDetail.billing.proformaDate) {
+                document.getElementById('proforma-date').textContent = `발행일: ${orderDetail.billing.proformaDate}`;
+                document.getElementById('proforma-date').classList.remove('hidden');
+            }
+
+            // Final 상태
+            document.getElementById('final-badge').className = `badge ${orderDetail.billing.finalIssued ? 'badge-default' : 'badge-secondary'}`;
+            document.getElementById('final-badge').textContent = orderDetail.billing.finalIssued ? '발행완료' : '미발행';
+            if (orderDetail.billing.finalIssued && orderDetail.billing.finalDate) {
+                document.getElementById('final-date').textContent = `발행일: ${orderDetail.billing.finalDate}`;
+                document.getElementById('final-date').classList.remove('hidden');
+            }
+
+            // 비용 상세 (Proforma 발행된 경우에만)
+            if (orderDetail.billing.proformaIssued) {
+                document.getElementById('billing-details').classList.remove('hidden');
+                
+                const costItems = [
+                    { label: '기본 배송비', amount: orderDetail.billing.shippingFee },
+                    { label: '현지 배송비', amount: orderDetail.billing.localDeliveryFee }
+                ];
+                
+                if (orderDetail.billing.repackingFee > 0) {
+                    costItems.push({ label: '리패킹 비용', amount: orderDetail.billing.repackingFee });
+                }
+                
+                costItems.push(
+                    { label: '취급 수수료', amount: orderDetail.billing.handlingFee },
+                    { label: '보험료', amount: orderDetail.billing.insuranceFee },
+                    { label: '통관 수수료', amount: orderDetail.billing.customsFee }
+                );
+
+                let costBreakdownHtml = '';
+                costItems.forEach(item => {
+                    costBreakdownHtml += `
+                        <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                            <span class="text-gray-700">${item.label}</span>
+                            <span class="font-medium">${formatCurrency(item.amount)}</span>
+                        </div>
+                    `;
+                });
+
+                costBreakdownHtml += `
+                    <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                        <span class="text-gray-700">TAX 7%</span>
+                        <span class="font-medium">${formatCurrency(orderDetail.billing.tax)}</span>
+                    </div>
+                    <div class="flex justify-between items-center py-3 bg-blue-50 px-4 rounded-lg">
+                        <span class="font-bold text-blue-900 text-lg">총 결제금액</span>
+                        <span class="font-bold text-blue-900 text-xl">${formatCurrency(orderDetail.billing.total)}</span>
+                    </div>
+                `;
+
+                document.getElementById('cost-breakdown').innerHTML = costBreakdownHtml;
+            }
+
+            // 결제 정보
+            const paymentStatusMap = {
+                completed: '입금완료',
+                confirmed: '입금확인',
+                pending: '입금대기',
+                not_ready: '미준비'
+            };
+
+            let paymentInfoHtml = `
+                <div class="flex justify-between items-center">
+                    <span class="text-blue-700">결제 방식</span>
+                    <span class="badge badge-outline">무통장 입금</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-blue-700">결제 상태</span>
+                    <span class="badge ${
+                        orderDetail.billing.paymentStatus === 'completed' || orderDetail.billing.paymentStatus === 'confirmed' ? 'badge-default' :
+                        orderDetail.billing.paymentStatus === 'pending' ? 'badge-secondary' : 'badge-outline'
+                    }">
+                        ${paymentStatusMap[orderDetail.billing.paymentStatus] || '미준비'}
+                    </span>
+                </div>
+            `;
+
+            if (orderDetail.billing.depositorName) {
+                paymentInfoHtml += `
+                    <div class="flex justify-between items-center">
+                        <span class="text-blue-700">입금자명</span>
+                        <span class="font-medium">${orderDetail.billing.depositorName}</span>
+                    </div>
+                `;
+            }
+
+            if (orderDetail.billing.paymentDate) {
+                paymentInfoHtml += `
+                    <div class="flex justify-between items-center">
+                        <span class="text-blue-700">입금일</span>
+                        <span class="font-medium">${orderDetail.billing.paymentDate}</span>
+                    </div>
+                `;
+            }
+
+            document.getElementById('payment-info').innerHTML = paymentInfoHtml;
+
+            // 입금 대기 알림
+            if (orderDetail.status === 'payment_pending' && orderDetail.billing.paymentStatus === 'pending') {
+                document.getElementById('payment-alert').classList.remove('hidden');
+                document.getElementById('payment-amount').textContent = formatCurrency(orderDetail.billing.total);
+            }
+        }
+
+        // 품목 정보 렌더링
+        function renderItems() {
+            if (orderDetail.customerType === 'corporate') {
+                document.getElementById('unit-price-header').classList.remove('hidden');
+            }
+
+            let itemsHtml = '';
+            orderDetail.items.forEach(item => {
+                itemsHtml += `
+                    <tr>
+                        <td>
+                            <div>
+                                ${orderDetail.customerType === 'corporate' ? `<p class="text-xs text-gray-500 mb-1 font-mono">${item.hscode}</p>` : ''}
+                                <p class="font-medium">${item.description}</p>
+                            </div>
+                        </td>
+                        <td class="text-center">${item.quantity}개</td>
+                        <td class="text-center">${item.weight}kg</td>
+                        <td class="text-center">${item.width}×${item.height}×${item.depth}</td>
+                        <td class="text-center">
+                            <span class="badge badge-outline text-xs flex items-center gap-1">
+                                <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                </svg>
+                                ${item.cbm}m³
+                            </span>
+                        </td>
+                        <td class="text-center">${calculateVolumetricWeight(item).toFixed(2)}kg</td>
+                        ${orderDetail.customerType === 'corporate' ? `<td class="text-right">${formatUSD(item.unitPrice)}</td>` : ''}
+                    </tr>
+                `;
+            });
+
+            document.getElementById('items-table-body').innerHTML = itemsHtml;
+        }
+
+        // 수취인 정보 렌더링
+        function renderRecipientInfo() {
+            const recipientInfoHtml = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-blue-700">수취인 이름</span>
+                        <span class="font-medium">${orderDetail.recipientName}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-blue-700">연락처</span>
+                        <span class="font-medium">${orderDetail.recipientPhone}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-blue-700">우편번호</span>
+                        <span class="font-medium">${orderDetail.recipientPostalCode}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-blue-700">국가</span>
+                        <span class="font-medium">${getCountryName(orderDetail.country)}</span>
+                    </div>
+                </div>
+                <div>
+                    <p class="text-blue-700 mb-1">배송지 주소</p>
+                    <p class="font-medium bg-gray-50 p-3 rounded-lg">${orderDetail.recipientAddress}</p>
+                </div>
+            `;
+
+            document.getElementById('recipient-info').innerHTML = recipientInfoHtml;
+        }
+
+        // 특별 요청사항 렌더링
+        function renderSpecialRequests() {
+            if (orderDetail.specialRequests) {
+                document.getElementById('special-requests-section').classList.remove('hidden');
+                document.getElementById('special-requests-text').textContent = orderDetail.specialRequests;
+            }
+        }
+
+        // 하단 버튼 설정
+        function setupButtons() {
+            // 청구서 다운로드 버튼
+            if (orderDetail.billing.proformaIssued) {
+                document.getElementById('download-invoice').classList.remove('hidden');
+            }
+
+            // 입금하기 버튼
+            if (orderDetail.status === 'payment_pending' && orderDetail.billing.paymentStatus === 'pending') {
+                document.getElementById('make-payment').classList.remove('hidden');
+            }
+        }
+
+        // 이벤트 리스너 설정
+        function setupEventListeners() {
+            // 뒤로가기 버튼들
+            document.getElementById('back-button').addEventListener('click', () => {
+                window.location.href = 'order-history.html';
+            });
+
+            document.getElementById('back-to-history').addEventListener('click', () => {
+                window.location.href = 'order-history.html';
+            });
+
+            // 청구서 다운로드
+            document.getElementById('download-invoice').addEventListener('click', () => {
+                window.print();
+            });
+
+            // 입금하기 버튼들
+            document.getElementById('payment-button')?.addEventListener('click', () => {
+                window.location.href = `payment.html?orderId=${orderDetail.orderId}`;
+            });
+
+            document.getElementById('make-payment').addEventListener('click', () => {
+                window.location.href = `payment.html?orderId=${orderDetail.orderId}`;
+            });
+        }
+
+        // 페이지 초기화
+        function initializePage() {
+            // 로딩 시뮬레이션
+            setTimeout(() => {
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('main-content').classList.remove('hidden');
+
+                // 모든 정보 렌더링
+                renderOrderInfo();
+                renderCustomerInfo();
+                renderWarehouseInfo();
+                renderBillingInfo();
+                renderItems();
+                renderRecipientInfo();
+                renderSpecialRequests();
+                renderWorkflow();
+                setupButtons();
+                setupEventListeners();
+            }, 1000);
+        }
+
+        // URL 파라미터에서 orderId 가져오기
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId = urlParams.get('orderId');
+        if (orderId) {
+            orderDetail.orderId = orderId;
+        }
+
+        // 페이지 로드 완료 시 초기화
+        document.addEventListener('DOMContentLoaded', initializePage);
+    </script>
+</body>
+</html>

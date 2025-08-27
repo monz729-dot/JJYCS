@@ -1,0 +1,141 @@
+# Backup and Data Persistence Configuration
+spring:
+  profiles: backup
+  
+  # Database backup configuration
+  datasource:
+    backup:
+      enabled: true
+      schedule: "0 0 2 * * ?" # Daily at 2 AM
+      retention-days: 30
+      s3-bucket: "${BACKUP_S3_BUCKET:ycs-lms-backups}"
+      compression: true
+      encryption: true
+    
+    # Read replica configuration for backup operations
+    read-replica:
+      url: "${DB_REPLICA_URL:jdbc:mysql://localhost:3307/ycs_lms}"
+      username: "${DB_REPLICA_USERNAME:sa}"
+      password: "${DB_REPLICA_PASSWORD:password}"
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      hikari:
+        maximum-pool-size: 5
+        connection-timeout: 30000
+        idle-timeout: 600000
+        max-lifetime: 1800000
+
+  # JPA configuration for backup operations
+  jpa:
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 1000
+        order_inserts: true
+        order_updates: true
+        batch_versioned_data: true
+
+# Custom backup configuration
+ycs:
+  backup:
+    # Database backup settings
+    database:
+      enabled: true
+      type: "mysql" # mysql, postgresql, etc.
+      full-backup-schedule: "0 0 3 * * SUN" # Weekly full backup on Sunday at 3 AM
+      incremental-backup-schedule: "0 0 2 * * MON-SAT" # Daily incremental Monday-Saturday at 2 AM
+      retention:
+        daily: 7
+        weekly: 4
+        monthly: 12
+        yearly: 5
+      compression: gzip
+      encryption:
+        enabled: true
+        key: "${BACKUP_ENCRYPTION_KEY:}"
+        algorithm: "AES-256-CBC"
+    
+    # File storage backup settings
+    files:
+      enabled: true
+      schedule: "0 30 2 * * ?" # Daily at 2:30 AM
+      source-directories:
+        - "/app/uploads"
+        - "/app/logs"
+        - "/app/config"
+      exclude-patterns:
+        - "*.tmp"
+        - "*.log.gz"
+        - "cache/*"
+      retention-days: 90
+      sync-to-s3: true
+      s3-bucket: "${FILES_BACKUP_S3_BUCKET:ycs-lms-file-backups}"
+    
+    # Application configuration backup
+    config:
+      enabled: true
+      schedule: "0 0 1 * * ?" # Daily at 1 AM
+      include:
+        - "application*.yml"
+        - "application*.properties"
+        - "logback*.xml"
+      git-backup:
+        enabled: true
+        repository: "${CONFIG_BACKUP_REPO:}"
+        branch: "config-backup"
+    
+    # Audit log archival
+    audit:
+      enabled: true
+      archive-schedule: "0 0 4 * * ?" # Daily at 4 AM
+      archive-after-days: 90
+      archive-location: "${AUDIT_ARCHIVE_LOCATION:s3://ycs-lms-audit-archives/}"
+      purge-after-days: 2555 # 7 years for compliance
+    
+    # Health monitoring
+    monitoring:
+      enabled: true
+      notification:
+        email:
+          enabled: true
+          recipients: ["admin@ycs.com", "backup@ycs.com"]
+          on-failure: true
+          on-success: false
+        slack:
+          enabled: false
+          webhook-url: "${BACKUP_SLACK_WEBHOOK:}"
+          channel: "#ops"
+      metrics:
+        enabled: true
+        export-to: "prometheus"
+        backup-size-threshold-mb: 10240 # 10GB warning threshold
+        backup-duration-threshold-minutes: 120 # 2 hours warning threshold
+
+# Logging for backup operations
+logging:
+  level:
+    com.ycs.lms.backup: DEBUG
+    org.springframework.scheduling: INFO
+  pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [BACKUP] %logger{36} - %msg%n"
+  file:
+    name: "/app/logs/backup.log"
+    max-size: 100MB
+    max-history: 30
+
+# Management endpoints for backup monitoring
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,metrics,backup,restore"
+  endpoint:
+    backup:
+      enabled: true
+      sensitive: true
+    restore:
+      enabled: true
+      sensitive: true
+  health:
+    backup:
+      enabled: true
+      show-details: always

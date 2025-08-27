@@ -1,0 +1,68 @@
+package com.ycs.lms.listener;
+
+import com.ycs.lms.entity.Order;
+import com.ycs.lms.entity.User;
+import com.ycs.lms.event.SearchIndexEvent;
+import com.ycs.lms.service.SearchService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
+
+@Component
+@RequiredArgsConstructor
+@Slf4j
+public class SearchIndexEventListener {
+
+    private final SearchService searchService;
+
+    @EventListener
+    @Async
+    public void handleSearchIndexEvent(SearchIndexEvent event) {
+        try {
+            switch (event.getEntityType()) {
+                case ORDER:
+                    handleOrderEvent(event);
+                    break;
+                case USER:
+                    handleUserEvent(event);
+                    break;
+            }
+        } catch (Exception e) {
+            log.error("Failed to handle search index event: {}", event, e);
+        }
+    }
+
+    private void handleOrderEvent(SearchIndexEvent event) {
+        switch (event.getActionType()) {
+            case INDEX:
+            case UPDATE:
+                if (event.getEntity() instanceof Order) {
+                    searchService.indexOrder((Order) event.getEntity());
+                    log.debug("Indexed order: {}", event.getEntityId());
+                }
+                break;
+            case DELETE:
+                searchService.deleteOrderIndex(event.getEntityId());
+                log.debug("Deleted order index: {}", event.getEntityId());
+                break;
+        }
+    }
+
+    private void handleUserEvent(SearchIndexEvent event) {
+        switch (event.getActionType()) {
+            case INDEX:
+            case UPDATE:
+                if (event.getEntity() instanceof User) {
+                    searchService.indexUser((User) event.getEntity());
+                    log.debug("Indexed user: {}", event.getEntityId());
+                }
+                break;
+            case DELETE:
+                searchService.deleteUserIndex(event.getEntityId());
+                log.debug("Deleted user index: {}", event.getEntityId());
+                break;
+        }
+    }
+}

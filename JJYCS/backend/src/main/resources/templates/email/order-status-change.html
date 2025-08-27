@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>주문 상태 변경 안내</title>
+    <style>
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .status-change {
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .status-from, .status-to {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin: 0 10px;
+        }
+        .status-from {
+            background: #dc3545;
+            color: white;
+        }
+        .status-to {
+            background: #28a745;
+            color: white;
+        }
+        .order-info {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 th:text="${applicationName}">YCS 물류관리시스템</h1>
+            <p>주문 상태 변경 안내</p>
+        </div>
+        
+        <div class="content">
+            <p><strong th:text="${userName}">고객님</strong>,</p>
+            
+            <p>주문하신 상품의 상태가 변경되었습니다.</p>
+            
+            <div class="status-change">
+                <h3>🔄 상태 변경</h3>
+                <p>
+                    <span class="status-from" th:text="${previousStatus}">이전상태</span>
+                    ➜
+                    <span class="status-to" th:text="${currentStatus}">현재상태</span>
+                </p>
+            </div>
+            
+            <div class="order-info">
+                <h3>📦 주문 정보</h3>
+                <p><strong>주문번호:</strong> <span th:text="${orderNumber}">YCS-240101-001</span></p>
+                <p th:if="${trackingNumber}"><strong>송장번호:</strong> <span th:text="${trackingNumber}">EE123456789KR</span></p>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="#" class="btn">주문 상세보기</a>
+            </div>
+            
+            <p>궁금한 사항이 있으시면 언제든지 문의해 주세요.</p>
+            
+            <p>감사합니다.<br>
+            <strong th:text="${applicationName}">YCS 물류관리시스템</strong></p>
+        </div>
+        
+        <div class="footer">
+            <p th:text="${currentDate}">2025년 08월 23일 14:30</p>
+            <p>본 메일은 자동 발송된 메일입니다.</p>
+        </div>
+    </div>
+</body>
+</html>

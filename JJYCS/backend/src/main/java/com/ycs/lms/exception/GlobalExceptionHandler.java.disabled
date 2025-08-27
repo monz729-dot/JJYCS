@@ -1,0 +1,373 @@
+package com.ycs.lms.exception;
+
+import com.ycs.lms.service.AuditLogService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.validation.BindException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@RestControllerAdvice
+@RequiredArgsConstructor
+@Slf4j
+public class GlobalExceptionHandler {
+
+    private final AuditLogService auditLogService;
+
+    // YCS LMS 커스텀 예외 처리
+    @ExceptionHandler(YcsLmsException.class)
+    public ResponseEntity<ErrorResponse> handleYcsLmsException(YcsLmsException ex, HttpServletRequest request) {
+        log.error("YCS LMS Exception: {} - {}", ex.getErrorCode(), ex.getMessage(), ex);
+        
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(ex.getHttpStatus().value())
+                .error(ex.getHttpStatus().getReasonPhrase())
+                .message(ex.getMessage())
+                .errorCode(ex.getErrorCode())
+                .path(request.getRequestURI())
+                .build();
+
+        // 감사 로그 기록
+        auditLogService.logSecurityEvent(
+                request.getRemoteAddr(), 
+                "EXCEPTION_OCCURRED", 
+                ex.getErrorCode(), 
+                ex.getMessage());
+
+        return ResponseEntity.status(ex.getHttpStatus()).body(errorResponse);
+    }
+
+    // 검증 예외 처리 (Bean Validation)
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleValidationException(
+            MethodArgumentNotValidException ex, HttpServletRequest request) {
+        log.warn("Validation error: {}", ex.getMessage());
+
+        Map<String, List<String>> fieldErrors = new HashMap<>();
+        for (FieldError error : ex.getBindingResult().getFieldErrors()) {
+            fieldErrors.computeIfAbsent(error.getField(), k -> new ArrayList<>())
+                      .add(error.getDefaultMessage());
+        }
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Validation Failed")
+                .message("입력값 검증에 실패했습니다.")
+                .errorCode("VALIDATION_FAILED")
+                .path(request.getRequestURI())
+                .fieldErrors(fieldErrors)
+                .build();
+
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
+
+    // 바인딩 예외 처리
+    @ExceptionHandler(BindException.class)
+    public ResponseEntity<ErrorResponse> handleBindException(BindException ex, HttpServletRequest request) {
+        log.warn("Binding error: {}", ex.getMessage());
+
+        Map<String, List<String>> fieldErrors = new HashMap<>();
+        for (FieldError error : ex.getBindingResult().getFieldErrors()) {
+            fieldErrors.computeIfAbsent(error.getField(), k -> new ArrayList<>())
+                      .add(error.getDefaultMessage());
+        }
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Binding Failed")
+                .message("파라미터 바인딩에 실패했습니다.")
+                .errorCode("BINDING_FAILED")
+                .path(request.getRequestURI())
+                .fieldErrors(fieldErrors)
+                .build();
+
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
+
+    // 제약조건 위반 예외 처리
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolationException(
+            ConstraintViolationException ex, HttpServletRequest request) {
+        log.warn("Constraint violation: {}", ex.getMessage());
+
+        Map<String, List<String>> fieldErrors = new HashMap<>();
+        for (ConstraintViolation<?> violation : ex.getConstraintViolations()) {
+            String fieldName = violation.getPropertyPath().toString();
+            fieldErrors.computeIfAbsent(fieldName, k -> new ArrayList<>())
+                      .add(violation.getMessage());
+        }
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Constraint Violation")
+                .message("제약조건 위반이 발생했습니다.")
+                .errorCode("CONSTRAINT_VIOLATION")
+                .path(request.getRequestURI())
+                .fieldErrors(fieldErrors)
+                .build();
+
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
+
+    // 파일 크기 초과 예외 처리
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleMaxUploadSizeExceeded(
+            MaxUploadSizeExceededException ex, HttpServletRequest request) {
+        log.warn("File size exceeded: {}", ex.getMessage());
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("File Size Exceeded")
+                .message("업로드 파일 크기가 제한을 초과했습니다.")
+                .errorCode("FILE_SIZE_EXCEEDED")
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
+
+    // 인증 예외 처리
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorResponse> handleAuthenticationException(
+            AuthenticationException ex, HttpServletRequest request) {
+        log.warn("Authentication error: {}", ex.getMessage());
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.UNAUTHORIZED.value())
+                .error("Authentication Failed")
+                .message("인증에 실패했습니다.")
+                .errorCode("AUTHENTICATION_FAILED")
+                .path(request.getRequestURI())
+                .build();
+
+        // 보안 이벤트 로그
+        auditLogService.logSecurityEvent(
+                request.getRemoteAddr(), 
+                "AUTHENTICATION_FAILED", 
+                "AUTH", 
+                ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+    }
+
+    // 접근 거부 예외 처리
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDeniedException(
+            AccessDeniedException ex, HttpServletRequest request) {
+        log.warn("Access denied: {}", ex.getMessage());
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.FORBIDDEN.value())
+                .error("Access Denied")
+                .message("접근이 거부되었습니다.")
+                .errorCode("ACCESS_DENIED")
+                .path(request.getRequestURI())
+                .build();
+
+        // 보안 이벤트 로그
+        auditLogService.logSecurityEvent(
+                request.getRemoteAddr(), 
+                "ACCESS_DENIED", 
+                "AUTH", 
+                ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    }
+
+    // HTTP 메소드 지원하지 않음 예외 처리
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMethodNotSupportedException(
+            HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
+        log.warn("Method not supported: {}", ex.getMessage());
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.METHOD_NOT_ALLOWED.value())
+                .error("Method Not Allowed")
+                .message(String.format("HTTP %s 메소드는 지원되지 않습니다.", ex.getMethod()))
+                .errorCode("METHOD_NOT_ALLOWED")
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(errorResponse);
+    }
+
+    // 필수 파라미터 누락 예외 처리
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponse> handleMissingParameter(
+            MissingServletRequestParameterException ex, HttpServletRequest request) {
+        log.warn("Missing parameter: {}", ex.getMessage());
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Missing Parameter")
+                .message(String.format("필수 파라미터가 누락되었습니다: %s", ex.getParameterName()))
+                .errorCode("MISSING_PARAMETER")
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
+
+    // 타입 불일치 예외 처리
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(
+            MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
+        log.warn("Type mismatch: {}", ex.getMessage());
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Type Mismatch")
+                .message(String.format("파라미터 '%s'의 타입이 올바르지 않습니다.", ex.getName()))
+                .errorCode("TYPE_MISMATCH")
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
+
+    // HTTP 메시지 읽기 오류 처리
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleMessageNotReadable(
+            HttpMessageNotReadableException ex, HttpServletRequest request) {
+        log.warn("Message not readable: {}", ex.getMessage());
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Message Not Readable")
+                .message("요청 본문을 읽을 수 없습니다. JSON 형식을 확인해주세요.")
+                .errorCode("MESSAGE_NOT_READABLE")
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
+
+    // 일반 예외 처리 (최후 방어선)
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleGenericException(Exception ex, HttpServletRequest request) {
+        log.error("Unexpected error: {}", ex.getMessage(), ex);
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .error("Internal Server Error")
+                .message("서버 내부 오류가 발생했습니다.")
+                .errorCode("INTERNAL_SERVER_ERROR")
+                .path(request.getRequestURI())
+                .build();
+
+        // 시스템 오류 로그
+        auditLogService.logSecurityEvent(
+                request.getRemoteAddr(), 
+                "SYSTEM_ERROR", 
+                "ERROR", 
+                ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+
+    // 에러 응답 DTO
+    public static class ErrorResponse {
+        private LocalDateTime timestamp;
+        private int status;
+        private String error;
+        private String message;
+        private String errorCode;
+        private String path;
+        private Map<String, List<String>> fieldErrors;
+
+        public static ErrorResponseBuilder builder() {
+            return new ErrorResponseBuilder();
+        }
+
+        // Getters and Setters
+        public LocalDateTime getTimestamp() { return timestamp; }
+        public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
+        public int getStatus() { return status; }
+        public void setStatus(int status) { this.status = status; }
+        public String getError() { return error; }
+        public void setError(String error) { this.error = error; }
+        public String getMessage() { return message; }
+        public void setMessage(String message) { this.message = message; }
+        public String getErrorCode() { return errorCode; }
+        public void setErrorCode(String errorCode) { this.errorCode = errorCode; }
+        public String getPath() { return path; }
+        public void setPath(String path) { this.path = path; }
+        public Map<String, List<String>> getFieldErrors() { return fieldErrors; }
+        public void setFieldErrors(Map<String, List<String>> fieldErrors) { this.fieldErrors = fieldErrors; }
+
+        public static class ErrorResponseBuilder {
+            private final ErrorResponse errorResponse = new ErrorResponse();
+
+            public ErrorResponseBuilder timestamp(LocalDateTime timestamp) {
+                errorResponse.setTimestamp(timestamp);
+                return this;
+            }
+
+            public ErrorResponseBuilder status(int status) {
+                errorResponse.setStatus(status);
+                return this;
+            }
+
+            public ErrorResponseBuilder error(String error) {
+                errorResponse.setError(error);
+                return this;
+            }
+
+            public ErrorResponseBuilder message(String message) {
+                errorResponse.setMessage(message);
+                return this;
+            }
+
+            public ErrorResponseBuilder errorCode(String errorCode) {
+                errorResponse.setErrorCode(errorCode);
+                return this;
+            }
+
+            public ErrorResponseBuilder path(String path) {
+                errorResponse.setPath(path);
+                return this;
+            }
+
+            public ErrorResponseBuilder fieldErrors(Map<String, List<String>> fieldErrors) {
+                errorResponse.setFieldErrors(fieldErrors);
+                return this;
+            }
+
+            public ErrorResponse build() {
+                return errorResponse;
+            }
+        }
+    }
+}

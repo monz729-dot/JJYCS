@@ -1,0 +1,314 @@
+### YCS LMS API Demo Test File
+### 이 파일은 API 테스트 및 데모를 위한 HTTP 요청 모음입니다.
+
+### 1. 사용자 회원가입 테스트
+POST http://localhost:8081/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "demo@ycs.com",
+  "password": "demo123456",
+  "name": "Demo User",
+  "phone": "+82-10-1234-5678",
+  "userType": "GENERAL",
+  "personalInfo": {
+    "birthDate": "1990-01-01",
+    "gender": "MALE",
+    "address": {
+      "line1": "123 Demo Street",
+      "city": "Seoul",
+      "state": "Seoul",
+      "postalCode": "12345",
+      "country": "KR"
+    }
+  }
+}
+
+###
+
+### 2. 기업 사용자 회원가입
+POST http://localhost:8081/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "corporate@ycs.com",
+  "password": "corp123456",
+  "name": "Corporate Manager",
+  "phone": "+82-10-2345-6789",
+  "userType": "CORPORATE",
+  "enterpriseProfile": {
+    "companyName": "YCS Demo Corp",
+    "businessNumber": "123-45-67890",
+    "companyAddress": {
+      "line1": "456 Business Ave",
+      "city": "Seoul",
+      "state": "Seoul", 
+      "postalCode": "54321",
+      "country": "KR"
+    },
+    "businessType": "LOGISTICS",
+    "numberOfEmployees": 50,
+    "annualRevenue": 1000000000
+  }
+}
+
+###
+
+### 3. 파트너 사용자 회원가입
+POST http://localhost:8081/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "partner@ycs.com",
+  "password": "partner123456",
+  "name": "Partner Agent",
+  "phone": "+82-10-3456-7890",
+  "userType": "PARTNER",
+  "partnerRegion": "SEOUL",
+  "commissionRate": 0.05,
+  "referredBy": null
+}
+
+###
+
+### 4. 로그인 테스트
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "demo@ycs.com",
+  "password": "demo123456"
+}
+
+###
+
+### 5. 주문 생성 테스트 (로그인 필요 - 위에서 받은 토큰 사용)
+POST http://localhost:8081/api/orders
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+{
+  "recipientName": "John Doe",
+  "recipientPhone": "+82-10-9876-5432",
+  "recipientEmail": "john@example.com",
+  "memberCode": "MEMBER001",
+  "shippingAddress": {
+    "line1": "789 Recipient St",
+    "line2": "Apt 101",
+    "city": "Busan",
+    "state": "Busan",
+    "postalCode": "67890",
+    "country": "KR"
+  },
+  "items": [
+    {
+      "productName": "T-Shirt",
+      "brand": "Nike",
+      "quantity": 2,
+      "unitPrice": 25.99,
+      "weight": 0.2,
+      "emsHsCode": "6109.10.00"
+    },
+    {
+      "productName": "Jeans",
+      "brand": "Levi's", 
+      "quantity": 1,
+      "unitPrice": 89.99,
+      "weight": 0.8,
+      "emsHsCode": "6203.42.11"
+    }
+  ],
+  "boxes": [
+    {
+      "width": 30,
+      "height": 20,
+      "depth": 10
+    }
+  ],
+  "orderType": "sea",
+  "requiresRepacking": false,
+  "notes": "Handle with care"
+}
+
+###
+
+### 6. CBM 29 초과 테스트 (항공 자동 전환)
+POST http://localhost:8081/api/orders
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+{
+  "recipientName": "Jane Smith",
+  "recipientPhone": "+82-10-8765-4321",
+  "recipientEmail": "jane@example.com",
+  "memberCode": "MEMBER002",
+  "shippingAddress": {
+    "line1": "321 Large Order Ave",
+    "city": "Seoul",
+    "postalCode": "12345",
+    "country": "KR"
+  },
+  "items": [
+    {
+      "productName": "Large Electronics",
+      "quantity": 5,
+      "unitPrice": 199.99,
+      "weight": 2.0,
+      "emsHsCode": "8517.12.00"
+    }
+  ],
+  "boxes": [
+    {
+      "width": 100,
+      "height": 100,
+      "depth": 100
+    },
+    {
+      "width": 80,
+      "height": 80,
+      "depth": 80
+    },
+    {
+      "width": 90,
+      "height": 90,
+      "depth": 90
+    }
+  ],
+  "orderType": "sea",
+  "requiresRepacking": true,
+  "notes": "Large shipment - should auto-convert to air"
+}
+
+###
+
+### 7. THB 1500 초과 테스트
+POST http://localhost:8081/api/orders
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+{
+  "recipientName": "High Value Customer",
+  "recipientPhone": "+82-10-5555-1234",
+  "recipientEmail": "highvalue@example.com",
+  "memberCode": "",
+  "shippingAddress": {
+    "line1": "555 Premium St",
+    "city": "Gangnam",
+    "postalCode": "06000",
+    "country": "KR"
+  },
+  "items": [
+    {
+      "productName": "Luxury Watch",
+      "brand": "Rolex",
+      "quantity": 1,
+      "unitPrice": 2000.00,
+      "weight": 0.1,
+      "emsHsCode": "9102.11.00"
+    }
+  ],
+  "boxes": [
+    {
+      "width": 15,
+      "height": 10,
+      "depth": 5
+    }
+  ],
+  "orderType": "air",
+  "requiresRepacking": false,
+  "notes": "High value item - should trigger additional recipient info requirement"
+}
+
+###
+
+### 8. 주문 목록 조회
+GET http://localhost:8081/api/orders?page=0&size=20
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+###
+
+### 9. 창고 스캔 테스트
+POST http://localhost:8081/api/warehouse/scan
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+{
+  "labelCode": "ORD-2024-001",
+  "scanType": "INBOUND",
+  "location": "A1-01-01",
+  "notes": "Items received in good condition"
+}
+
+###
+
+### 10. 파트너 대시보드 조회 (파트너 로그인 후)
+GET http://localhost:8081/api/partner/dashboard/1
+Authorization: Bearer YOUR_PARTNER_JWT_TOKEN_HERE
+
+###
+
+### 11. 관리자 - 승인 대기 목록
+GET http://localhost:8081/api/admin/users/pending-approvals
+Authorization: Bearer YOUR_ADMIN_JWT_TOKEN_HERE
+
+###
+
+### 12. 관리자 - 사용자 승인
+PUT http://localhost:8081/api/admin/users/2/approve
+Content-Type: application/json
+Authorization: Bearer YOUR_ADMIN_JWT_TOKEN_HERE
+
+{
+  "approvalNotes": "Approved after document verification"
+}
+
+###
+
+### 13. 견적 요청
+POST http://localhost:8081/api/orders/1/estimate
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+{
+  "version": 1,
+  "shippingCost": 45.50,
+  "localShippingCost": 8.00,
+  "repackingCost": 5.00,
+  "notes": "Standard shipping estimate"
+}
+
+###
+
+### 14. EMS 트래킹 조회 (Mock)
+GET http://localhost:8081/api/tracking/ems/EE123456789KR
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+###
+
+### 15. 시스템 상태 확인 (Health Check)
+GET http://localhost:8081/api/actuator/health
+
+###
+
+### 16. H2 데이터베이스 접속 정보
+### URL: http://localhost:8081/api/h2-console
+### JDBC URL: jdbc:h2:mem:ycsdb
+### Username: sa
+### Password: (비어있음)
+
+###
+
+### 사용 가이드:
+### 1. 먼저 회원가입 API로 테스트 계정 생성
+### 2. 로그인 API로 JWT 토큰 획득
+### 3. 받은 토큰을 "YOUR_JWT_TOKEN_HERE" 자리에 교체
+### 4. 각 API 테스트 실행
+### 5. H2 콘솔에서 데이터 확인 가능
+
+### 주요 테스트 시나리오:
+### - CBM 29 초과 시 자동 항공 전환 확인
+### - THB 1500 초과 시 경고 메시지 확인
+### - 회원코드 미기재 시 지연 처리 확인
+### - QR 스캔을 통한 입출고 관리
+### - 파트너 리퍼럴 시스템 동작 확인
+### - 관리자 승인 워크플로우 테스트

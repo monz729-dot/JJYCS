@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>아이디 찾기 - YCS 물류관리시스템</title>
+    <link rel="stylesheet" href="../../common/common.css">
+    <link rel="stylesheet" href="../../common/ui.css">
+    <style>
+        .find-id-container {
+            min-height: 100vh;
+            background: linear-gradient(135deg, rgb(239 246 255) 0%, rgb(255 255 255) 50%, rgb(239 246 255) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .find-id-card {
+            width: 100%;
+            max-width: 28rem;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 40px rgba(37, 99, 235, 0.15);
+            border: 1px solid rgb(219 234 254);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .card-header {
+            text-align: center;
+            padding: 2rem 2rem 0;
+            position: relative;
+        }
+
+        .back-button {
+            position: absolute;
+            left: 1.5rem;
+            top: 1.5rem;
+            padding: 0.5rem;
+            color: rgba(37, 99, 235, 0.6);
+            background: transparent;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s;
+            opacity: 0.6;
+        }
+
+        .back-button:hover {
+            color: rgb(29 78 216);
+            background: rgb(239 246 255);
+            opacity: 1;
+        }
+
+        .back-button svg {
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+
+        .header-icon {
+            width: 4rem;
+            height: 4rem;
+            background: linear-gradient(135deg, rgb(37 99 235) 0%, rgb(59 130 246) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+        }
+
+        .header-icon svg {
+            width: 2rem;
+            height: 2rem;
+            color: white;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: rgb(30 64 175);
+            margin-bottom: 0.75rem;
+        }
+
+        .card-content {
+            padding: 0 2rem 2rem;
+        }
+
+        .step-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .auth-method-info {
+            padding: 1rem;
+            background: rgba(239, 246, 255, 0.5);
+            border: 1px solid rgba(191, 219, 254, 0.5);
+            border-radius: 0.5rem;
+        }
+
+        .auth-method-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .auth-method-header svg {
+            width: 1.25rem;
+            height: 1.25rem;
+            color: rgb(37 99 235);
+        }
+
+        .auth-method-title {
+            font-weight: 500;
+            color: rgb(30 64 175);
+        }
+
+        .auth-method-description {
+            font-size: 0.875rem;
+            color: rgb(37 99 235);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .form-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: rgb(30 64 175);
+        }
+
+        .form-input {
+            height: 3.5rem;
+            padding: 0 1rem;
+            border: 1px solid rgb(191 219 254);
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            background: rgba(239, 246, 255, 0.3);
+            transition: all 0.3s;
+        }
+
+        .form-input:hover {
+            background: rgba(239, 246, 255, 0.5);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: rgb(37 99 235);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: rgb(156 163 175);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .input-group .form-input {
+            flex: 1;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0 1.5rem;
+            height: 3.5rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.5s;
+            border: none;
+            text-decoration: none;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: rgba(37, 99, 235, 0.2);
+            border: 1px solid rgba(37, 99, 235, 0.3);
+            color: rgb(29 78 216);
+            opacity: 0.7;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgb(37 99 235) 0%, rgb(59 130 246) 100%);
+            border-color: rgb(37 99 235);
+            color: white;
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+            opacity: 1;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid rgba(191, 219, 254, 0.5);
+            color: rgba(37, 99, 235, 0.7);
+            opacity: 0.7;
+        }
+
+        .btn-outline:hover:not(:disabled) {
+            background: rgb(239 246 255);
+            color: rgb(29 78 216);
+            border-color: rgba(37, 99, 235, 0.3);
+            opacity: 1;
+        }
+
+        .btn-small {
+            height: 3.5rem;
+            padding: 0 1.5rem;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .button-group .btn {
+            flex: 1;
+        }
+
+        .spinner {
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid currentColor;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border: 1px solid;
+            animation: scaleIn 0.3s ease-out;
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.05);
+            border-color: #fecaca;
+            color: #991b1b;
+        }
+
+        .verify-info {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .verify-icon {
+            width: 4rem;
+            height: 4rem;
+            background: rgb(219 234 254);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+        }
+
+        .verify-icon svg {
+            width: 2rem;
+            height: 2rem;
+            color: rgb(37 99 235);
+        }
+
+        .verify-description {
+            font-size: 0.875rem;
+            color: rgb(37 99 235);
+            margin-bottom: 1.5rem;
+        }
+
+        .result-icon {
+            width: 4rem;
+            height: 4rem;
+            background: rgb(220 252 231);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+        }
+
+        .result-icon svg {
+            width: 2rem;
+            height: 2rem;
+            color: rgb(22 163 74);
+        }
+
+        .result-description {
+            color: rgb(37 99 235);
+            margin-bottom: 2rem;
+        }
+
+        .id-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .id-item {
+            padding: 1.25rem;
+            background: rgba(239, 246, 255, 0.5);
+            border: 1px solid rgba(191, 219, 254, 0.5);
+            border-radius: 0.5rem;
+            animation: scaleIn 0.3s ease-out;
+            transition: all 0.3s;
+        }
+
+        .id-item:hover {
+            background: rgb(239 246 255);
+        }
+
+        .id-item-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .id-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .id-value {
+            font-weight: 500;
+            color: rgb(30 64 175);
+        }
+
+        .id-join-date {
+            font-size: 0.875rem;
+            color: rgb(37 99 235);
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="find-id-container">
+        <div class="find-id-card">
+            <div class="card">
+                <div class="card-header">
+                    <button class="back-button" onclick="goToLogin()">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                        </svg>
+                    </button>
+                    <div class="header-icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                    </div>
+                    <h1 class="card-title">아이디 찾기</h1>
+                </div>
+
+                <div class="card-content">
+                    <!-- Step 1: 입력 -->
+                    <div id="stepInput" class="step-content">
+                        <!-- 인증 방법 안내 -->
+                        <div class="auth-method-info">
+                            <div class="auth-method-header">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                </svg>
+                                <span class="auth-method-title">이메일 인증</span>
+                            </div>
+                            <p class="auth-method-description">
+                                등록된 이메일 주소로 인증번호를 전송합니다.
+                            </p>
+                        </div>
+
+                        <form id="inputForm" onsubmit="handleInputSubmit(event)">
+                            <div class="form-group">
+                                <label for="name" class="form-label">이름</label>
+                                <input
+                                    type="text"
+                                    id="name"
+                                    class="form-input"
+                                    placeholder="이름을 입력하세요"
+                                    required
+                                >
+                            </div>
+
+                            <div class="form-group">
+                                <label for="email" class="form-label">이메일 주소</label>
+                                <input
+                                    type="email"
+                                    id="email"
+                                    class="form-input"
+                                    placeholder="이메일을 입력해주세요"
+                                    required
+                                >
+                            </div>
+
+                            <div id="errorMessage" class="alert alert-error hidden">
+                                <span id="errorText"></span>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary" id="inputSubmitBtn">
+                                <span id="inputBtnText">인증번호 받기</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Step 2: 인증 -->
+                    <div id="stepVerify" class="step-content hidden">
+                        <div class="verify-info">
+                            <div class="verify-icon">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                </svg>
+                            </div>
+                            <p class="verify-description">
+                                <span id="emailDisplay"></span>로<br>
+                                인증번호를 전송했습니다.
+                            </p>
+                        </div>
+
+                        <form id="verifyForm" onsubmit="handleVerifySubmit(event)">
+                            <div class="form-group">
+                                <label for="verificationCode" class="form-label">인증번호</label>
+                                <div class="input-group">
+                                    <input
+                                        type="text"
+                                        id="verificationCode"
+                                        class="form-input"
+                                        placeholder="6자리 인증번호"
+                                        maxlength="6"
+                                        required
+                                    >
+                                    <button type="button" class="btn btn-outline btn-small" onclick="resendCode()" id="resendBtn">
+                                        재전송
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div id="verifyErrorMessage" class="alert alert-error hidden">
+                                <span id="verifyErrorText"></span>
+                            </div>
+
+                            <div class="button-group">
+                                <button type="button" class="btn btn-outline" onclick="goToPrevious()">
+                                    이전
+                                </button>
+                                <button type="submit" class="btn btn-primary" id="verifySubmitBtn">
+                                    <span id="verifyBtnText">확인</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Step 3: 결과 -->
+                    <div id="stepResult" class="step-content hidden">
+                        <div class="verify-info">
+                            <div class="result-icon">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                            <p class="result-description">
+                                총 <span id="foundCount">0</span>개의 아이디를 찾았습니다.
+                            </p>
+                        </div>
+
+                        <div class="id-list" id="idList">
+                            <!-- 동적으로 생성될 아이디 목록 -->
+                        </div>
+
+                        <div class="button-group">
+                            <button type="button" class="btn btn-outline" onclick="goToFindPassword()">
+                                비밀번호 찾기
+                            </button>
+                            <button type="button" class="btn btn-primary" onclick="goToLogin()">
+                                로그인하기
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../common/common.js"></script>
+    <script>
+        // 상태 변수
+        let currentStep = 'input';
+        let isLoading = false;
+        let formData = {
+            name: '',
+            email: '',
+            verificationCode: ''
+        };
+        let foundIds = [];
+
+        // Mock 데이터
+        const mockUsers = {
+            '홍길동': {
+                email: 'hong@example.com',
+                ids: ['hong123', 'hong_user']
+            },
+            '김철수': {
+                email: 'kim@example.com', 
+                ids: ['kim123']
+            },
+            '이영희': {
+                email: 'lee@example.com',
+                ids: ['lee_younghee', 'younghee2024']
+            }
+        };
+
+        // Step 관리
+        function showStep(step) {
+            document.getElementById('stepInput').classList.add('hidden');
+            document.getElementById('stepVerify').classList.add('hidden');
+            document.getElementById('stepResult').classList.add('hidden');
+            
+            document.getElementById(`step${step.charAt(0).toUpperCase() + step.slice(1)}`).classList.remove('hidden');
+            currentStep = step;
+        }
+
+        // 로딩 상태 설정
+        function setLoading(loading, step = currentStep) {
+            isLoading = loading;
+            
+            if (step === 'input') {
+                const btn = document.getElementById('inputSubmitBtn');
+                const text = document.getElementById('inputBtnText');
+                
+                if (loading) {
+                    text.innerHTML = '<div class="spinner"></div> 인증번호 전송 중...';
+                    btn.disabled = true;
+                } else {
+                    text.textContent = '인증번호 받기';
+                    btn.disabled = false;
+                }
+            } else if (step === 'verify') {
+                const btn = document.getElementById('verifySubmitBtn');
+                const text = document.getElementById('verifyBtnText');
+                const resendBtn = document.getElementById('resendBtn');
+                
+                if (loading) {
+                    text.innerHTML = '<div class="spinner"></div> 확인 중...';
+                    btn.disabled = true;
+                    resendBtn.disabled = true;
+                } else {
+                    text.textContent = '확인';
+                    btn.disabled = false;
+                    resendBtn.disabled = false;
+                }
+            }
+        }
+
+        // 에러 메시지 표시
+        function showError(message, step = currentStep) {
+            if (step === 'input') {
+                const errorDiv = document.getElementById('errorMessage');
+                const errorText = document.getElementById('errorText');
+                errorText.textContent = message;
+                errorDiv.classList.remove('hidden');
+            } else if (step === 'verify') {
+                const errorDiv = document.getElementById('verifyErrorMessage');
+                const errorText = document.getElementById('verifyErrorText');
+                errorText.textContent = message;
+                errorDiv.classList.remove('hidden');
+            }
+        }
+
+        // 에러 메시지 숨기기
+        function hideError(step = currentStep) {
+            if (step === 'input') {
+                document.getElementById('errorMessage').classList.add('hidden');
+            } else if (step === 'verify') {
+                document.getElementById('verifyErrorMessage').classList.add('hidden');
+            }
+        }
+
+        // 입력 폼 제출
+        function handleInputSubmit(e) {
+            e.preventDefault();
+            if (isLoading) return;
+
+            hideError();
+            
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
+
+            // 입력 검증
+            if (!name) {
+                showError('이름을 입력해주세요.');
+                return;
+            }
+
+            if (!email) {
+                showError('이메일을 입력해주세요.');
+                return;
+            }
+
+            // 이메일 형식 검증
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showError('올바른 이메일 형식을 입력해주세요.');
+                return;
+            }
+
+            formData.name = name;
+            formData.email = email;
+
+            setLoading(true);
+
+            // Mock API 호출
+            setTimeout(() => {
+                // Mock 사용자 확인
+                const mockUser = mockUsers[name];
+                if (!mockUser || mockUser.email !== email) {
+                    showError('입력하신 정보와 일치하는 계정을 찾을 수 없습니다.');
+                    setLoading(false);
+                    return;
+                }
+
+                // 인증 단계로 이동
+                document.getElementById('emailDisplay').textContent = email;
+                showStep('verify');
+                setLoading(false);
+            }, 1500);
+        }
+
+        // 인증 폼 제출
+        function handleVerifySubmit(e) {
+            e.preventDefault();
+            if (isLoading) return;
+
+            hideError('verify');
+            
+            const verificationCode = document.getElementById('verificationCode').value.trim();
+
+            if (!verificationCode) {
+                showError('인증번호를 입력해주세요.', 'verify');
+                return;
+            }
+
+            formData.verificationCode = verificationCode;
+            setLoading(true, 'verify');
+
+            setTimeout(() => {
+                if (verificationCode === '123456') {
+                    // Mock 아이디 결과 설정
+                    const mockUser = mockUsers[formData.name];
+                    foundIds = mockUser.ids;
+                    
+                    // 결과 단계로 이동
+                    showResultStep();
+                } else {
+                    showError('인증번호가 일치하지 않습니다.', 'verify');
+                }
+                setLoading(false, 'verify');
+            }, 1500);
+        }
+
+        // 결과 단계 표시
+        function showResultStep() {
+            document.getElementById('foundCount').textContent = foundIds.length;
+            
+            const idList = document.getElementById('idList');
+            idList.innerHTML = '';
+            
+            foundIds.forEach((id, index) => {
+                const idItem = document.createElement('div');
+                idItem.className = 'id-item';
+                idItem.style.animationDelay = `${index * 0.1}s`;
+                
+                idItem.innerHTML = `
+                    <div class="id-item-content">
+                        <div class="id-info">
+                            <p class="id-value">${id}</p>
+                            <p class="id-join-date">가입일: 2024.01.15</p>
+                        </div>
+                        <button class="btn btn-outline btn-small" onclick="goToLoginWithId('${id}')">
+                            로그인하기
+                        </button>
+                    </div>
+                `;
+                
+                idList.appendChild(idItem);
+            });
+            
+            showStep('result');
+        }
+
+        // 인증번호 재전송
+        function resendCode() {
+            if (isLoading) return;
+            
+            setLoading(true, 'verify');
+            setTimeout(() => {
+                alert('인증번호가 이메일로 전송되었습니다. (데모: 123456)');
+                setLoading(false, 'verify');
+            }, 1000);
+        }
+
+        // 이전 단계로
+        function goToPrevious() {
+            hideError('verify');
+            document.getElementById('verificationCode').value = '';
+            showStep('input');
+        }
+
+        // 페이지 네비게이션
+        function goToLogin() {
+            navigateTo('login');
+        }
+
+        function goToFindPassword() {
+            navigateTo('find-password');
+        }
+
+        function goToLoginWithId(id) {
+            navigateTo('login', { prefillId: id });
+        }
+
+        // 페이지 초기화
+        document.addEventListener('DOMContentLoaded', () => {
+            showStep('input');
+        });
+    </script>
+</body>
+</html>

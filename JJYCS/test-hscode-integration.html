@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HS Code Integration Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        button { padding: 10px 20px; margin: 10px 0; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { background: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 4px; white-space: pre-wrap; }
+        input { padding: 8px; margin: 5px; border: 1px solid #ddd; border-radius: 4px; }
+        .error { background: #f8d7da; color: #721c24; }
+        .success { background: #d4edda; color: #155724; }
+    </style>
+</head>
+<body>
+    <h1>HS Code API Integration Test</h1>
+    
+    <div class="test-section">
+        <h2>1. Search HS Code by Product Name</h2>
+        <input type="text" id="productName" placeholder="Enter product name" value="electronic">
+        <button onclick="searchByProduct()">Search HS Code</button>
+        <div id="searchResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. Search Product by HS Code</h2>
+        <input type="text" id="hsCode" placeholder="Enter HS Code" value="850431">
+        <button onclick="searchByHsCode()">Search Product</button>
+        <div id="hsCodeResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. Get Tariff Rate</h2>
+        <input type="text" id="tariffHsCode" placeholder="Enter HS Code" value="850431">
+        <button onclick="getTariffRate()">Get Tariff Rate</button>
+        <div id="tariffResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. Calculate Customs Duty</h2>
+        <input type="text" id="dutyHsCode" placeholder="HS Code" value="850431">
+        <input type="number" id="quantity" placeholder="Quantity" value="10">
+        <input type="number" id="value" placeholder="Value (USD)" value="1000">
+        <button onclick="calculateDuty()">Calculate Duty</button>
+        <div id="dutyResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>5. Get Exchange Rate</h2>
+        <button onclick="getExchangeRate()">Get Exchange Rate</button>
+        <div id="exchangeResult" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8081/api';
+
+        async function apiCall(url, method = 'GET', data = null) {
+            try {
+                const options = {
+                    method,
+                    headers: { 'Content-Type': 'application/json' }
+                };
+                
+                if (data) {
+                    options.body = JSON.stringify(data);
+                }
+                
+                const response = await fetch(url, options);
+                const result = await response.json();
+                return { success: response.ok, data: result };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+
+        async function searchByProduct() {
+            const productName = document.getElementById('productName').value;
+            const url = `${API_BASE}/hscode/search/by-product?productName=${encodeURIComponent(productName)}`;
+            
+            const result = await apiCall(url);
+            const resultDiv = document.getElementById('searchResult');
+            
+            if (result.success) {
+                resultDiv.className = 'result success';
+                resultDiv.textContent = JSON.stringify(result.data, null, 2);
+            } else {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `Error: ${result.error || 'Failed to fetch'}`;
+            }
+        }
+
+        async function searchByHsCode() {
+            const hsCode = document.getElementById('hsCode').value;
+            const url = `${API_BASE}/hscode/search/by-hscode?hsCode=${encodeURIComponent(hsCode)}`;
+            
+            const result = await apiCall(url);
+            const resultDiv = document.getElementById('hsCodeResult');
+            
+            if (result.success) {
+                resultDiv.className = 'result success';
+                resultDiv.textContent = JSON.stringify(result.data, null, 2);
+            } else {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `Error: ${result.error || 'Failed to fetch'}`;
+            }
+        }
+
+        async function getTariffRate() {
+            const hsCode = document.getElementById('tariffHsCode').value;
+            const url = `${API_BASE}/hscode/tariff/${encodeURIComponent(hsCode)}`;
+            
+            const result = await apiCall(url);
+            const resultDiv = document.getElementById('tariffResult');
+            
+            if (result.success) {
+                resultDiv.className = 'result success';
+                resultDiv.textContent = JSON.stringify(result.data, null, 2);
+            } else {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `Error: ${result.error || 'Failed to fetch'}`;
+            }
+        }
+
+        async function calculateDuty() {
+            const hsCode = document.getElementById('dutyHsCode').value;
+            const quantity = parseFloat(document.getElementById('quantity').value);
+            const value = parseFloat(document.getElementById('value').value);
+            
+            const data = {
+                hsCode,
+                quantity,
+                value,
+                currency: 'USD'
+            };
+            
+            const url = `${API_BASE}/hscode/calculate-duty`;
+            const result = await apiCall(url, 'POST', data);
+            const resultDiv = document.getElementById('dutyResult');
+            
+            if (result.success) {
+                resultDiv.className = 'result success';
+                resultDiv.textContent = JSON.stringify(result.data, null, 2);
+            } else {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `Error: ${result.error || 'Failed to fetch'}`;
+            }
+        }
+
+        async function getExchangeRate() {
+            const url = `${API_BASE}/hscode/exchange-rate`;
+            
+            const result = await apiCall(url);
+            const resultDiv = document.getElementById('exchangeResult');
+            
+            if (result.success) {
+                resultDiv.className = 'result success';
+                resultDiv.textContent = JSON.stringify(result.data, null, 2);
+            } else {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `Error: ${result.error || 'Failed to fetch'}`;
+            }
+        }
+    </script>
+</body>
+</html>

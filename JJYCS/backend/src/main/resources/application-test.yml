@@ -1,0 +1,47 @@
+spring:
+  application:
+    name: ycs-lms-test
+  
+  # Database Configuration - H2만 사용
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: true
+
+  # JPA Configuration - 최소 설정
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    defer-datasource-initialization: true
+    
+  # SQL 초기화
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:data.sql
+
+# 서버 설정
+server:
+  port: 8081
+  servlet:
+    context-path: /api
+
+# 로깅 - 기본만
+logging:
+  level:
+    com.ycs.lms: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.springframework.security: DEBUG

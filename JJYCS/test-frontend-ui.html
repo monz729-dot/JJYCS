@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HS Code 사용자 화면 테스트</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .test-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .test-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        }
+        
+        .test-card h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .icon {
+            font-size: 1.5rem;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #34495e;
+            font-weight: 500;
+        }
+        
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e6ed;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+        
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .result.info {
+            background: #e2e3e5;
+            border: 1px solid #d6d8db;
+            color: #383d41;
+        }
+        
+        .status-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .status-item {
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        
+        .status-item.online {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-item.offline {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .order-scenario {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        
+        .scenario-step {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-left: 4px solid #667eea;
+            background: #f8f9fa;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .scenario-step h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .test-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎯 HS Code 시스템 사용자 테스트</h1>
+        <p>한국 관세청 API 통합 시스템의 모든 기능을 실제 사용자 관점에서 테스트해보세요</p>
+    </div>
+
+    <div class="container">
+        <!-- 시스템 상태 패널 -->
+        <div class="status-panel">
+            <h3>📊 시스템 상태</h3>
+            <div class="status-grid">
+                <div class="status-item" id="frontend-status">
+                    <h4>프론트엔드</h4>
+                    <p id="frontend-text">확인 중...</p>
+                </div>
+                <div class="status-item" id="api-status">
+                    <h4>API 서버</h4>
+                    <p id="api-text">확인 중...</p>
+                </div>
+                <div class="status-item" id="hscode-status">
+                    <h4>HS Code API</h4>
+                    <p id="hscode-text">확인 중...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 테스트 카드들 -->
+        <div class="test-grid">
+            <!-- 1. 품목명 검색 -->
+            <div class="test-card">
+                <h3><span class="icon">🔍</span>품목명으로 HS Code 검색</h3>
+                <div class="input-group">
+                    <label for="productName">품목명을 입력하세요</label>
+                    <input type="text" id="productName" placeholder="예: 전자제품, 가죽신발, electronic" value="전자제품">
+                </div>
+                <button class="btn" onclick="searchByProduct()">🔍 HS Code 검색</button>
+                <div id="productResult" class="result info" style="display: none;"></div>
+            </div>
+
+            <!-- 2. HS Code 검색 -->
+            <div class="test-card">
+                <h3><span class="icon">🔢</span>HS Code로 품목 검색</h3>
+                <div class="input-group">
+                    <label for="hsCode">HS Code를 입력하세요</label>
+                    <input type="text" id="hsCode" placeholder="예: 850431, 640399" value="850431">
+                </div>
+                <button class="btn" onclick="searchByHsCode()">🔍 품목 정보 검색</button>
+                <div id="hsCodeResult" class="result info" style="display: none;"></div>
+            </div>
+
+            <!-- 3. 관세율 조회 -->
+            <div class="test-card">
+                <h3><span class="icon">💰</span>관세율 조회</h3>
+                <div class="input-group">
+                    <label for="tariffHsCode">HS Code</label>
+                    <input type="text" id="tariffHsCode" placeholder="HS Code 입력" value="850431">
+                </div>
+                <button class="btn" onclick="getTariffRate()">💰 관세율 확인</button>
+                <div id="tariffResult" class="result info" style="display: none;"></div>
+            </div>
+
+            <!-- 4. 관세 계산 -->
+            <div class="test-card">
+                <h3><span class="icon">🧮</span>관세 계산기</h3>
+                <div class="input-group">
+                    <label for="dutyHsCode">HS Code</label>
+                    <input type="text" id="dutyHsCode" placeholder="HS Code" value="850431">
+                </div>
+                <div class="input-group">
+                    <label for="quantity">수량</label>
+                    <input type="number" id="quantity" placeholder="수량" value="10">
+                </div>
+                <div class="input-group">
+                    <label for="value">신고가격 (USD)</label>
+                    <input type="number" id="value" placeholder="가격" value="1000">
+                </div>
+                <button class="btn" onclick="calculateDuty()">🧮 관세 계산</button>
+                <div id="dutyResult" class="result info" style="display: none;"></div>
+            </div>
+
+            <!-- 5. 환율 정보 -->
+            <div class="test-card">
+                <h3><span class="icon">💱</span>환율 정보</h3>
+                <p>현재 관세 계산용 환율 정보를 확인합니다.</p>
+                <button class="btn" onclick="getExchangeRate()">💱 환율 확인</button>
+                <div id="exchangeResult" class="result info" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- 완전한 주문 시나리오 -->
+        <div class="order-scenario">
+            <h3>🎯 완전한 주문 시나리오 테스트</h3>
+            <p>실제 주문 과정을 시뮬레이션하여 전체 프로세스를 테스트합니다.</p>
+            <button class="btn" onclick="runCompleteScenario()">🚀 완전한 시나리오 실행</button>
+            
+            <div id="scenarioResults" style="display: none;">
+                <div class="scenario-step" id="step1">
+                    <h4>1단계: 품목 검색</h4>
+                    <div id="step1Result"></div>
+                </div>
+                <div class="scenario-step" id="step2">
+                    <h4>2단계: 관세율 확인</h4>
+                    <div id="step2Result"></div>
+                </div>
+                <div class="scenario-step" id="step3">
+                    <h4>3단계: 관세 계산</h4>
+                    <div id="step3Result"></div>
+                </div>
+                <div class="scenario-step" id="step4">
+                    <h4>4단계: 주문 완료</h4>
+                    <div id="step4Result"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8081/api';
+        const FRONTEND_BASE = 'http://localhost:3001';
+
+        // 시스템 상태 확인
+        async function checkSystemStatus() {
+            // API 서버 상태
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                updateStatus('api-status', 'api-text', response.ok, 'API 서버 정상', 'API 서버 오류');
+                updateStatus('hscode-status', 'hscode-text', data.status === 'OK', 'HS Code API 정상', 'HS Code API 오류');
+            } catch (error) {
+                updateStatus('api-status', 'api-text', false, '', 'API 서버 연결 실패');
+                updateStatus('hscode-status', 'hscode-text', false, '', 'HS Code API 연결 실패');
+            }
+
+            // 프론트엔드 상태
+            updateStatus('frontend-status', 'frontend-text', true, 'localhost:3001 실행 중', '');
+        }
+
+        function updateStatus(elementId, textId, isOnline, onlineText, offlineText) {
+            const element = document.getElementById(elementId);
+            const textElement = document.getElementById(textId);
+            
+            if (isOnline) {
+                element.className = 'status-item online';
+                textElement.textContent = onlineText;
+            } else {
+                element.className = 'status-item offline';
+                textElement.textContent = offlineText;
+            }
+        }
+
+        // API 호출 헬퍼 함수
+        async function apiCall(url, method = 'GET', data = null) {
+            try {
+                const options = {
+                    method,
+                    headers: { 'Content-Type': 'application/json' }
+                };
+                
+                if (data) {
+                    options.body = JSON.stringify(data);
+                }
+                
+                const response = await fetch(url, options);
+                const result = await response.json();
+                return { success: response.ok, data: result };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+
+        function showResult(elementId, success, content) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = success ? 'result success' : 'result error';
+            element.innerHTML = content;
+        }
+
+        // 품목명으로 HS Code 검색
+        async function searchByProduct() {
+            const productName = document.getElementById('productName').value;
+            if (!productName.trim()) {
+                showResult('productResult', false, '품목명을 입력해주세요.');
+                return;
+            }
+
+            const url = `${API_BASE}/hscode/search/by-product?productName=${encodeURIComponent(productName)}`;
+            const result = await apiCall(url);
+            
+            if (result.success && result.data.items && result.data.items.length > 0) {
+                const items = result.data.items;
+                let content = `<strong>검색 결과 (${items.length}개):</strong><br><br>`;
+                
+                items.forEach(item => {
+                    content += `
+                        <div style="margin-bottom: 10px; padding: 10px; background: rgba(255,255,255,0.7); border-radius: 5px;">
+                            <strong>HS Code:</strong> ${item.hsCode}<br>
+                            <strong>품목명:</strong> ${item.koreanName}<br>
+                            <strong>영문명:</strong> ${item.englishName}<br>
+                            <strong>단위:</strong> ${item.unit} | <strong>기본관세율:</strong> ${item.basicRate}%
+                        </div>
+                    `;
+                });
+                
+                showResult('productResult', true, content);
+            } else {
+                showResult('productResult', false, `검색 실패: ${result.error || '결과를 찾을 수 없습니다.'}`);
+            }
+        }
+
+        // HS Code로 품목 검색
+        async function searchByHsCode() {
+            const hsCode = document.getElementById('hsCode').value;
+            if (!hsCode.trim()) {
+                showResult('hsCodeResult', false, 'HS Code를 입력해주세요.');
+                return;
+            }
+
+            const url = `${API_BASE}/hscode/search/by-hscode?hsCode=${encodeURIComponent(hsCode)}`;
+            const result = await apiCall(url);
+            
+            if (result.success && result.data.items && result.data.items.length > 0) {
+                const item = result.data.items[0];
+                const content = `
+                    <div style="padding: 10px; background: rgba(255,255,255,0.7); border-radius: 5px;">
+                        <strong>HS Code:</strong> ${item.hsCode}<br>
+                        <strong>품목명:</strong> ${item.koreanName}<br>
+                        <strong>영문명:</strong> ${item.englishName}<br>
+                        <strong>단위:</strong> ${item.unit}<br>
+                        <strong>기본관세율:</strong> ${item.basicRate}%<br>
+                        <strong>WTO관세율:</strong> ${item.wtoRate}%<br>
+                        <strong>특혜관세율:</strong> ${item.specialRate}%
+                    </div>
+                `;
+                
+                showResult('hsCodeResult', true, content);
+            } else {
+                showResult('hsCodeResult', false, `검색 실패: ${result.error || 'HS Code를 찾을 수 없습니다.'}`);
+            }
+        }
+
+        // 관세율 조회
+        async function getTariffRate() {
+            const hsCode = document.getElementById('tariffHsCode').value;
+            if (!hsCode.trim()) {
+                showResult('tariffResult', false, 'HS Code를 입력해주세요.');
+                return;
+            }
+
+            const url = `${API_BASE}/hscode/tariff/${encodeURIComponent(hsCode)}`;
+            const result = await apiCall(url);
+            
+            if (result.success && result.data.items && result.data.items.length > 0) {
+                const item = result.data.items[0];
+                const content = `
+                    <div style="padding: 10px; background: rgba(255,255,255,0.7); border-radius: 5px;">
+                        <strong>HS Code:</strong> ${item.hsCode}<br>
+                        <strong>품목명:</strong> ${item.koreanName}<br><br>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 10px; text-align: center;">
+                            <div style="background: #e3f2fd; padding: 8px; border-radius: 4px;">
+                                <div style="font-weight: bold; color: #1976d2;">기본관세율</div>
+                                <div style="font-size: 1.2em; color: #1976d2;">${item.basicRate}%</div>
+                            </div>
+                            <div style="background: #e8f5e8; padding: 8px; border-radius: 4px;">
+                                <div style="font-weight: bold; color: #388e3c;">WTO관세율</div>
+                                <div style="font-size: 1.2em; color: #388e3c;">${item.wtoRate}%</div>
+                            </div>
+                            <div style="background: #fff3e0; padding: 8px; border-radius: 4px;">
+                                <div style="font-weight: bold; color: #f57c00;">특혜관세율</div>
+                                <div style="font-size: 1.2em; color: #f57c00;">${item.specialRate}%</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                showResult('tariffResult', true, content);
+            } else {
+                showResult('tariffResult', false, `조회 실패: ${result.error || '관세율 정보를 찾을 수 없습니다.'}`);
+            }
+        }
+
+        // 관세 계산
+        async function calculateDuty() {
+            const hsCode = document.getElementById('dutyHsCode').value;
+            const quantity = parseFloat(document.getElementById('quantity').value);
+            const value = parseFloat(document.getElementById('value').value);
+
+            if (!hsCode.trim() || !quantity || !value) {
+                showResult('dutyResult', false, '모든 필드를 입력해주세요.');
+                return;
+            }
+
+            const data = { hsCode, quantity, value, currency: 'USD' };
+            const url = `${API_BASE}/hscode/calculate-duty`;
+            const result = await apiCall(url, 'POST', data);
+            
+            if (result.success && result.data.hsCode) {
+                const item = result.data;
+                const content = `
+                    <div style="padding: 15px; background: rgba(255,255,255,0.7); border-radius: 5px;">
+                        <div style="margin-bottom: 15px;">
+                            <strong>HS Code:</strong> ${item.hsCode}<br>
+                            <strong>품목명:</strong> ${item.productName}
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-bottom: 15px; text-align: center;">
+                            <div style="background: #e3f2fd; padding: 10px; border-radius: 4px;">
+                                <div style="font-weight: bold; color: #1976d2;">적용관세율</div>
+                                <div style="font-size: 1.3em; color: #1976d2;">${item.appliedRate}%</div>
+                            </div>
+                            <div style="background: #fff3e0; padding: 10px; border-radius: 4px;">
+                                <div style="font-weight: bold; color: #f57c00;">관세액</div>
+                                <div style="font-size: 1.3em; color: #f57c00;">$${item.dutyAmount}</div>
+                            </div>
+                            <div style="background: #e8f5e8; padding: 10px; border-radius: 4px;">
+                                <div style="font-weight: bold; color: #388e3c;">총액</div>
+                                <div style="font-size: 1.3em; color: #388e3c;">$${item.totalAmount}</div>
+                            </div>
+                        </div>
+                        
+                        <div style="background: #f5f5f5; padding: 10px; border-radius: 4px; font-size: 0.9em;">
+                            <strong>계산 내역:</strong><br>
+                            신고가격: $${value} × 관세율 ${item.appliedRate}% = 관세액 $${item.dutyAmount}<br>
+                            총 납부액: $${value} + $${item.dutyAmount} = $${item.totalAmount}
+                        </div>
+                    </div>
+                `;
+                
+                showResult('dutyResult', true, content);
+            } else {
+                showResult('dutyResult', false, `계산 실패: ${result.error || '관세 계산을 할 수 없습니다.'}`);
+            }
+        }
+
+        // 환율 정보
+        async function getExchangeRate() {
+            const url = `${API_BASE}/hscode/exchange-rate`;
+            const result = await apiCall(url);
+            
+            if (result.success && result.data.data) {
+                const data = result.data.data;
+                const content = `
+                    <div style="padding: 15px; background: rgba(255,255,255,0.7); border-radius: 5px; text-align: center;">
+                        <div style="font-size: 1.5em; margin-bottom: 10px;">
+                            <strong>${data.baseCurrency}/${data.targetCurrency}</strong>
+                        </div>
+                        <div style="font-size: 2em; color: #1976d2; font-weight: bold; margin-bottom: 10px;">
+                            ${data.exchangeRate.toLocaleString()} 원
+                        </div>
+                        <div style="color: #666; font-size: 0.9em;">
+                            마지막 업데이트: ${new Date(data.lastUpdated).toLocaleString('ko-KR')}
+                        </div>
+                    </div>
+                `;
+                
+                showResult('exchangeResult', true, content);
+            } else {
+                showResult('exchangeResult', false, `조회 실패: ${result.error || '환율 정보를 가져올 수 없습니다.'}`);
+            }
+        }
+
+        // 완전한 시나리오 실행
+        async function runCompleteScenario() {
+            const scenarioResults = document.getElementById('scenarioResults');
+            scenarioResults.style.display = 'block';
+            
+            // 초기화
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById(`step${i}Result`).innerHTML = '진행 중...';
+            }
+
+            try {
+                // 1단계: 품목 검색
+                document.getElementById('step1Result').innerHTML = '📡 품목 검색 중...';
+                const searchUrl = `${API_BASE}/hscode/search/by-product?productName=${encodeURIComponent('전자제품')}`;
+                const searchResult = await apiCall(searchUrl);
+                
+                if (!searchResult.success || !searchResult.data.items || searchResult.data.items.length === 0) {
+                    throw new Error('품목 검색 실패');
+                }
+
+                const selectedItem = searchResult.data.items[0];
+                document.getElementById('step1Result').innerHTML = `
+                    ✅ <strong>품목 선택 완료</strong><br>
+                    HS Code: ${selectedItem.hsCode}<br>
+                    품목명: ${selectedItem.koreanName}
+                `;
+
+                // 2단계: 관세율 확인
+                document.getElementById('step2Result').innerHTML = '📡 관세율 조회 중...';
+                const tariffUrl = `${API_BASE}/hscode/tariff/${selectedItem.hsCode}`;
+                const tariffResult = await apiCall(tariffUrl);
+                
+                if (!tariffResult.success || !tariffResult.data.items) {
+                    throw new Error('관세율 조회 실패');
+                }
+
+                const tariffInfo = tariffResult.data.items[0];
+                document.getElementById('step2Result').innerHTML = `
+                    ✅ <strong>관세율 확인 완료</strong><br>
+                    기본관세율: ${tariffInfo.basicRate}%<br>
+                    WTO관세율: ${tariffInfo.wtoRate}%<br>
+                    적용예정: ${tariffInfo.basicRate}%
+                `;
+
+                // 3단계: 관세 계산
+                document.getElementById('step3Result').innerHTML = '📡 관세 계산 중...';
+                const orderData = {
+                    hsCode: selectedItem.hsCode,
+                    quantity: 5,
+                    value: 1500,
+                    currency: 'USD'
+                };
+
+                const dutyUrl = `${API_BASE}/hscode/calculate-duty`;
+                const dutyResult = await apiCall(dutyUrl, 'POST', orderData);
+                
+                if (!dutyResult.success || !dutyResult.data.hsCode) {
+                    throw new Error('관세 계산 실패');
+                }
+
+                const dutyData = dutyResult.data;
+                document.getElementById('step3Result').innerHTML = `
+                    ✅ <strong>관세 계산 완료</strong><br>
+                    신고가격: $${orderData.value}<br>
+                    관세액: $${dutyData.dutyAmount}<br>
+                    총 금액: $${dutyData.totalAmount}
+                `;
+
+                // 4단계: 주문 완료
+                document.getElementById('step4Result').innerHTML = '✅ <strong>시나리오 테스트 완료</strong><br>모든 단계가 성공적으로 처리되었습니다!';
+
+            } catch (error) {
+                document.getElementById('step4Result').innerHTML = `❌ <strong>시나리오 실패</strong><br>오류: ${error.message}`;
+            }
+        }
+
+        // 페이지 로드 시 시스템 상태 확인
+        window.onload = function() {
+            checkSystemStatus();
+            
+            // 5초마다 상태 업데이트
+            setInterval(checkSystemStatus, 5000);
+        };
+    </script>
+</body>
+</html>

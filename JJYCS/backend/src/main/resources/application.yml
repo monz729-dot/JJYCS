@@ -1,0 +1,254 @@
+spring:
+  application:
+    name: ycs-lms
+  
+  # 자동 설정 비활성화 (개발용)
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchRepositoriesAutoConfiguration
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+      - org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration
+  
+  # Database Configuration
+  datasource:
+    # H2 Configuration (Development)
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+    generate-unique-name: false  # 중요: 랜덤 이름 방지
+    
+    # HikariCP Connection Pool Optimization
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000          # 5 minutes
+      connection-timeout: 20000     # 20 seconds
+      max-lifetime: 1800000         # 30 minutes
+      leak-detection-threshold: 60000 # 1 minute
+      pool-name: YCS-LMS-HikariCP
+      connection-test-query: SELECT 1
+      auto-commit: false
+      
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: true
+
+  # Production MySQL Configuration (activated by profile)
+  profiles:
+    production:
+      datasource:
+        url: ${DB_URL:jdbc:mysql://localhost:3306/ycs_lms?useSSL=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        username: ${DB_USERNAME:ycs_user}
+        password: ${DB_PASSWORD:ycs_password}
+        
+        hikari:
+          maximum-pool-size: 50
+          minimum-idle: 10
+          idle-timeout: 600000        # 10 minutes
+          connection-timeout: 30000   # 30 seconds
+          max-lifetime: 3600000       # 60 minutes
+          leak-detection-threshold: 60000 # 1 minute
+          pool-name: YCS-LMS-Production-Pool
+          connection-test-query: SELECT 1
+          auto-commit: false
+          connection-init-sql: SET SESSION sql_mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'
+  
+  # JPA Configuration
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+        generate_statistics: true
+        session:
+          events:
+            log:
+              LOG_QUERIES_SLOWER_THAN_MS: 10
+    defer-datasource-initialization: true
+    
+  # SQL Initialization
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:data.sql
+      
+  # Disable Flyway for now
+  flyway:
+    enabled: false
+      
+  # Security
+  security:
+    jwt:
+      secret-key: YCS-LMS-2024-SECRET-KEY-FOR-JWT-TOKEN-GENERATION-MUST-BE-LONG-ENOUGH
+      expiration-time: 86400000 # 24 hours in milliseconds
+      
+  # Mail Configuration (disabled for development)
+  mail:
+    host: localhost
+    port: 25
+    username: 
+    password: 
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+            required: false
+
+  # Cache Configuration (simple for development)
+  cache:
+    type: simple
+
+  # Session Configuration (in-memory for development)
+  session:
+    store-type: none
+    timeout: 86400s  # 24 hours
+
+  # Spring Boot File Upload Configuration
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 50MB
+      max-request-size: 100MB
+      file-size-threshold: 2KB
+  
+  # Message encoding
+  messages:
+    encoding: UTF-8
+    fallback-to-system-locale: false
+
+# Server Configuration
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+# Logging
+logging:
+  level:
+    com.ycs.lms: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.hibernate.stat: DEBUG
+    org.hibernate.engine.internal.StatisticalLoggingSessionEventListener: INFO
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    
+# CORS Configuration
+cors:
+  allowed-origins:
+    - http://localhost:3000
+    - http://localhost:3001
+    - http://localhost:3002
+    - http://localhost:3003
+    - http://localhost:3004
+    - http://localhost:3005
+    - http://localhost:3006
+    - http://localhost:3007
+    - http://localhost:3008
+    - http://localhost:3009
+    - http://localhost:3010
+    - http://127.0.0.1:3000
+    - http://127.0.0.1:3001
+    - http://127.0.0.1:3002
+    - http://127.0.0.1:3003
+    - http://127.0.0.1:3004
+    - http://127.0.0.1:3005
+    - http://127.0.0.1:3006
+    - http://127.0.0.1:3007
+    - http://127.0.0.1:3008
+    - http://127.0.0.1:3009
+    - http://127.0.0.1:3010
+  allowed-methods:
+    - GET
+    - POST
+    - PUT
+    - DELETE
+    - OPTIONS
+  allowed-headers:
+    - "*"
+  allow-credentials: true
+  max-age: 3600
+
+# Business Rules
+business:
+  cbm:
+    threshold: 29.0 # CBM 임계값 (m³)
+  amount:
+    thb-threshold: 1500.0 # THB 임계값
+  warehouse:
+    auto-assign-location: true
+    default-location-prefix: "A"
+    
+# External APIs Configuration
+external-api:
+  ems:
+    base-url: https://mock-ems-api.com
+    api-key: ${EMS_API_KEY:mock-key}
+    enabled: false
+  hs-code:
+    base-url: https://mock-hscode-api.com
+    api-key: ${HS_API_KEY:mock-key}
+    enabled: false
+  exchange-rate:
+    base-url: https://mock-exchange-api.com
+    api-key: ${EXCHANGE_API_KEY:mock-key}
+    enabled: false
+
+# HS Code API Configuration
+app:
+  api:
+    hscode:
+      search:
+        key: ${HS_SEARCH_API_KEY:s240o275s078n237g000a070s0}
+        url: https://apis.data.go.kr/1360000/000000/getVilageFcstInfoService
+      tariff:
+        key: ${HS_TARIFF_API_KEY:s240o275s078n237g000a070s0}
+        url: https://apis.data.go.kr/1360000/000000/getTariffRateService
+      exchange:
+        key: ${HS_EXCHANGE_API_KEY:s240o275s078n237g000a070s0}
+        url: https://apis.data.go.kr/1360000/000000/getExchangeRateService
+    
+# File Upload Configuration
+file:
+  upload:
+    base-path: ${FILE_UPLOAD_PATH:./uploads}
+    max-size: 50MB # 최대 파일 크기
+    max-request-size: 100MB # 최대 요청 크기
+    temp-cleanup-hours: 24 # 임시 파일 정리 주기(시간)
+    allowed-types:
+      image: ["jpg", "jpeg", "png", "gif", "webp", "bmp"]
+      document: ["pdf", "doc", "docx", "xls", "xlsx", "txt", "hwp"]
+      archive: ["zip", "rar", "7z", "tar", "gz"]
+      video: ["mp4", "avi", "mov", "wmv", "flv"]
+      audio: ["mp3", "wav", "flac", "aac"]
+    image:
+      thumbnail:
+        enabled: true
+        width: 200
+        height: 200
+        quality: 0.8
+      optimize:
+        enabled: true
+        max-width: 1920
+        max-height: 1080
+        quality: 0.85
+

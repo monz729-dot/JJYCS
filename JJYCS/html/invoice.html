@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YCS 물류 시스템 - 청구서</title>
+    <link rel="stylesheet" href="css/globals.css">
+    <style>
+        .page-container {
+            background: var(--gray-50);
+            min-height: 100vh;
+            padding: 1rem;
+        }
+        
+        .invoice-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .invoice-header {
+            background: linear-gradient(135deg, var(--success-600), var(--success-700));
+            color: white;
+            padding: 2rem;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .company-info h1 {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+        
+        .company-info p {
+            opacity: 0.9;
+            margin: 0;
+        }
+        
+        .invoice-info {
+            text-align: right;
+        }
+        
+        .invoice-number {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .invoice-status {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        .invoice-body {
+            padding: 2rem;
+        }
+        
+        .billing-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .billing-section h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+        
+        .billing-detail {
+            margin-bottom: 0.5rem;
+            color: var(--gray-600);
+        }
+        
+        .billing-detail strong {
+            color: var(--gray-900);
+        }
+        
+        .order-reference {
+            background: var(--primary-50);
+            border: 1px solid var(--primary-200);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin: 2rem 0;
+        }
+        
+        .reference-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+        
+        .reference-item {
+            text-align: center;
+        }
+        
+        .reference-value {
+            font-size: 1.125rem;
+            font-weight: bold;
+            color: var(--primary-600);
+            margin-bottom: 0.25rem;
+        }
+        
+        .reference-label {
+            font-size: 0.875rem;
+            color: var(--primary-700);
+        }
+        
+        .services-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            border: 1px solid var(--gray-200);
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+        
+        .services-table th {
+            background: var(--success-50);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--success-800);
+            border-bottom: 1px solid var(--success-200);
+        }
+        
+        .services-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--gray-100);
+            vertical-align: top;
+        }
+        
+        .services-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .amount-summary {
+            background: var(--gray-50);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border: 1px solid var(--gray-200);
+        }
+        
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--gray-200);
+        }
+        
+        .summary-item:last-child {
+            border-bottom: none;
+            font-weight: bold;
+            font-size: 1.25rem;
+            color: var(--success-600);
+            background: white;
+            margin: 1rem -1.5rem -1.5rem -1.5rem;
+            padding: 1rem 1.5rem;
+            border-radius: 0 0 0.5rem 0.5rem;
+            box-shadow: 0 -1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+        
+        .payment-info {
+            background: var(--warning-50);
+            border: 1px solid var(--warning-200);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin: 2rem 0;
+        }
+        
+        .payment-info h3 {
+            color: var(--warning-800);
+            margin-bottom: 1rem;
+        }
+        
+        .bank-info {
+            background: white;
+            padding: 1rem;
+            border-radius: 0.375rem;
+            margin: 1rem 0;
+        }
+        
+        .bank-detail {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .bank-detail:last-child {
+            margin-bottom: 0;
+        }
+        
+        .copy-btn {
+            background: var(--primary-100);
+            color: var(--primary-600);
+            border: none;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .copy-btn:hover {
+            background: var(--primary-200);
+        }
+        
+        .payment-deadline {
+            background: var(--danger-50);
+            border: 1px solid var(--danger-200);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            text-align: center;
+            margin: 1.5rem 0;
+        }
+        
+        .deadline-date {
+            font-size: 1.125rem;
+            font-weight: bold;
+            color: var(--danger-600);
+        }
+        
+        .invoice-footer {
+            background: var(--gray-50);
+            padding: 2rem;
+            border-top: 1px solid var(--gray-200);
+        }
+        
+        .footer-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+        
+        .footer-notes {
+            text-align: center;
+            font-size: 0.875rem;
+            color: var(--gray-600);
+        }
+        
+        @media (max-width: 768px) {
+            .header-content {
+                text-align: center;
+            }
+            
+            .invoice-info {
+                text-align: center;
+            }
+            
+            .billing-info {
+                grid-template-columns: 1fr;
+            }
+            
+            .reference-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .services-table {
+                font-size: 0.875rem;
+            }
+            
+            .services-table th,
+            .services-table td {
+                padding: 0.75rem 0.5rem;
+            }
+            
+            .footer-actions {
+                flex-direction: column;
+            }
+            
+            .bank-detail {
+                flex-direction: column;
+                align-items: start;
+                gap: 0.5rem;
+            }
+        }
+        
+        @media print {
+            .invoice-footer .btn {
+                display: none;
+            }
+            
+            .page-container {
+                background: white;
+                padding: 0;
+            }
+            
+            .invoice-container {
+                box-shadow: none;
+                border: 1px solid var(--gray-300);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <div class="invoice-container">
+            <!-- 헤더 -->
+            <div class="invoice-header">
+                <div class="header-content">
+                    <div class="company-info">
+                        <h1>YCS 물류 시스템</h1>
+                        <p>태국 전문 배송 서비스</p>
+                        <p>📞 02-1234-5678 | 📧 billing@ycs.com</p>
+                    </div>
+                    <div class="invoice-info">
+                        <div class="invoice-number">청구서 #INV240822001</div>
+                        <div>발행일: 2024년 8월 22일</div>
+                        <div style="margin-top: 0.5rem;">
+                            <span class="invoice-status">미납</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 본문 -->
+            <div class="invoice-body">
+                <!-- 청구 정보 -->
+                <div class="billing-info">
+                    <div class="billing-section">
+                        <h3>청구 대상</h3>
+                        <div class="billing-detail"><strong>김개발</strong></div>
+                        <div class="billing-detail">서울시 강남구 테헤란로 123</div>
+                        <div class="billing-detail">개발타워 15층</div>
+                        <div class="billing-detail">📞 010-1234-5678</div>
+                        <div class="billing-detail">📧 dev@example.com</div>
+                    </div>
+                    
+                    <div class="billing-section">
+                        <h3>발송 정보</h3>
+                        <div class="billing-detail"><strong>수취인:</strong> John Smith</div>
+                        <div class="billing-detail"><strong>주소:</strong> Bangkok, Thailand</div>
+                        <div class="billing-detail"><strong>배송일:</strong> 2024년 8월 28일</div>
+                        <div class="billing-detail"><strong>배송 완료:</strong> 2024년 9월 5일</div>
+                    </div>
+                </div>
+
+                <!-- 주문 참조 -->
+                <div class="order-reference">
+                    <h3 style="text-align: center; margin-bottom: 1rem; color: var(--primary-700);">📦 주문 참조 정보</h3>
+                    <div class="reference-grid">
+                        <div class="reference-item">
+                            <div class="reference-value">#YCS240822001</div>
+                            <div class="reference-label">주문번호</div>
+                        </div>
+                        <div class="reference-item">
+                            <div class="reference-value">#EST240822001</div>
+                            <div class="reference-label">견적서 번호</div>
+                        </div>
+                        <div class="reference-item">
+                            <div class="reference-value">2.5m³</div>
+                            <div class="reference-label">총 CBM</div>
+                        </div>
+                        <div class="reference-item">
+                            <div class="reference-value">해상</div>
+                            <div class="reference-label">배송 방법</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 서비스 상세 -->
+                <div class="services-section">
+                    <h2 style="font-size: 1.125rem; font-weight: 600; color: var(--gray-900); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--success-500);">
+                        제공 서비스
+                    </h2>
+                    <table class="services-table">
+                        <thead>
+                            <tr>
+                                <th>서비스</th>
+                                <th>설명</th>
+                                <th>수량/단위</th>
+                                <th>단가</th>
+                                <th>금액</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>해상 배송비</strong></td>
+                                <td>부산항 → 방콕항 (2.5m³)</td>
+                                <td>2.5m³</td>
+                                <td>₩50,000/m³</td>
+                                <td>₩125,000</td>
+                            </tr>
+                            <tr>
+                                <td><strong>보험료</strong></td>
+                                <td>상품가치 보장 (₩93,000 × 2%)</td>
+                                <td>1식</td>
+                                <td>₩1,860</td>
+                                <td>₩1,860</td>
+                            </tr>
+                            <tr>
+                                <td><strong>포장 및 라벨링</strong></td>
+                                <td>안전 포장 및 배송 라벨 작업</td>
+                                <td>1식</td>
+                                <td>₩15,000</td>
+                                <td>₩15,000</td>
+                            </tr>
+                            <tr>
+                                <td><strong>현지 배송</strong></td>
+                                <td>태국 국내 배송 (항구 → 수취인)</td>
+                                <td>1식</td>
+                                <td>₩25,000</td>
+                                <td>₩25,000</td>
+                            </tr>
+                            <tr>
+                                <td><strong>통관 대행</strong></td>
+                                <td>태국 세관 통관 대행 서비스</td>
+                                <td>1식</td>
+                                <td>₩20,000</td>
+                                <td>₩20,000</td>
+                            </tr>
+                            <tr>
+                                <td><strong>신규고객 할인</strong></td>
+                                <td>첫 주문 10% 할인 혜택</td>
+                                <td>1식</td>
+                                <td>-10%</td>
+                                <td style="color: var(--success-600);">-₩18,686</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 금액 요약 -->
+                <div class="amount-summary">
+                    <div class="summary-item">
+                        <span>소계</span>
+                        <span>₩186,860</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>할인</span>
+                        <span style="color: var(--success-600);">-₩18,686</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>부가세 (10%)</span>
+                        <span>₩16,817</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>총 청구 금액</span>
+                        <span>₩184,991</span>
+                    </div>
+                </div>
+
+                <!-- 결제 기한 -->
+                <div class="payment-deadline">
+                    <div style="margin-bottom: 0.5rem; font-weight: 500;">⏰ 결제 기한</div>
+                    <div class="deadline-date">2024년 9월 12일 (발행일로부터 21일)</div>
+                    <div style="font-size: 0.875rem; margin-top: 0.5rem; color: var(--danger-700);">
+                        기한 내 미납 시 연체료가 부과될 수 있습니다.
+                    </div>
+                </div>
+
+                <!-- 결제 정보 -->
+                <div class="payment-info">
+                    <h3>💳 무통장 입금 정보</h3>
+                    <p style="margin-bottom: 1rem; color: var(--warning-700);">
+                        아래 계좌로 정확한 금액을 입금해주시고, 입금 확인을 위해 연락바랍니다.
+                    </p>
+                    
+                    <div class="bank-info">
+                        <div class="bank-detail">
+                            <span><strong>은행명:</strong> 신한은행</span>
+                            <button class="copy-btn" onclick="copyText('신한은행')">복사</button>
+                        </div>
+                        <div class="bank-detail">
+                            <span><strong>계좌번호:</strong> 110-123-456789</span>
+                            <button class="copy-btn" onclick="copyText('110-123-456789')">복사</button>
+                        </div>
+                        <div class="bank-detail">
+                            <span><strong>예금주:</strong> (주)YCS물류</span>
+                            <button class="copy-btn" onclick="copyText('(주)YCS물류')">복사</button>
+                        </div>
+                        <div class="bank-detail">
+                            <span><strong>입금액:</strong> ₩184,991</span>
+                            <button class="copy-btn" onclick="copyText('184991')">복사</button>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 1rem; padding: 1rem; background: var(--warning-100); border-radius: 0.375rem;">
+                        <div style="font-weight: 500; margin-bottom: 0.5rem;">📞 입금 확인 연락처</div>
+                        <div>전화: 02-1234-5678 (평일 9:00-18:00)</div>
+                        <div>이메일: billing@ycs.com</div>
+                        <div style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--warning-700);">
+                            * 입금자명이 다를 경우 반드시 연락바랍니다.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 푸터 -->
+            <div class="invoice-footer">
+                <div class="footer-actions">
+                    <button class="btn btn-primary" onclick="confirmPayment()">입금 완료 신고</button>
+                    <button class="btn btn-outline" onclick="downloadPDF()">PDF 다운로드</button>
+                    <button class="btn btn-outline" onclick="printInvoice()">인쇄</button>
+                    <button class="btn btn-outline" onclick="requestExtension()">결제 연장 요청</button>
+                    <button class="btn btn-outline" onclick="goBack()">돌아가기</button>
+                </div>
+                
+                <div class="footer-notes">
+                    <p><strong>이용해주셔서 감사합니다!</strong></p>
+                    <p>문의사항이 있으시면 언제든지 고객센터로 연락해주세요.</p>
+                    <p style="margin-top: 0.5rem; font-size: 0.75rem;">
+                        사업자등록번호: 123-45-67890 | 통신판매업신고: 2024-서울강남-1234
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 텍스트 복사
+        function copyText(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast(`${text}이(가) 복사되었습니다!`, 'success');
+            }).catch(() => {
+                showToast('복사에 실패했습니다. 직접 선택해서 복사해주세요.', 'error');
+            });
+        }
+
+        // 입금 완료 신고
+        function confirmPayment() {
+            const depositor = prompt('입금자명을 입력해주세요:');
+            if (depositor && depositor.trim()) {
+                showToast('입금 완료 신고가 접수되었습니다. 확인 후 처리 상태를 업데이트해드리겠습니다.', 'success');
+                console.log('입금자:', depositor);
+                // 실제로는 서버에 입금 신고 전송
+            }
+        }
+
+        // PDF 다운로드
+        function downloadPDF() {
+            showToast('청구서 PDF를 생성하고 있습니다...', 'info');
+            setTimeout(() => {
+                showToast('청구서 PDF가 다운로드되었습니다.', 'success');
+            }, 2000);
+        }
+
+        // 인쇄
+        function printInvoice() {
+            window.print();
+        }
+
+        // 결제 연장 요청
+        function requestExtension() {
+            const reason = prompt('결제 연장이 필요한 사유를 입력해주세요:');
+            if (reason && reason.trim()) {
+                showToast('결제 연장 요청이 전송되었습니다. 검토 후 연락드리겠습니다.', 'success');
+                console.log('연장 사유:', reason);
+            }
+        }
+
+        // 돌아가기
+        function goBack() {
+            history.back();
+        }
+
+        // 토스트 메시지
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.textContent = message;
+            toast.style.cssText = `
+                position: fixed;
+                top: 2rem;
+                right: 2rem;
+                padding: 1rem 1.5rem;
+                border-radius: 0.5rem;
+                color: white;
+                font-weight: 500;
+                z-index: 9999;
+                opacity: 0;
+                transform: translateY(-1rem);
+                transition: all 0.3s ease;
+                max-width: 350px;
+            `;
+            
+            if (type === 'success') {
+                toast.style.backgroundColor = 'var(--success-600)';
+            } else if (type === 'error') {
+                toast.style.backgroundColor = 'var(--danger-600)';
+            } else {
+                toast.style.backgroundColor = 'var(--primary-600)';
+            }
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateY(0)';
+            }, 100);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-1rem)';
+                setTimeout(() => document.body.removeChild(toast), 300);
+            }, 4000);
+        }
+
+        // 페이지 로드 시 애니메이션
+        document.addEventListener('DOMContentLoaded', function() {
+            const sections = document.querySelectorAll('.billing-info, .order-reference, .services-section, .amount-summary, .payment-info');
+            sections.forEach((section, index) => {
+                section.style.opacity = '0';
+                section.style.transform = 'translateY(1rem)';
+                setTimeout(() => {
+                    section.style.transition = 'all 0.3s ease';
+                    section.style.opacity = '1';
+                    section.style.transform = 'translateY(0)';
+                }, index * 200);
+            });
+        });
+
+        // 결제 기한 체크 및 경고
+        function checkPaymentDeadline() {
+            const deadlineDate = new Date('2024-09-12');
+            const today = new Date();
+            const daysLeft = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
+            
+            if (daysLeft <= 3 && daysLeft > 0) {
+                setTimeout(() => {
+                    showToast(`결제 기한이 ${daysLeft}일 남았습니다!`, 'warning');
+                }, 3000);
+            } else if (daysLeft <= 0) {
+                setTimeout(() => {
+                    showToast('결제 기한이 지났습니다. 빠른 결제 부탁드립니다.', 'error');
+                }, 3000);
+            }
+        }
+
+        // 페이지 로드 시 결제 기한 체크
+        setTimeout(checkPaymentDeadline, 5000);
+    </script>
+</body>
+</html>

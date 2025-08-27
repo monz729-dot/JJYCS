@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YCS 물류 시스템 - 입금 확인</title>
+    <link rel="stylesheet" href="css/globals.css">
+    <style>
+        .page-container {
+            background: var(--gray-50);
+            min-height: 100vh;
+            padding: 1rem;
+        }
+        
+        .payment-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .payment-header {
+            background: linear-gradient(135deg, var(--success-500), var(--success-600));
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .success-icon {
+            width: 4rem;
+            height: 4rem;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem auto;
+            font-size: 2rem;
+        }
+        
+        .payment-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .payment-subtitle {
+            opacity: 0.9;
+        }
+        
+        .payment-body {
+            padding: 2rem;
+        }
+        
+        .payment-details {
+            background: var(--success-50);
+            border: 1px solid var(--success-200);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--success-200);
+        }
+        
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+        
+        .detail-label {
+            color: var(--success-700);
+            font-weight: 500;
+        }
+        
+        .detail-value {
+            color: var(--success-800);
+            font-weight: 600;
+        }
+        
+        .timeline-section {
+            margin: 2rem 0;
+        }
+        
+        .section-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--success-500);
+        }
+        
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0.75rem;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--success-200);
+        }
+        
+        .timeline-item {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -0.75rem;
+            top: 0.25rem;
+            width: 1rem;
+            height: 1rem;
+            border-radius: 50%;
+            background: var(--success-500);
+            border: 3px solid white;
+            box-shadow: 0 0 0 2px var(--success-500);
+        }
+        
+        .timeline-item.completed::before {
+            background: var(--success-600);
+            box-shadow: 0 0 0 2px var(--success-600);
+        }
+        
+        .timeline-item.pending::before {
+            background: var(--gray-300);
+            box-shadow: 0 0 0 2px var(--gray-300);
+        }
+        
+        .timeline-content {
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-left: 1rem;
+        }
+        
+        .timeline-title {
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 0.25rem;
+        }
+        
+        .timeline-desc {
+            font-size: 0.875rem;
+            color: var(--gray-600);
+            margin-bottom: 0.5rem;
+        }
+        
+        .timeline-time {
+            font-size: 0.75rem;
+            color: var(--gray-500);
+        }
+        
+        .next-steps {
+            background: var(--primary-50);
+            border: 1px solid var(--primary-200);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin: 2rem 0;
+        }
+        
+        .next-steps h3 {
+            color: var(--primary-800);
+            margin-bottom: 1rem;
+        }
+        
+        .steps-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .steps-list li {
+            display: flex;
+            align-items: start;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: white;
+            border-radius: 0.375rem;
+        }
+        
+        .step-number {
+            background: var(--primary-500);
+            color: white;
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        
+        .contact-support {
+            background: var(--warning-50);
+            border: 1px solid var(--warning-200);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .contact-support h3 {
+            color: var(--warning-800);
+            margin-bottom: 1rem;
+        }
+        
+        .contact-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .contact-item {
+            background: white;
+            padding: 1rem;
+            border-radius: 0.375rem;
+            text-align: center;
+        }
+        
+        .contact-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .payment-footer {
+            background: var(--gray-50);
+            padding: 2rem;
+            border-top: 1px solid var(--gray-200);
+            text-align: center;
+        }
+        
+        .footer-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+        
+        .estimated-time {
+            background: var(--info-50);
+            border: 1px solid var(--info-200);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin: 1.5rem 0;
+            text-align: center;
+        }
+        
+        .time-value {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: var(--info-600);
+        }
+        
+        @media (max-width: 768px) {
+            .detail-item {
+                flex-direction: column;
+                align-items: start;
+                gap: 0.5rem;
+            }
+            
+            .contact-info {
+                grid-template-columns: 1fr;
+            }
+            
+            .footer-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <div class="payment-container">
+            <!-- 헤더 -->
+            <div class="payment-header">
+                <div class="success-icon">✅</div>
+                <h1 class="payment-title">입금이 확인되었습니다!</h1>
+                <p class="payment-subtitle">결제가 정상적으로 처리되어 배송 준비가 시작됩니다.</p>
+            </div>
+
+            <!-- 본문 -->
+            <div class="payment-body">
+                <!-- 결제 상세 -->
+                <div class="payment-details">
+                    <div class="detail-item">
+                        <span class="detail-label">청구서 번호</span>
+                        <span class="detail-value">#INV240822001</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">입금 금액</span>
+                        <span class="detail-value">₩184,991</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">입금자명</span>
+                        <span class="detail-value">김개발</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">입금 확인일</span>
+                        <span class="detail-value">2024년 8월 22일 14:30</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">주문 번호</span>
+                        <span class="detail-value">#YCS240822001</span>
+                    </div>
+                </div>
+
+                <!-- 예상 처리 시간 -->
+                <div class="estimated-time">
+                    <div style="margin-bottom: 0.5rem; font-weight: 500;">📅 예상 배송 완료</div>
+                    <div class="time-value">2024년 9월 5일</div>
+                    <div style="font-size: 0.875rem; margin-top: 0.5rem; color: var(--info-700);">
+                        해상 배송 기준 약 14일 소요
+                    </div>
+                </div>
+
+                <!-- 진행 상황 타임라인 -->
+                <div class="timeline-section">
+                    <h2 class="section-title">배송 진행 상황</h2>
+                    <div class="timeline">
+                        <div class="timeline-item completed">
+                            <div class="timeline-content">
+                                <div class="timeline-title">✅ 주문 접수</div>
+                                <div class="timeline-desc">주문이 접수되고 견적서가 발행되었습니다.</div>
+                                <div class="timeline-time">2024-08-22 09:00</div>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item completed">
+                            <div class="timeline-content">
+                                <div class="timeline-title">✅ 결제 확인</div>
+                                <div class="timeline-desc">입금이 확인되어 배송 준비가 시작됩니다.</div>
+                                <div class="timeline-time">2024-08-22 14:30</div>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item pending">
+                            <div class="timeline-content">
+                                <div class="timeline-title">⏳ 상품 수거</div>
+                                <div class="timeline-desc">발송인 주소에서 상품을 수거합니다.</div>
+                                <div class="timeline-time">예정: 2024-08-23</div>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item pending">
+                            <div class="timeline-content">
+                                <div class="timeline-title">⏳ 포장 및 검수</div>
+                                <div class="timeline-desc">안전한 포장 및 상품 검수를 진행합니다.</div>
+                                <div class="timeline-time">예정: 2024-08-24</div>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item pending">
+                            <div class="timeline-content">
+                                <div class="timeline-title">⏳ 선적 및 출항</div>
+                                <div class="timeline-desc">부산항에서 방콕항으로 선적됩니다.</div>
+                                <div class="timeline-time">예정: 2024-08-26</div>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item pending">
+                            <div class="timeline-content">
+                                <div class="timeline-title">⏳ 현지 도착 및 통관</div>
+                                <div class="timeline-desc">태국 도착 후 세관 통관을 진행합니다.</div>
+                                <div class="timeline-time">예정: 2024-09-02</div>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item pending">
+                            <div class="timeline-content">
+                                <div class="timeline-title">⏳ 현지 배송</div>
+                                <div class="timeline-desc">수취인 주소로 최종 배송됩니다.</div>
+                                <div class="timeline-time">예정: 2024-09-05</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 다음 단계 안내 -->
+                <div class="next-steps">
+                    <h3>🎯 다음 단계</h3>
+                    <ul class="steps-list">
+                        <li>
+                            <span class="step-number">1</span>
+                            <div>
+                                <strong>상품 수거 준비</strong><br>
+                                <small>내일(8/23) 상품 수거 예정입니다. 포장을 완료해주세요.</small>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="step-number">2</span>
+                            <div>
+                                <strong>진행 상황 알림</strong><br>
+                                <small>SMS와 이메일로 각 단계별 진행 상황을 알려드립니다.</small>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="step-number">3</span>
+                            <div>
+                                <strong>배송 완료 확인</strong><br>
+                                <small>수취인이 상품을 받으면 완료 알림을 보내드립니다.</small>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- 고객 지원 -->
+                <div class="contact-support">
+                    <h3>💬 문의 및 지원</h3>
+                    <p>배송 과정에서 궁금한 점이 있으시면 언제든지 연락해주세요.</p>
+                    
+                    <div class="contact-info">
+                        <div class="contact-item">
+                            <div class="contact-icon">📞</div>
+                            <div><strong>전화 상담</strong></div>
+                            <div>02-1234-5678</div>
+                            <div style="font-size: 0.875rem; color: var(--gray-600);">평일 9:00-18:00</div>
+                        </div>
+                        
+                        <div class="contact-item">
+                            <div class="contact-icon">📧</div>
+                            <div><strong>이메일 문의</strong></div>
+                            <div>support@ycs.com</div>
+                            <div style="font-size: 0.875rem; color: var(--gray-600);">24시간 접수</div>
+                        </div>
+                        
+                        <div class="contact-item">
+                            <div class="contact-icon">💬</div>
+                            <div><strong>카카오톡</strong></div>
+                            <div>@YCS물류</div>
+                            <div style="font-size: 0.875rem; color: var(--gray-600);">실시간 상담</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 푸터 -->
+            <div class="payment-footer">
+                <div class="footer-actions">
+                    <button class="btn btn-primary" onclick="trackOrder()">배송 추적</button>
+                    <button class="btn btn-outline" onclick="downloadReceipt()">영수증 다운로드</button>
+                    <button class="btn btn-outline" onclick="goToDashboard()">대시보드로 이동</button>
+                    <button class="btn btn-outline" onclick="newOrder()">새 주문하기</button>
+                </div>
+                
+                <div style="font-size: 0.875rem; color: var(--gray-600);">
+                    <p><strong>결제가 완료되었습니다. 이용해주셔서 감사합니다!</strong></p>
+                    <p>배송 과정에서 실시간 알림을 받으시려면 알림 설정을 확인해주세요.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 배송 추적
+        function trackOrder() {
+            location.href = 'tracking.html?order=YCS240822001';
+        }
+
+        // 영수증 다운로드
+        function downloadReceipt() {
+            showToast('영수증을 생성하고 있습니다...', 'info');
+            setTimeout(() => {
+                showToast('영수증이 다운로드되었습니다.', 'success');
+            }, 2000);
+        }
+
+        // 대시보드로 이동
+        function goToDashboard() {
+            // 사용자 타입에 따라 적절한 대시보드로 이동
+            const userType = localStorage.getItem('userType') || 'general';
+            location.href = `dashboard-${userType}.html`;
+        }
+
+        // 새 주문하기
+        function newOrder() {
+            const userType = localStorage.getItem('userType') || 'general';
+            location.href = `order-form-${userType}.html`;
+        }
+
+        // 토스트 메시지
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.textContent = message;
+            toast.style.cssText = `
+                position: fixed;
+                top: 2rem;
+                right: 2rem;
+                padding: 1rem 1.5rem;
+                border-radius: 0.5rem;
+                color: white;
+                font-weight: 500;
+                z-index: 9999;
+                opacity: 0;
+                transform: translateY(-1rem);
+                transition: all 0.3s ease;
+                max-width: 350px;
+            `;
+            
+            if (type === 'success') {
+                toast.style.backgroundColor = 'var(--success-600)';
+            } else if (type === 'error') {
+                toast.style.backgroundColor = 'var(--danger-600)';
+            } else {
+                toast.style.backgroundColor = 'var(--primary-600)';
+            }
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateY(0)';
+            }, 100);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-1rem)';
+                setTimeout(() => document.body.removeChild(toast), 300);
+            }, 4000);
+        }
+
+        // 페이지 로드 시 애니메이션
+        document.addEventListener('DOMContentLoaded', function() {
+            // 타임라인 아이템 순차 애니메이션
+            const timelineItems = document.querySelectorAll('.timeline-item');
+            timelineItems.forEach((item, index) => {
+                item.style.opacity = '0';
+                item.style.transform = 'translateX(-1rem)';
+                setTimeout(() => {
+                    item.style.transition = 'all 0.3s ease';
+                    item.style.opacity = '1';
+                    item.style.transform = 'translateX(0)';
+                }, index * 200);
+            });
+
+            // 섹션 애니메이션
+            const sections = document.querySelectorAll('.payment-details, .next-steps, .contact-support');
+            sections.forEach((section, index) => {
+                section.style.opacity = '0';
+                section.style.transform = 'translateY(1rem)';
+                setTimeout(() => {
+                    section.style.transition = 'all 0.3s ease';
+                    section.style.opacity = '1';
+                    section.style.transform = 'translateY(0)';
+                }, (index + timelineItems.length) * 200);
+            });
+
+            // 성공 메시지 표시
+            setTimeout(() => {
+                showToast('배송 추적 정보는 실시간으로 업데이트됩니다.', 'success');
+            }, 3000);
+        });
+
+        // 알림 권한 요청 (선택사항)
+        function requestNotificationPermission() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        showToast('배송 알림을 받으실 수 있습니다!', 'success');
+                    }
+                });
+            }
+        }
+
+        // 페이지 로드 후 알림 권한 요청
+        setTimeout(requestNotificationPermission, 5000);
+    </script>
+</body>
+</html>

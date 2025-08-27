@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>파트너 작업 내역 - YSC 물류관리 시스템</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/umd/lucide.min.js"></script>
+    <style>
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        }
+
+        .shadow-blue {
+            box-shadow: 0 4px 14px -2px rgba(59, 130, 246, 0.15);
+        }
+
+        .period-button {
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .period-button.active {
+            background: #2563eb;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .period-button:not(.active) {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+
+        .period-button:not(.active):hover {
+            background: #dbeafe;
+            transform: translateY(-1px);
+        }
+
+        .task-card {
+            transition: all 0.3s ease;
+        }
+
+        .task-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px -2px rgba(59, 130, 246, 0.25);
+        }
+
+        .stat-card {
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px -2px rgba(59, 130, 246, 0.2);
+        }
+
+        .star-filled {
+            color: #fbbf24;
+            fill: currentColor;
+        }
+
+        .star-empty {
+            color: #d1d5db;
+        }
+
+        .route-text {
+            background: linear-gradient(90deg, #2563eb, #7c3aed);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .feedback-bubble {
+            position: relative;
+        }
+
+        .feedback-bubble::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: 16px;
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 8px solid #fefce8;
+        }
+
+        .scroll-container {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .scroll-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .task-type-pickup {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .task-type-delivery {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+
+        @media (max-width: 640px) {
+            .grid-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- 메인 컨테이너 -->
+    <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 pb-20">
+        <!-- 헤더 -->
+        <header class="bg-white border-b border-blue-100 shadow-sm sticky top-0 z-40">
+            <div class="px-4 py-4">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h1 class="text-xl font-semibold text-blue-900">작업 내역</h1>
+                        <p class="text-sm text-blue-600"><span id="partnerName">파트너</span>님의 완료된 작업</p>
+                    </div>
+                    <div class="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center shadow-blue">
+                        <i data-lucide="package" class="h-6 w-6 text-white"></i>
+                    </div>
+                </div>
+
+                <!-- 기간 선택 -->
+                <div class="flex space-x-2 mb-4 overflow-x-auto scroll-container">
+                    <button id="thisMonthBtn" class="period-button px-4 py-2 rounded-lg text-sm font-medium active" onclick="selectPeriod('thisMonth')">
+                        이번 달
+                    </button>
+                    <button id="lastMonthBtn" class="period-button px-4 py-2 rounded-lg text-sm font-medium" onclick="selectPeriod('lastMonth')">
+                        지난 달
+                    </button>
+                    <button id="last3MonthsBtn" class="period-button px-4 py-2 rounded-lg text-sm font-medium" onclick="selectPeriod('last3Months')">
+                        최근 3개월
+                    </button>
+                    <button id="thisYearBtn" class="period-button px-4 py-2 rounded-lg text-sm font-medium" onclick="selectPeriod('thisYear')">
+                        올해
+                    </button>
+                </div>
+
+                <!-- 검색 -->
+                <div class="relative">
+                    <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-blue-600/60"></i>
+                    <input
+                        type="text"
+                        id="searchInput"
+                        placeholder="주문번호, 고객명, 경로로 검색..."
+                        class="w-full pl-10 h-12 border border-blue-200 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-200 bg-blue-50/30 hover:bg-blue-50/50 focus:bg-white transition-all duration-300"
+                        oninput="filterTasks()"
+                    />
+                </div>
+            </div>
+        </header>
+
+        <div class="p-4">
+            <!-- 통계 카드 -->
+            <div class="grid grid-stats grid-cols-2 gap-4 mb-6">
+                <div class="stat-card bg-white rounded-lg shadow-blue border-blue-100 border">
+                    <div class="p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-blue-600">완료 작업</p>
+                                <p id="totalTasks" class="text-2xl font-bold text-blue-900">0</p>
+                            </div>
+                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                <i data-lucide="package" class="h-5 w-5 text-blue-600"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card bg-white rounded-lg shadow-blue border-blue-100 border">
+                    <div class="p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-green-600">총 수익</p>
+                                <p id="totalEarnings" class="text-2xl font-bold text-green-900">0원</p>
+                            </div>
+                            <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                <i data-lucide="trending-up" class="h-5 w-5 text-green-600"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card bg-white rounded-lg shadow-blue border-blue-100 border">
+                    <div class="p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-yellow-600">평균 평점</p>
+                                <div class="flex items-center gap-2">
+                                    <p id="averageRating" class="text-2xl font-bold text-yellow-900">0.0</p>
+                                    <div id="averageStars" class="flex">
+                                        <!-- 별점이 여기에 동적으로 추가됩니다 -->
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                                <i data-lucide="award" class="h-5 w-5 text-yellow-600"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card bg-white rounded-lg shadow-blue border-blue-100 border">
+                    <div class="p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-purple-600">총 거리</p>
+                                <p id="totalDistance" class="text-2xl font-bold text-purple-900">0km</p>
+                            </div>
+                            <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                                <i data-lucide="map-pin" class="h-5 w-5 text-purple-600"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 작업 내역 목록 -->
+            <div id="tasksList" class="space-y-4">
+                <!-- 작업 내역이 여기에 동적으로 추가됩니다 -->
+            </div>
+
+            <!-- 빈 목록 메시지 -->
+            <div id="emptyMessage" class="bg-white rounded-lg shadow-blue border-blue-100 border hidden">
+                <div class="flex flex-col items-center justify-center py-12">
+                    <i data-lucide="package" class="h-12 w-12 text-blue-300 mb-4"></i>
+                    <h3 class="text-lg font-medium text-blue-900 mb-2">작업 내역이 없습니다</h3>
+                    <p id="emptyDescription" class="text-blue-600 text-center">아직 완료된 작업이 없습니다.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 전역 변수
+        let selectedPeriod = 'thisMonth';
+        let searchQuery = '';
+
+        // 데모 데이터
+        const completedTasks = [
+            {
+                id: 'YCS-2024-001',
+                date: '2024-01-14',
+                time: '15:30',
+                customer: '(주)ABC무역',
+                type: 'pickup',
+                route: '강남구 → 분당구',
+                distance: '23km',
+                duration: '1시간 45분',
+                items: '전자제품 외 2건',
+                weight: '15kg',
+                fee: '28,000원',
+                rating: 5,
+                feedback: '정시 배송으로 만족합니다.'
+            },
+            {
+                id: 'YCS-2024-002',
+                date: '2024-01-14',
+                time: '11:20',
+                customer: '개인고객',
+                type: 'delivery',
+                route: '홍대입구 → 송도',
+                distance: '45km',
+                duration: '2시간 30분',
+                items: '서류봉투',
+                weight: '0.5kg',
+                fee: '35,000원',
+                rating: 4,
+                feedback: '친절한 서비스 감사합니다.'
+            },
+            {
+                id: 'YCS-2024-003',
+                date: '2024-01-13',
+                time: '16:45',
+                customer: '스타트업코리아',
+                type: 'pickup',
+                route: '서초구 → 해운대구',
+                distance: '380km',
+                duration: '당일배송',
+                items: '노트북, 모니터',
+                weight: '12kg',
+                fee: '85,000원',
+                rating: 5,
+                feedback: '안전한 포장과 빠른 배송!'
+            },
+            {
+                id: 'YCS-2024-004',
+                date: '2024-01-13',
+                time: '09:15',
+                customer: '(주)테크솔루션',
+                type: 'delivery',
+                route: '판교 → 여의도',
+                distance: '35km',
+                duration: '1시간 20분',
+                items: '회사서류',
+                weight: '2kg',
+                fee: '22,000원',
+                rating: 5,
+                feedback: null
+            },
+            {
+                id: 'YCS-2024-005',
+                date: '2024-01-12',
+                time: '14:00',
+                customer: '김개인',
+                type: 'pickup',
+                route: '강서구 → 강동구',
+                distance: '28km',
+                duration: '2시간',
+                items: '가전제품',
+                weight: '25kg',
+                fee: '32,000원',
+                rating: 4,
+                feedback: '시간에 맞춰 잘 도착했어요.'
+            }
+        ];
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+            loadUserData();
+            updateStatistics();
+            renderTasks();
+        });
+
+        // 사용자 데이터 로드
+        function loadUserData() {
+            // 실제 구현에서는 로그인된 사용자 정보 가져오기
+            document.getElementById('partnerName').textContent = '파트너';
+        }
+
+        // 기간 선택
+        function selectPeriod(period) {
+            selectedPeriod = period;
+            
+            // 모든 버튼에서 active 클래스 제거
+            document.querySelectorAll('.period-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // 선택된 버튼에 active 클래스 추가
+            document.getElementById(period + 'Btn').classList.add('active');
+            
+            updateStatistics();
+            renderTasks();
+        }
+
+        // 작업 필터링
+        function filterTasks() {
+            searchQuery = document.getElementById('searchInput').value.toLowerCase();
+            renderTasks();
+        }
+
+        // 필터된 작업 목록 가져오기
+        function getFilteredTasks() {
+            return completedTasks.filter(task => {
+                const matchesSearch = searchQuery === '' || 
+                    task.id.toLowerCase().includes(searchQuery) ||
+                    task.customer.toLowerCase().includes(searchQuery) ||
+                    task.route.toLowerCase().includes(searchQuery);
+                
+                return matchesSearch;
+            });
+        }
+
+        // 통계 업데이트
+        function updateStatistics() {
+            const filteredTasks = getFilteredTasks();
+            
+            const totalTasks = filteredTasks.length;
+            const totalEarnings = filteredTasks.reduce((sum, task) => sum + parseInt(task.fee.replace(/[^0-9]/g, '')), 0);
+            const averageRating = totalTasks > 0 ? filteredTasks.reduce((sum, task) => sum + task.rating, 0) / totalTasks : 0;
+            const totalDistance = filteredTasks.reduce((sum, task) => sum + parseInt(task.distance.replace(/[^0-9]/g, '')), 0);
+            
+            document.getElementById('totalTasks').textContent = totalTasks;
+            document.getElementById('totalEarnings').textContent = totalEarnings.toLocaleString() + '원';
+            document.getElementById('averageRating').textContent = averageRating.toFixed(1);
+            document.getElementById('totalDistance').textContent = totalDistance + 'km';
+            
+            // 평균 별점 렌더링
+            renderAverageStars(Math.round(averageRating));
+        }
+
+        // 평균 별점 렌더링
+        function renderAverageStars(rating) {
+            const container = document.getElementById('averageStars');
+            container.innerHTML = '';
+            
+            for (let i = 0; i < 5; i++) {
+                const star = document.createElement('i');
+                star.setAttribute('data-lucide', 'star');
+                star.className = `h-4 w-4 ${i < rating ? 'star-filled' : 'star-empty'}`;
+                container.appendChild(star);
+            }
+            
+            lucide.createIcons();
+        }
+
+        // 별점 HTML 생성
+        function getRatingStarsHTML(rating) {
+            let starsHTML = '';
+            for (let i = 0; i < 5; i++) {
+                const starClass = i < rating ? 'star-filled' : 'star-empty';
+                starsHTML += `<i data-lucide="star" class="h-4 w-4 ${starClass}"></i>`;
+            }
+            return starsHTML;
+        }
+
+        // 작업 타입 배지
+        function getTaskTypeBadge(type) {
+            if (type === 'pickup') {
+                return '<span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium text-white task-type-pickup">픽업</span>';
+            } else {
+                return '<span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium text-white task-type-delivery">배송</span>';
+            }
+        }
+
+        // 작업 목록 렌더링
+        function renderTasks() {
+            const filteredTasks = getFilteredTasks();
+            const tasksList = document.getElementById('tasksList');
+            const emptyMessage = document.getElementById('emptyMessage');
+            const emptyDescription = document.getElementById('emptyDescription');
+            
+            if (filteredTasks.length === 0) {
+                tasksList.innerHTML = '';
+                emptyMessage.classList.remove('hidden');
+                emptyDescription.textContent = searchQuery ? '검색 조건에 맞는 작업이 없습니다.' : '아직 완료된 작업이 없습니다.';
+                return;
+            }
+            
+            emptyMessage.classList.add('hidden');
+            
+            tasksList.innerHTML = filteredTasks.map(task => `
+                <div class="task-card bg-white rounded-lg shadow-blue border-blue-100 border">
+                    <div class="p-6 pb-3">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <div class="flex items-center gap-2 text-blue-900 font-semibold mb-1">
+                                    <i data-lucide="truck" class="h-5 w-5 text-blue-600"></i>
+                                    ${task.id}
+                                </div>
+                                <p class="text-sm text-gray-600">
+                                    ${task.customer} • ${task.date} ${task.time}
+                                </p>
+                            </div>
+                            <div class="flex gap-2">
+                                ${getTaskTypeBadge(task.type)}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-green-600 border border-green-300 bg-green-50">
+                                    완료
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="px-6 pb-6 space-y-4">
+                        <!-- 기본 정보 -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="map-pin" class="h-4 w-4 text-blue-600"></i>
+                                    <span class="text-sm font-medium text-blue-900">이동 경로</span>
+                                </div>
+                                <p class="text-sm font-medium route-text ml-6">${task.route}</p>
+                                <p class="text-xs text-blue-600 ml-6">${task.distance} • ${task.duration}</p>
+                            </div>
+
+                            <div class="space-y-2">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="package" class="h-4 w-4 text-green-600"></i>
+                                    <span class="text-sm font-medium text-green-900">화물 정보</span>
+                                </div>
+                                <p class="text-sm text-green-800 ml-6">${task.items}</p>
+                                <p class="text-xs text-green-600 ml-6">${task.weight}</p>
+                            </div>
+                        </div>
+
+                        <!-- 수익 및 평점 -->
+                        <div class="flex items-center justify-between p-3 bg-blue-50/50 rounded-lg">
+                            <div class="flex items-center gap-6">
+                                <div>
+                                    <p class="text-sm text-blue-600">수익</p>
+                                    <p class="font-bold text-blue-900">${task.fee}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-blue-600">평점</p>
+                                    <div class="flex items-center gap-1">
+                                        ${getRatingStarsHTML(task.rating)}
+                                        <span class="text-sm font-medium text-blue-900 ml-1">${task.rating}.0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 고객 피드백 -->
+                        ${task.feedback ? `
+                            <div class="feedback-bubble p-3 bg-yellow-50/50 rounded-lg">
+                                <p class="text-sm text-yellow-600 mb-1">고객 피드백</p>
+                                <p class="text-sm text-yellow-800 italic">"${task.feedback}"</p>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+            
+            // 아이콘 다시 생성
+            lucide.createIcons();
+        }
+
+        // 네비게이션
+        function navigateTo(page) {
+            console.log('Navigating to:', page);
+            // 실제 프로젝트에서는 라우팅 로직 구현
+        }
+    </script>
+</body>
+</html>
