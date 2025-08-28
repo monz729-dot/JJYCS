@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { USER_TYPE } from '../types'
 import type { User, UserType, LoginForm, RegisterForm } from '../types'
 import { authApi } from '../utils/api'
+import { tokenStorage } from '../utils/tokenStorage'
 
 export const useAuthStore = defineStore('auth', () => {
   // State
@@ -20,18 +21,25 @@ export const useAuthStore = defineStore('auth', () => {
   const isCorporate = computed(() => user.value?.userType === USER_TYPE.CORPORATE)
 
   // Actions
-  const initAuth = () => {
-    const savedToken = localStorage.getItem('auth_token')
-    const savedRefreshToken = localStorage.getItem('refresh_token')
-    const savedUser = localStorage.getItem('user')
+  const initAuth = async () => {
+    const savedToken = tokenStorage.getToken()
+    const savedRefreshToken = tokenStorage.getRefreshToken()
+    const savedUser = localStorage.getItem('user') // Keep user data in localStorage for all environments
     
-    if (savedToken && savedUser) {
+    if (savedToken) {
       token.value = savedToken
       refreshTokenValue.value = savedRefreshToken
-      try {
-        user.value = JSON.parse(savedUser)
-      } catch (e) {
-        clearAuth()
+      
+      // Try to hydrate user info from server
+      const userInitialized = await initializeUser()
+      
+      // If server call failed, fall back to cached user data
+      if (!userInitialized && savedUser) {
+        try {
+          user.value = JSON.parse(savedUser)
+        } catch (e) {
+          clearAuth()
+        }
       }
     }
   }
@@ -52,9 +60,9 @@ export const useAuthStore = defineStore('auth', () => {
           refreshTokenValue.value = loginData.refreshToken
           user.value = loginData.user
           
-          localStorage.setItem('auth_token', token.value)
+          tokenStorage.setToken(token.value)
           if (refreshTokenValue.value) {
-            localStorage.setItem('refresh_token', refreshTokenValue.value)
+            tokenStorage.setRefreshToken(refreshTokenValue.value)
           }
           localStorage.setItem('user', JSON.stringify(user.value))
           
@@ -118,8 +126,7 @@ export const useAuthStore = defineStore('auth', () => {
     token.value = null
     refreshTokenValue.value = null
     error.value = null
-    localStorage.removeItem('auth_token')
-    localStorage.removeItem('refresh_token')
+    tokenStorage.removeTokens()
     localStorage.removeItem('user')
     localStorage.removeItem('remember_me')
   }
@@ -201,12 +208,36 @@ export const useAuthStore = defineStore('auth', () => {
       if (response.success && response.data) {
         token.value = response.data.accessToken || response.data.token
         
-        localStorage.setItem('auth_token', response.data.accessToken || response.data.token)
+        tokenStorage.setToken(response.data.accessToken || response.data.token)
         
         return true
       }
     } catch (err) {
       console.warn('Token refresh failed:', err)
+      clearAuth()
+    }
+    
+    return false
+  }
+
+  const initializeUser = async () => {
+    if (!token.value) {
+      return false
+    }
+
+    try {
+      const response = await authApi.getCurrentUser()
+      
+      if (response.success && response.data) {
+        const userData = response.data
+        if (userData.success) {
+          user.value = userData.user
+          localStorage.setItem('user', JSON.stringify(userData.user))
+          return true
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to initialize user:', err)
       clearAuth()
     }
     
@@ -247,6 +278,7 @@ export const useAuthStore = defineStore('auth', () => {
     forgotPassword,
     resetPassword,
     refreshToken,
+    initializeUser,
     updateUserInfo,
     clearError,
     clearAuth

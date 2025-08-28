@@ -101,6 +101,35 @@ const router = createRouter({
         allowedRoles: [USER_TYPE.PARTNER]
       }
     },
+
+    // Warehouse routes
+    {
+      path: '/warehouse',
+      name: 'warehouse-dashboard',
+      component: () => import('@/modules/warehouse/views/WarehouseDashboard.vue'),
+      meta: { 
+        requiresAuth: true,
+        allowedRoles: [USER_TYPE.WAREHOUSE, USER_TYPE.ADMIN]
+      }
+    },
+    {
+      path: '/warehouse/scan',
+      name: 'warehouse-scan',
+      component: () => import('@/modules/warehouse/views/WarehouseScanPage.vue'),
+      meta: { 
+        requiresAuth: true,
+        allowedRoles: [USER_TYPE.WAREHOUSE, USER_TYPE.ADMIN]
+      }
+    },
+    {
+      path: '/warehouse/inventory',
+      name: 'warehouse-inventory',
+      component: () => import('@/modules/warehouse/views/WarehouseInventoryPage.vue'),
+      meta: { 
+        requiresAuth: true,
+        allowedRoles: [USER_TYPE.WAREHOUSE, USER_TYPE.ADMIN]
+      }
+    },
     // 파트너는 이제 주문 관리만 사용하므로 추천/수수료 기능 제거
     // {
     //   path: '/partner/referrals',
@@ -233,6 +262,8 @@ function getDashboardRoute(userType?: UserType): string {
       return 'partner-dashboard'
     case USER_TYPE.ADMIN:
       return 'admin-dashboard'
+    case USER_TYPE.WAREHOUSE:
+      return 'warehouse-dashboard'
     case USER_TYPE.GENERAL:
     case USER_TYPE.CORPORATE:
     default:

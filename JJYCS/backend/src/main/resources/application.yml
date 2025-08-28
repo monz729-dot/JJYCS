@@ -2,6 +2,10 @@ spring:
   application:
     name: ycs-lms
   
+  # Active profile (default: dev)
+  profiles:
+    active: dev
+  
   # 자동 설정 비활성화 (개발용)
   autoconfigure:
     exclude:
@@ -12,81 +16,8 @@ spring:
       - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
       - org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration
   
-  # Database Configuration
-  datasource:
-    # H2 Configuration (Development)
-    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    driver-class-name: org.h2.Driver
-    username: sa
-    password: 
-    generate-unique-name: false  # 중요: 랜덤 이름 방지
-    
-    # HikariCP Connection Pool Optimization
-    hikari:
-      maximum-pool-size: 20
-      minimum-idle: 5
-      idle-timeout: 300000          # 5 minutes
-      connection-timeout: 20000     # 20 seconds
-      max-lifetime: 1800000         # 30 minutes
-      leak-detection-threshold: 60000 # 1 minute
-      pool-name: YCS-LMS-HikariCP
-      connection-test-query: SELECT 1
-      auto-commit: false
-      
-  h2:
-    console:
-      enabled: true
-      path: /h2-console  # 최종 URL은 /api/h2-console이 됨
-      settings:
-        web-allow-others: true   # 로컬 개발용
+  # Database and JPA configurations are in profile-specific files
 
-  # Production MySQL Configuration (activated by profile)
-  profiles:
-    production:
-      datasource:
-        url: ${DB_URL:jdbc:mysql://localhost:3306/ycs_lms?useSSL=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
-        driver-class-name: com.mysql.cj.jdbc.Driver
-        username: ${DB_USERNAME:ycs_user}
-        password: ${DB_PASSWORD:ycs_password}
-        
-        hikari:
-          maximum-pool-size: 50
-          minimum-idle: 10
-          idle-timeout: 600000        # 10 minutes
-          connection-timeout: 30000   # 30 seconds
-          max-lifetime: 3600000       # 60 minutes
-          leak-detection-threshold: 60000 # 1 minute
-          pool-name: YCS-LMS-Production-Pool
-          connection-test-query: SELECT 1
-          auto-commit: false
-          connection-init-sql: SET SESSION sql_mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'
-  
-  # JPA Configuration
-  jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
-    hibernate:
-      ddl-auto: create-drop
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-        use_sql_comments: true
-        generate_statistics: true
-        session:
-          events:
-            log:
-              LOG_QUERIES_SLOWER_THAN_MS: 10
-    defer-datasource-initialization: true
-    
-  # SQL Initialization - Test accounts
-  sql:
-    init:
-      mode: always
-      data-locations: classpath:simple-data.sql
-      
-  # Disable Flyway for now
-  flyway:
-    enabled: false
       
   # Security
   security:

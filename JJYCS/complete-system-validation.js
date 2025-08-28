@@ -3,7 +3,7 @@
 async function completeSystemValidation() {
     console.log('🚀 === YCS LMS 완전한 시스템 검증 시작 ===\n');
     
-    const baseUrl = 'http://localhost:8081/api';
+    const baseUrl = 'http://localhost:8080/api';
     let testResults = {
         auth: false,
         orders: false,
@@ -120,10 +120,10 @@ async function completeSystemValidation() {
         console.log('\n5. 🗃️ 데이터베이스 연동 검증...');
         // H2 콘솔 접근성 확인
         try {
-            const h2Response = await fetch('http://localhost:8081/api/h2-console');
+            const h2Response = await fetch('http://localhost:8080/api/h2-console');
             if (h2Response.status === 302 || h2Response.ok) {
                 console.log('✅ H2 데이터베이스 콘솔 접근 가능');
-                console.log('   URL: http://localhost:8081/api/h2-console');
+                console.log('   URL: http://localhost:8080/api/h2-console');
                 console.log('   JDBC: jdbc:h2:mem:testdb');
                 testResults.database = true;
             } else {
@@ -181,9 +181,9 @@ async function completeSystemValidation() {
         console.log('  - 창고 스캔: file:///C:/YCS-ver2/JJYCS/html/warehouse-scan.html');
         
         console.log('\n🔗 API 엔드포인트:');
-        console.log('  - 백엔드 API: http://localhost:8081/api');
+        console.log('  - 백엔드 API: http://localhost:8080/api');
         console.log('  - 프론트엔드: http://localhost:3000');
-        console.log('  - H2 콘솔: http://localhost:8081/api/h2-console');
+        console.log('  - H2 콘솔: http://localhost:8080/api/h2-console');
         
         // 9. 비즈니스 룰 검증 상세
         console.log('\n📊 === 비즈니스 룰 검증 상세 ===');

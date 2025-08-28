@@ -1,7 +1,7 @@
 // 테스트용 사용자 생성 스크립트
 
 async function createUsers() {
-    const baseUrl = 'http://localhost:8081/api';
+    const baseUrl = 'http://localhost:8080/api';
     
     // 테스트 사용자 데이터
     const users = [

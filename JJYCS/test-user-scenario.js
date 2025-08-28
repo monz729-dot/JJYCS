@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 // API 기본 설정
-const API_BASE = 'http://localhost:8081/api';
+const API_BASE = 'http://localhost:8080/api';
 const FRONTEND_BASE = 'http://localhost:3001';
 
 // 색상 코드 (콘솔 출력용)

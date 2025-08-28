@@ -3,7 +3,7 @@
 async function testWarehouseScan() {
     console.log('=== 창고 스캔 시스템 테스트 시작 ===\n');
     
-    const baseUrl = 'http://localhost:8081/api';
+    const baseUrl = 'http://localhost:8080/api';
     
     try {
         // 1. 창고 현황 확인
@@ -122,13 +122,13 @@ async function testWarehouseScan() {
         // 7. 사용 가능한 URL 정보 출력
         console.log('\n📱 스캔 인터페이스 URL:');
         console.log('- 창고 스캔 페이지: file:///C:/YCS-ver2/JJYCS/html/warehouse-scan.html');
-        console.log('- 백엔드 API: http://localhost:8081/api/warehouse/scan');
-        console.log('- 창고 현황 API: http://localhost:8081/api/warehouse/status');
+        console.log('- 백엔드 API: http://localhost:8080/api/warehouse/scan');
+        console.log('- 창고 현황 API: http://localhost:8080/api/warehouse/status');
         
     } catch (error) {
         console.error('\n❌ 테스트 중 오류 발생:', error.message);
         console.log('\n📋 문제 해결 체크리스트:');
-        console.log('1. 백엔드 서버가 http://localhost:8081에서 실행 중인지 확인');
+        console.log('1. 백엔드 서버가 http://localhost:8080에서 실행 중인지 확인');
         console.log('2. 데이터베이스에 테스트 주문이 있는지 확인');
         console.log('3. CORS 설정이 올바른지 확인');
     }
