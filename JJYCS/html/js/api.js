@@ -5,7 +5,8 @@
 
 class YCSAPI {
     constructor() {
-        this.baseUrl = 'http://localhost:8081/api';
+        // API 요청은 상대 경로로 - server.js의 프록시를 통해 백엔드로 전달됨
+        this.baseUrl = '/api';
     }
 
     // HTTP 요청을 위한 기본 fetch wrapper
@@ -15,6 +16,12 @@ class YCSAPI {
             const defaultHeaders = {
                 'Content-Type': 'application/json',
             };
+
+            // JWT 토큰이 있으면 Authorization 헤더 추가
+            const token = localStorage.getItem('auth_token');
+            if (token) {
+                defaultHeaders['Authorization'] = `Bearer ${token}`;
+            }
 
             const response = await fetch(url, {
                 headers: { ...defaultHeaders, ...options.headers },
@@ -151,27 +158,60 @@ class YCSAPI {
         };
     }
 
-    // 인증 관련 API (향후 구현)
+    // 인증 관련 API (실제 백엔드 연동)
     async login(email, password) {
-        // 임시로 사용자 찾기 (실제로는 JWT 토큰을 받아야 함)
-        const users = await this.getUsers();
-        const user = users.find(u => u.email === email);
-        if (user) {
-            // 세션에 사용자 정보 저장
-            sessionStorage.setItem('currentUser', JSON.stringify(user));
-            return { success: true, user };
+        try {
+            console.log(`🔐 [AUTH] 로그인 시도: ${email}`);
+            const response = await this.request('/auth/login', {
+                method: 'POST',
+                body: JSON.stringify({ email, password })
+            });
+            
+            if (response.success && response.accessToken) {
+                // JWT 토큰과 사용자 정보를 localStorage에 저장
+                localStorage.setItem('auth_token', response.accessToken);
+                localStorage.setItem('refresh_token', response.refreshToken || '');
+                localStorage.setItem('currentUser', JSON.stringify(response.user));
+                
+                console.log('✅ [AUTH] 로그인 성공:', response.user.name);
+                return { success: true, user: response.user, token: response.accessToken };
+            } else {
+                throw new Error(response.message || '로그인 실패');
+            }
+        } catch (error) {
+            console.error('❌ [AUTH] 로그인 실패:', error);
+            throw new Error('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');
         }
-        throw new Error('로그인 실패');
     }
 
     async logout() {
-        sessionStorage.removeItem('currentUser');
+        try {
+            // 백엔드에 로그아웃 요청 (선택적)
+            await this.request('/auth/logout', { method: 'POST' });
+        } catch (error) {
+            console.warn('로그아웃 API 호출 실패:', error);
+        }
+        
+        // 로컬 스토리지 정리
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('currentUser');
+        
+        console.log('🚪 [AUTH] 로그아웃 완료');
         return { success: true };
     }
 
     getCurrentUser() {
-        const userStr = sessionStorage.getItem('currentUser');
+        const userStr = localStorage.getItem('currentUser');
         return userStr ? JSON.parse(userStr) : null;
+    }
+
+    getAuthToken() {
+        return localStorage.getItem('auth_token');
+    }
+
+    isAuthenticated() {
+        return !!this.getAuthToken() && !!this.getCurrentUser();
     }
 
     // 사용자별 주문 목록

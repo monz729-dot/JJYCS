@@ -6,6 +6,33 @@
 
 **YCS LMS**는 현대적인 웹 기술을 활용하여 구축된 포괄적인 물류 관리 시스템입니다. 주문 처리, 창고 관리, 파트너 협업을 위한 통합 플랫폼을 제공합니다.
 
+## 🚀 빠른 시작 (3단계)
+
+### 1. 백엔드 서버 실행
+```bash
+cd backend
+./mvnw.cmd spring-boot:run
+```
+- **포트**: http://localhost:8080
+- **H2 콘솔**: http://localhost:8080/api/h2-console
+- **API**: /api/* 경로로 제공
+
+### 2. 프론트엔드 서버 실행
+```bash
+# 새 터미널에서
+node server.js
+```
+- **포트**: http://localhost:3000
+- **API 프록시**: `/api/*` → `http://localhost:8080/api/*`
+- **정적 파일**: `html/` 폴더 서빙
+
+### 3. 브라우저에서 접속
+- **로그인**: http://localhost:3000/auth-login.html
+- **테스트 계정**: `admin@ycs.com` / `password`
+- **대시보드**: 로그인 후 자동 이동
+
+> ⚠️ **중요**: 백엔드 서버가 먼저 실행되어야 프론트엔드의 API 호출이 작동합니다.
+
 ## 🚀 주요 기능
 
 ### 📦 스마트 주문 관리

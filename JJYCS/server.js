@@ -5,6 +5,7 @@ const url = require('url');
 
 const PORT = 3000;
 const HTML_DIR = path.join(__dirname, 'html');
+const BACKEND_URL = 'http://localhost:8080';
 
 // MIME 타입 매핑
 const mimeTypes = {
@@ -19,34 +20,89 @@ const mimeTypes = {
     '.ico': 'image/x-icon'
 };
 
-const server = http.createServer((req, res) => {
-    console.log(`${req.method} ${req.url}`);
-    
-    // URL 파싱
-    let pathname = url.parse(req.url).pathname;
-    
-    // 기본 경로 처리
-    if (pathname === '/') {
-        pathname = '/index.html';
+// API 프록시 함수
+function proxyToBackend(req, res) {
+    const options = {
+        hostname: 'localhost',
+        port: 8080,
+        path: req.url,
+        method: req.method,
+        headers: req.headers
+    };
+
+    console.log(`🔄 [PROXY] ${req.method} ${req.url} → ${BACKEND_URL}${req.url}`);
+
+    const proxyReq = http.request(options, (proxyRes) => {
+        // CORS 헤더 추가
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        
+        res.writeHead(proxyRes.statusCode, proxyRes.headers);
+        proxyRes.pipe(res);
+    });
+
+    proxyReq.on('error', (err) => {
+        console.error(`❌ [PROXY ERROR] ${err.message}`);
+        res.writeHead(502, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+            success: false,
+            error: 'Backend server is not available. Please make sure the backend is running on port 8080.',
+            details: err.message
+        }));
+    });
+
+    // POST 데이터 전달
+    if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
+        let body = '';
+        req.on('data', (chunk) => {
+            body += chunk.toString();
+        });
+        req.on('end', () => {
+            proxyReq.write(body);
+            proxyReq.end();
+        });
+    } else {
+        proxyReq.end();
     }
+}
+
+const server = http.createServer((req, res) => {
+    const pathname = url.parse(req.url).pathname;
     
-    // 파일 경로 생성
-    let filePath = path.join(HTML_DIR, pathname);
+    // OPTIONS 요청 처리 (CORS preflight)
+    if (req.method === 'OPTIONS') {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        res.writeHead(200);
+        res.end();
+        return;
+    }
+
+    // API 요청은 백엔드로 프록시
+    if (pathname.startsWith('/api/')) {
+        proxyToBackend(req, res);
+        return;
+    }
+
+    // 정적 파일 서빙
+    console.log(`📄 [STATIC] ${req.method} ${req.url}`);
+    
+    let requestPath = pathname === '/' ? '/index.html' : pathname;
+    let filePath = path.join(HTML_DIR, requestPath);
     
     // 디렉토리 요청 시 index.html 찾기
     if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) {
         filePath = path.join(filePath, 'index.html');
     }
     
-    // 파일 확장자 가져오기
     const extname = String(path.extname(filePath)).toLowerCase();
     const contentType = mimeTypes[extname] || 'application/octet-stream';
     
-    // 파일 읽기 및 응답
     fs.readFile(filePath, (error, content) => {
         if (error) {
             if (error.code === 'ENOENT') {
-                // 404 에러
                 res.writeHead(404, { 'Content-Type': 'text/html' });
                 res.end(`
                     <!DOCTYPE html>
@@ -78,9 +134,7 @@ const server = http.createServer((req, res) => {
                                 display: inline-block;
                                 margin-top: 20px;
                             }
-                            a:hover {
-                                background: rgba(255,255,255,0.3);
-                            }
+                            a:hover { background: rgba(255,255,255,0.3); }
                         </style>
                     </head>
                     <body>
@@ -94,12 +148,10 @@ const server = http.createServer((req, res) => {
                     </html>
                 `, 'utf-8');
             } else {
-                // 500 에러
                 res.writeHead(500);
                 res.end(`서버 오류: ${error.code}`);
             }
         } else {
-            // 성공
             res.writeHead(200, { 
                 'Content-Type': contentType,
                 'Cache-Control': 'no-cache'
@@ -115,16 +167,20 @@ server.listen(PORT, () => {
 ║                                                        ║
 ║   🚀 YCS 물류 시스템 개발 서버가 시작되었습니다!      ║
 ║                                                        ║
-║   서버 주소: http://localhost:${PORT}                     ║
-║   테스트 페이지: http://localhost:${PORT}/test.html       ║
+║   📱 Frontend: http://localhost:${PORT}                   ║
+║   🔄 API Proxy: /api/* → http://localhost:8080/api/*   ║
 ║                                                        ║
+║   📋 테스트 페이지:                                   ║
+║   • http://localhost:${PORT}/auth-login.html             ║
+║   • http://localhost:${PORT}/dashboard-general.html     ║
+║                                                        ║
+║   ⚠️  백엔드가 필요합니다: ./backend/mvnw.cmd spring-boot:run ║
 ║   종료하려면 Ctrl+C를 누르세요                        ║
 ║                                                        ║
 ╚════════════════════════════════════════════════════════╝
     `);
 });
 
-// 종료 시그널 처리
 process.on('SIGINT', () => {
     console.log('\n\n👋 서버를 종료합니다...');
     process.exit();
