@@ -203,6 +203,9 @@ public class OrderService {
             finalOrder.getOrderNumber(), ruleResult.getTotalCbm(), ruleResult.getTotalThbValue(), 
             ruleResult.hasWarnings() ? ruleResult.getWarnings().size() : 0);
         
+        // HS Code 비동기 검증 시작
+        validateHSCodesAsync(finalOrder);
+        
         return finalOrder;
     }
     
@@ -592,6 +595,55 @@ public class OrderService {
         
         public String getSpecialRequests() { return specialRequests; }
         public void setSpecialRequests(String specialRequests) { this.specialRequests = specialRequests; }
+    }
+    
+    /**
+     * HS Code 검증 (비동기)
+     * @param order 주문
+     */
+    private void validateHSCodesAsync(Order order) {
+        if (order.getOrderItems() == null || order.getOrderItems().isEmpty()) {
+            return;
+        }
+        
+        // 각 아이템의 HS Code 검증을 별도 스레드에서 수행
+        new Thread(() -> {
+            for (OrderItem item : order.getOrderItems()) {
+                if (item.getHsCode() != null && !item.getHsCode().trim().isEmpty()) {
+                    try {
+                        // HS Code 유효성 검증
+                        validateHSCode(item.getHsCode(), order.getOrderNumber(), item.getDescription());
+                    } catch (Exception e) {
+                        log.warn("HS Code validation failed for order {} item {}: {}", 
+                                order.getOrderNumber(), item.getDescription(), e.getMessage());
+                        // 검증 실패 시 주문에 경고 플래그 설정 가능
+                    }
+                }
+            }
+        }).start();
+    }
+    
+    /**
+     * HS Code 검증
+     * @param hsCode HS 코드
+     * @param orderNumber 주문 번호
+     * @param itemDescription 품목 설명
+     */
+    private void validateHSCode(String hsCode, String orderNumber, String itemDescription) {
+        try {
+            // HS Code 형식 검증 (10자리 숫자)
+            if (!hsCode.matches("\\d{10}")) {
+                log.warn("Invalid HS Code format for order {}: {} (item: {})", 
+                        orderNumber, hsCode, itemDescription);
+                return;
+            }
+            
+            log.info("HS Code validation passed for order {}: {} (item: {})", 
+                    orderNumber, hsCode, itemDescription);
+            
+        } catch (Exception e) {
+            log.error("Failed to validate HS Code for order {}: {}", orderNumber, e.getMessage());
+        }
     }
     
     /**
