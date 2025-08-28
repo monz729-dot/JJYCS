@@ -114,13 +114,28 @@ public class OrderBusinessRuleService {
             return BigDecimal.ZERO;
         }
         
-        // 간단한 추정: 아이템 개수 × 평균 CBM (0.01)
-        int itemCount = order.getOrderItems().size();
-        BigDecimal estimatedCbm = BigDecimal.valueOf(itemCount).multiply(BigDecimal.valueOf(0.01));
+        // 실제 계산: 아이템들의 CBM을 합산
+        BigDecimal totalCbm = BigDecimal.ZERO;
         
-        log.debug("Estimated CBM from {} items: {}", itemCount, estimatedCbm);
+        for (OrderItem item : order.getOrderItems()) {
+            if (item.getWidth() != null && item.getHeight() != null && item.getDepth() != null && item.getQuantity() != null) {
+                // CBM = (W × H × D × Quantity) / 1,000,000
+                BigDecimal itemCbm = item.getWidth()
+                    .multiply(item.getHeight())
+                    .multiply(item.getDepth())
+                    .multiply(BigDecimal.valueOf(item.getQuantity()))
+                    .divide(BigDecimal.valueOf(1000000), 6, RoundingMode.HALF_UP);
+                
+                totalCbm = totalCbm.add(itemCbm);
+                
+                log.debug("Item CBM: {}x{}x{}x{} = {} m³", 
+                    item.getWidth(), item.getHeight(), item.getDepth(), item.getQuantity(), itemCbm);
+            }
+        }
         
-        return estimatedCbm;
+        log.debug("Total estimated CBM from {} items: {} m³", order.getOrderItems().size(), totalCbm);
+        
+        return totalCbm;
     }
     
     /**

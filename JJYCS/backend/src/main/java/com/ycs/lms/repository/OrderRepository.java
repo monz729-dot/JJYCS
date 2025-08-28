@@ -222,4 +222,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     // 전체 주문 조회 (날짜순)
     @EntityGraph(attributePaths = {"user", "items"})
     List<Order> findAllByOrderByCreatedAtDesc();
+    
+    // WarehouseService 메소드들
+    List<Order> findByArrivedAtIsNullAndStatusNot(Order.OrderStatus status);
+    List<Order> findByArrivedAtIsNotNullAndShippedAtIsNullAndStatusNot(Order.OrderStatus status);
+    List<Order> findByCreatedAtAfter(LocalDateTime startTime);
 }

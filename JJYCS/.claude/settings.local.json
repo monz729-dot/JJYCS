@@ -80,7 +80,9 @@
       "Bash(./mvnw.cmd:*)",
       "Bash(git commit:*)",
       "Bash(start \"http://localhost:3006/login\")",
-      "Bash(start:*)"
+      "Bash(start:*)",
+      "Bash(tasklist:*)",
+      "Bash(git clean:*)"
     ],
     "deny": [],
     "ask": [],

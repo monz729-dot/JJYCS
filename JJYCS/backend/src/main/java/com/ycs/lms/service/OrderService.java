@@ -9,7 +9,10 @@ import com.ycs.lms.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -33,12 +36,27 @@ public class OrderService {
     private final OrderBusinessRuleService orderBusinessRuleService;
     // private final NotificationService notificationService; // TODO: Re-enable after fixing NotificationService
     
+    @PersistenceContext
+    private EntityManager entityManager;
+    
     // CBM 임계값 (29.0 m³)
     private static final BigDecimal CBM_THRESHOLD = new BigDecimal("29.0");
     // THB 임계값 (1,500 THB)
     private static final BigDecimal THB_THRESHOLD = new BigDecimal("1500.0");
     
     public Order createOrder(CreateOrderRequest request) {
+        // 먼저 데이터베이스에 모든 엔티티를 저장
+        Order savedOrder = createOrderEntities(request);
+        
+        // 별도 트랜잭션에서 비즈니스 규칙 적용
+        return applyBusinessRulesPostTransaction(savedOrder.getId());
+    }
+    
+    /**
+     * 주문과 관련 엔티티들을 데이터베이스에 저장
+     */
+    @Transactional
+    public Order createOrderEntities(CreateOrderRequest request) {
         // 사용자 확인
         User user = userRepository.findById(request.getUserId())
             .orElseThrow(() -> new IllegalArgumentException("User not found"));
@@ -74,7 +92,6 @@ public class OrderService {
         // 주문 항목별 CBM 계산 및 총합 계산
         BigDecimal totalCbm = BigDecimal.ZERO;
         BigDecimal totalWeight = BigDecimal.ZERO;
-        BigDecimal totalValue = BigDecimal.ZERO;
         
         for (CreateOrderRequest.OrderItemRequest itemRequest : request.getOrderItems()) {
             // CBM 계산: (W × H × D) / 1,000,000
@@ -87,20 +104,10 @@ public class OrderService {
             
             totalCbm = totalCbm.add(itemCbm);
             totalWeight = totalWeight.add(new BigDecimal(itemRequest.getWeight().toString()));
-            
-            // 항목 가격 계산 (THB 체크용)
-            if (itemRequest.getUnitPrice() != null) {
-                BigDecimal itemTotal = itemRequest.getUnitPrice().multiply(new BigDecimal(itemRequest.getQuantity()));
-                totalValue = totalValue.add(itemTotal);
-            }
         }
         
         order.setTotalCbm(totalCbm);
         order.setTotalWeight(totalWeight);
-        
-        // 핵심 비즈니스 로직 적용
-        OrderBusinessRuleService.OrderBusinessRuleResult ruleResult = 
-            orderBusinessRuleService.applyBusinessRules(order);
         
         // 주문 저장
         Order savedOrder = orderRepository.save(order);
@@ -133,24 +140,53 @@ public class OrderService {
             savedOrder.getItems().add(orderItem);
         }
         
-        // 주문 생성 알림 발송 - TODO: Re-enable after fixing NotificationService
-        /*
-        try {
-            Map<String, Object> variables = new HashMap<>();
-            variables.put("totalItems", savedOrder.getItems().size());
-            variables.put("shippingWarnings", buildWarningMessage(savedOrder));
-            
-            notificationService.triggerOrderNotification(
-                NotificationTemplate.TriggerEvent.ORDER_CREATED, 
-                savedOrder, 
-                variables);
-        } catch (Exception e) {
-            log.error("Failed to send order creation notification for order: {}", 
-                savedOrder.getOrderNumber(), e);
+        // 박스 정보 저장 (있는 경우)
+        if (request.getOrderBoxes() != null && !request.getOrderBoxes().isEmpty()) {
+            for (CreateOrderRequest.OrderBoxRequest boxRequest : request.getOrderBoxes()) {
+                OrderBox orderBox = new OrderBox();
+                orderBox.setOrder(savedOrder);
+                orderBox.setWidthCm(boxRequest.getWidthCm());
+                orderBox.setHeightCm(boxRequest.getHeightCm());
+                orderBox.setDepthCm(boxRequest.getDepthCm());
+                
+                savedOrder.getBoxes().add(orderBox);
+            }
         }
-        */
         
+        // 모든 엔티티 저장 완료
+        entityManager.flush();
+        
+        log.info("Order entities created successfully for order: {}", savedOrder.getOrderNumber());
         return savedOrder;
+    }
+    
+    /**
+     * 별도 트랜잭션에서 비즈니스 규칙 적용
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public Order applyBusinessRulesPostTransaction(Long orderId) {
+        // 완전히 새로운 트랜잭션에서 주문을 조회
+        Order order = orderRepository.findById(orderId)
+            .orElseThrow(() -> new IllegalArgumentException("Order not found: " + orderId));
+        
+        log.info("Applying business rules for order: {} with {} items", 
+            order.getOrderNumber(), order.getOrderItems().size());
+        
+        // 비즈니스 규칙 적용
+        OrderBusinessRuleService.OrderBusinessRuleResult ruleResult = 
+            orderBusinessRuleService.applyBusinessRules(order);
+        
+        // 규칙 적용 결과를 주문에 반영
+        order.setUpdatedAt(LocalDateTime.now());
+        
+        // 최종 저장
+        Order finalOrder = orderRepository.save(order);
+        
+        log.info("Business rules applied successfully for order: {} (CBM: {}, THB: {}, Warnings: {})", 
+            finalOrder.getOrderNumber(), ruleResult.getTotalCbm(), ruleResult.getTotalThbValue(), 
+            ruleResult.hasWarnings() ? ruleResult.getWarnings().size() : 0);
+        
+        return finalOrder;
     }
     
     /**
