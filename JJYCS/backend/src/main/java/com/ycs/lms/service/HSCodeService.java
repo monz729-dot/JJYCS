@@ -28,11 +28,11 @@ public class HSCodeService {
     private String hsSearchApiKey;
 
     // 관세율기본조회 API
-    @Value("${app.api.tariff.basic.key:y270u255i028u267i010o090s0}")
+    @Value("${app.api.hscode.tariff.key:s240o275s078n237g000a070s0}")
     private String tariffBasicApiKey;
 
     // 관세환율정보조회 API
-    @Value("${app.api.tariff.exchange.key:p230m215f048a247h000v070a0}")
+    @Value("${app.api.hscode.exchange.key:s240o275s078n237g000a070s0}")
     private String tariffExchangeApiKey;
 
     private static final String HS_SEARCH_BASE_URL = "https://unipass.customs.go.kr:38010/ext/rest/hsCodeSearchService/search";

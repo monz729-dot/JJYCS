@@ -341,36 +341,28 @@ const formatTimeKorean = (date: Date) => {
 const loadDashboardData = async () => {
   loading.value = true
   try {
-    // 실제 API 호출
-    const ordersResponse = await adminApi.getAllOrders()
+    // 통계 API 호출 - 올바른 엔드포인트 사용
+    const statsResponse = await adminApi.getSystemStats()
     
-    if (ordersResponse.success) {
-      const orders = ordersResponse.data || []
+    if (statsResponse.success && statsResponse.data) {
+      // 백엔드 통계 데이터 직접 사용
+      const statsData = statsResponse.data
+      stats.value.totalOrders = statsData.totalOrders || 0
+      stats.value.todayOrders = statsData.todayOrders || 0
+      stats.value.specialCases = statsData.specialCases || 0
       
-      // 대시보드 통계 계산
-      stats.value.totalOrders = orders.length
-      
-      const today = new Date()
-      const todayOrders = orders.filter((order: any) => {
-        const orderDate = new Date(order.createdAt)
-        return orderDate.toDateString() === today.toDateString()
-      })
-      stats.value.todayOrders = todayOrders.length
-      
-      // 비즈니스 룰 적용된 주문 수 계산
-      const specialOrders = orders.filter((order: any) => 
-        order.requiresExtraRecipient || order.hasNoMemberCode || order.totalCbm > 29
-      )
-      stats.value.specialCases = specialOrders.length
-      
-      // 창고 통계
-      warehouse.value.totalInWarehouse = orders.filter((order: any) => 
-        order.status === 'ARRIVED' || order.status === 'PROCESSING'
-      ).length
-      
-      warehouse.value.arrivedCount = orders.filter((order: any) => 
-        order.status === 'ARRIVED'
-      ).length
+      // 창고 통계 (백엔드에서 제공되면 사용, 아니면 0으로 설정)
+      warehouse.value.totalInWarehouse = statsData.totalInWarehouse || 0
+      warehouse.value.arrivedCount = statsData.arrivedCount || 0
+    } else {
+      console.log('통계 API 실패, 목 데이터 사용')
+    }
+    
+    // 최근 주문 조회 (별도로)
+    const ordersResponse = await adminApi.getAllOrders({ page: 1, pageSize: 5 })
+    if (ordersResponse.success && ordersResponse.data) {
+      const orders = Array.isArray(ordersResponse.data) ? ordersResponse.data : 
+                    (ordersResponse.data.content || [])
       
       // 최근 활동 생성 (실제 데이터 기반)
       recentActivity.value = orders.slice(0, 5).map((order: any, index: number) => ({

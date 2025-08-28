@@ -70,7 +70,14 @@ public class OrderService {
         order.setOrderNumber(generateOrderNumber());
         order.setUser(user);
         order.setStatus(Order.OrderStatus.RECEIVED);
-        order.setShippingType(Order.ShippingType.valueOf(request.getShippingType().toUpperCase()));
+        
+        // shippingType 설정 (기본값: SEA)
+        String shippingType = request.getShippingType();
+        if (shippingType == null || shippingType.trim().isEmpty()) {
+            shippingType = "SEA"; // 기본값
+        }
+        order.setShippingType(Order.ShippingType.valueOf(shippingType.toUpperCase()));
+        
         order.setCountry(request.getCountry());
         order.setPostalCode(request.getPostalCode());
         order.setRecipientName(request.getRecipientName());
@@ -89,21 +96,34 @@ public class OrderService {
             order.setNoMemberCode(false);
         }
         
-        // 주문 항목별 CBM 계산 및 총합 계산
+        // 박스별 CBM 계산 및 총합 계산
         BigDecimal totalCbm = BigDecimal.ZERO;
         BigDecimal totalWeight = BigDecimal.ZERO;
         
-        for (CreateOrderRequest.OrderItemRequest itemRequest : request.getOrderItems()) {
-            // CBM 계산: (W × H × D) / 1,000,000
-            BigDecimal itemCbm = calculateCbm(
-                itemRequest.getWidth(), 
-                itemRequest.getHeight(), 
-                itemRequest.getDepth(),
-                itemRequest.getQuantity()
-            );
-            
-            totalCbm = totalCbm.add(itemCbm);
-            totalWeight = totalWeight.add(new BigDecimal(itemRequest.getWeight().toString()));
+        // 박스에서 CBM 계산
+        if (request.getOrderBoxes() != null && !request.getOrderBoxes().isEmpty()) {
+            for (CreateOrderRequest.OrderBoxRequest boxRequest : request.getOrderBoxes()) {
+                // CBM 계산: (W × H × D) / 1,000,000
+                if (boxRequest.getWidthCm() != null && boxRequest.getHeightCm() != null && boxRequest.getDepthCm() != null) {
+                    BigDecimal boxCbm = calculateCbm(
+                        boxRequest.getWidthCm(), 
+                        boxRequest.getHeightCm(), 
+                        boxRequest.getDepthCm(),
+                        1 // 박스는 개수가 1개
+                    );
+                    totalCbm = totalCbm.add(boxCbm);
+                }
+            }
+        }
+        
+        // 아이템별 무게 계산
+        if (request.getOrderItems() != null && !request.getOrderItems().isEmpty()) {
+            for (CreateOrderRequest.OrderItemRequest itemRequest : request.getOrderItems()) {
+                if (itemRequest.getWeight() != null && itemRequest.getQuantity() != null) {
+                    BigDecimal itemWeight = itemRequest.getWeight().multiply(new BigDecimal(itemRequest.getQuantity()));
+                    totalWeight = totalWeight.add(itemWeight);
+                }
+            }
         }
         
         order.setTotalCbm(totalCbm);
@@ -127,14 +147,8 @@ public class OrderService {
             orderItem.setTotalPrice(itemRequest.getUnitPrice() != null ? 
                 itemRequest.getUnitPrice().multiply(new BigDecimal(itemRequest.getQuantity())) : null);
             
-            // 개별 항목 CBM 계산
-            BigDecimal itemCbm = calculateCbm(
-                itemRequest.getWidth(), 
-                itemRequest.getHeight(), 
-                itemRequest.getDepth(),
-                itemRequest.getQuantity()
-            );
-            orderItem.setCbm(itemCbm);
+            // 개별 항목 CBM은 박스에서 계산됨
+            orderItem.setCbm(BigDecimal.ZERO); // 초기값
             orderItem.setCreatedAt(LocalDateTime.now());
             
             savedOrder.getItems().add(orderItem);
@@ -149,7 +163,7 @@ public class OrderService {
                 orderBox.setWidth(boxRequest.getWidthCm());
                 orderBox.setHeight(boxRequest.getHeightCm());
                 orderBox.setDepth(boxRequest.getDepthCm());
-                orderBox.setWeight(BigDecimal.ZERO); // weight는 추후 설정
+                orderBox.setWeight(boxRequest.getWeightKg() != null ? boxRequest.getWeightKg() : BigDecimal.ZERO);
                 
                 savedOrder.getBoxes().add(orderBox);
             }
@@ -255,6 +269,11 @@ public class OrderService {
     }
     
     private BigDecimal calculateCbm(BigDecimal width, BigDecimal height, BigDecimal depth, Integer quantity) {
+        // null 체크
+        if (width == null || height == null || depth == null || quantity == null || quantity <= 0) {
+            return BigDecimal.ZERO;
+        }
+        
         // CBM = (W × H × D × 수량) / 1,000,000
         BigDecimal volume = width.multiply(height).multiply(depth).multiply(new BigDecimal(quantity));
         return volume.divide(new BigDecimal("1000000"), 6, RoundingMode.HALF_UP);
@@ -473,6 +492,7 @@ public class OrderService {
             private BigDecimal widthCm;
             private BigDecimal heightCm;
             private BigDecimal depthCm;
+            private BigDecimal weightKg;
             
             public BigDecimal getWidthCm() { return widthCm; }
             public void setWidthCm(BigDecimal widthCm) { this.widthCm = widthCm; }
@@ -480,6 +500,8 @@ public class OrderService {
             public void setHeightCm(BigDecimal heightCm) { this.heightCm = heightCm; }
             public BigDecimal getDepthCm() { return depthCm; }
             public void setDepthCm(BigDecimal depthCm) { this.depthCm = depthCm; }
+            public BigDecimal getWeightKg() { return weightKg; }
+            public void setWeightKg(BigDecimal weightKg) { this.weightKg = weightKg; }
         }
     }
 }

@@ -1,7 +1,7 @@
-# Development Profile Configuration
+# Minimal Profile Configuration
 spring:
   application:
-    name: ycs-lms-dev
+    name: ycs-lms-minimal
 
   # Database Configuration - H2 In-Memory
   datasource:
@@ -9,16 +9,6 @@ spring:
     driver-class-name: org.h2.Driver
     username: sa
     password: 
-    generate-unique-name: false
-
-    hikari:
-      maximum-pool-size: 10
-      minimum-idle: 2
-      idle-timeout: 300000
-      connection-timeout: 20000
-      max-lifetime: 1800000
-      pool-name: YCS-LMS-Dev-Pool
-      connection-test-query: SELECT 1
 
   h2:
     console:
@@ -27,17 +17,12 @@ spring:
       settings:
         web-allow-others: true
 
-  # JPA Configuration - Development
+  # JPA Configuration - Minimal
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: create-drop
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-        use_sql_comments: true
-        generate_statistics: true
+    show-sql: false
     defer-datasource-initialization: true
 
   # SQL Initialization - Test accounts
@@ -46,11 +31,11 @@ spring:
       mode: always
       data-locations: classpath:simple-data.sql
 
-  # Disable Flyway for development (use JPA auto-creation)
+  # Disable Flyway for minimal profile
   flyway:
     enabled: false
 
-  # Mail Configuration - Gmail SMTP (Development)
+  # Mail Configuration - Gmail SMTP
   mail:
     host: smtp.gmail.com
     port: 587
@@ -71,16 +56,13 @@ spring:
 app:
   notification:
     email:
-      enabled: ${APP_NOTIFICATION_EMAIL_ENABLED:true}
+      enabled: true
       from: ${MAIL_USERNAME:monz729@gmail.com}
       from-name: "YCS 물류관리시스템"
 
-# Logging - Development
+# Logging - Minimal
 logging:
   level:
-    com.ycs.lms: DEBUG
-    org.springframework.security: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-  pattern:
-    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    com.ycs.lms: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
