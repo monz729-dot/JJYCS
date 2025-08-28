@@ -1,5 +1,77 @@
 <template>
-  <nav class="fixed bottom-0 left-0 right-0 bg-white/95 border-t border-blue-100 shadow-lg z-50 backdrop-blur-md">
+  <!-- PC용 사이드바 네비게이션 -->
+  <nav v-if="compact" class="sidebar-navigation bg-white border-r border-gray-200 h-full w-64 flex flex-col">
+    <div class="sidebar-header p-6 border-b border-gray-100">
+      <h2 class="text-xl font-semibold text-gray-800">관리자 메뉴</h2>
+      <p class="text-sm text-gray-600 mt-1">시스템 관리</p>
+    </div>
+    
+    <div class="sidebar-menu flex-1 px-3 py-4 space-y-2">
+      <button
+        v-for="item in navigationItems"
+        :key="item.id"
+        :class="[
+          'sidebar-item w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-all duration-200',
+          currentRoute === item.route 
+            ? 'text-blue-700 bg-blue-50 border-l-4 border-blue-700 shadow-sm' 
+            : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+        ]"
+        @click="navigateTo(item.route)"
+        :aria-label="item.description"
+      >
+        <!-- 아이콘 -->
+        <div :class="[
+          'nav-icon flex-shrink-0 transition-all duration-200',
+          currentRoute === item.route ? 'text-blue-700' : 'text-gray-500'
+        ]">
+          <component :is="item.icon" class="h-5 w-5" />
+        </div>
+        
+        <!-- 라벨과 뱃지 -->
+        <div class="flex-1 flex items-center justify-between">
+          <span :class="[
+            'font-medium transition-all duration-200',
+            currentRoute === item.route ? 'text-blue-700' : 'text-gray-700'
+          ]">
+            {{ item.label }}
+          </span>
+          
+          <!-- 뱃지 (알림 개수) -->
+          <span 
+            v-if="item.badge && item.badge > 0" 
+            class="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] h-5 flex items-center justify-center"
+          >
+            {{ item.badge > 99 ? '99+' : item.badge }}
+          </span>
+        </div>
+      </button>
+    </div>
+    
+    <!-- 사용자 정보 -->
+    <div class="sidebar-footer p-4 border-t border-gray-100">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="avatar w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+          <span class="text-sm font-medium text-blue-700">
+            {{ (authStore.user?.name || 'A').charAt(0).toUpperCase() }}
+          </span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium text-gray-700 truncate">{{ authStore.user?.name || 'Admin' }}</p>
+          <p class="text-xs text-gray-500 truncate">{{ authStore.user?.email }}</p>
+        </div>
+      </div>
+      <button
+        @click="handleLogout"
+        class="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+      >
+        <LogOutIcon class="h-4 w-4" />
+        로그아웃
+      </button>
+    </div>
+  </nav>
+  
+  <!-- 모바일용 하단 네비게이션 -->
+  <nav v-else class="fixed bottom-0 left-0 right-0 bg-white/95 border-t border-blue-100 shadow-lg z-50 backdrop-blur-md">
     <div class="grid grid-cols-5 h-16">
       <button
         v-for="item in navigationItems"
@@ -70,10 +142,12 @@ import { useAuthStore } from '@/stores/auth'
 // Props
 interface Props {
   showLogoutButton?: boolean
+  compact?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  showLogoutButton: false
+  showLogoutButton: false,
+  compact: false
 })
 
 // Icons (SVG 컴포넌트로 정의)
@@ -239,8 +313,46 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* 사이드바 스타일 */
+.sidebar-navigation {
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-item {
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-item:hover {
+  transform: translateX(2px);
+}
+
+.sidebar-item.active {
+  position: relative;
+}
+
+.sidebar-item.active::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(to bottom, #3b82f6, #1d4ed8);
+  border-radius: 0 2px 2px 0;
+}
+
+.sidebar-header {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+}
+
+.sidebar-footer {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+}
+
+/* 모바일 네비게이션 스타일 */
 @supports (backdrop-filter: blur(20px)) {
-  nav {
+  .fixed.bottom-0 {
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     background-color: rgba(255, 255, 255, 0.95);
@@ -248,7 +360,7 @@ onUnmounted(() => {
 }
 
 @supports not (backdrop-filter: blur(20px)) {
-  nav {
+  .fixed.bottom-0 {
     background-color: white;
   }
 }
@@ -260,5 +372,40 @@ onUnmounted(() => {
 
 .nav-icon {
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 반응형 디자인 */
+@media (min-width: 768px) {
+  .sidebar-navigation {
+    min-height: 100vh;
+  }
+}
+
+@media (max-width: 767px) {
+  .sidebar-navigation {
+    display: none;
+  }
+}
+
+/* 애니메이션 */
+.sidebar-item {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 사용자 아바타 스타일 */
+.avatar {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border: 2px solid #e0f2fe;
 }
 </style>

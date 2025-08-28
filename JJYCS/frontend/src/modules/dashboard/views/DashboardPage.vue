@@ -380,46 +380,49 @@ const loadDashboardData = async () => {
         loadMockData()
       }
     } else {
-      // For regular users, directly call orders API
-      console.log('Loading user orders directly from orders API')
-      const ordersResponse = await ordersApi.getOrders(1, 50) // Get first 50 orders
-      console.log('Orders API response:', ordersResponse)
+      // For regular users, use my orders stats API
+      console.log('Loading my order stats')
+      const statsResponse = await ordersApi.getMyOrderStats()
+      console.log('My Order Stats API response:', statsResponse)
       
-      if (ordersResponse.success && ordersResponse.data) {
-        const orders = Array.isArray(ordersResponse.data) ? ordersResponse.data : 
-                      (ordersResponse.data.content || [])
+      if (statsResponse.success && statsResponse.data) {
+        const statsData = statsResponse.data
         
-        console.log('User orders loaded:', orders.length)
+        console.log('Stats loaded:', statsData)
         
-        // Calculate stats from orders
-        const total = orders.length
-        const pending = orders.filter((order: any) => 
-          ['RECEIVED', 'ARRIVED', 'REPACKING', 'SHIPPING', 'BILLING', 'PAYMENT_PENDING'].includes(order.status)
-        ).length
-        const completed = orders.filter((order: any) => 
-          ['DELIVERED', 'COMPLETED', 'PAYMENT_CONFIRMED'].includes(order.status)
-        ).length
+        // Use stats directly from API
+        stats.totalOrders = Number(statsData.total || 0)
+        stats.pendingOrders = Number(statsData.inProgress || 0)
+        stats.completedOrders = Number(statsData.delivered || 0)
+        stats.monthlyShipping = Number(statsData.totalFreight || 0)
         
-        stats.totalOrders = total
-        stats.pendingOrders = pending
-        stats.completedOrders = completed
-        stats.monthlyShipping = 0
-        
-        console.log('Calculated user stats:', {
-          totalOrders: total,
-          pendingOrders: pending,
-          completedOrders: completed
+        console.log('Updated user stats:', {
+          totalOrders: stats.totalOrders,
+          pendingOrders: stats.pendingOrders,
+          completedOrders: stats.completedOrders,
+          monthlyShipping: stats.monthlyShipping
         })
         
-        // Update recent orders
-        recentOrders.value = orders.slice(0, 10)
+        // Also load recent orders
+        try {
+          const ordersResponse = await ordersApi.getMyOrders(0, 10)
+          if (ordersResponse.success && ordersResponse.data) {
+            const orders = Array.isArray(ordersResponse.data) ? ordersResponse.data : 
+                          (ordersResponse.data.content || [])
+            
+            recentOrders.value = orders.slice(0, 10)
+            
+            // Filter warehouse items (ARRIVED or REPACKING status)
+            warehouseItems.value = orders.filter((order: any) => 
+              ['ARRIVED', 'REPACKING'].includes(order.status)
+            ) || []
+          }
+        } catch (orderError) {
+          console.warn('Failed to load recent orders:', orderError)
+        }
         
-        // Filter warehouse items (ARRIVED or REPACKING status)
-        warehouseItems.value = orders.filter((order: any) => 
-          ['ARRIVED', 'REPACKING'].includes(order.status)
-        ) || []
       } else {
-        console.error('Orders API response failed:', ordersResponse.error)
+        console.error('Stats API response failed:', statsResponse.error)
         loadMockData()
       }
     }

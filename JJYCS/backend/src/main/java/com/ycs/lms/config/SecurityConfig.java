@@ -84,6 +84,9 @@ public class SecurityConfig {
                 // 주문 관련 - 일반/기업/관리자/창고
                 .requestMatchers("/orders/**").hasAnyRole("GENERAL", "CORPORATE", "ADMIN", "WAREHOUSE")
                 
+                // HS Code 조회 - 모든 인증된 사용자 (주문 생성시 필요)
+                .requestMatchers("/hscode/**").hasAnyRole("GENERAL", "CORPORATE", "ADMIN", "WAREHOUSE", "PARTNER")
+                
                 // 은행계좌 - 일반/기업/관리자
                 .requestMatchers("/bank-accounts/**").hasAnyRole("GENERAL", "CORPORATE", "ADMIN")
                 

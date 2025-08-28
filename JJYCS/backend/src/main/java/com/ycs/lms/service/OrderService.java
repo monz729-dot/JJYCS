@@ -195,6 +195,10 @@ public class OrderService {
         
         // 규칙 적용 결과를 주문에 반영
         order.setUpdatedAt(LocalDateTime.now());
+        order.setLastValidatedAt(LocalDateTime.now());
+        
+        // 경고 메시지 저장
+        storeValidationWarnings(order, ruleResult);
         
         // 최종 저장
         Order finalOrder = orderRepository.save(order);
@@ -304,6 +308,17 @@ public class OrderService {
     
     public List<Order> findByUserId(Long userId) {
         return orderRepository.findByUserIdOrderByCreatedAtDesc(userId);
+    }
+    
+    /**
+     * 파트너와 관련된 주문들 조회
+     * @param partnerId 파트너 사용자 ID
+     * @return 파트너가 접근할 수 있는 주문 목록
+     */
+    public List<Order> findOrdersForPartner(Long partnerId) {
+        // 현재는 파트너 자신의 주문만 조회
+        // 향후 파트너가 추천한 사용자들의 주문도 포함하도록 확장 가능
+        return orderRepository.findByUserIdOrderByCreatedAtDesc(partnerId);
     }
     
     /**
@@ -635,14 +650,49 @@ public class OrderService {
             if (!hsCode.matches("\\d{10}")) {
                 log.warn("Invalid HS Code format for order {}: {} (item: {})", 
                         orderNumber, hsCode, itemDescription);
+                        
+                // 주문에 검증 실패 결과 저장
+                updateHSCodeValidationResult(orderNumber, false, "Invalid HS Code format: " + hsCode);
                 return;
             }
             
             log.info("HS Code validation passed for order {}: {} (item: {})", 
                     orderNumber, hsCode, itemDescription);
+                    
+            // 주문에 검증 성공 결과 저장
+            updateHSCodeValidationResult(orderNumber, true, null);
             
         } catch (Exception e) {
             log.error("Failed to validate HS Code for order {}: {}", orderNumber, e.getMessage());
+            updateHSCodeValidationResult(orderNumber, false, "HS Code validation error: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * HS Code 검증 결과 업데이트
+     */
+    private void updateHSCodeValidationResult(String orderNumber, boolean validated, String errorMessage) {
+        try {
+            Optional<Order> orderOpt = orderRepository.findByOrderNumber(orderNumber);
+            if (orderOpt.isPresent()) {
+                Order order = orderOpt.get();
+                order.setHsCodeValidated(validated);
+                order.setLastValidatedAt(LocalDateTime.now());
+                
+                if (errorMessage != null) {
+                    String currentErrors = order.getValidationErrors();
+                    if (currentErrors != null && !currentErrors.isEmpty()) {
+                        order.setValidationErrors(currentErrors + "||" + errorMessage);
+                    } else {
+                        order.setValidationErrors(errorMessage);
+                    }
+                }
+                
+                orderRepository.save(order);
+                log.info("Updated HS Code validation result for order {}: validated={}", orderNumber, validated);
+            }
+        } catch (Exception e) {
+            log.error("Failed to update HS Code validation result for order {}", orderNumber, e);
         }
     }
     
@@ -669,8 +719,8 @@ public class OrderService {
         
         // 파트너는 자신과 관련된 주문만 접근 가능
         if (User.UserType.PARTNER.equals(user.getUserType())) {
-            // TODO: 파트너와 주문 연결 로직 구현 필요
-            return order.getUser().getId().equals(user.getId());
+            // 파트너 자신의 주문이거나, 파트너가 추천한 사용자의 주문인지 확인
+            return isPartnerRelatedOrder(order, user.getId());
         }
         
         // 일반 사용자와 기업 사용자는 자신의 주문만 접근 가능
@@ -727,5 +777,87 @@ public class OrderService {
         );
         
         return modifiableStatuses.contains(order.getStatus());
+    }
+    
+    /**
+     * 파트너와 관련된 주문인지 확인
+     * @param order 주문
+     * @param partnerId 파트너 ID
+     * @return 관련된 주문 여부
+     */
+    private boolean isPartnerRelatedOrder(Order order, Long partnerId) {
+        if (order == null || partnerId == null) {
+            return false;
+        }
+        
+        // 1. 파트너 자신의 주문인 경우
+        if (order.getUser().getId().equals(partnerId)) {
+            return true;
+        }
+        
+        // 2. 파트너가 추천한 사용자의 주문인 경우 (향후 구현)
+        // TODO: partner_referrals 테이블을 통해 추천 관계 확인
+        // return partnerReferralRepository.existsByPartnerIdAndReferredUserId(partnerId, order.getUser().getId());
+        
+        return false;
+    }
+    
+    /**
+     * 검증 경고 메시지 저장
+     * @param order 주문
+     * @param ruleResult 비즈니스 룰 검증 결과
+     */
+    private void storeValidationWarnings(Order order, OrderBusinessRuleService.OrderBusinessRuleResult ruleResult) {
+        // CBM 관련 경고
+        if (ruleResult.isCbmExceedsThreshold()) {
+            String cbmWarning = String.format("CBM %.3fm³가 임계값(29m³)을 초과하여 자동으로 항공 배송으로 전환되었습니다.", 
+                    ruleResult.getTotalCbm());
+            order.setCbmWarningMessage(cbmWarning);
+        }
+        
+        // THB 임계값 초과 경고
+        if (ruleResult.isThbValueExceedsThreshold()) {
+            String thbWarning = String.format("총 금액(%.2fTHB)이 1,500THB를 초과하여 수취인 추가 정보가 필요합니다.", 
+                    ruleResult.getTotalThbValue());
+            order.setThbWarningMessage(thbWarning);
+        }
+        
+        // 회원코드 미기재 경고
+        if (ruleResult.isHasNoMemberCode()) {
+            order.setMemberCodeWarningMessage("회원코드가 미기재되어 발송이 지연될 수 있습니다.");
+        }
+        
+        // 전체 경고 메시지 저장 (JSON 형식)
+        if (ruleResult.hasWarnings()) {
+            StringBuilder warnings = new StringBuilder();
+            for (String warning : ruleResult.getWarnings()) {
+                if (warnings.length() > 0) {
+                    warnings.append("||");
+                }
+                warnings.append(warning);
+            }
+            order.setValidationWarnings(warnings.toString());
+        }
+        
+        // 오류 메시지 저장
+        if (ruleResult.hasErrors()) {
+            StringBuilder errors = new StringBuilder();
+            for (String error : ruleResult.getErrors()) {
+                if (errors.length() > 0) {
+                    errors.append("||");
+                }
+                errors.append(error);
+            }
+            order.setValidationErrors(errors.toString());
+        }
+        
+        log.info("Stored validation warnings for order {}: CBM={}, THB={}, MemberCode={}, Total Warnings={}, Errors={}", 
+                order.getOrderNumber(),
+                order.getCbmWarningMessage() != null,
+                order.getThbWarningMessage() != null,
+                order.getMemberCodeWarningMessage() != null,
+                ruleResult.hasWarnings() ? ruleResult.getWarnings().size() : 0,
+                ruleResult.hasErrors() ? ruleResult.getErrors().size() : 0
+        );
     }
 }

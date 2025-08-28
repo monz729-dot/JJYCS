@@ -1,6 +1,6 @@
 <template>
   <nav class="fixed bottom-0 left-0 right-0 bg-white/95 border-t border-blue-100 shadow-lg z-50 backdrop-blur-md">
-    <div class="grid grid-cols-5 h-16">
+    <div class="grid grid-cols-3 h-16">
       <button
         v-for="item in navigationItems"
         :key="item.id"
@@ -89,29 +89,6 @@ const FileIcon = () => h('svg', {
   })
 ])
 
-const UserIcon = () => h('svg', { 
-  class: 'h-5 w-5', 
-  fill: 'currentColor', 
-  viewBox: '0 0 20 20' 
-}, [
-  h('path', {
-    'fill-rule': 'evenodd',
-    d: 'M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z',
-    'clip-rule': 'evenodd'
-  })
-])
-
-const MenuIcon = () => h('svg', { 
-  class: 'h-5 w-5', 
-  fill: 'currentColor', 
-  viewBox: '0 0 20 20' 
-}, [
-  h('path', {
-    'fill-rule': 'evenodd',
-    d: 'M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z',
-    'clip-rule': 'evenodd'
-  })
-])
 
 const route = useRoute()
 const router = useRouter()
@@ -145,20 +122,6 @@ const navigationItems = computed(() => {
       icon: FileIcon,
       route: 'OrderHistory',
       description: '주문 내역'
-    },
-    {
-      id: 'profile',
-      label: '프로필',
-      icon: UserIcon,
-      route: 'Profile',
-      description: '내 정보'
-    },
-    {
-      id: 'menu',
-      label: '메뉴',
-      icon: MenuIcon,
-      route: 'Menu',
-      description: '더보기'
     }
   ]
 
@@ -190,20 +153,6 @@ const navigationItems = computed(() => {
         icon: FileIcon,
         route: 'order-create',
         description: '새 주문 접수'
-      },
-      {
-        id: 'profile',
-        label: '프로필',
-        icon: UserIcon,
-        route: 'profile',
-        description: '파트너 정보'
-      },
-      {
-        id: 'menu',
-        label: '메뉴',
-        icon: MenuIcon,
-        route: 'PartnerMenu',
-        description: '더보기'
       }
     ]
   }
@@ -217,22 +166,6 @@ const navigateTo = (routeName: string) => {
   }
 }
 
-// 사용자 유형별 라벨 표시
-const getUserTypeLabel = computed(() => {
-  const userType = authStore.user?.userType
-  switch (userType) {
-    case 'CORPORATE':
-      return '기업'
-    case 'PARTNER':
-      return '파트너'
-    case 'WAREHOUSE':
-      return '창고'
-    case 'ADMIN':
-      return '관리자'
-    default:
-      return ''
-  }
-})
 </script>
 
 <style scoped>

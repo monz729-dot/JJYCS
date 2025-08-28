@@ -302,6 +302,15 @@ export const ordersApi = {
   getOrderByNumber: (orderNumber: string) =>
     api.get(`/orders/number/${orderNumber}`),
   
+  getUserOrders: (userId: number, page: number = 0, size: number = 50) =>
+    api.get(`/orders/user/${userId}`, { params: { page, size } }),
+  
+  getMyOrders: (page: number = 0, size: number = 50) =>
+    api.get('/orders/user/me', { params: { page, size } }),
+  
+  getMyOrderStats: () =>
+    api.get('/orders/user/me/stats'),
+  
   updateOrder: (id: number, data: any) =>
     api.put(`/orders/${id}`, data),
   

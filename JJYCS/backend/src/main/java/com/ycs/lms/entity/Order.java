@@ -162,6 +162,117 @@ public class Order {
     public void setHasNoMemberCode(boolean hasNoMemberCode) {
         this.noMemberCode = hasNoMemberCode;
     }
+    
+    // 경고 및 검증 결과 저장 필드들
+    @Column(length = 2000)
+    private String validationWarnings; // 검증 경고 메시지들 (JSON 또는 구분자로 구분)
+    
+    @Column(length = 1000)
+    private String validationErrors; // 검증 오류 메시지들
+    
+    @Column
+    private Boolean hsCodeValidated = false; // HS Code 검증 완료 여부
+    
+    @Column
+    private LocalDateTime lastValidatedAt; // 마지막 검증 시간
+    
+    @Column(length = 500)
+    private String cbmWarningMessage; // CBM 관련 경고 메시지
+    
+    @Column(length = 500)
+    private String thbWarningMessage; // THB 임계값 관련 경고 메시지
+    
+    @Column(length = 500)
+    private String memberCodeWarningMessage; // 회원코드 관련 경고 메시지
+    
+    // Getter/Setter 메서드들
+    public String getValidationWarnings() {
+        return validationWarnings;
+    }
+    
+    public void setValidationWarnings(String validationWarnings) {
+        this.validationWarnings = validationWarnings;
+    }
+    
+    public String getValidationErrors() {
+        return validationErrors;
+    }
+    
+    public void setValidationErrors(String validationErrors) {
+        this.validationErrors = validationErrors;
+    }
+    
+    public Boolean getHsCodeValidated() {
+        return hsCodeValidated;
+    }
+    
+    public void setHsCodeValidated(Boolean hsCodeValidated) {
+        this.hsCodeValidated = hsCodeValidated;
+    }
+    
+    public LocalDateTime getLastValidatedAt() {
+        return lastValidatedAt;
+    }
+    
+    public void setLastValidatedAt(LocalDateTime lastValidatedAt) {
+        this.lastValidatedAt = lastValidatedAt;
+    }
+    
+    public String getCbmWarningMessage() {
+        return cbmWarningMessage;
+    }
+    
+    public void setCbmWarningMessage(String cbmWarningMessage) {
+        this.cbmWarningMessage = cbmWarningMessage;
+    }
+    
+    public String getThbWarningMessage() {
+        return thbWarningMessage;
+    }
+    
+    public void setThbWarningMessage(String thbWarningMessage) {
+        this.thbWarningMessage = thbWarningMessage;
+    }
+    
+    public String getMemberCodeWarningMessage() {
+        return memberCodeWarningMessage;
+    }
+    
+    public void setMemberCodeWarningMessage(String memberCodeWarningMessage) {
+        this.memberCodeWarningMessage = memberCodeWarningMessage;
+    }
+    
+    /**
+     * 모든 경고 메시지를 하나로 합치는 유틸리티 메서드
+     */
+    public String getAllWarningMessages() {
+        StringBuilder warnings = new StringBuilder();
+        
+        if (cbmWarningMessage != null && !cbmWarningMessage.trim().isEmpty()) {
+            warnings.append(cbmWarningMessage).append(" ");
+        }
+        
+        if (thbWarningMessage != null && !thbWarningMessage.trim().isEmpty()) {
+            warnings.append(thbWarningMessage).append(" ");
+        }
+        
+        if (memberCodeWarningMessage != null && !memberCodeWarningMessage.trim().isEmpty()) {
+            warnings.append(memberCodeWarningMessage).append(" ");
+        }
+        
+        if (validationWarnings != null && !validationWarnings.trim().isEmpty()) {
+            warnings.append(validationWarnings).append(" ");
+        }
+        
+        return warnings.toString().trim();
+    }
+    
+    /**
+     * 경고가 있는지 확인
+     */
+    public boolean hasWarnings() {
+        return !getAllWarningMessages().isEmpty();
+    }
 
     public enum OrderStatus {
         RECEIVED,           // 접수완료
