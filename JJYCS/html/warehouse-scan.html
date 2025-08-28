@@ -388,7 +388,7 @@
             }
 
             // API 호출
-            fetch('http://localhost:8081/api/warehouse/scan', {
+            fetch('/api/warehouse/scan', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -536,7 +536,7 @@
             
             const endpoint = batchType === 'INBOUND' ? 'batch/inbound' : 'batch/outbound';
             
-            fetch(`http://localhost:8081/api/warehouse/${endpoint}`, {
+            fetch(`/api/warehouse/${endpoint}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

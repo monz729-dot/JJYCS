@@ -125,7 +125,7 @@
         // 주문 목록 조회
         async function loadOrders() {
             try {
-                const response = await fetch('http://localhost:8081/api/orders', {
+                const response = await fetch('/api/orders', {
                     headers: {
                         'Authorization': 'Bearer mock-jwt-token'
                     }
@@ -272,7 +272,7 @@
             const reason = document.getElementById('changeReason').value;
 
             try {
-                const response = await fetch(`http://localhost:8081/api/orders/${currentOrderId}/status`, {
+                const response = await fetch(`/api/orders/${currentOrderId}/status`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -312,7 +312,7 @@
 
             try {
                 const promises = selectedOrders.map(orderId => 
-                    fetch(`http://localhost:8081/api/orders/${orderId}/status`, {
+                    fetch(`/api/orders/${orderId}/status`, {
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',

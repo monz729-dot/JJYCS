@@ -6,7 +6,7 @@
 
 const axios = require('axios')
 
-const API_BASE = 'http://localhost:8081/api'
+const API_BASE = 'http://localhost:8080/api'
 
 // API 클라이언트 설정
 const client = axios.create({

@@ -6,32 +6,31 @@
 
 **YCS LMS**는 현대적인 웹 기술을 활용하여 구축된 포괄적인 물류 관리 시스템입니다. 주문 처리, 창고 관리, 파트너 협업을 위한 통합 플랫폼을 제공합니다.
 
-## 🚀 빠른 시작 (3단계)
+## 🚀 빠른 시작 (2단계)
 
-### 1. 백엔드 서버 실행
+### 1. 프론트엔드 서버 실행 (API 프록시 포함)
 ```bash
-cd backend
-./mvnw.cmd spring-boot:run
-```
-- **포트**: http://localhost:8080
-- **H2 콘솔**: http://localhost:8080/api/h2-console
-- **API**: /api/* 경로로 제공
+# 의존성 설치 (최초 1회)
+npm install
 
-### 2. 프론트엔드 서버 실행
-```bash
-# 새 터미널에서
+# 개발 서버 실행
+npm start
+# 또는
 node server.js
 ```
 - **포트**: http://localhost:3000
 - **API 프록시**: `/api/*` → `http://localhost:8080/api/*`
 - **정적 파일**: `html/` 폴더 서빙
 
-### 3. 브라우저에서 접속
+### 2. 브라우저에서 접속
 - **로그인**: http://localhost:3000/auth-login.html
-- **테스트 계정**: `admin@ycs.com` / `password`
+- **테스트 계정**: `admin@ycs.com` / `password` (백엔드 연동 시)
 - **대시보드**: 로그인 후 자동 이동
 
-> ⚠️ **중요**: 백엔드 서버가 먼저 실행되어야 프론트엔드의 API 호출이 작동합니다.
+> ⚠️ **중요**: 
+> - 현재 레포는 **프론트엔드 전용**입니다. 
+> - 로그인/API 기능을 테스트하려면 별도 Spring Boot 백엔드가 `http://localhost:8080`에서 실행되어야 합니다.
+> - API 프록시가 설정되어 있어 `/api/*` 요청이 자동으로 백엔드로 전달됩니다.
 
 ## 🚀 주요 기능
 

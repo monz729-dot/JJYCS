@@ -1,18 +1,36 @@
 {
-  "name": "jjycs",
+  "name": "ycs-lms-monorepo",
   "version": "1.0.0",
-  "description": "",
-  "main": "convert_tsx_to_html.js",
+  "description": "YCS Logistics Management System - Full Stack Application",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "dev:api": "cd backend && ./mvnw.cmd spring-boot:run",
+    "dev:web": "cd frontend && npm run dev",
+    "dev:proxy": "node server.js",
+    "dev:all": "concurrently -k \"npm:dev:api\" \"npm:dev:web\"",
+    "build:api": "cd backend && ./mvnw.cmd clean package",
+    "build:web": "cd frontend && npm run build",
+    "build:all": "npm run build:api && npm run build:web",
+    "test:api": "cd backend && ./mvnw.cmd test",
+    "test:web": "cd frontend && npm run test",
+    "start": "node server.js",
+    "postinstall": "cd frontend && npm install"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "logistics",
+    "management",
+    "system",
+    "vue",
+    "spring-boot"
+  ],
+  "author": "YCS Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
   "dependencies": {
     "axios": "^1.11.0",
     "cors": "^2.8.5",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "http-proxy-middleware": "^3.0.5"
   }
 }
