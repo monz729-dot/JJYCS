@@ -361,69 +361,67 @@ const loadDashboardData = async () => {
     const userType = authStore.user?.userType || 'GENERAL'
     console.log('User type:', userType)
     
-    const response = await dashboardApi.getDashboardData(userType, userId)
-    console.log('Dashboard API response:', response)
-    
-    if (response.success) {
-      const data = response.data
-      console.log('Dashboard data:', data)
+    if (userType === 'ADMIN') {
+      // For admin, use admin stats API
+      const response = await dashboardApi.getDashboardData(userType, userId)
+      console.log('Admin Dashboard API response:', response)
       
-      if (userType === 'ADMIN') {
-        // Admin stats structure
+      if (response.success) {
+        const data = response.data
         stats.totalOrders = Number(data.totalOrders || 0)
         stats.pendingOrders = Number(data.pendingOrders || 0) + Number(data.processingOrders || 0)
         stats.completedOrders = Number(data.deliveredOrders || 0) + Number(data.shippedOrders || 0)
-        stats.monthlyShipping = 0 // Admin doesn't have personal shipping costs
+        stats.monthlyShipping = 0
         
-        // For admin, we don't have recent orders, so use empty array
         recentOrders.value = []
         warehouseItems.value = []
       } else {
-        // Handle current backend response structure 
-        // Backend is returning UserDashboard object directly without Map wrapper
+        console.error('Admin Dashboard API response failed:', response.error)
+        loadMockData()
+      }
+    } else {
+      // For regular users, directly call orders API
+      console.log('Loading user orders directly from orders API')
+      const ordersResponse = await ordersApi.getOrders(1, 50) // Get first 50 orders
+      console.log('Orders API response:', ordersResponse)
+      
+      if (ordersResponse.success && ordersResponse.data) {
+        const orders = Array.isArray(ordersResponse.data) ? ordersResponse.data : 
+                      (ordersResponse.data.content || [])
         
-        // Calculate stats from recentOrders since statusCounts isn't in current response
-        const allOrders = data.recentOrders || []
-        const total = allOrders.length
+        console.log('User orders loaded:', orders.length)
         
-        // Count by status
-        const pending = allOrders.filter((order: Order) => 
-          ['PENDING', 'PROCESSING', 'RECEIVED', 'ARRIVED', 'REPACKING', 'SHIPPING', 'BILLING', 'PAYMENT_PENDING'].includes(order.status)
+        // Calculate stats from orders
+        const total = orders.length
+        const pending = orders.filter((order: any) => 
+          ['RECEIVED', 'ARRIVED', 'REPACKING', 'SHIPPING', 'BILLING', 'PAYMENT_PENDING'].includes(order.status)
         ).length
-        
-        const completed = allOrders.filter((order: Order) => 
-          ['DELIVERED', 'COMPLETED'].includes(order.status)
+        const completed = orders.filter((order: any) => 
+          ['DELIVERED', 'COMPLETED', 'PAYMENT_CONFIRMED'].includes(order.status)
         ).length
         
         stats.totalOrders = total
         stats.pendingOrders = pending
         stats.completedOrders = completed
-        stats.monthlyShipping = Number(data.paymentInfo?.totalPaid || 0)
+        stats.monthlyShipping = 0
         
-        console.log('Calculated stats from orders:', {
-          total,
-          pending, 
-          completed,
-          ordersCount: allOrders.length
+        console.log('Calculated user stats:', {
+          totalOrders: total,
+          pendingOrders: pending,
+          completedOrders: completed
         })
         
         // Update recent orders
-        recentOrders.value = allOrders
+        recentOrders.value = orders.slice(0, 10)
         
         // Filter warehouse items (ARRIVED or REPACKING status)
-        warehouseItems.value = allOrders.filter((order: Order) => 
+        warehouseItems.value = orders.filter((order: any) => 
           ['ARRIVED', 'REPACKING'].includes(order.status)
         ) || []
+      } else {
+        console.error('Orders API response failed:', ordersResponse.error)
+        loadMockData()
       }
-      
-      console.log('Updated stats:', {
-        totalOrders: stats.totalOrders,
-        pendingOrders: stats.pendingOrders,
-        completedOrders: stats.completedOrders
-      })
-    } else {
-      console.error('Dashboard API response failed:', response.error)
-      loadMockData()
     }
   } catch (error) {
     console.error('Failed to load dashboard data:', error)

@@ -23,6 +23,11 @@ public class MinimalSecurityConfig {
                     .requestMatchers("/test/**").permitAll()
                     .requestMatchers("/h2-console/**").permitAll()
                     .requestMatchers("/actuator/**").permitAll()
+                    .requestMatchers("/auth/**").permitAll()
+                    .requestMatchers("/admin/**").permitAll()
+                    .requestMatchers("/dashboard/**").permitAll()
+                    .requestMatchers("/orders/**").permitAll()
+                    .requestMatchers("/hscode/**").permitAll()
                     .anyRequest().authenticated()
             )
             .headers().frameOptions().disable(); // For H2 console
