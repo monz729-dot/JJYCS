@@ -83,7 +83,9 @@
       "Bash(start:*)",
       "Bash(tasklist:*)",
       "Bash(git clean:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(git ls-tree:*)",
+      "Bash(git remote set-url:*)"
     ],
     "deny": [],
     "ask": [],
