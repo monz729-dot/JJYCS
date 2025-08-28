@@ -82,7 +82,8 @@
       "Bash(start \"http://localhost:3006/login\")",
       "Bash(start:*)",
       "Bash(tasklist:*)",
-      "Bash(git clean:*)"
+      "Bash(git clean:*)",
+      "Bash(git log:*)"
     ],
     "deny": [],
     "ask": [],
