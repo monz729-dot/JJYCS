@@ -24,13 +24,7 @@ app.use('/api', createProxyMiddleware({
 }));
 
 // 정적 파일 서빙 (Vue 빌드 결과물)
-app.use(express.static(path.join(__dirname, 'frontend', 'dist'), {
-    setHeaders: (res, path) => {
-        // 캐시 비활성화
-        res.setHeader('Cache-Control', 'no-cache');
-        console.log(`📄 [STATIC] ${path}`);
-    }
-}));
+app.use(express.static(path.join(__dirname, 'frontend', 'dist')));
 
 // SPA History API Fallback - 모든 라우트는 index.html로
 app.get('*', (req, res) => {
@@ -41,14 +35,14 @@ app.listen(PORT, () => {
     console.log(`
 ╔════════════════════════════════════════════════════════╗
 ║                                                        ║
-║   🚀 YCS 물류 시스템 개발 서버가 시작되었습니다!      ║
+║   🚀 YCS LMS Express Server Started                   ║
 ║                                                        ║
 ║   📱 Frontend: http://localhost:${PORT}                   ║
 ║   🔄 API Proxy: /api/* → ${BACKEND_URL}/api/*         ║
 ║                                                        ║
-║   📋 테스트 페이지:                                   ║
-║   • http://localhost:${PORT}/auth-login.html             ║
-║   • http://localhost:${PORT}/dashboard-general.html     ║
+║   📋 테스트:                                          ║
+║   • http://localhost:${PORT}/login                       ║
+║   • http://localhost:${PORT}/admin                       ║
 ║                                                        ║
 ║   ⚠️  백엔드가 필요합니다: ./backend/mvnw.cmd spring-boot:run ║
 ║   종료하려면 Ctrl+C를 누르세요                        ║

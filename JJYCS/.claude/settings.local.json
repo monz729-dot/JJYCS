@@ -88,7 +88,9 @@
       "Bash(git remote set-url:*)",
       "Bash(git rev-parse:*)",
       "Bash(rg:*)",
-      "Bash(git grep:*)"
+      "Bash(git grep:*)",
+      "Bash(npm run build:*)",
+      "Bash(npx vite:*)"
     ],
     "deny": [],
     "ask": [],

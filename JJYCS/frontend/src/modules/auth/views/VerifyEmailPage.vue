@@ -3,7 +3,7 @@
     <div class="max-w-md w-full space-y-8">
       <div>
         <div class="mx-auto h-12 w-auto flex justify-center">
-          <img src="/ycs-logo.png" alt="YCS LMS" class="h-12 w-auto" />
+          <img src="/ycs-logo.svg" alt="YCS LMS" class="h-12 w-auto" />
         </div>
         <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
           Verify your email

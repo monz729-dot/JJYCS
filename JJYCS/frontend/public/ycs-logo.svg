@@ -1,4 +1,1 @@
-<svg width="200" height="80" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80">
-  <rect width="200" height="80" fill="#1f2937"/>
-  <text x="100" y="45" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="white" text-anchor="middle">YCS</text>
-</svg>
+<svg width='48' height='48' xmlns='http://www.w3.org/2000/svg'><rect width='48' height='48' fill='#4F46E5'/><text x='24' y='30' text-anchor='middle' fill='white' font-family='Arial' font-size='16' font-weight='bold'>YCS</text></svg>

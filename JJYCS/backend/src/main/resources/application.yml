@@ -78,11 +78,11 @@ spring:
               LOG_QUERIES_SLOWER_THAN_MS: 10
     defer-datasource-initialization: true
     
-  # SQL Initialization - Temporarily disabled for Phase 2 testing
+  # SQL Initialization - Test accounts
   sql:
     init:
-      mode: never
-      # data-locations: classpath:data.sql
+      mode: always
+      data-locations: classpath:simple-data.sql
       
   # Disable Flyway for now
   flyway:
