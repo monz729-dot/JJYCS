@@ -123,7 +123,7 @@ public class OrderBusinessRuleService {
                 BigDecimal itemCbm = item.getWidth()
                     .multiply(item.getHeight())
                     .multiply(item.getDepth())
-                    .multiply(BigDecimal.valueOf(item.getQuantity()))
+                    .multiply(item.getQuantity())
                     .divide(BigDecimal.valueOf(1000000), 6, RoundingMode.HALF_UP);
                 
                 totalCbm = totalCbm.add(itemCbm);

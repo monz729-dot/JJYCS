@@ -201,6 +201,69 @@ public class AuthController {
         }
     }
     
+    @GetMapping("/me")
+    public ResponseEntity<Map<String, Object>> getCurrentUser(@RequestHeader("Authorization") String authHeader) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "인증 토큰이 없습니다."));
+            }
+            
+            String token = authHeader.substring(7);
+            String email = jwtUtil.getUsernameFromToken(token);
+            
+            if (!jwtUtil.validateToken(token, email)) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "유효하지 않은 토큰입니다."));
+            }
+            
+            var userOpt = userService.findByEmail(email);
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "사용자를 찾을 수 없습니다."));
+            }
+            
+            User user = userOpt.get();
+            user.setPassword(null); // 비밀번호는 응답에서 제외
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "user", user,
+                "permissions", getUserPermissions(user)
+            ));
+            
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                .body(Map.of("success", false, "error", "사용자 정보 조회 중 오류가 발생했습니다."));
+        }
+    }
+    
+    private Map<String, Boolean> getUserPermissions(User user) {
+        Map<String, Boolean> permissions = new HashMap<>();
+        
+        // 기본 권한
+        permissions.put("canCreateOrder", true);
+        permissions.put("canViewOwnOrders", true);
+        
+        // 역할별 권한
+        if (user.getUserType() == User.UserType.ADMIN) {
+            permissions.put("canViewAllOrders", true);
+            permissions.put("canManageUsers", true);
+            permissions.put("canApproveUsers", true);
+            permissions.put("canViewReports", true);
+            permissions.put("canManageWarehouse", true);
+        } else if (user.getUserType() == User.UserType.CORPORATE) {
+            permissions.put("canViewCompanyOrders", true);
+            permissions.put("canManageEmployees", true);
+        } else if (user.getUserType() == User.UserType.PARTNER) {
+            permissions.put("canViewPartnerOrders", true);
+            permissions.put("canViewCommission", true);
+        }
+        // GENERAL은 기본 권한만 가짐
+        
+        return permissions;
+    }
+    
     @PostMapping("/logout")
     public ResponseEntity<Map<String, Object>> logout(@RequestHeader(value = "Authorization", required = false) String authHeader) {
         try {

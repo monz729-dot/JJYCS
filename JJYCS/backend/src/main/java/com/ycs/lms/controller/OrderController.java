@@ -1,10 +1,13 @@
 package com.ycs.lms.controller;
 
 import com.ycs.lms.entity.Order;
+import com.ycs.lms.entity.User;
 import com.ycs.lms.service.BusinessLogicService;
 import com.ycs.lms.service.OrderBusinessRuleService;
 import com.ycs.lms.service.OrderService;
 import com.ycs.lms.service.OrderService.CreateOrderRequest;
+import com.ycs.lms.service.UserService;
+import com.ycs.lms.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -24,12 +27,21 @@ public class OrderController {
     
     private final OrderService orderService;
     private final BusinessLogicService businessLogicService;
+    private final UserService userService;
+    private final JwtUtil jwtUtil;
     
     @PostMapping
-    public ResponseEntity<Map<String, Object>> createOrder(@RequestBody CreateOrderRequest request) {
+    public ResponseEntity<Map<String, Object>> createOrder(
+            @RequestBody CreateOrderRequest request,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
         try {
-            // 임시로 하드코딩된 사용자 ID 사용 (추후 JWT에서 추출)
-            Long userId = 1L; // 테스트용 - 첫 번째 사용자
+            // JWT에서 사용자 정보 추출
+            Long userId = getUserIdFromToken(authHeader);
+            if (userId == null) {
+                // 토큰이 없거나 유효하지 않은 경우 기본값 사용 (테스트용)
+                log.warn("No valid auth token found, using default user ID for testing");
+                userId = 1L;
+            }
             request.setUserId(userId);
             
             log.info("Creating order for user: {}", request.getUserId());
@@ -352,6 +364,28 @@ public class OrderController {
         }
         
         return timeline;
+    }
+    
+    // JWT에서 사용자 ID 추출 헬퍼 메소드
+    private Long getUserIdFromToken(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return null;
+        }
+        
+        try {
+            String token = authHeader.substring(7);
+            String email = jwtUtil.getUsernameFromToken(token);
+            
+            if (!jwtUtil.validateToken(token, email)) {
+                return null;
+            }
+            
+            Optional<User> userOpt = userService.findByEmail(email);
+            return userOpt.map(User::getId).orElse(null);
+        } catch (Exception e) {
+            log.error("Error extracting user from token", e);
+            return null;
+        }
     }
     
     // DTO 클래스들

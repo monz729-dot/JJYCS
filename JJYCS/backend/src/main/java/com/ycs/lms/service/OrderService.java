@@ -145,9 +145,11 @@ public class OrderService {
             for (CreateOrderRequest.OrderBoxRequest boxRequest : request.getOrderBoxes()) {
                 OrderBox orderBox = new OrderBox();
                 orderBox.setOrder(savedOrder);
-                orderBox.setWidthCm(boxRequest.getWidthCm());
-                orderBox.setHeightCm(boxRequest.getHeightCm());
-                orderBox.setDepthCm(boxRequest.getDepthCm());
+                orderBox.setBoxNumber("BOX-" + System.currentTimeMillis());
+                orderBox.setWidth(boxRequest.getWidthCm());
+                orderBox.setHeight(boxRequest.getHeightCm());
+                orderBox.setDepth(boxRequest.getDepthCm());
+                orderBox.setWeight(BigDecimal.ZERO); // weight는 추후 설정
                 
                 savedOrder.getBoxes().add(orderBox);
             }
