@@ -19,6 +19,7 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -302,6 +303,59 @@ public class OrderService {
         return orderRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
     
+    /**
+     * 주문 정보 수정
+     * @param orderId 주문 ID
+     * @param updateRequest 수정 요청 데이터
+     * @return 수정된 주문
+     */
+    public Order updateOrder(Long orderId, UpdateOrderRequest updateRequest) {
+        Order order = orderRepository.findById(orderId)
+            .orElseThrow(() -> new IllegalArgumentException("Order not found: " + orderId));
+        
+        // 수정 가능한 상태인지 확인
+        if (!isOrderModifiable(order)) {
+            throw new IllegalStateException("Order cannot be modified in current status: " + order.getStatus());
+        }
+        
+        // 수취인 정보 업데이트
+        if (updateRequest.getRecipientName() != null) {
+            order.setRecipientName(updateRequest.getRecipientName());
+        }
+        if (updateRequest.getRecipientPhone() != null) {
+            order.setRecipientPhone(updateRequest.getRecipientPhone());
+        }
+        if (updateRequest.getRecipientAddress() != null) {
+            order.setRecipientAddress(updateRequest.getRecipientAddress());
+        }
+        if (updateRequest.getRecipientPostalCode() != null) {
+            order.setRecipientPostalCode(updateRequest.getRecipientPostalCode());
+        }
+        
+        // 배송 정보 업데이트
+        if (updateRequest.getShippingType() != null) {
+            order.setShippingType(Order.ShippingType.valueOf(updateRequest.getShippingType()));
+        }
+        if (updateRequest.getCountry() != null) {
+            order.setCountry(updateRequest.getCountry());
+        }
+        
+        // 특별 요청사항 업데이트
+        if (updateRequest.getSpecialRequests() != null) {
+            order.setSpecialRequests(updateRequest.getSpecialRequests());
+        }
+        
+        // 업데이트 시간 기록
+        order.setUpdatedAt(LocalDateTime.now());
+        
+        // 변경사항 저장
+        Order updatedOrder = orderRepository.save(order);
+        
+        log.info("Order updated successfully: {} by user", orderId);
+        
+        return updatedOrder;
+    }
+    
     public Order updateOrderStatus(Long orderId, String newStatus, String reason) {
         Order order = orderRepository.findById(orderId)
             .orElseThrow(() -> new IllegalArgumentException("Order not found"));
@@ -503,5 +557,123 @@ public class OrderService {
             public BigDecimal getWeightKg() { return weightKg; }
             public void setWeightKg(BigDecimal weightKg) { this.weightKg = weightKg; }
         }
+    }
+    
+    /**
+     * 주문 수정 요청 DTO
+     */
+    public static class UpdateOrderRequest {
+        private String recipientName;
+        private String recipientPhone;
+        private String recipientAddress;
+        private String recipientPostalCode;
+        private String shippingType;
+        private String country;
+        private String specialRequests;
+        
+        // Getters and Setters
+        public String getRecipientName() { return recipientName; }
+        public void setRecipientName(String recipientName) { this.recipientName = recipientName; }
+        
+        public String getRecipientPhone() { return recipientPhone; }
+        public void setRecipientPhone(String recipientPhone) { this.recipientPhone = recipientPhone; }
+        
+        public String getRecipientAddress() { return recipientAddress; }
+        public void setRecipientAddress(String recipientAddress) { this.recipientAddress = recipientAddress; }
+        
+        public String getRecipientPostalCode() { return recipientPostalCode; }
+        public void setRecipientPostalCode(String recipientPostalCode) { this.recipientPostalCode = recipientPostalCode; }
+        
+        public String getShippingType() { return shippingType; }
+        public void setShippingType(String shippingType) { this.shippingType = shippingType; }
+        
+        public String getCountry() { return country; }
+        public void setCountry(String country) { this.country = country; }
+        
+        public String getSpecialRequests() { return specialRequests; }
+        public void setSpecialRequests(String specialRequests) { this.specialRequests = specialRequests; }
+    }
+    
+    /**
+     * 주문 접근 권한 확인
+     * @param order 주문
+     * @param user 사용자
+     * @return 접근 가능 여부
+     */
+    public boolean isOrderAccessible(Order order, User user) {
+        if (order == null || user == null) {
+            return false;
+        }
+        
+        // 관리자는 모든 주문 접근 가능
+        if (User.UserType.ADMIN.equals(user.getUserType())) {
+            return true;
+        }
+        
+        // 창고 담당자는 모든 주문 접근 가능
+        if (User.UserType.WAREHOUSE.equals(user.getUserType())) {
+            return true;
+        }
+        
+        // 파트너는 자신과 관련된 주문만 접근 가능
+        if (User.UserType.PARTNER.equals(user.getUserType())) {
+            // TODO: 파트너와 주문 연결 로직 구현 필요
+            return order.getUser().getId().equals(user.getId());
+        }
+        
+        // 일반 사용자와 기업 사용자는 자신의 주문만 접근 가능
+        return order.getUser().getId().equals(user.getId());
+    }
+    
+    /**
+     * 주문 소유자 확인
+     * @param order 주문
+     * @param userId 사용자 ID
+     * @return 소유자 여부
+     */
+    public boolean isOrderOwner(Order order, Long userId) {
+        if (order == null || userId == null) {
+            return false;
+        }
+        return order.getUser().getId().equals(userId);
+    }
+    
+    /**
+     * 주문 취소 가능 여부 확인
+     * @param order 주문
+     * @return 취소 가능 여부
+     */
+    public boolean isOrderCancellable(Order order) {
+        if (order == null) {
+            return false;
+        }
+        
+        // 취소 가능한 상태 목록
+        List<Order.OrderStatus> cancellableStatuses = Arrays.asList(
+            Order.OrderStatus.RECEIVED,
+            Order.OrderStatus.PENDING,
+            Order.OrderStatus.PROCESSING
+        );
+        
+        return cancellableStatuses.contains(order.getStatus());
+    }
+    
+    /**
+     * 주문 수정 가능 여부 확인
+     * @param order 주문
+     * @return 수정 가능 여부
+     */
+    public boolean isOrderModifiable(Order order) {
+        if (order == null) {
+            return false;
+        }
+        
+        // 수정 가능한 상태 목록
+        List<Order.OrderStatus> modifiableStatuses = Arrays.asList(
+            Order.OrderStatus.RECEIVED,
+            Order.OrderStatus.PENDING
+        );
+        
+        return modifiableStatuses.contains(order.getStatus());
     }
 }

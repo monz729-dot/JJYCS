@@ -156,15 +156,15 @@ app:
   api:
     hscode:
       search:
-        key: s240o275s078n237g000a070s0
+        key: ${HSCODE_SEARCH_API_KEY:test-key-default}
         url: https://apis.data.go.kr/1360000/000000/getVilageFcstInfoService
         enabled: true
       tariff:
-        key: s240o275s078n237g000a070s0  
+        key: ${HSCODE_TARIFF_API_KEY:test-key-default}  
         url: https://apis.data.go.kr/1360000/000000/getTariffRateService
         enabled: true
       exchange:
-        key: s240o275s078n237g000a070s0
+        key: ${HSCODE_EXCHANGE_API_KEY:test-key-default}
         url: https://apis.data.go.kr/1360000/000000/getExchangeRateService
         enabled: true
   notification:
