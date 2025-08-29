@@ -24,7 +24,7 @@ spring:
   h2:
     console:
       enabled: true
-      path: /api/h2-console
+      path: /h2-console   # ← /api 붙이지 마세요
       settings:
         web-allow-others: true
 
@@ -57,25 +57,22 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${MAIL_USERNAME:monz729@gmail.com}
-    password: ${MAIL_PASSWORD:eyubylejwyuqnqvj}
+    username: monz729@gmail.com
+    password: eyubylejwyuqnqvj
     properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-            required: true
-          connectiontimeout: 5000
-          timeout: 3000
-          writetimeout: 5000
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.connectiontimeout: 5000
+      mail.smtp.timeout: 5000
+      mail.smtp.writetimeout: 5000
+    default-encoding: UTF-8
 
 # Email Notification Settings
 app:
   notification:
     email:
-      enabled: ${APP_NOTIFICATION_EMAIL_ENABLED:true}
-      from: ${MAIL_USERNAME:monz729@gmail.com}
+      enabled: true
+      from: monz729@gmail.com
       from-name: "YCS 물류관리시스템"
 
 # Logging - Development
@@ -83,6 +80,9 @@ logging:
   level:
     com.ycs.lms: DEBUG
     org.springframework.security: DEBUG
+    org.springframework.mail: DEBUG
+    org.springframework.web: INFO
+    com.ycs.lms.service.EmailService: DEBUG
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
   pattern:

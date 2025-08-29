@@ -25,4 +25,6 @@ public interface EmailVerificationTokenRepository extends JpaRepository<EmailVer
     void deleteExpiredTokens(@Param("now") LocalDateTime now);
     
     void deleteByUserIdAndTokenType(Long userId, EmailVerificationToken.TokenType tokenType);
+    
+    void deleteByEmailAndTokenType(String email, EmailVerificationToken.TokenType tokenType);
 }

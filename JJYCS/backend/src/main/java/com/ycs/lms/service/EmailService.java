@@ -21,7 +21,7 @@ public class EmailService {
     @Value("${app.notification.email.enabled:false}")
     private boolean emailEnabled;
 
-    @Value("${app.notification.email.from:noreply@ycs-lms.com}")
+    @Value("${spring.mail.username:monz729@gmail.com}")
     private String fromEmail;
 
     @Value("${app.notification.email.from-name:YCS 물류관리시스템}")
@@ -34,17 +34,16 @@ public class EmailService {
     private String backendBaseUrl;
 
     /**
-     * 이메일 인증 메일 발송
+     * 이메일 인증 메일 발송 (인증 코드 방식)
      */
-    public void sendVerificationEmail(String to, String name, String token) {
+    public void sendVerificationEmail(String to, String name, String code) {
         if (!emailEnabled) {
-            log.info("Email sending is disabled. Verification token: {}", token);
+            log.info("Email sending is disabled. Verification code: {}", code);
             return;
         }
 
         try {
-            String subject = "[YCS LMS] 이메일 인증을 완료해주세요";
-            String verificationUrl = frontendBaseUrl + "/verify-email/" + token;
+            String subject = "[YCS LMS] 이메일 인증 코드";
             
             String htmlContent = String.format("""
                 <html>
@@ -52,28 +51,31 @@ public class EmailService {
                     <div style="max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
                         <div style="background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%); color: white; padding: 30px; text-align: center;">
                             <h1 style="margin: 0; font-size: 28px;">YCS 물류관리시스템</h1>
-                            <p style="margin: 10px 0 0 0; opacity: 0.9;">이메일 인증</p>
+                            <p style="margin: 10px 0 0 0; opacity: 0.9;">이메일 인증 코드</p>
                         </div>
                         <div style="padding: 40px 30px;">
                             <h2 style="color: #2c3e50; margin-bottom: 20px;">안녕하세요, %s님!</h2>
                             <p style="line-height: 1.6; margin-bottom: 25px;">
                                 YCS 물류관리시스템에 회원가입해 주셔서 감사합니다.<br>
-                                아래 버튼을 클릭하여 이메일 인증을 완료해주세요.
+                                아래 인증 코드를 입력하여 이메일 인증을 완료해주세요.
                             </p>
                             <div style="text-align: center; margin: 35px 0;">
-                                <a href="%s" style="background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 25px; display: inline-block; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);">
-                                    ✉️ 이메일 인증하기
-                                </a>
+                                <div style="background: #f8f9fa; border: 2px dashed #667eea; padding: 20px; border-radius: 10px; display: inline-block;">
+                                    <p style="margin: 0 0 10px 0; font-size: 14px; color: #666;">인증 코드</p>
+                                    <div style="font-family: 'Courier New', monospace; font-size: 32px; font-weight: bold; color: #667eea; letter-spacing: 8px; margin: 10px 0;">
+                                        %s
+                                    </div>
+                                    <p style="margin: 10px 0 0 0; font-size: 12px; color: #999;">5분 내에 입력해주세요</p>
+                                </div>
                             </div>
-                            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea;">
-                                <p style="margin: 0; font-size: 14px; color: #6c757d;">
-                                    <strong>링크가 작동하지 않나요?</strong><br>
-                                    다음 URL을 복사하여 브라우저 주소창에 붙여넣으세요:<br>
-                                    <code style="background: #e9ecef; padding: 2px 6px; border-radius: 4px; word-break: break-all;">%s</code>
+                            <div style="background: #fff3cd; padding: 20px; border-radius: 8px; border-left: 4px solid #ffc107;">
+                                <p style="margin: 0; font-size: 14px; color: #856404;">
+                                    <strong>⚠️ 보안 안내</strong><br>
+                                    이 인증 코드를 타인과 공유하지 마세요. 본인이 요청하지 않았다면 이 메일을 무시해주세요.
                                 </p>
                             </div>
                             <p style="font-size: 12px; color: #6c757d; margin-top: 30px; text-align: center;">
-                                이 링크는 24시간 후 만료됩니다. 본인이 가입하지 않았다면 이 메일을 무시해주세요.
+                                이 인증 코드는 5분 후 만료됩니다.
                             </p>
                         </div>
                         <div style="background: #f8f9fa; padding: 20px 30px; text-align: center; border-top: 1px solid #dee2e6;">
@@ -84,13 +86,13 @@ public class EmailService {
                     </div>
                 </body>
                 </html>
-                """, name, verificationUrl, verificationUrl);
+                """, name, code);
 
             sendHtmlEmail(to, subject, htmlContent);
-            log.info("Verification email sent to: {}", to);
+            log.info("Verification code email sent to: {}", to);
 
         } catch (Exception e) {
-            log.error("Failed to send verification email to: {}", to, e);
+            log.error("Failed to send verification code email to: {}", to, e);
             throw new RuntimeException("이메일 발송에 실패했습니다.", e);
         }
     }

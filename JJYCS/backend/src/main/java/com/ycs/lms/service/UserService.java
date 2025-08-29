@@ -7,6 +7,7 @@ import com.ycs.lms.exception.ResourceNotFoundException;
 import com.ycs.lms.repository.UserRepository;
 import com.ycs.lms.repository.EmailVerificationTokenRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,7 +19,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
 @Transactional
 public class UserService {
     
@@ -26,6 +26,16 @@ public class UserService {
     private final EmailVerificationTokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    
+    public UserService(UserRepository userRepository, 
+                      EmailVerificationTokenRepository tokenRepository,
+                      @Lazy PasswordEncoder passwordEncoder,
+                      @Lazy EmailService emailService) {
+        this.userRepository = userRepository;
+        this.tokenRepository = tokenRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
+    }
     
     public User createUser(User user) {
         // 이메일 중복 체크

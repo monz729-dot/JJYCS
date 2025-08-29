@@ -12,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
@@ -29,14 +30,14 @@ public class SecurityConfig {
 
     // 1) H2 콘솔 전용 체인 (항상 먼저 평가되도록 Order 낮게)
     @Bean
-    @Order(1)
+    @Order(0)
     public SecurityFilterChain h2ConsoleChain(HttpSecurity http) throws Exception {
         http
-            // 컨텍스트 패스가 /api 여도 ServletPath는 /h2-console 로 잡힘
-            .securityMatcher(new AntPathRequestMatcher("/h2-console/**"))
+            // 컨텍스트패스(/api)와 무관하게 servletPath는 /h2-console 로 들어옵니다.
+            .securityMatcher(PathRequest.toH2Console())
             .csrf(csrf -> csrf.disable())
-            .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
-            .authorizeHttpRequests(authz -> authz.anyRequest().permitAll());
+            .headers(h -> h.frameOptions(f -> f.sameOrigin()))
+            .authorizeHttpRequests(a -> a.anyRequest().permitAll());
         
         return http.build();
     }

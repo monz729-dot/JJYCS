@@ -21,81 +21,70 @@ public class DevSeedRunner {
     @Bean
     ApplicationRunner seedUsers(UserRepository userRepo, PasswordEncoder encoder) {
         return args -> {
-            if (userRepo.count() == 0) {
-                log.info("Initializing dev database with seed data...");
-                
-                // 관리자 계정
+            log.info("개발용 테스트 계정 보정을 시작합니다...");
+
+            // 관리자 계정 보정
+            userRepo.findByEmail("admin@ycs.com").ifPresentOrElse(user -> {
+                // 이미 있다면 보정
+                log.info("기존 admin 계정을 보정합니다: {}", user.getEmail());
+                if (!encoder.matches("password", user.getPassword())) {
+                    user.setPassword(encoder.encode("password"));
+                    log.info("admin 비밀번호를 'password'로 재설정했습니다.");
+                }
+                user.setStatus(User.UserStatus.ACTIVE);
+                user.setEmailVerified(true);
+                if (user.getMemberCode() == null) {
+                    user.setMemberCode("ADM001");
+                }
+                user.setUpdatedAt(LocalDateTime.now());
+                userRepo.save(user);
+            }, () -> {
+                // 없으면 생성
+                log.info("새로운 admin 계정을 생성합니다.");
                 User admin = new User();
                 admin.setEmail("admin@ycs.com");
-                admin.setPassword(encoder.encode("admin123"));
+                admin.setPassword(encoder.encode("password"));
                 admin.setName("Administrator");
+                admin.setPhone("010-0000-0000");
                 admin.setUserType(User.UserType.ADMIN);
                 admin.setStatus(User.UserStatus.ACTIVE);
-                admin.setMemberCode("ADM001");
                 admin.setEmailVerified(true);
+                admin.setMemberCode("ADM001");
                 admin.setCreatedAt(LocalDateTime.now());
                 admin.setUpdatedAt(LocalDateTime.now());
                 userRepo.save(admin);
-                
-                // 일반 사용자 계정
-                User user = new User();
-                user.setEmail("user@test.com");
-                user.setPassword(encoder.encode("user123"));
-                user.setName("Test User");
-                user.setUserType(User.UserType.GENERAL);
+            });
+
+            // 일반 사용자 계정 보정  
+            userRepo.findByEmail("user@ycs.com").ifPresentOrElse(user -> {
+                log.info("기존 user 계정을 보정합니다: {}", user.getEmail());
+                if (!encoder.matches("password", user.getPassword())) {
+                    user.setPassword(encoder.encode("password"));
+                }
                 user.setStatus(User.UserStatus.ACTIVE);
-                user.setMemberCode("GEN001");
                 user.setEmailVerified(true);
-                user.setCreatedAt(LocalDateTime.now());
+                if (user.getMemberCode() == null) {
+                    user.setMemberCode("GEN001");
+                }
                 user.setUpdatedAt(LocalDateTime.now());
                 userRepo.save(user);
-                
-                // 파트너 계정
-                User partner = new User();
-                partner.setEmail("partner@ycs.com");
-                partner.setPassword(encoder.encode("partner123"));
-                partner.setName("Partner User");
-                partner.setUserType(User.UserType.PARTNER);
-                partner.setStatus(User.UserStatus.ACTIVE);
-                partner.setMemberCode("PAR001");
-                partner.setEmailVerified(true);
-                partner.setCreatedAt(LocalDateTime.now());
-                partner.setUpdatedAt(LocalDateTime.now());
-                userRepo.save(partner);
-                
-                // 창고 담당자 계정
-                User warehouse = new User();
-                warehouse.setEmail("warehouse@ycs.com");
-                warehouse.setPassword(encoder.encode("warehouse123"));
-                warehouse.setName("Warehouse Manager");
-                warehouse.setUserType(User.UserType.WAREHOUSE);
-                warehouse.setStatus(User.UserStatus.ACTIVE);
-                warehouse.setMemberCode("WH001");
-                warehouse.setEmailVerified(true);
-                warehouse.setCreatedAt(LocalDateTime.now());
-                warehouse.setUpdatedAt(LocalDateTime.now());
-                userRepo.save(warehouse);
-                
-                // 기업 회원 계정
-                User corporate = new User();
-                corporate.setEmail("corp@test.com");
-                corporate.setPassword(encoder.encode("corp123"));
-                corporate.setName("Corporate User");
-                corporate.setUserType(User.UserType.CORPORATE);
-                corporate.setStatus(User.UserStatus.ACTIVE);
-                corporate.setMemberCode("COR001");
-                corporate.setEmailVerified(true);
-                corporate.setCompanyName("Test Corporation");
-                corporate.setBusinessNumber("123-45-67890");
-                corporate.setCompanyAddress("서울시 강남구 테헤란로 123");
-                corporate.setCreatedAt(LocalDateTime.now());
-                corporate.setUpdatedAt(LocalDateTime.now());
-                userRepo.save(corporate);
-                
-                log.info("Seed data initialized successfully - {} users created", userRepo.count());
-            } else {
-                log.info("Database already contains {} users - skipping seed data", userRepo.count());
-            }
+            }, () -> {
+                log.info("새로운 user 계정을 생성합니다.");
+                User generalUser = new User();
+                generalUser.setEmail("user@ycs.com");
+                generalUser.setPassword(encoder.encode("password"));
+                generalUser.setName("General User");
+                generalUser.setPhone("010-1111-1111");
+                generalUser.setUserType(User.UserType.GENERAL);
+                generalUser.setStatus(User.UserStatus.ACTIVE);
+                generalUser.setEmailVerified(true);
+                generalUser.setMemberCode("GEN001");
+                generalUser.setCreatedAt(LocalDateTime.now());
+                generalUser.setUpdatedAt(LocalDateTime.now());
+                userRepo.save(generalUser);
+            });
+
+            log.info("개발용 테스트 계정 보정 완료!");
         };
     }
 }

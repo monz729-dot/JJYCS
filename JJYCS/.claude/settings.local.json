@@ -90,7 +90,10 @@
       "Bash(rg:*)",
       "Bash(git grep:*)",
       "Bash(npm run build:*)",
-      "Bash(npx vite:*)"
+      "Bash(npx vite:*)",
+      "Bash(jps:*)",
+      "Bash(echo $env:SPRING_PROFILES_ACTIVE)",
+      "Bash(del C:YCS-ver2JJYCSbackenddataycs_lms_dev.*)"
     ],
     "deny": [],
     "ask": [],

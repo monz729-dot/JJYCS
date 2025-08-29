@@ -9,6 +9,7 @@ import com.ycs.lms.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -29,13 +30,32 @@ public class AuthController {
     @PostMapping("/signup")
     public ResponseEntity<Map<String, Object>> signup(@RequestBody SignupRequest request) {
         try {
+            System.out.println("=== Signup request received ===");
+            System.out.println("Email: " + request.getEmail());
+            System.out.println("UserType: " + request.getUserType());
+            
+            // userType 유효성 검사
+            if (request.getUserType() == null || request.getUserType().trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "회원 유형을 선택해주세요."));
+            }
+            
+            User.UserType userType;
+            try {
+                userType = User.UserType.valueOf(request.getUserType().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                System.err.println("Invalid userType: " + request.getUserType());
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "잘못된 회원 유형입니다: " + request.getUserType()));
+            }
+            
             // 사용자 생성
             User user = new User();
             user.setEmail(request.getEmail());
             user.setPassword(passwordEncoder.encode(request.getPassword()));
             user.setName(request.getName());
             user.setPhone(request.getPhone());
-            user.setUserType(User.UserType.valueOf(request.getUserType().toUpperCase()));
+            user.setUserType(userType);
             
             // 기업 회원인 경우 추가 정보 설정
             if (user.getUserType() == User.UserType.CORPORATE) {
@@ -420,6 +440,102 @@ public class AuthController {
         }
     }
     
+    /**
+     * 이메일 인증 코드 전송 (회원가입용)
+     */
+    @PostMapping("/send-verification")
+    @Transactional
+    public ResponseEntity<Map<String, Object>> sendVerificationCode(@RequestBody SendVerificationRequest request) {
+        try {
+            // 이미 가입된 이메일인지 확인
+            if (userService.findByEmail(request.getEmail()).isPresent()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "이미 가입된 이메일입니다."));
+            }
+            
+            // 기존 인증 토큰 삭제
+            tokenRepository.deleteByEmailAndTokenType(request.getEmail(), 
+                EmailVerificationToken.TokenType.EMAIL_VERIFICATION);
+            
+            // 6자리 인증 코드 생성
+            String verificationCode = String.format("%06d", (int)(Math.random() * 1000000));
+            
+            // 토큰 저장 (코드를 토큰으로 사용)
+            EmailVerificationToken emailToken = new EmailVerificationToken();
+            emailToken.setToken(verificationCode);
+            emailToken.setEmail(request.getEmail());
+            emailToken.setUserId(-1L); // 회원가입 전이므로 임시값 -1
+            emailToken.setTokenType(EmailVerificationToken.TokenType.EMAIL_VERIFICATION);
+            emailToken.setCreatedAt(LocalDateTime.now());
+            emailToken.setExpiresAt(LocalDateTime.now().plusMinutes(5)); // 5분 유효
+            
+            tokenRepository.save(emailToken);
+            
+            // 이메일 전송
+            try {
+                emailService.sendVerificationEmail(request.getEmail(), "고객님", verificationCode);
+                System.out.println("Verification code sent to: " + request.getEmail() + ", code: " + verificationCode);
+            } catch (Exception e) {
+                System.err.println("Failed to send verification email: " + e.getMessage());
+                return ResponseEntity.internalServerError()
+                    .body(Map.of("success", false, "error", "이메일 전송에 실패했습니다. 잠시 후 다시 시도해주세요."));
+            }
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "인증코드가 이메일로 전송되었습니다.",
+                "expiresIn", 300 // 5분 = 300초
+            ));
+            
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                .body(Map.of("success", false, "error", "인증코드 전송 중 오류가 발생했습니다."));
+        }
+    }
+    
+    /**
+     * 이메일 인증 코드 확인 (회원가입용)
+     */
+    @PostMapping("/verify-code")
+    public ResponseEntity<Map<String, Object>> verifyCode(@RequestBody VerifyCodeRequest request) {
+        try {
+            var tokenOpt = tokenRepository.findByTokenAndTokenTypeAndUsedFalse(
+                request.getCode(), EmailVerificationToken.TokenType.EMAIL_VERIFICATION);
+            
+            if (tokenOpt.isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "잘못된 인증코드입니다."));
+            }
+            
+            EmailVerificationToken emailToken = tokenOpt.get();
+            
+            // 이메일 일치 확인
+            if (!emailToken.getEmail().equals(request.getEmail())) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "이메일과 인증코드가 일치하지 않습니다."));
+            }
+            
+            if (emailToken.isExpired()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "인증코드가 만료되었습니다. 다시 요청해주세요."));
+            }
+            
+            // 토큰 사용 처리
+            emailToken.setUsed(true);
+            emailToken.setUsedAt(LocalDateTime.now());
+            tokenRepository.save(emailToken);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "이메일 인증이 완료되었습니다."
+            ));
+            
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                .body(Map.of("success", false, "error", "인증코드 확인 중 오류가 발생했습니다."));
+        }
+    }
+    
     // DTO 클래스들
     public static class SignupRequest {
         private String email;
@@ -489,5 +605,22 @@ public class AuthController {
         public void setToken(String token) { this.token = token; }
         public String getPassword() { return password; }
         public void setPassword(String password) { this.password = password; }
+    }
+    
+    public static class SendVerificationRequest {
+        private String email;
+        
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+    }
+    
+    public static class VerifyCodeRequest {
+        private String email;
+        private String code;
+        
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+        public String getCode() { return code; }
+        public void setCode(String code) { this.code = code; }
     }
 }

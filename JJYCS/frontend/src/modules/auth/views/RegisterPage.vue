@@ -330,6 +330,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { USER_TYPE } from '@/types'
 import type { UserType } from '@/types'
+import axios from 'axios'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -361,7 +362,6 @@ const uploadedFile = ref<File | null>(null)
 const agreeAll = ref(false)
 
 let verificationTimer: NodeJS.Timeout | null = null
-let actualVerificationCode = ''
 
 const showBusinessInfo = computed(() => 
   form.userType === USER_TYPE.CORPORATE || form.userType === USER_TYPE.PARTNER
@@ -421,7 +421,7 @@ const formatBusinessNumber = (event: Event) => {
   form.businessNumber = value
 }
 
-const sendVerificationCode = () => {
+const sendVerificationCode = async () => {
   if (!form.email) {
     alert('이메일을 입력해주세요.')
     return
@@ -433,14 +433,26 @@ const sendVerificationCode = () => {
     return
   }
   
-  actualVerificationCode = Math.floor(100000 + Math.random() * 900000).toString()
-  verificationSent.value = true
-  verificationTimeLeft.value = 300
-  
-  console.log(`인증코드: ${actualVerificationCode} (실제 서비스에서는 ${form.email}로 전송됩니다)`)
-  verificationStatus.value = '인증코드가 이메일로 전송되었습니다.'
-  
-  startVerificationTimer()
+  try {
+    verificationStatus.value = '인증코드를 전송하고 있습니다...'
+    
+    const response = await axios.post('/api/auth/send-verification', {
+      email: form.email
+    })
+    
+    if (response.data.success) {
+      verificationSent.value = true
+      verificationTimeLeft.value = response.data.expiresIn || 300
+      verificationStatus.value = '인증코드가 이메일로 전송되었습니다.'
+      console.log(`인증코드가 ${form.email}로 전송되었습니다.`)
+      startVerificationTimer()
+    } else {
+      verificationStatus.value = response.data.error || '인증코드 전송에 실패했습니다.'
+    }
+  } catch (error) {
+    console.error('인증코드 전송 실패:', error)
+    verificationStatus.value = error.response?.data?.error || '인증코드 전송 중 오류가 발생했습니다.'
+  }
 }
 
 const startVerificationTimer = () => {
@@ -454,27 +466,37 @@ const startVerificationTimer = () => {
     if (verificationTimeLeft.value <= 0) {
       clearInterval(verificationTimer!)
       verificationStatus.value = '인증시간이 만료되었습니다. 다시 요청해주세요.'
-      actualVerificationCode = ''
+      verificationSent.value = false
     }
   }, 1000)
 }
 
-const confirmVerificationCode = () => {
+const confirmVerificationCode = async () => {
   if (!verificationCode.value) {
     alert('인증코드를 입력해주세요.')
     return
   }
   
-  if (verificationCode.value === actualVerificationCode) {
-    emailVerified.value = true
-    verificationStatus.value = '이메일 인증이 완료되었습니다.'
+  try {
+    const response = await axios.post('/api/auth/verify-code', {
+      email: form.email,
+      code: verificationCode.value
+    })
     
-    if (verificationTimer) {
-      clearInterval(verificationTimer)
-      verificationTimer = null
+    if (response.data.success) {
+      emailVerified.value = true
+      verificationStatus.value = '이메일 인증이 완료되었습니다.'
+      
+      if (verificationTimer) {
+        clearInterval(verificationTimer)
+        verificationTimer = null
+      }
+    } else {
+      alert(response.data.error || '인증코드가 일치하지 않습니다.')
     }
-  } else {
-    alert('인증코드가 일치하지 않습니다.')
+  } catch (error) {
+    console.error('인증코드 확인 실패:', error)
+    alert(error.response?.data?.error || '인증코드 확인 중 오류가 발생했습니다.')
   }
 }
 
