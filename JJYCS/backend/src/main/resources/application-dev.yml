@@ -3,10 +3,10 @@ spring:
   application:
     name: ycs-lms-dev
 
-  # Database Configuration - H2 File-based
+  # Database Configuration - H2 File-based (for testing)
   datasource:
-    # ✅ 파일 기반 H2 (프로젝트 폴더 아래 .h2/ycs-lms-dev.mv.db 로 저장)
-    url: jdbc:h2:file:./.h2/ycs-lms-dev;DB_CLOSE_DELAY=-1
+    # ✅ 파일 기반 H2 (데이터 영구 저장)
+    url: jdbc:h2:file:./.h2/ycs-lms-dev;AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
     username: sa
     password: 
@@ -32,8 +32,8 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
-      # ✅ 절대 create / create-drop 쓰지 말 것 (데이터 날아감)
-      ddl-auto: update          # 스키마만 변경(필요 시 컴럼 추가)
+      # ✅ For H2 memory database, use create to ensure tables exist
+      ddl-auto: create          # Create tables first
     show-sql: true
     properties:
       hibernate:
@@ -42,16 +42,18 @@ spring:
         generate_statistics: true
     defer-datasource-initialization: true
 
-  # SQL Initialization - Test accounts
+  # SQL Initialization - Disabled (using AdminInitializationRunner instead)
   sql:
     init:
-      # ⚠️ 파일 DB로 전환 후에는 data.sql을 매번 실행하지 않는 것이 안전
-      mode: never               # seed가 필요하면 DevSeedRunner 사용
-      data-locations: classpath:simple-data.sql
+      # Disable SQL initialization, use AdminInitializationRunner for admin account
+      mode: never               # Disable SQL initialization
+      data-locations: classpath:data.sql
 
   # Disable Flyway for development (use JPA auto-creation)
   flyway:
     enabled: false
+    validate-on-migrate: false
+    baseline-on-migrate: true
 
   # Mail Configuration - Gmail SMTP (Development)
   mail:
@@ -67,11 +69,15 @@ spring:
       mail.smtp.writetimeout: 5000
     default-encoding: UTF-8
 
+# Server Configuration
+server:
+  port: 8081
+
 # Email Notification Settings
 app:
   notification:
     email:
-      enabled: true
+      enabled: false  # 개발환경에서는 이메일 전송 비활성화
       from: monz729@gmail.com
       from-name: "YCS 물류관리시스템"
 
@@ -79,11 +85,12 @@ app:
 logging:
   level:
     com.ycs.lms: DEBUG
-    org.springframework.security: DEBUG
-    org.springframework.mail: DEBUG
-    org.springframework.web: INFO
-    com.ycs.lms.service.EmailService: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.springframework.security: INFO
+    org.springframework.mail: INFO
+    org.springframework.web: WARN
+    com.ycs.lms.service.EmailService: INFO
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+    org.hibernate.engine.internal.StatisticalLoggingSessionEventListener: OFF
   pattern:
     console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

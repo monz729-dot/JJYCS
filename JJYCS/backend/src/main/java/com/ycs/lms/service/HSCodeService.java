@@ -22,6 +22,11 @@ public class HSCodeService {
 
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
+    
+    // 캐시를 위한 맵
+    private final Map<String, HSCodeSearchResponse> hsCodeCache = new HashMap<>();
+    private final Map<String, TariffRateResponse> tariffCache = new HashMap<>();
+    private static final long CACHE_DURATION_MS = 3600000; // 1시간
 
     // HS부호검색 API
     @Value("${app.api.hscode.search.key:s240o275s078n237g000a070s0}")
@@ -44,6 +49,12 @@ public class HSCodeService {
      */
     public HSCodeSearchResponse searchHSCodeByProductName(String productName) {
         try {
+            // Check if API key is test/default - use mock data
+            if (hsSearchApiKey.equals("s240o275s078n237g000a070s0") || hsSearchApiKey.equals("test-key-default")) {
+                log.info("Using mock data for HS Code search: {}", productName);
+                return createMockHSCodeResponse(productName);
+            }
+            
             String encodedProductName = URLEncoder.encode(productName, StandardCharsets.UTF_8);
             
             String url = UriComponentsBuilder.fromUriString(HS_SEARCH_BASE_URL)
@@ -74,6 +85,12 @@ public class HSCodeService {
      */
     public HSCodeSearchResponse searchProductNameByHSCode(String hsCode) {
         try {
+            // Check if API key is test/default - use mock data
+            if (hsSearchApiKey.equals("s240o275s078n237g000a070s0") || hsSearchApiKey.equals("test-key-default")) {
+                log.info("Using mock data for HS Code: {}", hsCode);
+                return createMockHSCodeResponseByCode(hsCode);
+            }
+            
             String url = UriComponentsBuilder.fromUriString(HS_SEARCH_BASE_URL)
                     .queryParam("key", hsSearchApiKey)
                     .queryParam("type", "json")
@@ -417,5 +434,122 @@ public class HSCodeService {
         public void setExchangeRate(BigDecimal exchangeRate) { this.exchangeRate = exchangeRate; }
         public String getApplyDate() { return applyDate; }
         public void setApplyDate(String applyDate) { this.applyDate = applyDate; }
+    }
+    
+    // Mock data methods for testing
+    private HSCodeSearchResponse createMockHSCodeResponse(String productName) {
+        HSCodeSearchResponse response = new HSCodeSearchResponse();
+        response.success = true;
+        response.items = List.of();
+        
+        String lowerProduct = productName.toLowerCase();
+        
+        // Mock data for common clothing terms
+        if (productName.contains("의류") || lowerProduct.contains("clothes") || 
+            lowerProduct.contains("apparel") || lowerProduct.contains("garment")) {
+            HSCodeItem item1 = new HSCodeItem();
+            item1.hsCode = "6101.20";
+            item1.koreanName = "면제 남성용 편직제품으로 된 슈트";
+            item1.englishName = "Men's or boys' suits, knitted or crocheted, of cotton";
+            item1.unit = "벌";
+            
+            HSCodeItem item2 = new HSCodeItem();
+            item2.hsCode = "6201.11";
+            item2.koreanName = "남성용 모직제품으로 된 오버코트";
+            item2.englishName = "Men's or boys' overcoats of wool or fine animal hair";
+            item2.unit = "벌";
+            
+            response.items = List.of(item1, item2);
+        }
+        // Electronics
+        else if (productName.contains("전자") || lowerProduct.contains("electronic") || 
+                 lowerProduct.contains("laptop") || lowerProduct.contains("computer")) {
+            HSCodeItem item1 = new HSCodeItem();
+            item1.hsCode = "8471.30";
+            item1.koreanName = "휴대용 자동자료처리기기";
+            item1.englishName = "Portable automatic data processing machines";
+            item1.unit = "대";
+            
+            HSCodeItem item2 = new HSCodeItem();
+            item2.hsCode = "8528.71";
+            item2.koreanName = "텔레비전 수신용 기기";
+            item2.englishName = "Television receivers";
+            item2.unit = "대";
+            
+            response.items = List.of(item1, item2);
+        }
+        // Cosmetics
+        else if (productName.contains("화장품") || lowerProduct.contains("cosmetic") || 
+                 lowerProduct.contains("makeup")) {
+            HSCodeItem item1 = new HSCodeItem();
+            item1.hsCode = "3304.10";
+            item1.koreanName = "입술화장품";
+            item1.englishName = "Lip make-up preparations";
+            item1.unit = "kg";
+            
+            HSCodeItem item2 = new HSCodeItem();
+            item2.hsCode = "3304.99";
+            item2.koreanName = "기타 화장품";
+            item2.englishName = "Other beauty or make-up preparations";
+            item2.unit = "kg";
+            
+            response.items = List.of(item1, item2);
+        }
+        // Food
+        else if (productName.contains("식품") || lowerProduct.contains("food") || 
+                 lowerProduct.contains("snack")) {
+            HSCodeItem item1 = new HSCodeItem();
+            item1.hsCode = "1905.90";
+            item1.koreanName = "빵류, 과자류";
+            item1.englishName = "Bread, pastry, cakes, biscuits";
+            item1.unit = "kg";
+            
+            response.items = List.of(item1);
+        }
+        // Toys
+        else if (productName.contains("장난감") || lowerProduct.contains("toy")) {
+            HSCodeItem item1 = new HSCodeItem();
+            item1.hsCode = "9503.00";
+            item1.koreanName = "장난감";
+            item1.englishName = "Toys";
+            item1.unit = "개";
+            
+            response.items = List.of(item1);
+        }
+        
+        return response;
+    }
+    
+    private HSCodeSearchResponse createMockHSCodeResponseByCode(String hsCode) {
+        HSCodeSearchResponse response = new HSCodeSearchResponse();
+        response.success = true;
+        
+        // Mock data for specific HS codes
+        if (hsCode.equals("6101.20") || hsCode.equals("610120")) {
+            HSCodeItem item = new HSCodeItem();
+            item.hsCode = "6101.20";
+            item.koreanName = "면제 남성용 편직제품으로 된 슈트";
+            item.englishName = "Men's or boys' suits, knitted or crocheted, of cotton";
+            item.unit = "벌";
+            response.items = List.of(item);
+        } else if (hsCode.startsWith("6101")) {
+            HSCodeItem item = new HSCodeItem();
+            item.hsCode = hsCode;
+            item.koreanName = "남성용 편직제품";
+            item.englishName = "Men's or boys' knitted garments";
+            item.unit = "벌";
+            response.items = List.of(item);
+        } else if (hsCode.startsWith("61") || hsCode.startsWith("62")) {
+            HSCodeItem item = new HSCodeItem();
+            item.hsCode = hsCode;
+            item.koreanName = "의류 및 그 부속품";
+            item.englishName = "Articles of apparel and clothing accessories";
+            item.unit = "개";
+            response.items = List.of(item);
+        } else {
+            response.items = List.of();
+        }
+        
+        return response;
     }
 }

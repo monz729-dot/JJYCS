@@ -21,13 +21,20 @@ interface BusinessRuleError {
 }
 
 export function useErrorHandler() {
-  const { error: showError, warning: showWarning, businessRule: showBusinessRule } = useToast()
+  const { 
+    error: showError, 
+    warning: showWarning, 
+    businessRule: showBusinessRule,
+    networkError,
+    validationError,
+    businessWarning
+  } = useToast()
 
   const handleApiError = (error: ApiError, context?: string) => {
     console.error('API Error:', error)
 
-    let title = 'An error occurred'
-    let message = 'Please try again later'
+    let title = '오류가 발생했습니다'
+    let message = '잠시 후 다시 시도해주세요'
 
     if (error.response) {
       const status = error.response.status
@@ -36,41 +43,42 @@ export function useErrorHandler() {
       // Handle specific HTTP status codes
       switch (status) {
         case 400:
-          title = 'Invalid Request'
-          message = errorData?.message || errorData?.error || 'Please check your input and try again'
-          break
+          title = '잘못된 요청'
+          message = errorData?.message || errorData?.error || '입력 내용을 확인하고 다시 시도해주세요'
+          return validationError(message)
         case 401:
-          title = 'Authentication Required'
-          message = 'Please log in again to continue'
-          // Redirect to login could be handled here
+          title = '인증 필요'
+          message = '로그인이 만료되었습니다. 다시 로그인해주세요'
+          localStorage.removeItem('auth-token')
+          window.location.href = '/login'
           break
         case 403:
-          title = 'Access Denied'
-          message = 'You do not have permission to perform this action'
+          title = '접근 권한 없음'
+          message = '해당 기능에 접근할 권한이 없습니다'
           break
         case 404:
-          title = 'Not Found'
-          message = errorData?.message || 'The requested resource was not found'
+          title = '리소스 없음'
+          message = errorData?.message || '요청하신 리소스를 찾을 수 없습니다'
           break
         case 409:
-          title = 'Conflict'
-          message = errorData?.message || 'This action conflicts with existing data'
+          title = '데이터 충돌'
+          message = errorData?.message || '이미 존재하는 데이터입니다'
           break
         case 422:
-          title = 'Validation Error'
-          message = errorData?.message || 'Please correct the highlighted fields'
-          break
+          title = '입력 오류'
+          message = errorData?.message || '입력 내용을 확인해주세요'
+          return validationError(message)
         case 429:
-          title = 'Too Many Requests'
-          message = 'Please wait a moment before trying again'
+          title = '요청 제한'
+          message = '잠시 후 다시 시도해주세요'
           break
         case 500:
-          title = 'Server Error'
-          message = 'A server error occurred. Our team has been notified.'
+          title = '서버 오류'
+          message = '서버에서 오류가 발생했습니다. 잠시 후 다시 시도해주세요'
           break
         default:
-          title = `Error ${status}`
-          message = errorData?.message || errorData?.error || 'An unexpected error occurred'
+          title = `오류 ${status}`
+          message = errorData?.message || errorData?.error || '알 수 없는 오류가 발생했습니다'
       }
 
       // Add context if provided
@@ -78,16 +86,14 @@ export function useErrorHandler() {
         title = `${context}: ${title}`
       }
     } else if (error.code === 'ECONNABORTED') {
-      title = 'Request Timeout'
-      message = 'The request took too long to complete. Please try again.'
+      return networkError('요청 시간이 초과되었습니다. 다시 시도해주세요.')
     } else if (error.code === 'NETWORK_ERROR' || !navigator.onLine) {
-      title = 'Network Error'
-      message = 'Please check your internet connection and try again.'
+      return networkError()
     } else if (error.message) {
       message = error.message
     }
 
-    showError(title, message)
+    return showError(title, message)
   }
 
   const handleBusinessRuleError = (rule: BusinessRuleError) => {
@@ -126,37 +132,102 @@ export function useErrorHandler() {
     handleApiError(error, context)
   }
 
-  // Business rule specific handlers
+  // Business rule specific handlers with Korean messages
   const handleCBMExceeded = (actualCBM: number, threshold: number = 29) => {
-    handleBusinessRuleError({
-      rule: 'CBM Limit Exceeded',
-      message: `Total CBM (${actualCBM}m³) exceeds sea shipping limit (${threshold}m³).`,
-      suggestion: 'Order has been automatically converted to air shipping.'
-    })
+    return businessWarning('cbm', `실제 CBM: ${actualCBM}m³, 임계값: ${threshold}m³`)
   }
 
   const handleTHBThresholdExceeded = (amount: number, threshold: number = 1500) => {
-    handleBusinessRuleError({
-      rule: 'THB Value Threshold',
-      message: `Item value (${amount} THB) exceeds ${threshold} THB limit.`,
-      suggestion: 'Additional recipient information may be required.'
-    })
+    return businessWarning('thb', `품목 가액: ${amount} THB, 임계값: ${threshold} THB`)
   }
 
   const handleMemberCodeMissing = () => {
-    handleBusinessRuleError({
-      rule: 'Member Code Required',
-      message: 'Member code is missing or invalid.',
-      suggestion: 'This may cause shipping delays. Please provide a valid member code.'
-    })
+    return businessWarning('memberCode', '회원코드를 확인하고 업데이트해주세요')
   }
 
   const handleEMSHSValidationFailed = (code: string) => {
-    handleBusinessRuleError({
-      rule: 'EMS/HS Code Validation',
-      message: `Code "${code}" is not valid or not found.`,
-      suggestion: 'Please verify the code with the Korea Trade-Investment Promotion Agency.'
+    return showError('HS 코드 검증 실패', `코드 "${code}"를 확인할 수 없습니다. 정확한 코드를 입력해주세요.`)
+  }
+
+  // Enhanced form validation with Korean messages
+  const validateForm = (formData: Record<string, any>, rules: Record<string, ValidationRule[]>): { isValid: boolean; errors: Record<string, string> } => {
+    const errors: Record<string, string> = {}
+    
+    for (const [field, fieldRules] of Object.entries(rules)) {
+      const value = formData[field]
+      for (const rule of fieldRules) {
+        const result = rule.validator(value)
+        if (result !== true) {
+          errors[field] = typeof result === 'string' ? result : rule.message
+          break // Stop at first error for this field
+        }
+      }
+    }
+    
+    return {
+      isValid: Object.keys(errors).length === 0,
+      errors
+    }
+  }
+
+  // Common validation rules with Korean messages
+  const validationRules = {
+    required: (message = '필수 입력 항목입니다.'): ValidationRule => ({
+      validator: (value) => {
+        if (value === null || value === undefined || value === '') return message
+        if (Array.isArray(value) && value.length === 0) return message
+        return true
+      },
+      message
+    }),
+
+    email: (message = '올바른 이메일 주소를 입력해주세요.'): ValidationRule => ({
+      validator: (value) => {
+        if (!value) return true
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        return emailRegex.test(value) ? true : message
+      },
+      message
+    }),
+
+    phone: (message = '올바른 전화번호를 입력해주세요.'): ValidationRule => ({
+      validator: (value) => {
+        if (!value) return true
+        const phoneRegex = /^\d{3}-\d{4}-\d{4}$/
+        return phoneRegex.test(value) ? true : message
+      },
+      message
+    }),
+
+    minLength: (min: number, message?: string): ValidationRule => ({
+      validator: (value) => {
+        if (!value) return true
+        const actualMessage = message || `최소 ${min}자 이상 입력해주세요.`
+        return value.length >= min ? true : actualMessage
+      },
+      message: message || `최소 ${min}자 이상 입력해주세요.`
+    }),
+
+    numeric: (message = '숫자만 입력해주세요.'): ValidationRule => ({
+      validator: (value) => {
+        if (!value) return true
+        return !isNaN(Number(value)) && !isNaN(parseFloat(value)) ? true : message
+      },
+      message
+    }),
+
+    positive: (message = '0보다 큰 값을 입력해주세요.'): ValidationRule => ({
+      validator: (value) => {
+        if (!value) return true
+        return Number(value) > 0 ? true : message
+      },
+      message
     })
+  }
+
+  interface ValidationRule {
+    validator: (value: any) => true | string
+    message: string
   }
 
   return {
@@ -171,6 +242,8 @@ export function useErrorHandler() {
     handleCBMExceeded,
     handleTHBThresholdExceeded,
     handleMemberCodeMissing,
-    handleEMSHSValidationFailed
+    handleEMSHSValidationFailed,
+    validateForm,
+    validationRules
   }
 }

@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/hscode")
+@RequestMapping("/hscode")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 @Slf4j

@@ -59,42 +59,6 @@
         <router-link to="/forgot-password" class="auth-link">비밀번호 찾기</router-link>
       </div>
       
-      <!-- H2 데이터베이스 테스트 계정 -->
-      <div class="demo-accounts">
-        <div class="demo-title">H2 데이터베이스 테스트 계정</div>
-        
-        <div class="demo-account" @click="fillDemo('kimcs@email.com', 'password', 'GENERAL')">
-          <div class="demo-info">
-            <div class="demo-type">일반 고객 (Kim Cheolsu)</div>
-            <div class="demo-email">kimcs@email.com</div>
-          </div>
-          <div class="demo-badge badge-general">개인</div>
-        </div>
-        
-        <div class="demo-account" @click="fillDemo('lee@company.com', 'password', 'CORPORATE')">
-          <div class="demo-info">
-            <div class="demo-type">기업 고객 (ABC Trading)</div>
-            <div class="demo-email">lee@company.com</div>
-          </div>
-          <div class="demo-badge badge-corporate">기업</div>
-        </div>
-        
-        <div class="demo-account" @click="fillDemo('park@partner.com', 'password', 'PARTNER')">
-          <div class="demo-info">
-            <div class="demo-type">파트너 (Park Minsu)</div>
-            <div class="demo-email">park@partner.com</div>
-          </div>
-          <div class="demo-badge badge-partner">파트너</div>
-        </div>
-        
-        <div class="demo-account" @click="fillDemo('admin@ycs.com', 'password', 'ADMIN')">
-          <div class="demo-info">
-            <div class="demo-type">관리자 (Administrator)</div>
-            <div class="demo-email">admin@ycs.com</div>
-          </div>
-          <div class="demo-badge badge-admin">관리자</div>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -155,17 +119,6 @@ const validateForm = () => {
   return isValid
 }
 
-const fillDemo = (email: string, password: string, userType: UserType) => {
-  errors.email = ''
-  errors.password = ''
-  
-  form.email = email
-  form.password = password
-  
-  setTimeout(() => {
-    handleLogin()
-  }, 300)
-}
 
 const handleLogin = async () => {
   if (!validateForm()) {
@@ -388,79 +341,6 @@ onMounted(() => {
   text-decoration: underline;
 }
 
-.demo-accounts {
-  background: #f0f9ff;
-  border: 1px solid #bae6fd;
-  border-radius: 0.75rem;
-  padding: 1rem;
-}
-
-.demo-title {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #0369a1;
-  margin-bottom: 0.75rem;
-}
-
-.demo-account {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem;
-  background: white;
-  border-radius: 0.5rem;
-  margin-bottom: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.demo-account:hover {
-  background: #dbeafe;
-}
-
-.demo-account:last-child {
-  margin-bottom: 0;
-}
-
-.demo-info {
-  font-size: 0.8rem;
-}
-
-.demo-type {
-  font-weight: 600;
-  color: #0369a1;
-}
-
-.demo-email {
-  color: #6b7280;
-}
-
-.demo-badge {
-  font-size: 0.7rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.375rem;
-  font-weight: 500;
-}
-
-.badge-general {
-  background: #dbeafe;
-  color: #0369a1;
-}
-
-.badge-corporate {
-  background: #fff7ed;
-  color: #ea580c;
-}
-
-.badge-partner {
-  background: #f5f3ff;
-  color: #7c3aed;
-}
-
-.badge-admin {
-  background: #fef2f2;
-  color: #dc2626;
-}
 
 @media (max-width: 768px) {
   .auth-card {

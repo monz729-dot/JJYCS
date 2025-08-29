@@ -2,6 +2,8 @@ package com.ycs.lms.controller;
 
 import com.ycs.lms.entity.Order;
 import com.ycs.lms.entity.User;
+import com.ycs.lms.exception.BusinessException;
+import com.ycs.lms.exception.ResourceNotFoundException;
 import com.ycs.lms.service.BusinessLogicService;
 import com.ycs.lms.service.OrderBusinessRuleService;
 import com.ycs.lms.service.OrderService;
@@ -36,19 +38,32 @@ public class OrderController {
     public ResponseEntity<Map<String, Object>> createOrder(
             @RequestBody CreateOrderRequest request,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        
         try {
+            log.info("Received order creation request from user with auth header present: {}", authHeader != null);
+            
             // JWT에서 사용자 정보 추출
             Long userId = getUserIdFromToken(authHeader);
             if (userId == null) {
-                // 토큰이 없거나 유효하지 않은 경우 기본값 사용 (테스트용)
-                log.warn("No valid auth token found, using default user ID for testing");
-                userId = 1L;
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "error", "로그인이 필요합니다."));
             }
+            
+            // 요청 데이터 유효성 검증
+            validateOrderRequest(request);
             request.setUserId(userId);
             
-            log.info("Creating order for user: {}", request.getUserId());
+            log.info("Creating order for user: {} with {} items", request.getUserId(),
+                request.getOrderItems() != null ? request.getOrderItems().size() : 0);
             
+            // 주문 생성
             Order order = orderService.createOrder(request);
+            
+            if (order == null) {
+                log.error("Order creation returned null for user: {}", userId);
+                return ResponseEntity.internalServerError()
+                    .body(Map.of("success", false, "error", "주문 생성에 실패했습니다."));
+            }
             
             // 비즈니스 규칙 경고 메시지 생성
             String warningMessage = buildWarningMessage(order);
@@ -66,16 +81,87 @@ public class OrderController {
             response.put("requiresExtraRecipient", order.getRequiresExtraRecipient());
             response.put("noMemberCode", order.getNoMemberCode());
             
+            log.info("Order created successfully: {} for user: {}", order.getOrderNumber(), userId);
             return ResponseEntity.ok(response);
             
-        } catch (IllegalArgumentException e) {
-            log.error("Order creation failed: {}", e.getMessage());
+        } catch (BusinessException e) {
+            log.error("Business error during order creation: {}", e.getMessage());
             return ResponseEntity.badRequest()
                 .body(Map.of("success", false, "error", e.getMessage()));
         } catch (Exception e) {
-            log.error("Order creation error", e);
+            log.error("Unexpected error during order creation for user {}: {}", 
+                request != null ? request.getUserId() : "unknown", e.getMessage(), e);
             return ResponseEntity.internalServerError()
-                .body(Map.of("success", false, "error", "주문 생성 중 오류가 발생했습니다."));
+                .body(Map.of("success", false, "error", "주문 생성 중 오류가 발생했습니다. 다시 시도해주세요."));
+        }
+    }
+    
+    /**
+     * 주문 생성 요청 데이터 유효성 검증
+     */
+    private void validateOrderRequest(CreateOrderRequest request) {
+        log.debug("Validating order request");
+        
+        if (request == null) {
+            throw new BusinessException("INVALID_REQUEST", "주문 요청 데이터가 없습니다.");
+        }
+        
+        if (request.getOrderItems() == null || request.getOrderItems().isEmpty()) {
+            throw new BusinessException("EMPTY_ORDER_ITEMS", "주문에는 최소 1개 이상의 상품이 필요합니다.");
+        }
+        
+        if (request.getRecipientName() == null || request.getRecipientName().trim().isEmpty()) {
+            throw new BusinessException("MISSING_RECIPIENT", "수취인 정보가 필요합니다.");
+        }
+        
+        if (request.getCountry() == null || request.getCountry().trim().isEmpty()) {
+            throw new BusinessException("MISSING_COUNTRY", "배송 국가 정보가 필요합니다.");
+        }
+        
+        // 최대 아이템 개수 제한 (성능 보호)
+        if (request.getOrderItems().size() > 100) {
+            throw new BusinessException("TOO_MANY_ITEMS", "주문 아이템은 최대 100개까지 가능합니다.");
+        }
+        
+        // 주문 아이템 개별 검증
+        try {
+            for (int i = 0; i < request.getOrderItems().size(); i++) {
+                CreateOrderRequest.OrderItemRequest item = request.getOrderItems().get(i);
+                validateOrderItem(item, i + 1);
+            }
+            log.debug("Order request validation passed for {} items", request.getOrderItems().size());
+        } catch (Exception e) {
+            log.error("Order request validation failed: {}", e.getMessage());
+            throw e;
+        }
+    }
+    
+    /**
+     * 주문 아이템 개별 유효성 검증
+     */
+    private void validateOrderItem(CreateOrderRequest.OrderItemRequest item, int itemIndex) {
+        String prefix = "상품 " + itemIndex + "번: ";
+        
+        if (item.getDescription() == null || item.getDescription().trim().isEmpty()) {
+            throw new BusinessException("MISSING_ITEM_DESCRIPTION", 
+                prefix + "상품 설명이 필요합니다.");
+        }
+        
+        if (item.getQuantity() == null || item.getQuantity() <= 0) {
+            throw new BusinessException("INVALID_QUANTITY", 
+                prefix + "수량은 1개 이상이어야 합니다.");
+        }
+        
+        if (item.getWeight() == null || item.getWeight().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException("INVALID_WEIGHT", 
+                prefix + "중량은 0보다 커야 합니다.");
+        }
+        
+        if (item.getWidth() == null || item.getWidth().compareTo(BigDecimal.ZERO) <= 0 ||
+            item.getHeight() == null || item.getHeight().compareTo(BigDecimal.ZERO) <= 0 ||
+            item.getDepth() == null || item.getDepth().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException("INVALID_DIMENSIONS", 
+                prefix + "상품 크기(가로/세로/높이)는 0보다 커야 합니다.");
         }
     }
     
@@ -83,80 +169,56 @@ public class OrderController {
     public ResponseEntity<Map<String, Object>> getOrder(
             @PathVariable Long id,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
-        try {
-            // 사용자 인증 확인
-            Long userId = getUserIdFromToken(authHeader);
-            if (userId == null) {
-                return ResponseEntity.status(401)
-                    .body(Map.of("success", false, "error", "인증이 필요합니다."));
-            }
-            
-            User user = userService.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-            
-            Optional<Order> orderOpt = orderService.findById(id);
-            if (orderOpt.isEmpty()) {
-                return ResponseEntity.notFound().build();
-            }
-            
-            Order order = orderOpt.get();
-            
-            // 주문 접근 권한 확인
-            if (!orderService.isOrderAccessible(order, user)) {
-                return ResponseEntity.status(403)
-                    .body(Map.of("success", false, "error", "해당 주문에 접근할 권한이 없습니다."));
-            }
-            
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "order", order
-            ));
-            
-        } catch (Exception e) {
-            log.error("Error getting order {}", id, e);
-            return ResponseEntity.internalServerError()
-                .body(Map.of("success", false, "error", "주문 조회 중 오류가 발생했습니다."));
+        
+        // 사용자 인증 확인
+        Long userId = getUserIdFromToken(authHeader);
+        if (userId == null) {
+            throw new BusinessException("AUTH_REQUIRED", "로그인이 필요합니다.");
         }
+        
+        User user = userService.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
+        
+        Order order = orderService.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("주문을 찾을 수 없습니다."));
+        
+        // 주문 접근 권한 확인
+        if (!orderService.isOrderAccessible(order, user)) {
+            throw new BusinessException("ACCESS_DENIED", "해당 주문에 접근할 권한이 없습니다.");
+        }
+        
+        return ResponseEntity.ok(Map.of(
+            "success", true,
+            "order", order
+        ));
     }
     
     @GetMapping("/number/{orderNumber}")
     public ResponseEntity<Map<String, Object>> getOrderByNumber(
             @PathVariable String orderNumber,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
-        try {
-            // 사용자 인증 확인
-            Long userId = getUserIdFromToken(authHeader);
-            if (userId == null) {
-                return ResponseEntity.status(401)
-                    .body(Map.of("success", false, "error", "인증이 필요합니다."));
-            }
-            
-            User user = userService.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-            
-            Optional<Order> orderOpt = orderService.findByOrderNumber(orderNumber);
-            if (orderOpt.isEmpty()) {
-                return ResponseEntity.notFound().build();
-            }
-            
-            Order order = orderOpt.get();
-            
-            // 주문 접근 권한 확인
-            if (!orderService.isOrderAccessible(order, user)) {
-                return ResponseEntity.status(403)
-                    .body(Map.of("success", false, "error", "해당 주문에 접근할 권한이 없습니다."));
-            }
-            
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "order", order
-            ));
-            
-        } catch (Exception e) {
-            log.error("Error getting order by number {}", orderNumber, e);
-            return ResponseEntity.internalServerError()
-                .body(Map.of("success", false, "error", "주문 조회 중 오류가 발생했습니다."));
+        
+        // 사용자 인증 확인
+        Long userId = getUserIdFromToken(authHeader);
+        if (userId == null) {
+            throw new BusinessException("AUTH_REQUIRED", "로그인이 필요합니다.");
         }
+        
+        User user = userService.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
+        
+        Order order = orderService.findByOrderNumber(orderNumber)
+            .orElseThrow(() -> new ResourceNotFoundException("주문번호 '" + orderNumber + "'을 찾을 수 없습니다."));
+        
+        // 주문 접근 권한 확인
+        if (!orderService.isOrderAccessible(order, user)) {
+            throw new BusinessException("ACCESS_DENIED", "해당 주문에 접근할 권한이 없습니다.");
+        }
+        
+        return ResponseEntity.ok(Map.of(
+            "success", true,
+            "order", order
+        ));
     }
     
     @GetMapping

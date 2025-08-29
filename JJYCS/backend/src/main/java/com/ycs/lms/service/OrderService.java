@@ -18,6 +18,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -46,11 +47,19 @@ public class OrderService {
     private static final BigDecimal THB_THRESHOLD = new BigDecimal("1500.0");
     
     public Order createOrder(CreateOrderRequest request) {
-        // 먼저 데이터베이스에 모든 엔티티를 저장
-        Order savedOrder = createOrderEntities(request);
-        
-        // 별도 트랜잭션에서 비즈니스 규칙 적용
-        return applyBusinessRulesPostTransaction(savedOrder.getId());
+        try {
+            log.info("Starting order creation for user: {}", request.getUserId());
+            
+            // 먼저 데이터베이스에 모든 엔티티를 저장
+            Order savedOrder = createOrderEntities(request);
+            
+            // 별도 트랜잭션에서 비즈니스 규칙 적용
+            return applyBusinessRulesPostTransaction(savedOrder.getId());
+            
+        } catch (Exception e) {
+            log.error("Failed to create order for user {}: {}", request.getUserId(), e.getMessage(), e);
+            throw e;
+        }
     }
     
     /**
@@ -58,13 +67,14 @@ public class OrderService {
      */
     @Transactional
     public Order createOrderEntities(CreateOrderRequest request) {
-        // 사용자 확인
-        User user = userRepository.findById(request.getUserId())
-            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        try {
+            // 사용자 확인
+            User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + request.getUserId()));
         
-        if (user.getStatus() != User.UserStatus.ACTIVE) {
-            throw new IllegalArgumentException("User account is not active");
-        }
+            if (user.getStatus() != User.UserStatus.ACTIVE) {
+                throw new IllegalArgumentException("User account is not active: " + user.getStatus());
+            }
         
         // 주문 생성
         Order order = new Order();
@@ -125,6 +135,8 @@ public class OrderService {
                     totalWeight = totalWeight.add(itemWeight);
                 }
             }
+        } else {
+            log.warn("OrderItems is null or empty in createOrderEntities for user: {}", request.getUserId());
         }
         
         order.setTotalCbm(totalCbm);
@@ -134,6 +146,10 @@ public class OrderService {
         Order savedOrder = orderRepository.save(order);
         
         // 주문 항목 저장
+        if (request.getOrderItems() == null || request.getOrderItems().isEmpty()) {
+            throw new IllegalArgumentException("Order must have at least one item");
+        }
+        
         for (CreateOrderRequest.OrderItemRequest itemRequest : request.getOrderItems()) {
             OrderItem orderItem = new OrderItem();
             orderItem.setOrder(savedOrder);
@@ -170,11 +186,17 @@ public class OrderService {
             }
         }
         
-        // 모든 엔티티 저장 완료
-        entityManager.flush();
-        
-        log.info("Order entities created successfully for order: {}", savedOrder.getOrderNumber());
-        return savedOrder;
+            // 모든 엔티티 저장 완료
+            entityManager.flush();
+            
+            log.info("Order entities created successfully for order: {} with {} items, {} boxes", 
+                savedOrder.getOrderNumber(), savedOrder.getItems().size(), savedOrder.getBoxes().size());
+            return savedOrder;
+            
+        } catch (Exception e) {
+            log.error("Failed to create order entities for user {}: {}", request.getUserId(), e.getMessage(), e);
+            throw e;
+        }
     }
     
     /**
@@ -470,6 +492,7 @@ public class OrderService {
         private String recipientAddress;
         private String recipientPostalCode;
         private String specialRequests;
+        @JsonProperty("items")
         private List<OrderItemRequest> orderItems;
         private List<OrderBoxRequest> orderBoxes;
         
@@ -493,7 +516,16 @@ public class OrderService {
         public String getSpecialRequests() { return specialRequests; }
         public void setSpecialRequests(String specialRequests) { this.specialRequests = specialRequests; }
         public List<OrderItemRequest> getOrderItems() { return orderItems; }
-        public void setOrderItems(List<OrderItemRequest> orderItems) { this.orderItems = orderItems; }
+        
+        @JsonProperty("items")
+        public void setOrderItems(List<OrderItemRequest> orderItems) { 
+            this.orderItems = orderItems; 
+        }
+        
+        // Alternative setter for Jackson flexibility
+        public void setItems(List<OrderItemRequest> items) { 
+            this.orderItems = items; 
+        }
         public List<OrderBoxRequest> getOrderBoxes() { return orderBoxes; }
         public void setOrderBoxes(List<OrderBoxRequest> orderBoxes) { this.orderBoxes = orderBoxes; }
         
@@ -623,17 +655,27 @@ public class OrderService {
         
         // 각 아이템의 HS Code 검증을 별도 스레드에서 수행
         new Thread(() -> {
-            for (OrderItem item : order.getOrderItems()) {
-                if (item.getHsCode() != null && !item.getHsCode().trim().isEmpty()) {
-                    try {
-                        // HS Code 유효성 검증
-                        validateHSCode(item.getHsCode(), order.getOrderNumber(), item.getDescription());
-                    } catch (Exception e) {
-                        log.warn("HS Code validation failed for order {} item {}: {}", 
-                                order.getOrderNumber(), item.getDescription(), e.getMessage());
-                        // 검증 실패 시 주문에 경고 플래그 설정 가능
+            try {
+                log.info("Starting async HS Code validation for order: {}", order.getOrderNumber());
+                
+                for (OrderItem item : order.getOrderItems()) {
+                    if (item.getHsCode() != null && !item.getHsCode().trim().isEmpty()) {
+                        try {
+                            // HS Code 유효성 검증
+                            validateHSCode(item.getHsCode(), order.getOrderNumber(), item.getDescription());
+                        } catch (Exception e) {
+                            log.warn("HS Code validation failed for order {} item {}: {}", 
+                                    order.getOrderNumber(), item.getDescription(), e.getMessage());
+                            // 검증 실패 시 주문에 경고 플래그 설정 가능
+                        }
                     }
                 }
+                
+                log.info("Completed async HS Code validation for order: {}", order.getOrderNumber());
+                
+            } catch (Exception e) {
+                log.error("Failed to complete async HS Code validation for order {}: {}", 
+                        order.getOrderNumber(), e.getMessage(), e);
             }
         }).start();
     }
@@ -671,6 +713,7 @@ public class OrderService {
     /**
      * HS Code 검증 결과 업데이트
      */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     private void updateHSCodeValidationResult(String orderNumber, boolean validated, String errorMessage) {
         try {
             Optional<Order> orderOpt = orderRepository.findByOrderNumber(orderNumber);
@@ -690,9 +733,11 @@ public class OrderService {
                 
                 orderRepository.save(order);
                 log.info("Updated HS Code validation result for order {}: validated={}", orderNumber, validated);
+            } else {
+                log.warn("Order not found for HS Code validation update: {}", orderNumber);
             }
         } catch (Exception e) {
-            log.error("Failed to update HS Code validation result for order {}", orderNumber, e);
+            log.error("Failed to update HS Code validation result for order {}: {}", orderNumber, e.getMessage(), e);
         }
     }
     

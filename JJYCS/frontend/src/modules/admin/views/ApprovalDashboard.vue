@@ -399,12 +399,19 @@ const loadPendingUsers = async () => {
   try {
     // Get both pending users and recently processed ones for admin review
     const response = await adminApi.getUsers({ status: '' }) // Get all users
+    console.log('Approval Dashboard API Response:', response)
     
     if (response.success && response.data?.users) {
       users.value = response.data.users.filter((user: User) => 
         user.userType === 'CORPORATE' || user.userType === 'PARTNER'
       )
+    } else if (response.data?.users) {
+      // API response format might be different
+      users.value = response.data.users.filter((user: User) => 
+        user.userType === 'CORPORATE' || user.userType === 'PARTNER'
+      )
     } else {
+      console.warn('No users data found, falling back to mock data')
       // Mock data for testing
       users.value = [
         {

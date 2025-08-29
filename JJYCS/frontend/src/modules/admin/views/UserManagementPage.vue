@@ -319,10 +319,15 @@ const loadUsers = async () => {
   loading.value = true
   try {
     const response = await adminApi.getUsers()
+    console.log('API Response:', response)
     
     if (response.success && response.data?.users) {
       users.value = response.data.users
+    } else if (response.data?.users) {
+      // API response format might be different
+      users.value = response.data.users
     } else {
+      console.warn('No users data found, falling back to mock data')
       // Mock data for testing
       users.value = [
         {

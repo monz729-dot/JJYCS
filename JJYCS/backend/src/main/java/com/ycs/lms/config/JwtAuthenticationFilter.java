@@ -63,10 +63,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     if (jwtUtil.validateToken(jwt, userEmail)) {
                         
                         // UserDetails로 변환
+                        String role = "ROLE_" + user.getUserType().toString();
+                        log.debug("Creating UserDetails with role: {} for user: {}", role, userEmail);
+                        
                         UserDetails userDetails = org.springframework.security.core.userdetails.User.builder()
                                 .username(user.getEmail())
                                 .password(user.getPassword())
-                                .authorities("ROLE_" + user.getUserType().toString())
+                                .authorities(role)
                                 .accountExpired(false)
                                 .accountLocked(user.getStatus() != com.ycs.lms.entity.User.UserStatus.ACTIVE)
                                 .credentialsExpired(false)

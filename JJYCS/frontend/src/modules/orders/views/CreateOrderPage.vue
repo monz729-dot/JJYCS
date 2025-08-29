@@ -1,21 +1,27 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 p-4">
-    <!-- Success/Error Messages -->
-    <div v-if="success || error" class="fixed top-4 right-4 z-50">
-      <div :class="error ? 'bg-red-50 border border-red-200 text-red-700' : 'bg-green-50 border border-green-200 text-green-700'" class="px-4 py-3 rounded-xl">
-        {{ success || error }}
-      </div>
+    <!-- Business Rule Warnings -->
+    <div v-if="businessWarnings.length > 0" class="mb-4">
+      <InlineMessage
+        v-for="(warning, index) in businessWarnings" 
+        :key="index"
+        type="warning"
+        :title="warning.title"
+        :message="warning.message"
+        :dismissible="true"
+        @dismiss="removeWarning(index)"
+      />
     </div>
 
-    <!-- Validation Messages -->
-    <div v-if="validationMessages.length > 0" class="mb-4">
-      <div 
-        v-for="(msg, index) in validationMessages" 
-        :key="index" 
-        :class="'bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-xl mb-2'"
-      >
-        {{ msg.message }}
-      </div>
+    <!-- Validation Errors -->
+    <div v-if="validationErrors.length > 0" class="mb-4">
+      <InlineMessage
+        type="error"
+        title="입력 확인"
+        :errors="validationErrors"
+        :dismissible="true"
+        @dismiss="clearValidationErrors"
+      />
     </div>
 
     <!-- Header -->
@@ -26,9 +32,16 @@
         </svg>
         돌아가기
       </button>
-      <div>
+      <div class="flex-1">
         <h1 class="text-xl font-bold text-blue-900">새 주문 접수</h1>
         <p class="text-sm text-blue-600">주문 정보를 입력해주세요</p>
+      </div>
+      <div v-if="lastAutoSave" class="text-xs text-gray-500 flex items-center gap-1">
+        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+          <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 1 1 0 000 2H6a2 2 0 100 4h2a2 2 0 100-4h-.5a1 1 0 000-2H8a2 2 0 012 2v9a2 2 0 11-4 0V5z" clip-rule="evenodd"/>
+        </svg>
+        자동 저장됨
       </div>
     </div>
     <!-- Progress Steps -->
@@ -434,10 +447,15 @@
         </button>
         <button 
           type="submit" 
-          class="flex-1 h-14 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium"
-          :disabled="loading"
+          class="flex-1 h-14 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium relative overflow-hidden transition-all"
+          :disabled="isSubmitting"
+          :class="{'opacity-75 cursor-not-allowed': isSubmitting}"
         >
-          {{ loading ? '처리 중...' : '접수완료' }}
+          <span v-if="!isSubmitting">접수완료</span>
+          <div v-else class="flex items-center justify-center gap-2">
+            <div class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+            <span>{{ savingProgress || '처리 중...' }}</span>
+          </div>
         </button>
       </div>
     </form>
@@ -452,24 +470,80 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useErrorHandler } from '@/composables/useErrorHandler'
+import { useToast } from '@/composables/useToast'
 import { ordersApi } from '@/utils/api'
 import { USER_TYPE } from '@/types'
 import HSCodeSearchModal from '@/components/order/HSCodeSearchModal.vue'
+import InlineMessage from '@/components/ui/InlineMessage.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const { handleApiError, handleCBMExceeded, handleTHBThresholdExceeded, handleMemberCodeMissing, validateForm, validationRules } = useErrorHandler()
+const { success: showSuccess, businessWarning } = useToast()
 
 const loading = ref(false)
-const success = ref('')
-const error = ref('')
-const validationMessages = ref([])
+const isSubmitting = ref(false)
+const savingProgress = ref('')
+const autoSaveTimer = ref<number | null>(null)
+const lastAutoSave = ref<Date | null>(null)
+const validationErrors = ref<string[]>([])
+const businessWarnings = ref<Array<{title: string, message: string}>>([])
 
 const showHSModal = ref(false)
 const hsSearchTerm = ref('')
 const currentItemIndex = ref<number>(-1)
+
+// Helper functions for error handling
+const removeWarning = (index: number) => {
+  businessWarnings.value.splice(index, 1)
+}
+
+const clearValidationErrors = () => {
+  validationErrors.value = []
+}
+
+const addBusinessWarning = (title: string, message: string) => {
+  // Avoid duplicates
+  if (!businessWarnings.value.some(w => w.title === title && w.message === message)) {
+    businessWarnings.value.push({ title, message })
+  }
+}
+
+const checkBusinessRules = () => {
+  businessWarnings.value = [] // Clear previous warnings
+  
+  // CBM check
+  const cbm = totalCBM.value
+  if (cbm > 29) {
+    addBusinessWarning(
+      'CBM 임계값 초과',
+      `총 CBM이 ${cbm.toFixed(2)}m³로 29m³를 초과하여 해상운송에서 항공운송으로 자동 전환됩니다.`
+    )
+    // Auto-switch to air shipping
+    orderForm.shippingType = 'air'
+  }
+  
+  // THB value check
+  const totalThb = orderForm.items.reduce((sum, item) => sum + ((item.unitPrice || 0) * (item.quantity || 0)), 0)
+  if (totalThb > 1500) {
+    addBusinessWarning(
+      'THB 임계값 초과',
+      `품목 가액이 ${totalThb.toLocaleString()} THB로 1,500 THB를 초과하여 수취인 추가 정보 입력이 필요합니다.`
+    )
+  }
+  
+  // Member code check
+  if (!authStore.user?.memberCode || authStore.user?.memberCode === 'No code') {
+    addBusinessWarning(
+      '회원코드 미기재',
+      '회원코드가 없어 발송이 지연될 수 있습니다. 관리자에게 문의해주세요.'
+    )
+  }
+}
 
 const orderForm = reactive({
   trackingNumber: '',
@@ -608,42 +682,135 @@ const getAppliedTariffRate = (tariffInfo: any): number => {
   return tariffInfo.wtoRate > 0 ? tariffInfo.wtoRate : tariffInfo.basicRate
 }
 
+// Real-time field validation
+const validateField = (fieldName: string, value: any) => {
+  let isValid = true
+  let message = ''
+
+  switch (fieldName) {
+    case 'recipientName':
+      if (!value || value.trim().length < 2) {
+        isValid = false
+        message = '수취인 이름은 2자 이상 입력해주세요.'
+      }
+      break
+    
+    case 'recipientPhone':
+      if (!value || !value.trim()) {
+        isValid = false
+        message = '수취인 전화번호를 입력해주세요.'
+      } else {
+        const phoneRegex = /^[\+]?[\d\s\-\(\)]+$/
+        if (!phoneRegex.test(value.trim()) || value.trim().length < 8) {
+          isValid = false
+          message = '올바른 전화번호 형식이 아닙니다.'
+        }
+      }
+      break
+    
+    case 'recipientAddress':
+      if (!value || value.trim().length < 10) {
+        isValid = false
+        message = '수취인 주소는 10자 이상 자세히 입력해주세요.'
+      }
+      break
+    
+    case 'recipientPostalCode':
+      if (!value || value.trim().length < 3) {
+        isValid = false
+        message = '수취인 우편번호를 입력해주세요.'
+      }
+      break
+  }
+
+  if (fieldValidation.value[fieldName]) {
+    fieldValidation.value[fieldName].isValid = isValid
+    fieldValidation.value[fieldName].message = message
+  }
+
+  return { isValid, message }
+}
+
+// Enhanced form validation using the new error handler
+const validateOrderForm = (): { isValid: boolean; errors: string[] } => {
+  const formData = {
+    trackingNumber: orderForm.trackingNumber,
+    recipientName: orderForm.recipientName,
+    recipientPhone: orderForm.recipientPhone,
+    recipientAddress: orderForm.recipientAddress,
+    country: orderForm.country,
+    recipientPostalCode: orderForm.recipientPostalCode,
+    items: orderForm.items
+  }
+
+  const rules = {
+    trackingNumber: [
+      validationRules.required('우체국 송장번호를 입력해주세요.'),
+      validationRules.pattern(/^[A-Z]{2}[0-9]{9}[A-Z]{2}$/, '송장번호 형식이 올바르지 않습니다. (예: EE123456789KR)')
+    ],
+    recipientName: [
+      validationRules.required('수취인 이름을 입력해주세요.'),
+      validationRules.minLength(2, '수취인 이름은 최소 2자 이상이어야 합니다.')
+    ],
+    recipientPhone: [
+      validationRules.required('수취인 전화번호를 입력해주세요.'),
+      validationRules.minLength(8, '올바른 전화번호를 입력해주세요.')
+    ],
+    recipientAddress: [
+      validationRules.required('수취인 주소를 입력해주세요.'),
+      validationRules.minLength(10, '주소를 자세히 입력해주세요.')
+    ],
+    country: [validationRules.required('배송 국가를 선택해주세요.')],
+    recipientPostalCode: [validationRules.required('수취인 우편번호를 입력해주세요.')],
+    items: [{
+      validator: (items) => {
+        if (!items || items.length === 0) return '최소 1개 이상의 품목을 추가해주세요.'
+        
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i]
+          if (!item.hsCode) return `품목 ${i + 1}: HS 코드를 입력해주세요.`
+          if (!item.description) return `품목 ${i + 1}: 품목 설명을 입력해주세요.`
+          if (!item.quantity || item.quantity <= 0) return `품목 ${i + 1}: 수량을 올바르게 입력해주세요.`
+          if (!item.weight || item.weight <= 0) return `품목 ${i + 1}: 중량을 올바르게 입력해주세요.`
+          if (!item.width || item.width <= 0) return `품목 ${i + 1}: 가로 치수를 입력해주세요.`
+          if (!item.height || item.height <= 0) return `품목 ${i + 1}: 세로 치수를 입력해주세요.`
+          if (!item.depth || item.depth <= 0) return `품목 ${i + 1}: 높이 치수를 입력해주세요.`
+        }
+        return true
+      },
+      message: '품목 정보를 확인해주세요.'
+    }]
+  }
+
+  return validateForm(formData, rules)
+}
+
 const submitOrder = async () => {
+  isSubmitting.value = true
   loading.value = true
-  error.value = ''
+  savingProgress.value = '데이터 검증 중...'
+  validationErrors.value = []
+  businessWarnings.value = []
   
   try {
+    // Form validation using new error handler
+    const validation = validateOrderForm()
+    if (!validation.isValid) {
+      validationErrors.value = Object.values(validation.errors)
+      loading.value = false
+      isSubmitting.value = false
+      savingProgress.value = ''
+      return
+    }
+
     // Calculate CBM for all items
     orderForm.items.forEach(item => {
       item.cbm = parseFloat(calculateCBM(item))
     })
     
-    // Check CBM limit (29 m³)
-    if (totalCBM.value > 29) {
-      const confirm = window.confirm(
-        'CBM이 ' + totalCBM.value.toFixed(3) + 'm³로 29를 초과하여 항공 배송이 적용됩니다.\n' +
-        '항공 배송료가 추가로 부과될 수 있습니다. 계속 진행하시겠습니까?'
-      )
-      if (!confirm) {
-        loading.value = false
-        return
-      }
-    }
-
-    // Check high value items (THB 1,500)
-    const highValueItems = orderForm.items.filter(item => item.unitPrice > 1500)
-    if (highValueItems.length > 0) {
-      const confirm = window.confirm(
-        'THB 1,500을 초과하는 품목이 ' + highValueItems.length + '개 있습니다.\n' +
-        '수취인 추가 정보가 필요할 수 있으며, 관세가 부과될 수 있습니다.\n' +
-        '계속 진행하시겠습니까?'
-      )
-      if (!confirm) {
-        loading.value = false
-        return
-      }
-    }
-
+    // Check business rules and show warnings
+    checkBusinessRules()
+    
     // Prepare order data for backend API
     const orderData = {
       userId: authStore.user?.id,
@@ -680,14 +847,10 @@ const submitOrder = async () => {
     console.log('Order creation response:', response)
 
     if (response.success) {
-      success.value = '주문이 성공적으로 접수되었습니다.'
+      showSuccess('주문 접수 완료', '주문이 성공적으로 접수되었습니다.')
       
-      // Show warnings if any
-      if (response.warnings) {
-        setTimeout(() => {
-          alert('주의사항: ' + response.warnings)
-        }, 500)
-      }
+      // Clear draft data on success
+      localStorage.removeItem('orderDraft')
       
       setTimeout(() => {
         // Navigate to order detail page using order number
@@ -698,25 +861,50 @@ const submitOrder = async () => {
         }
       }, 2000)
     } else {
-      error.value = response.error || '주문 접수 중 오류가 발생했습니다.'
+      handleApiError({ response: { data: response, status: 400 } }, '주문 접수')
     }
   } catch (err) {
     console.error('Order submission error:', err)
-    error.value = '네트워크 오류가 발생했습니다: ' + (err.message || '알 수 없는 오류')
+    handleApiError(err, '주문 접수')
   } finally {
     loading.value = false
+    isSubmitting.value = false
+    savingProgress.value = ''
   }
 }
 
 const saveDraft = async () => {
   try {
     localStorage.setItem('orderDraft', JSON.stringify(orderForm))
+    lastAutoSave.value = new Date()
     success.value = '임시저장되었습니다.'
     setTimeout(() => success.value = '', 3000)
   } catch (error) {
     console.error('임시저장 실패:', error)
   }
 }
+
+// Auto-save functionality
+const autoSave = () => {
+  if (autoSaveTimer.value) {
+    clearTimeout(autoSaveTimer.value)
+  }
+  
+  autoSaveTimer.value = setTimeout(() => {
+    localStorage.setItem('orderDraft', JSON.stringify(orderForm))
+    lastAutoSave.value = new Date()
+    console.log('자동 저장됨:', new Date().toLocaleTimeString())
+  }, 3000) as unknown as number
+}
+
+// Watch for changes and auto-save
+watch(
+  () => orderForm,
+  () => {
+    autoSave()
+  },
+  { deep: true }
+)
 
 const goBack = () => {
   router.go(-1)

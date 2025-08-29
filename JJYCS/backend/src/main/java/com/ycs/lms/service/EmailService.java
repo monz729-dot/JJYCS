@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import jakarta.mail.MessagingException;
@@ -36,6 +37,7 @@ public class EmailService {
     /**
      * 이메일 인증 메일 발송 (인증 코드 방식)
      */
+    @Async
     public void sendVerificationEmail(String to, String name, String code) {
         if (!emailEnabled) {
             log.info("Email sending is disabled. Verification code: {}", code);

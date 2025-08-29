@@ -328,12 +328,16 @@
 import { ref, reactive, computed, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useErrorHandler } from '@/composables/useErrorHandler'
+import { useToast } from '@/composables/useToast'
 import { USER_TYPE } from '@/types'
 import type { UserType } from '@/types'
 import axios from 'axios'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const { handleApiError, validateForm, validationRules } = useErrorHandler()
+const { success: showSuccess, error: showError } = useToast()
 
 const form = reactive({
   userType: '' as UserType | '',
@@ -422,14 +426,13 @@ const formatBusinessNumber = (event: Event) => {
 }
 
 const sendVerificationCode = async () => {
-  if (!form.email) {
-    alert('이메일을 입력해주세요.')
-    return
-  }
+  // Form validation
+  const validation = validateForm({ email: form.email }, {
+    email: [validationRules.required(), validationRules.email()]
+  })
   
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailRegex.test(form.email)) {
-    alert('올바른 이메일 형식을 입력해주세요.')
+  if (!validation.isValid) {
+    showError('입력 확인', Object.values(validation.errors)[0])
     return
   }
   
@@ -444,14 +447,16 @@ const sendVerificationCode = async () => {
       verificationSent.value = true
       verificationTimeLeft.value = response.data.expiresIn || 300
       verificationStatus.value = '인증코드가 이메일로 전송되었습니다.'
-      console.log(`인증코드가 ${form.email}로 전송되었습니다.`)
+      showSuccess('인증코드 전송', `${form.email}로 인증코드가 전송되었습니다.`)
       startVerificationTimer()
     } else {
       verificationStatus.value = response.data.error || '인증코드 전송에 실패했습니다.'
+      showError('전송 실패', verificationStatus.value)
     }
   } catch (error) {
     console.error('인증코드 전송 실패:', error)
-    verificationStatus.value = error.response?.data?.error || '인증코드 전송 중 오류가 발생했습니다.'
+    handleApiError(error, '이메일 인증')
+    verificationStatus.value = '인증코드 전송 중 오류가 발생했습니다.'
   }
 }
 
@@ -473,7 +478,7 @@ const startVerificationTimer = () => {
 
 const confirmVerificationCode = async () => {
   if (!verificationCode.value) {
-    alert('인증코드를 입력해주세요.')
+    showError('입력 확인', '인증코드를 입력해주세요.')
     return
   }
   
@@ -486,17 +491,18 @@ const confirmVerificationCode = async () => {
     if (response.data.success) {
       emailVerified.value = true
       verificationStatus.value = '이메일 인증이 완료되었습니다.'
+      showSuccess('인증 완료', '이메일 인증이 완료되었습니다.')
       
       if (verificationTimer) {
         clearInterval(verificationTimer)
         verificationTimer = null
       }
     } else {
-      alert(response.data.error || '인증코드가 일치하지 않습니다.')
+      showError('인증 실패', response.data.error || '인증코드가 일치하지 않습니다.')
     }
   } catch (error) {
     console.error('인증코드 확인 실패:', error)
-    alert(error.response?.data?.error || '인증코드 확인 중 오류가 발생했습니다.')
+    handleApiError(error, '인증코드 확인')
   }
 }
 
@@ -549,13 +555,55 @@ const updateAgreeAll = () => {
 }
 
 const handleRegister = async () => {
+  // Email verification check
   if (!emailVerified.value) {
-    alert('이메일 인증을 완료해주세요.')
+    showError('인증 필요', '이메일 인증을 완료해주세요.')
     return
   }
   
+  // Business file upload check
   if (showBusinessInfo.value && !uploadedFile.value) {
-    alert('사업자등록증을 업로드해주세요.')
+    showError('파일 필요', '사업자등록증을 업로드해주세요.')
+    return
+  }
+
+  // Form validation
+  const validationData = {
+    userType: form.userType,
+    name: form.name,
+    email: form.email,
+    phone: form.phone,
+    password: form.password,
+    passwordConfirm: form.passwordConfirm
+  }
+
+  const rules: Record<string, any[]> = {
+    userType: [validationRules.required('사용자 유형을 선택해주세요.')],
+    name: [validationRules.required(), validationRules.minLength(2)],
+    email: [validationRules.required(), validationRules.email()],
+    phone: [validationRules.required(), validationRules.phone()],
+    password: [validationRules.required(), validationRules.minLength(8, '비밀번호는 최소 8자 이상이어야 합니다.')],
+    passwordConfirm: [validationRules.required()]
+  }
+
+  // Add business validation if needed
+  if (showBusinessInfo.value) {
+    validationData.companyName = form.companyName
+    validationData.businessNumber = form.businessNumber
+    rules.companyName = [validationRules.required('회사명을 입력해주세요.')]
+    rules.businessNumber = [validationRules.required('사업자등록번호를 입력해주세요.')]
+  }
+
+  const validation = validateForm(validationData, rules)
+  if (!validation.isValid) {
+    const firstError = Object.entries(validation.errors)[0]
+    showError('입력 확인', `${firstError[0]}: ${firstError[1]}`)
+    return
+  }
+
+  // Password match check
+  if (form.password !== form.passwordConfirm) {
+    showError('비밀번호 확인', '비밀번호가 일치하지 않습니다.')
     return
   }
   
@@ -576,17 +624,22 @@ const handleRegister = async () => {
     
     if (result.success) {
       if (showBusinessInfo.value) {
-        alert(`가입 신청이 완료되었습니다.\n\n관리자 승인 후 이용 가능합니다.\n승인 기간: 평일 기준 1~2일\n\n승인 완료 시 ${form.email}로 안내드립니다.`)
+        showSuccess('가입 신청 완료', 
+          `가입 신청이 완료되었습니다.\n\n관리자 승인 후 이용 가능합니다.\n승인 기간: 평일 기준 1~2일\n\n승인 완료 시 ${form.email}로 안내드립니다.`,
+          { duration: 8000 }
+        )
       } else {
-        alert('가입이 완료되었습니다!\n로그인 페이지로 이동합니다.')
+        showSuccess('가입 완료', '가입이 완료되었습니다! 로그인 페이지로 이동합니다.')
       }
       
-      router.push('/login')
+      // Delay navigation to show success message
+      setTimeout(() => {
+        router.push('/login')
+      }, 2000)
     }
   } catch (error: any) {
     console.error('회원가입 오류:', error)
-    const errorMessage = error.error || error.message || '회원가입 중 오류가 발생했습니다.'
-    alert(`회원가입 실패: ${errorMessage}\n\n다시 시도해주세요.`)
+    handleApiError(error, '회원가입')
   }
 }
 

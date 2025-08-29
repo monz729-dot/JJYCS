@@ -146,8 +146,10 @@ public class OrderBusinessRuleService {
         
         if (order.getOrderItems() != null) {
             for (OrderItem item : order.getOrderItems()) {
-                if (item.getThbValue() != null) {
-                    totalThbValue = totalThbValue.add(item.getThbValue().multiply(item.getQuantity()));
+                if (item.getUnitPrice() != null && item.getQuantity() != null) {
+                    BigDecimal itemTotalValue = item.getUnitPrice().multiply(item.getQuantity());
+                    totalThbValue = totalThbValue.add(itemTotalValue);
+                    log.debug("Item THB value: {} x {} = {}", item.getUnitPrice(), item.getQuantity(), itemTotalValue);
                 }
             }
         }
@@ -155,8 +157,12 @@ public class OrderBusinessRuleService {
         result.setTotalThbValue(totalThbValue);
         result.setThbValueExceedsThreshold(totalThbValue.compareTo(thbValueThreshold) > 0);
         
+        log.info("Total THB value calculated: {} (threshold: {})", totalThbValue, thbValueThreshold);
+        
         if (result.isThbValueExceedsThreshold()) {
-            result.getWarnings().add("총 THB 가치가 " + thbValueThreshold + "를 초과합니다 (" + totalThbValue + "). 수취인 추가 정보가 필요합니다.");
+            String warningMsg = String.format("총 THB 가치가 %.2f를 초과합니다 (%.2f). 수취인 추가 정보가 필요합니다.", 
+                    thbValueThreshold, totalThbValue);
+            result.getWarnings().add(warningMsg);
         }
     }
     

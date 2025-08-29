@@ -93,7 +93,11 @@
       "Bash(npx vite:*)",
       "Bash(jps:*)",
       "Bash(echo $env:SPRING_PROFILES_ACTIVE)",
-      "Bash(del C:YCS-ver2JJYCSbackenddataycs_lms_dev.*)"
+      "Bash(del C:YCS-ver2JJYCSbackenddataycs_lms_dev.*)",
+      "Bash(set:*)",
+      "Bash(del \"C:\\YCS-ver2\\JJYCS\\backend\\.h2\\ycs-lms-dev.*\")",
+      "Bash(del .h2\\ycs-lms-dev.*)",
+      "Bash(ping:*)"
     ],
     "deny": [],
     "ask": [],

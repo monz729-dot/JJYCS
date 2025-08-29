@@ -10,7 +10,7 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 import java.util.Properties;
 
 @Configuration
-@Profile("minimal")
+@Profile({"dev", "minimal", "prod", "production"})
 public class EmailConfig {
 
     @Value("${spring.mail.host}")

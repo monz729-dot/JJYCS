@@ -448,7 +448,7 @@ export const billingApi = {
 // Admin API
 export const adminApi = {
   getUsers: (params: any = {}) =>
-    api.get('/admin/users', { params }),
+    api.get('/admin/users/all', { params }),
   
   approveUser: (userId: number, data: any) =>
     api.post(`/admin/users/${userId}/approve`, data),
