@@ -1,6 +1,6 @@
 <template>
   <nav class="fixed bottom-0 left-0 right-0 bg-white/95 border-t border-blue-100 shadow-lg z-50 backdrop-blur-md">
-    <div class="grid grid-cols-3 h-16">
+    <div :class="['grid h-16', navigationItems.length === 3 ? 'grid-cols-3' : navigationItems.length === 4 ? 'grid-cols-4' : 'grid-cols-5']">
       <button
         v-for="item in navigationItems"
         :key="item.id"
@@ -52,6 +52,7 @@
 </template>
 
 <script setup lang="ts">
+console.log('[MobileNavigation] build tag v2025-08-28-3 - Starting initialization')
 import { computed, h } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
@@ -99,29 +100,30 @@ const currentRoute = computed(() => route.name as string)
 // 네비게이션 아이템들 (사용자 유형에 따라 다름)
 const navigationItems = computed(() => {
   const userType = authStore.user?.userType || 'GENERAL'
+  console.log('[MobileNavigation] UserType:', userType)
   
   const baseItems = [
     {
       id: 'dashboard',
       label: '홈',
       icon: HomeIcon,
-      route: 'Dashboard',
+      route: 'dashboard',
       description: '메인 대시보드'
     },
     {
       id: 'orders',
       label: '주문',
       icon: PackageIcon,
-      route: 'Orders',
+      route: 'orders',
       description: '주문 관리',
       badge: 0 // 예: 진행중인 주문 개수
     },
     {
-      id: 'history',
-      label: '내역',
+      id: 'new-order',
+      label: '새주문',
       icon: FileIcon,
-      route: 'OrderHistory',
-      description: '주문 내역'
+      route: 'order-create',
+      description: '새 주문 작성'
     }
   ]
 
@@ -157,6 +159,7 @@ const navigationItems = computed(() => {
     ]
   }
 
+  console.log('[MobileNavigation] Returning items:', baseItems.length, 'tabs -', baseItems.map(item => item.label).join('/'))
   return baseItems
 })
 

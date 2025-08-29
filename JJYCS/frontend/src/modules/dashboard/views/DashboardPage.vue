@@ -1,31 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 p-4 pb-24">
-    <!-- 헤더 -->
-    <div class="bg-white rounded-2xl p-6 mb-6 shadow-blue-100 shadow-lg border border-blue-100">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-4">
-          <div class="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg">
-            YCS
-          </div>
-          <div>
-            <h1 class="text-xl font-bold text-blue-900">YCS 물류 시스템</h1>
-            <p class="text-sm text-blue-600">{{ getUserTypeText }}</p>
-          </div>
-        </div>
-        <div class="flex items-center gap-4">
-          <div class="text-right">
-            <div class="text-sm font-medium text-blue-900">{{ authStore.user?.name || '사용자' }}</div>
-            <div class="text-xs text-gray-500">{{ getUserTypeText }}</div>
-          </div>
-          <button 
-            class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm" 
-            @click="handleLogout"
-          >
-            로그아웃
-          </button>
-        </div>
-      </div>
-    </div>
+  <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 p-4">
     <!-- 환영 섹션 -->
     <div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-6 mb-6 text-white shadow-blue-100 shadow-lg">
       <div class="relative">
@@ -186,46 +160,11 @@
         </button>
       </div>
     </div>
-
-    <!-- 하단 네비게이션 -->
-    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-50">
-      <div class="grid grid-cols-5 gap-2 max-w-md mx-auto">
-        <button class="flex flex-col items-center py-2 text-blue-600" @click="$router.push('/dashboard')">
-          <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-          </svg>
-          <span class="text-xs">홈</span>
-        </button>
-        <button class="flex flex-col items-center py-2 text-gray-400" @click="$router.push('/orders/new')">
-          <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-          </svg>
-          <span class="text-xs">주문</span>
-        </button>
-        <button class="flex flex-col items-center py-2 text-gray-400" @click="$router.push('/orders')">
-          <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-          </svg>
-          <span class="text-xs">내역</span>
-        </button>
-        <button class="flex flex-col items-center py-2 text-gray-400" @click="$router.push('/profile')">
-          <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-          </svg>
-          <span class="text-xs">프로필</span>
-        </button>
-        <button class="flex flex-col items-center py-2 text-gray-400" @click="$router.push('/menu')">
-          <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
-          </svg>
-          <span class="text-xs">메뉴</span>
-        </button>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+console.log('[Dashboard] build tag v2025-08-28-1 - DashboardPage.vue loaded')
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'

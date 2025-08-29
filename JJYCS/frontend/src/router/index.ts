@@ -9,9 +9,25 @@ const router = createRouter({
     // Public routes
     {
       path: '/',
-      name: 'home',
-      component: () => import('@/modules/common/views/HomePage.vue'),
-      meta: { requiresAuth: false }
+      redirect: () => {
+        const authStore = useAuthStore()
+        if (authStore.isAuthenticated && authStore.user) {
+          // 사용자 타입에 따라 적절한 대시보드로 리다이렉트
+          switch (authStore.user.userType) {
+            case USER_TYPE.ADMIN:
+              return '/admin'
+            case USER_TYPE.PARTNER:
+              return '/partner'
+            case USER_TYPE.WAREHOUSE:
+              return '/warehouse'
+            case USER_TYPE.GENERAL:
+            case USER_TYPE.CORPORATE:
+            default:
+              return '/dashboard'
+          }
+        }
+        return '/login'
+      }
     },
     {
       path: '/login',
@@ -190,16 +206,35 @@ const router = createRouter({
 
     // Profile routes
     {
+      path: '/mypage',
+      name: 'mypage',
+      component: () => import('@/modules/profile/views/MyPage.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/profile',
       name: 'profile',
-      component: () => import('@/modules/common/views/ProfilePage.vue'),
-      meta: { requiresAuth: true }
+      redirect: '/mypage'
     },
     {
       path: '/settings',
       name: 'settings',
       component: () => import('@/modules/common/views/SettingsPage.vue'),
       meta: { requiresAuth: true }
+    },
+
+    // Additional routes
+    {
+      path: '/notices',
+      name: 'notices',
+      component: () => import('@/modules/etc/views/NoticeListPage.vue'),
+      meta: { requiresAuth: false }
+    },
+    {
+      path: '/faq',
+      name: 'faq',
+      component: () => import('@/modules/etc/views/FaqPage.vue'),
+      meta: { requiresAuth: false }
     },
 
     // Error routes

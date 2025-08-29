@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 p-4 pb-24">
+  <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 p-4">
     <!-- Success/Error Messages -->
     <div v-if="success || error" class="fixed top-4 right-4 z-50">
       <div :class="error ? 'bg-red-50 border border-red-200 text-red-700' : 'bg-green-50 border border-green-200 text-green-700'" class="px-4 py-3 rounded-xl">

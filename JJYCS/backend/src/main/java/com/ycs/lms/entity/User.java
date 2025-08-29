@@ -82,6 +82,24 @@ public class User {
 
     @Column(length = 500)
     private String rejectionReason; // 거부 사유
+    
+    // 주소 필드
+    @Column(length = 10)
+    private String zipCode;
+    
+    @Column(length = 200)
+    private String address;
+    
+    @Column(length = 200)
+    private String addressDetail;
+    
+    // 알림 설정
+    @Column(length = 500)
+    private String notificationSettings; // JSON 형태로 저장
+    
+    // 삭제 관련
+    @Column
+    private LocalDateTime deletedAt;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)
@@ -94,6 +112,7 @@ public class User {
         GENERAL,    // 일반 회원
         CORPORATE,  // 기업 회원
         PARTNER,    // 파트너
+        WAREHOUSE,  // 창고 관리자
         ADMIN       // 관리자
     }
 
@@ -102,7 +121,8 @@ public class User {
         PENDING,    // 승인 대기
         REJECTED,   // 승인 거부
         SUSPENDED,  // 정지
-        WITHDRAWN   // 탈퇴
+        WITHDRAWN,  // 탈퇴
+        DELETED     // 삭제됨
     }
     
     // Approval helper methods

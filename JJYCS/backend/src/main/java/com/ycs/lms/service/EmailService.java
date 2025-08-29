@@ -29,6 +29,9 @@ public class EmailService {
 
     @Value("${app.frontend.base-url:http://localhost:3006}")
     private String frontendBaseUrl;
+    
+    @Value("${app.backend.base-url:http://localhost:8080/api}")
+    private String backendBaseUrl;
 
     /**
      * 이메일 인증 메일 발송
@@ -211,5 +214,67 @@ public class EmailService {
         sendSimpleEmail(to, 
             "[YCS LMS] 메일 발송 테스트", 
             "YCS 물류관리시스템 메일 발송이 정상적으로 작동합니다.\\n\\n발송 시간: " + java.time.LocalDateTime.now());
+    }
+    
+    /**
+     * 이메일 변경 인증 메일 발송
+     */
+    public void sendEmailChangeVerification(String to, String token) {
+        if (!emailEnabled) {
+            log.info("Email sending is disabled. Email change verification token: {}", token);
+            return;
+        }
+
+        try {
+            String subject = "[YCS LMS] 이메일 변경 인증을 완료해주세요";
+            String verificationUrl = backendBaseUrl + "/auth/verify-email?token=" + token;
+            
+            String htmlContent = String.format("""
+                <html>
+                <body style="font-family: Arial, sans-serif; margin: 40px; color: #333;">
+                    <div style="max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+                        <div style="background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%); color: white; padding: 30px; text-align: center;">
+                            <h1 style="margin: 0; font-size: 28px;">YCS 물류관리시스템</h1>
+                        </div>
+                        <div style="padding: 40px;">
+                            <h2 style="color: #333; margin-bottom: 20px;">이메일 변경 인증</h2>
+                            <p style="line-height: 1.6; color: #666;">
+                                안녕하세요,<br><br>
+                                귀하의 계정에 대한 이메일 변경 요청이 접수되었습니다.<br>
+                                아래 버튼을 클릭하여 새 이메일 주소를 인증해주세요.
+                            </p>
+                            <div style="text-align: center; margin: 30px 0;">
+                                <a href="%s" style="display: inline-block; padding: 15px 40px; background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%); color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                                    이메일 인증하기
+                                </a>
+                            </div>
+                            <p style="color: #999; font-size: 14px; margin-top: 30px;">
+                                이 링크는 30분간 유효합니다.<br>
+                                본인이 요청하지 않은 경우, 이 메일을 무시하셔도 됩니다.
+                            </p>
+                            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+                            <p style="color: #999; font-size: 12px; text-align: center;">
+                                버튼이 작동하지 않는 경우, 아래 링크를 브라우저에 복사하여 접속해주세요:<br>
+                                <a href="%s" style="color: #667eea; word-break: break-all;">%s</a>
+                            </p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """, verificationUrl, verificationUrl, verificationUrl);
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(fromEmail, fromName);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+            log.info("Email change verification email sent to {}", to);
+        } catch (MessagingException | java.io.UnsupportedEncodingException e) {
+            log.error("Failed to send email change verification email to {}", to, e);
+            throw new RuntimeException("Failed to send email", e);
+        }
     }
 }

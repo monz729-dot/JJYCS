@@ -31,24 +31,16 @@
             <span v-if="unreadNotifications > 0" class="notification-badge">{{ unreadNotifications }}</span>
           </button>
           
-          <!-- 프로필 버튼 -->
+          <!-- 햄버거 메뉴 버튼 -->
           <button 
             v-if="authStore.isAuthenticated"
-            @click="showProfile = !showProfile"
-            class="profile-button"
-            aria-label="프로필"
+            @click="showHamburgerMenu = !showHamburgerMenu"
+            class="menu-button"
+            aria-label="메뉴 열기"
           >
-            <div class="avatar">
-              <img 
-                v-if="authStore.user?.avatar" 
-                :src="authStore.user.avatar" 
-                :alt="authStore.user?.name"
-                class="avatar-img"
-              />
-              <div v-else class="avatar-placeholder">
-                {{ (authStore.user?.name || 'U').charAt(0).toUpperCase() }}
-              </div>
-            </div>
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
           </button>
         </div>
       </div>
@@ -91,11 +83,25 @@
       </div>
     </main>
 
-    <!-- Bottom Navigation (모바일용) -->
-    <MobileNavigation 
-      v-if="hasBottomNav" 
-      class="bottom-nav"
-    />
+    <!-- Hamburger Menu Dropdown -->
+    <transition name="fade">
+      <div
+        v-if="showHamburgerMenu"
+        class="fixed right-4 top-14 w-64 rounded-xl border bg-white shadow-lg overflow-hidden z-50"
+        @click.outside="showHamburgerMenu = false"
+      >
+        <nav class="py-1">
+          <MenuItem label="홈" :to="{name:'dashboard'}" icon="home" @done="closeHamburgerMenu" />
+          <MenuItem label="마이페이지" :to="{name:'mypage'}" icon="user" @done="closeHamburgerMenu" />
+          <MenuItem label="주문서 작성" :to="{name:'order-create'}" icon="file-plus" @done="closeHamburgerMenu" />
+          <MenuItem label="주문내역" :to="{name:'orders'}" icon="list" @done="closeHamburgerMenu" />
+          <MenuItem label="공지사항" :to="{name:'notices'}" icon="bell" @done="closeHamburgerMenu" />
+          <MenuItem label="FAQ" :to="{name:'faq'}" icon="help-circle" @done="closeHamburgerMenu" />
+          <div class="border-t my-1"></div>
+          <MenuItem label="로그아웃" icon="log-out" @done="handleLogout" />
+        </nav>
+      </div>
+    </transition>
 
     <!-- Notification Panel -->
     <div 
@@ -132,51 +138,10 @@
       </div>
     </div>
 
-    <!-- Profile Panel -->
-    <div 
-      v-if="showProfile"
-      class="profile-panel"
-      @click.self="showProfile = false"
-    >
-      <div class="profile-content">
-        <div class="profile-header">
-          <div class="avatar-large">
-            <img 
-              v-if="authStore.user?.avatar" 
-              :src="authStore.user.avatar" 
-              :alt="authStore.user?.name"
-              class="avatar-img"
-            />
-            <div v-else class="avatar-placeholder">
-              {{ (authStore.user?.name || 'U').charAt(0).toUpperCase() }}
-            </div>
-          </div>
-          <div class="profile-info">
-            <h3>{{ authStore.user?.name || '사용자' }}</h3>
-            <p>{{ authStore.user?.email }}</p>
-            <span class="user-type">{{ getUserTypeLabel(authStore.user?.userType) }}</span>
-          </div>
-        </div>
-        <div class="profile-actions">
-          <button @click="goToProfile" class="profile-action-button">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-            </svg>
-            프로필 설정
-          </button>
-          <button @click="logout" class="profile-action-button logout">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-            </svg>
-            로그아웃
-          </button>
-        </div>
-      </div>
-    </div>
 
     <!-- Backdrop for panels -->
     <div 
-      v-if="showNotifications || showProfile || sidebarOpen"
+      v-if="showNotifications || sidebarOpen || showHamburgerMenu"
       class="backdrop"
       @click="closeAllPanels"
     ></div>
@@ -192,7 +157,8 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import { useToast } from '../../composables/useToast'
 import ToastContainer from './ToastContainer.vue'
-import { MobileNavigation, AdminNavigation, PartnerNavigation } from '../navigation'
+import { AdminNavigation, PartnerNavigation } from '../navigation'
+import MenuItem from '../common/MenuItem.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -202,7 +168,7 @@ const { showToast } = useToast()
 // 반응형 상태
 const sidebarOpen = ref(false)
 const showNotifications = ref(false)
-const showProfile = ref(false)
+const showHamburgerMenu = ref(false)
 const loading = ref(false)
 const unreadNotifications = ref(0)
 const notifications = ref<any[]>([])
@@ -225,11 +191,8 @@ const showSidebar = computed(() => {
   return isDesktop.value && (authStore.isAdmin || authStore.isPartner)
 })
 
-const hasBottomNav = computed(() => {
-  return authStore.isAuthenticated && 
-         (isMobile.value || isTablet.value) &&
-         (authStore.user?.userType === 'GENERAL' || authStore.user?.userType === 'CORPORATE')
-})
+// 하단 네비게이션 제거
+const hasBottomNav = computed(() => false)
 
 // 사용자 타입 라벨
 const getUserTypeLabel = (userType?: string) => {
@@ -267,21 +230,24 @@ const toggleSidebar = () => {
 const closeAllPanels = () => {
   sidebarOpen.value = false
   showNotifications.value = false
-  showProfile.value = false
+  showHamburgerMenu.value = false
 }
 
-const goToProfile = () => {
-  showProfile.value = false
-  router.push('/profile')
+const closeHamburgerMenu = () => {
+  showHamburgerMenu.value = false
 }
 
-const logout = async () => {
+const handleLogout = async () => {
+  closeHamburgerMenu()
   try {
     await authStore.logout()
     showToast('로그아웃되었습니다.', 'success')
-    router.push('/login')
+    // 강제로 로그인 페이지로 이동하고 히스토리 초기화
+    window.location.href = '/login'
   } catch (error) {
     showToast('로그아웃 중 오류가 발생했습니다.', 'error')
+    // 에러가 있어도 로그인 페이지로 이동
+    window.location.href = '/login'
   }
 }
 
@@ -382,10 +348,7 @@ watchEffect(() => {
   position: relative;
 }
 
-/* 하단 네비게이션이 있는 경우 */
-.has-bottom-nav {
-  padding-bottom: 4rem;
-}
+/* 하단 네비게이션 제거 */
 
 /* 헤더 */
 .app-header {
@@ -554,13 +517,19 @@ watchEffect(() => {
   color: #3b82f6;
 }
 
-/* 하단 네비게이션 */
-.bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 40;
+/* 햄버거 메뉴 트랜지션 */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.fade-enter-from {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 
 /* 알림 패널 */

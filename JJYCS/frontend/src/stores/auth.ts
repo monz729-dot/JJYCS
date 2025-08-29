@@ -93,6 +93,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       const response = await authApi.register(data)
+      console.log('[AUTH] Register response:', response)
       
       if (response.success) {
         return { 
@@ -101,10 +102,12 @@ export const useAuthStore = defineStore('auth', () => {
         }
       } else {
         error.value = response.error || 'Registration failed'
+        console.error('[AUTH] Register error:', response.error, response)
         return { success: false, error: error.value }
       }
     } catch (err: any) {
-      error.value = err.message || 'Registration failed'
+      console.error('[AUTH] Register exception:', err.response?.status, err.response?.data || err.message)
+      error.value = err.response?.data?.error || err.message || 'Registration failed'
       return { success: false, error: error.value }
     } finally {
       loading.value = false

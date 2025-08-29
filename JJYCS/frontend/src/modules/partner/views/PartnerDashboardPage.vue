@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 p-4 pb-24">
+  <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 p-4">
     <!-- 헤더 -->
     <div class="bg-white rounded-2xl p-6 mb-6 shadow-blue-100 shadow-lg border border-blue-100">
       <div class="flex items-center justify-between">

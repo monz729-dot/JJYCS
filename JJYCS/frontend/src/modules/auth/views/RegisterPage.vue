@@ -561,9 +561,10 @@ const handleRegister = async () => {
       
       router.push('/login')
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('회원가입 오류:', error)
-    alert('회원가입 중 오류가 발생했습니다. 다시 시도해주세요.')
+    const errorMessage = error.error || error.message || '회원가입 중 오류가 발생했습니다.'
+    alert(`회원가입 실패: ${errorMessage}\n\n다시 시도해주세요.`)
   }
 }
 

@@ -3,9 +3,10 @@ spring:
   application:
     name: ycs-lms-dev
 
-  # Database Configuration - H2 In-Memory
+  # Database Configuration - H2 File-based
   datasource:
-    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    # ✅ 파일 기반 H2 (프로젝트 폴더 아래 .h2/ycs-lms-dev.mv.db 로 저장)
+    url: jdbc:h2:file:./.h2/ycs-lms-dev;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
     username: sa
     password: 
@@ -23,7 +24,7 @@ spring:
   h2:
     console:
       enabled: true
-      path: /h2-console
+      path: /api/h2-console
       settings:
         web-allow-others: true
 
@@ -31,7 +32,8 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
-      ddl-auto: create-drop
+      # ✅ 절대 create / create-drop 쓰지 말 것 (데이터 날아감)
+      ddl-auto: update          # 스키마만 변경(필요 시 컴럼 추가)
     show-sql: true
     properties:
       hibernate:
@@ -43,7 +45,8 @@ spring:
   # SQL Initialization - Test accounts
   sql:
     init:
-      mode: always
+      # ⚠️ 파일 DB로 전환 후에는 data.sql을 매번 실행하지 않는 것이 안전
+      mode: never               # seed가 필요하면 DevSeedRunner 사용
       data-locations: classpath:simple-data.sql
 
   # Disable Flyway for development (use JPA auto-creation)

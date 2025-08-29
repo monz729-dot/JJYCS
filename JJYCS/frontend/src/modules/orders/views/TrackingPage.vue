@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 p-4 pb-24">
+  <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 p-4">
     <!-- 헤더 -->
     <div class="sticky top-0 z-40 bg-white border-b border-blue-100 p-4 shadow-sm mb-8">
       <div class="flex items-center justify-between max-w-6xl mx-auto">

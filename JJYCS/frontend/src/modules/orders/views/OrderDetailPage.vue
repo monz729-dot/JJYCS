@@ -8,7 +8,7 @@
     </div>
   </div>
 
-  <div v-else class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 p-4 pb-24">
+  <div v-else class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 p-4">
     <!-- 헤더 -->
     <div class="flex items-center gap-4 mb-6">
       <button @click="router.back()" class="text-blue-600 hover:text-blue-700 hover:bg-blue-50 p-2 rounded-lg transition-all flex items-center gap-2">
