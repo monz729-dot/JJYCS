@@ -152,10 +152,6 @@ external-api:
     base-url: https://mock-ems-api.com
     api-key: ${EMS_API_KEY:mock-key}
     enabled: false
-  hs-code:
-    base-url: https://mock-hscode-api.com
-    api-key: ${HS_API_KEY:mock-key}
-    enabled: false
   exchange-rate:
     base-url: https://mock-exchange-api.com
     api-key: ${EXCHANGE_API_KEY:mock-key}
@@ -164,6 +160,21 @@ external-api:
 # HS Code API Configuration and App Settings
 app:
   api:
+    # data.go.kr API 설정
+    data-go-kr:
+      service-key: ${DATA_GO_KR_SERVICE_KEY:}
+      base-url: http://apis.data.go.kr/1390802/ems
+      enabled: true
+      timeout-seconds: 10
+    
+    # 관세청 API 설정
+    customs:
+      api-key: ${CUSTOMS_API_KEY:}
+      base-url: https://unipass.customs.go.kr/ext/rest
+      enabled: true
+      timeout-seconds: 10
+    
+    # 기존 HS Code API 설정 (호환성 유지)
     hscode:
       search:
         key: ${HSCODE_SEARCH_API_KEY:test-key-default}

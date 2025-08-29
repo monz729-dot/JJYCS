@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.scheduling.annotation.Async;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
@@ -653,31 +654,61 @@ public class OrderService {
             return;
         }
         
-        // 각 아이템의 HS Code 검증을 별도 스레드에서 수행
-        new Thread(() -> {
-            try {
-                log.info("Starting async HS Code validation for order: {}", order.getOrderNumber());
-                
-                for (OrderItem item : order.getOrderItems()) {
-                    if (item.getHsCode() != null && !item.getHsCode().trim().isEmpty()) {
-                        try {
-                            // HS Code 유효성 검증
-                            validateHSCode(item.getHsCode(), order.getOrderNumber(), item.getDescription());
-                        } catch (Exception e) {
-                            log.warn("HS Code validation failed for order {} item {}: {}", 
-                                    order.getOrderNumber(), item.getDescription(), e.getMessage());
-                            // 검증 실패 시 주문에 경고 플래그 설정 가능
-                        }
+        // 각 아이템의 HS Code 검증을 비동기로 수행
+        processHSCodeValidationAsync(order.getOrderNumber(), order.getOrderItems());
+    }
+    
+    /**
+     * 비동기로 HS Code 검증 수행
+     * @param orderNumber 주문 번호
+     * @param orderItems 주문 아이템 목록
+     */
+    @Async
+    public void processHSCodeValidationAsync(String orderNumber, List<OrderItem> orderItems) {
+        try {
+            log.info("Starting async HS Code validation for order: {}", orderNumber);
+            
+            for (OrderItem item : orderItems) {
+                if (item.getHsCode() != null && !item.getHsCode().trim().isEmpty()) {
+                    try {
+                        // HS Code 유효성 검증
+                        validateHSCode(item.getHsCode(), orderNumber, item.getDescription());
+                    } catch (Exception e) {
+                        log.warn("HS Code validation failed for order {} item {}: {}", 
+                                orderNumber, item.getDescription(), e.getMessage());
+                        // 검증 실패 시 주문에 경고 플래그 설정 가능
                     }
                 }
-                
-                log.info("Completed async HS Code validation for order: {}", order.getOrderNumber());
-                
-            } catch (Exception e) {
-                log.error("Failed to complete async HS Code validation for order {}: {}", 
-                        order.getOrderNumber(), e.getMessage(), e);
             }
-        }).start();
+            
+            // 검증 결과를 데이터베이스에 업데이트
+            updateHSCodeValidationResult(orderNumber);
+            
+            log.info("Completed async HS Code validation for order: {}", orderNumber);
+            
+        } catch (Exception e) {
+            log.error("Failed to complete async HS Code validation for order {}: {}", 
+                    orderNumber, e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * HS Code 검증 결과 업데이트
+     * @param orderNumber 주문 번호
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void updateHSCodeValidationResult(String orderNumber) {
+        try {
+            Order order = orderRepository.findByOrderNumber(orderNumber).orElse(null);
+            if (order != null) {
+                order.setHsCodeValidated(true);
+                order.setLastValidatedAt(LocalDateTime.now());
+                orderRepository.save(order);
+                log.info("Updated HS Code validation result for order: {}: validated={}", orderNumber, true);
+            }
+        } catch (Exception e) {
+            log.error("Failed to update HS Code validation result for order: {}", orderNumber, e);
+        }
     }
     
     /**

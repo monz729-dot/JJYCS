@@ -188,20 +188,20 @@
             </button>
 
             <button 
-              @click="navigateToReports" 
+              @click="navigateToSettings" 
               class="group relative bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-orange-500 border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-orange-50"
             >
               <div>
                 <span class="rounded-lg inline-flex p-3 bg-orange-50 text-orange-700 ring-4 ring-white text-2xl">
-                  📊
+                  ⚙️
                 </span>
               </div>
               <div class="mt-4">
                 <h3 class="text-lg font-medium text-gray-900">
-                  리포트
+                  시스템 설정
                 </h3>
                 <p class="mt-2 text-sm text-gray-500">
-                  통계 및 분석 리포트
+                  시스템 설정 관리
                 </p>
               </div>
             </button>
@@ -446,11 +446,11 @@ const navigateToWarehouse = () => {
 }
 
 const navigateToUserApproval = () => {
-  alert('사용자 승인 페이지로 이동 예정')
+  router.push('/admin/approvals')
 }
 
-const navigateToReports = () => {
-  alert('리포트 페이지로 이동 예정')
+const navigateToSettings = () => {
+  router.push('/settings')
 }
 
 onMounted(() => {

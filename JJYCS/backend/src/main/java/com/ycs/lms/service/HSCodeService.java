@@ -6,7 +6,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.util.UriComponentsBuilder;
+import reactor.core.publisher.Mono;
+import java.util.concurrent.TimeoutException;
+import java.time.Duration;
 
 import java.math.BigDecimal;
 import java.net.URLEncoder;
@@ -14,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @RequiredArgsConstructor
@@ -23,10 +29,31 @@ public class HSCodeService {
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
     
-    // 캐시를 위한 맵
-    private final Map<String, HSCodeSearchResponse> hsCodeCache = new HashMap<>();
-    private final Map<String, TariffRateResponse> tariffCache = new HashMap<>();
+    // TTL 캐시를 위한 맵
+    private final Map<String, CacheEntry<HSCodeSearchResponse>> hsCodeCache = new ConcurrentHashMap<>();
+    private final Map<String, CacheEntry<TariffRateResponse>> tariffCache = new ConcurrentHashMap<>();
+    private final Map<String, CacheEntry<TariffExchangeResponse>> exchangeCache = new ConcurrentHashMap<>();
     private static final long CACHE_DURATION_MS = 3600000; // 1시간
+    
+    // 캐시 통계를 위한 카운터
+    private volatile long cacheHits = 0;
+    private volatile long cacheMisses = 0;
+    
+    // 캐시 엔트리 클래스
+    private static class CacheEntry<T> {
+        private final T data;
+        private final long timestamp;
+        
+        public CacheEntry(T data) {
+            this.data = data;
+            this.timestamp = System.currentTimeMillis();
+        }
+        
+        public T getData() { return data; }
+        public boolean isExpired() {
+            return System.currentTimeMillis() - timestamp > CACHE_DURATION_MS;
+        }
+    }
 
     // HS부호검색 API
     @Value("${app.api.hscode.search.key:s240o275s078n237g000a070s0}")
@@ -49,10 +76,22 @@ public class HSCodeService {
      */
     public HSCodeSearchResponse searchHSCodeByProductName(String productName) {
         try {
+            // 캐시에서 먼저 확인
+            String cacheKey = "search_product:" + productName.toLowerCase().trim();
+            CacheEntry<HSCodeSearchResponse> cachedEntry = hsCodeCache.get(cacheKey);
+            if (cachedEntry != null && !cachedEntry.isExpired()) {
+                cacheHits++;
+                log.info("Cache hit for HS Code search: {} (hits: {}, misses: {})", productName, cacheHits, cacheMisses);
+                return cachedEntry.getData();
+            }
+            cacheMisses++;
+            
             // Check if API key is test/default - use mock data
             if (hsSearchApiKey.equals("s240o275s078n237g000a070s0") || hsSearchApiKey.equals("test-key-default")) {
                 log.info("Using mock data for HS Code search: {}", productName);
-                return createMockHSCodeResponse(productName);
+                HSCodeSearchResponse response = createMockHSCodeResponse(productName);
+                hsCodeCache.put(cacheKey, new CacheEntry<>(response));
+                return response;
             }
             
             String encodedProductName = URLEncoder.encode(productName, StandardCharsets.UTF_8);
@@ -71,12 +110,40 @@ public class HSCodeService {
                     .uri(url)
                     .retrieve()
                     .bodyToMono(String.class)
+                    .timeout(Duration.ofSeconds(10))
                     .block();
 
-            return parseHSCodeSearchResponse(response);
+            HSCodeSearchResponse result = parseHSCodeSearchResponse(response);
+            // 성공한 응답만 캐시에 저장
+            if (result.isSuccess()) {
+                hsCodeCache.put(cacheKey, new CacheEntry<>(result));
+            }
+            return result;
+        } catch (WebClientResponseException e) {
+            log.error("HTTP error searching HS Code for product: {} - Status: {}, Body: {}", 
+                    productName, e.getStatusCode(), e.getResponseBodyAsString(), e);
+            if (e.getStatusCode().is4xxClientError()) {
+                return HSCodeSearchResponse.error("API 요청 오류: " + 
+                    (e.getStatusCode().value() == 400 ? "잘못된 요청입니다. 검색어를 확인해주세요." : 
+                     e.getStatusCode().value() == 401 ? "API 인증에 실패했습니다. 관리자에게 문의하세요." : 
+                     e.getStatusCode().value() == 429 ? "API 호출 한도를 초과했습니다. 잠시 후 다시 시도해주세요." : 
+                     "클라이언트 오류가 발생했습니다."));
+            } else if (e.getStatusCode().is5xxServerError()) {
+                return HSCodeSearchResponse.error("서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+            }
+            return HSCodeSearchResponse.error("HS Code 검색 중 오류가 발생했습니다: " + e.getMessage());
+        } catch (WebClientRequestException e) {
+            log.error("Network error searching HS Code for product: {}", productName, e);
+            if (e.getCause() instanceof java.net.ConnectException) {
+                return HSCodeSearchResponse.error("네트워크 연결에 실패했습니다. 인터넷 연결을 확인해주세요.");
+            } else if (e.getCause() instanceof java.net.SocketTimeoutException || 
+                      e.getMessage().contains("timeout")) {
+                return HSCodeSearchResponse.error("요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.");
+            }
+            return HSCodeSearchResponse.error("네트워크 오류가 발생했습니다: " + e.getMessage());
         } catch (Exception e) {
-            log.error("Failed to search HS Code for product: {}", productName, e);
-            return HSCodeSearchResponse.error("HS Code 검색에 실패했습니다: " + e.getMessage());
+            log.error("Unexpected error searching HS Code for product: {}", productName, e);
+            return HSCodeSearchResponse.error("HS Code 검색 중 예상치 못한 오류가 발생했습니다. 관리자에게 문의하세요.");
         }
     }
 
@@ -85,10 +152,20 @@ public class HSCodeService {
      */
     public HSCodeSearchResponse searchProductNameByHSCode(String hsCode) {
         try {
+            // 캐시에서 먼저 확인
+            String cacheKey = "search_hscode:" + hsCode.toLowerCase().trim();
+            CacheEntry<HSCodeSearchResponse> cachedEntry = hsCodeCache.get(cacheKey);
+            if (cachedEntry != null && !cachedEntry.isExpired()) {
+                log.info("Cache hit for HS Code lookup: {}", hsCode);
+                return cachedEntry.getData();
+            }
+            
             // Check if API key is test/default - use mock data
             if (hsSearchApiKey.equals("s240o275s078n237g000a070s0") || hsSearchApiKey.equals("test-key-default")) {
                 log.info("Using mock data for HS Code: {}", hsCode);
-                return createMockHSCodeResponseByCode(hsCode);
+                HSCodeSearchResponse response = createMockHSCodeResponseByCode(hsCode);
+                hsCodeCache.put(cacheKey, new CacheEntry<>(response));
+                return response;
             }
             
             String url = UriComponentsBuilder.fromUriString(HS_SEARCH_BASE_URL)
@@ -105,12 +182,40 @@ public class HSCodeService {
                     .uri(url)
                     .retrieve()
                     .bodyToMono(String.class)
+                    .timeout(Duration.ofSeconds(10))
                     .block();
 
-            return parseHSCodeSearchResponse(response);
+            HSCodeSearchResponse result = parseHSCodeSearchResponse(response);
+            // 성공한 응답만 캐시에 저장
+            if (result.isSuccess()) {
+                hsCodeCache.put(cacheKey, new CacheEntry<>(result));
+            }
+            return result;
+        } catch (WebClientResponseException e) {
+            log.error("HTTP error searching product for HS Code: {} - Status: {}, Body: {}", 
+                    hsCode, e.getStatusCode(), e.getResponseBodyAsString(), e);
+            if (e.getStatusCode().is4xxClientError()) {
+                return HSCodeSearchResponse.error("API 요청 오류: " + 
+                    (e.getStatusCode().value() == 400 ? "잘못된 HS Code입니다. 형식을 확인해주세요." : 
+                     e.getStatusCode().value() == 401 ? "API 인증에 실패했습니다. 관리자에게 문의하세요." : 
+                     e.getStatusCode().value() == 429 ? "API 호출 한도를 초과했습니다. 잠시 후 다시 시도해주세요." : 
+                     "클라이언트 오류가 발생했습니다."));
+            } else if (e.getStatusCode().is5xxServerError()) {
+                return HSCodeSearchResponse.error("서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+            }
+            return HSCodeSearchResponse.error("품목명 검색 중 오류가 발생했습니다: " + e.getMessage());
+        } catch (WebClientRequestException e) {
+            log.error("Network error searching product for HS Code: {}", hsCode, e);
+            if (e.getCause() instanceof java.net.ConnectException) {
+                return HSCodeSearchResponse.error("네트워크 연결에 실패했습니다. 인터넷 연결을 확인해주세요.");
+            } else if (e.getCause() instanceof java.net.SocketTimeoutException || 
+                      e.getMessage().contains("timeout")) {
+                return HSCodeSearchResponse.error("요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.");
+            }
+            return HSCodeSearchResponse.error("네트워크 오류가 발생했습니다: " + e.getMessage());
         } catch (Exception e) {
-            log.error("Failed to search product name for HS Code: {}", hsCode, e);
-            return HSCodeSearchResponse.error("품목명 검색에 실패했습니다: " + e.getMessage());
+            log.error("Unexpected error searching product for HS Code: {}", hsCode, e);
+            return HSCodeSearchResponse.error("품목명 검색 중 예상치 못한 오류가 발생했습니다. 관리자에게 문의하세요.");
         }
     }
 
@@ -119,6 +224,14 @@ public class HSCodeService {
      */
     public TariffRateResponse getTariffRate(String hsCode) {
         try {
+            // 캐시에서 먼저 확인
+            String cacheKey = "tariff:" + hsCode.toLowerCase().trim();
+            CacheEntry<TariffRateResponse> cachedEntry = tariffCache.get(cacheKey);
+            if (cachedEntry != null && !cachedEntry.isExpired()) {
+                log.info("Cache hit for tariff rate: {}", hsCode);
+                return cachedEntry.getData();
+            }
+            
             String url = UriComponentsBuilder.fromUriString(TARIFF_BASIC_BASE_URL)
                     .queryParam("key", tariffBasicApiKey)
                     .queryParam("type", "json")
@@ -133,12 +246,40 @@ public class HSCodeService {
                     .uri(url)
                     .retrieve()
                     .bodyToMono(String.class)
+                    .timeout(Duration.ofSeconds(10))
                     .block();
 
-            return parseTariffRateResponse(response);
+            TariffRateResponse result = parseTariffRateResponse(response);
+            // 성공한 응답만 캐시에 저장
+            if (result.isSuccess()) {
+                tariffCache.put(cacheKey, new CacheEntry<>(result));
+            }
+            return result;
+        } catch (WebClientResponseException e) {
+            log.error("HTTP error getting tariff rate for HS Code: {} - Status: {}, Body: {}", 
+                    hsCode, e.getStatusCode(), e.getResponseBodyAsString(), e);
+            if (e.getStatusCode().is4xxClientError()) {
+                return TariffRateResponse.error("관세율 조회 오류: " + 
+                    (e.getStatusCode().value() == 400 ? "잘못된 HS Code입니다. 형식을 확인해주세요." : 
+                     e.getStatusCode().value() == 401 ? "API 인증에 실패했습니다. 관리자에게 문의하세요." : 
+                     e.getStatusCode().value() == 429 ? "API 호출 한도를 초과했습니다. 잠시 후 다시 시도해주세요." : 
+                     "클라이언트 오류가 발생했습니다."));
+            } else if (e.getStatusCode().is5xxServerError()) {
+                return TariffRateResponse.error("서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+            }
+            return TariffRateResponse.error("관세율 조회 중 오류가 발생했습니다: " + e.getMessage());
+        } catch (WebClientRequestException e) {
+            log.error("Network error getting tariff rate for HS Code: {}", hsCode, e);
+            if (e.getCause() instanceof java.net.ConnectException) {
+                return TariffRateResponse.error("네트워크 연결에 실패했습니다. 인터넷 연결을 확인해주세요.");
+            } else if (e.getCause() instanceof java.net.SocketTimeoutException || 
+                      e.getMessage().contains("timeout")) {
+                return TariffRateResponse.error("요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.");
+            }
+            return TariffRateResponse.error("네트워크 오류가 발생했습니다: " + e.getMessage());
         } catch (Exception e) {
-            log.error("Failed to get tariff rate for HS Code: {}", hsCode, e);
-            return TariffRateResponse.error("관세율 조회에 실패했습니다: " + e.getMessage());
+            log.error("Unexpected error getting tariff rate for HS Code: {}", hsCode, e);
+            return TariffRateResponse.error("관세율 조회 중 예상치 못한 오류가 발생했습니다. 관리자에게 문의하세요.");
         }
     }
 
@@ -147,6 +288,14 @@ public class HSCodeService {
      */
     public TariffExchangeResponse getTariffExchangeRate() {
         try {
+            // 캐시에서 먼저 확인 - 환율은 전역적으로 동일하므로 고정 키 사용
+            String cacheKey = "exchange_rate";
+            CacheEntry<TariffExchangeResponse> cachedEntry = exchangeCache.get(cacheKey);
+            if (cachedEntry != null && !cachedEntry.isExpired()) {
+                log.info("Cache hit for exchange rate");
+                return cachedEntry.getData();
+            }
+            
             String url = UriComponentsBuilder.fromUriString(TARIFF_EXCHANGE_BASE_URL)
                     .queryParam("key", tariffExchangeApiKey)
                     .queryParam("type", "json")
@@ -160,12 +309,39 @@ public class HSCodeService {
                     .uri(url)
                     .retrieve()
                     .bodyToMono(String.class)
+                    .timeout(Duration.ofSeconds(10))
                     .block();
 
-            return parseTariffExchangeResponse(response);
+            TariffExchangeResponse result = parseTariffExchangeResponse(response);
+            // 성공한 응답만 캐시에 저장
+            if (result.isSuccess()) {
+                exchangeCache.put(cacheKey, new CacheEntry<>(result));
+            }
+            return result;
+        } catch (WebClientResponseException e) {
+            log.error("HTTP error getting tariff exchange rate - Status: {}, Body: {}", 
+                    e.getStatusCode(), e.getResponseBodyAsString(), e);
+            if (e.getStatusCode().is4xxClientError()) {
+                return TariffExchangeResponse.error("관세환율 조회 오류: " + 
+                    (e.getStatusCode().value() == 401 ? "API 인증에 실패했습니다. 관리자에게 문의하세요." : 
+                     e.getStatusCode().value() == 429 ? "API 호출 한도를 초과했습니다. 잠시 후 다시 시도해주세요." : 
+                     "클라이언트 오류가 발생했습니다."));
+            } else if (e.getStatusCode().is5xxServerError()) {
+                return TariffExchangeResponse.error("서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+            }
+            return TariffExchangeResponse.error("관세환율 조회 중 오류가 발생했습니다: " + e.getMessage());
+        } catch (WebClientRequestException e) {
+            log.error("Network error getting tariff exchange rate", e);
+            if (e.getCause() instanceof java.net.ConnectException) {
+                return TariffExchangeResponse.error("네트워크 연결에 실패했습니다. 인터넷 연결을 확인해주세요.");
+            } else if (e.getCause() instanceof java.net.SocketTimeoutException || 
+                      e.getMessage().contains("timeout")) {
+                return TariffExchangeResponse.error("요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.");
+            }
+            return TariffExchangeResponse.error("네트워크 오류가 발생했습니다: " + e.getMessage());
         } catch (Exception e) {
-            log.error("Failed to get tariff exchange rate", e);
-            return TariffExchangeResponse.error("관세환율 조회에 실패했습니다: " + e.getMessage());
+            log.error("Unexpected error getting tariff exchange rate", e);
+            return TariffExchangeResponse.error("관세환율 조회 중 예상치 못한 오류가 발생했습니다. 관리자에게 문의하세요.");
         }
     }
 
@@ -551,5 +727,31 @@ public class HSCodeService {
         }
         
         return response;
+    }
+    
+    /**
+     * 캐시 통계 정보 조회
+     */
+    public Map<String, Object> getCacheStats() {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("cacheHits", cacheHits);
+        stats.put("cacheMisses", cacheMisses);
+        stats.put("hitRate", cacheMisses > 0 ? (double) cacheHits / (cacheHits + cacheMisses) : 0.0);
+        stats.put("hsCodeCacheSize", hsCodeCache.size());
+        stats.put("tariffCacheSize", tariffCache.size());
+        stats.put("exchangeCacheSize", exchangeCache.size());
+        stats.put("cacheDurationMs", CACHE_DURATION_MS);
+        return stats;
+    }
+    
+    /**
+     * 캐시 클리어 (만료된 항목 정리)
+     */
+    public void clearExpiredCache() {
+        long cleared = 0;
+        cleared += hsCodeCache.entrySet().removeIf(entry -> entry.getValue().isExpired()) ? 1 : 0;
+        cleared += tariffCache.entrySet().removeIf(entry -> entry.getValue().isExpired()) ? 1 : 0;
+        cleared += exchangeCache.entrySet().removeIf(entry -> entry.getValue().isExpired()) ? 1 : 0;
+        log.info("Cleared {} expired cache entries", cleared);
     }
 }

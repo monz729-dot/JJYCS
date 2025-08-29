@@ -68,15 +68,22 @@ export interface Order {
 }
 
 export enum OrderStatus {
-  RECEIVED = 'RECEIVED',
-  ARRIVED = 'ARRIVED',
-  REPACKING = 'REPACKING',
-  SHIPPING = 'SHIPPING',
-  DELIVERED = 'DELIVERED',
-  BILLING = 'BILLING',
-  PAYMENT_PENDING = 'PAYMENT_PENDING',
-  PAYMENT_CONFIRMED = 'PAYMENT_CONFIRMED',
-  COMPLETED = 'COMPLETED'
+  RECEIVED = 'RECEIVED',           // 접수완료
+  ARRIVED = 'ARRIVED',             // 창고도착
+  REPACKING = 'REPACKING',         // 리패킹진행
+  SHIPPING = 'SHIPPING',           // 배송중
+  DELIVERED = 'DELIVERED',         // 배송완료
+  BILLING = 'BILLING',             // 청구서발행
+  PAYMENT_PENDING = 'PAYMENT_PENDING',   // 입금대기
+  PAYMENT_CONFIRMED = 'PAYMENT_CONFIRMED', // 입금확인
+  COMPLETED = 'COMPLETED',         // 완료
+  // 추가 상태 (백엔드 호환용)
+  PENDING = 'PENDING',             // 대기 중
+  PROCESSING = 'PROCESSING',       // 처리 중
+  SHIPPED = 'SHIPPED',             // 발송됨
+  IN_TRANSIT = 'IN_TRANSIT',       // 운송 중
+  CANCELLED = 'CANCELLED',         // 취소됨
+  DELAYED = 'DELAYED'              // 지연됨
 }
 
 export enum ShippingType {

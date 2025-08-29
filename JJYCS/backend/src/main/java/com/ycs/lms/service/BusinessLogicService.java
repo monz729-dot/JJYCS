@@ -2,7 +2,12 @@ package com.ycs.lms.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.publisher.Mono;
+import java.time.Duration;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
@@ -13,13 +18,26 @@ import java.util.Map;
 @Slf4j
 public class BusinessLogicService {
     
+    private final WebClient webClient;
+    
+    @Value("${app.api.data-go-kr.service-key:}")
+    private String dataGoKrServiceKey;
+    
+    @Value("${app.api.customs.api-key:}")
+    private String customsApiKey;
+    
+    @Value("${app.api.data-go-kr.base-url:http://apis.data.go.kr/1390802/ems}")
+    private String dataGoKrBaseUrl;
+    
+    @Value("${app.api.customs.base-url:https://unipass.customs.go.kr/ext/rest}")
+    private String customsBaseUrl;
+    
     // 비즈니스 규칙 상수들
     private static final BigDecimal CBM_THRESHOLD = new BigDecimal("29.0");
     private static final BigDecimal THB_THRESHOLD = new BigDecimal("1500.0");
     
     /**
-     * EMS 코드 검증 (Mock 구현)
-     * 실제로는 data.go.kr API 연동 필요
+     * EMS 코드 검증 - data.go.kr API 연동
      */
     public boolean validateEmsCode(String emsCode) {
         if (emsCode == null || emsCode.trim().isEmpty()) {
@@ -30,15 +48,59 @@ public class BusinessLogicService {
         String pattern = "^[A-Z]{2}\\d{9}[A-Z]{2}$";
         boolean isValidFormat = emsCode.matches(pattern);
         
-        log.info("EMS code validation: {} -> {}", emsCode, isValidFormat);
+        if (!isValidFormat) {
+            log.warn("Invalid EMS code format: {}", emsCode);
+            return false;
+        }
         
-        // TODO: 실제 data.go.kr API 호출하여 검증
-        return isValidFormat;
+        // 실제 data.go.kr API 호출
+        if (dataGoKrServiceKey == null || dataGoKrServiceKey.trim().isEmpty()) {
+            log.warn("data.go.kr service key not configured, using format validation only");
+            return isValidFormat;
+        }
+        
+        try {
+            String response = webClient.get()
+                .uri(uriBuilder -> uriBuilder
+                    .scheme("http")
+                    .host("apis.data.go.kr")
+                    .path("/1390802/ems/getEmsTracking")
+                    .queryParam("serviceKey", dataGoKrServiceKey)
+                    .queryParam("ems_number", emsCode)
+                    .queryParam("type", "json")
+                    .build())
+                .retrieve()
+                .bodyToMono(String.class)
+                .timeout(Duration.ofSeconds(10))
+                .block();
+            
+            // API 응답 처리
+            if (response != null && !response.contains("ERROR")) {
+                log.info("EMS code validation successful: {}", emsCode);
+                return true;
+            } else {
+                log.warn("EMS code not found in tracking system: {}", emsCode);
+                return false;
+            }
+            
+        } catch (WebClientResponseException e) {
+            if (e.getStatusCode().value() == 404) {
+                log.warn("EMS code not found: {}", emsCode);
+                return false;
+            } else {
+                log.error("EMS API error (status {}): {}", e.getStatusCode(), e.getMessage());
+                // API 오류 시 형식 검증 결과 반환
+                return isValidFormat;
+            }
+        } catch (Exception e) {
+            log.error("EMS validation error for {}: {}", emsCode, e.getMessage());
+            // 오류 시 형식 검증 결과 반환
+            return isValidFormat;
+        }
     }
     
     /**
-     * HS 코드 검증 (Mock 구현)
-     * 실제로는 관세청 API 연동 필요
+     * HS 코드 검증 - 관세청 API 연동
      */
     public boolean validateHsCode(String hsCode) {
         if (hsCode == null || hsCode.trim().isEmpty()) {
@@ -49,10 +111,59 @@ public class BusinessLogicService {
         String pattern = "^\\d{4}(\\.\\d{1,6})?$";
         boolean isValidFormat = hsCode.matches(pattern);
         
-        log.info("HS code validation: {} -> {}", hsCode, isValidFormat);
+        if (!isValidFormat) {
+            log.warn("Invalid HS code format: {}", hsCode);
+            return false;
+        }
         
-        // TODO: 실제 관세청 API 호출하여 검증
-        return isValidFormat;
+        // 관세청 API 호출
+        if (customsApiKey == null || customsApiKey.trim().isEmpty()) {
+            log.warn("Customs API key not configured, using format validation only");
+            return isValidFormat;
+        }
+        
+        try {
+            // HS 코드에서 점 제거 (API는 10자리 숫자만 받음)
+            String hsCodeForApi = hsCode.replace(".", "");
+            if (hsCodeForApi.length() < 10) {
+                hsCodeForApi = hsCodeForApi + "0000000000".substring(hsCodeForApi.length());
+            }
+            
+            String response = webClient.get()
+                .uri(uriBuilder -> uriBuilder
+                    .scheme("https")
+                    .host("unipass.customs.go.kr")
+                    .path("/ext/rest/hsCodeInqry/hsCodeInqry.do")
+                    .queryParam("apiKey", customsApiKey)
+                    .queryParam("hsCode", hsCodeForApi.substring(0, 10))
+                    .queryParam("responseType", "JSON")
+                    .build())
+                .retrieve()
+                .bodyToMono(String.class)
+                .timeout(Duration.ofSeconds(10))
+                .block();
+            
+            // API 응답 처리
+            if (response != null && response.contains("\"resultCode\":\"SUCCESS\"")) {
+                log.info("HS code validation successful: {}", hsCode);
+                return true;
+            } else if (response != null && response.contains("\"resultCode\":\"ERROR\"")) {
+                log.warn("HS code not found in customs database: {}", hsCode);
+                return false;
+            } else {
+                log.warn("Invalid HS code response for: {}", hsCode);
+                return false;
+            }
+            
+        } catch (WebClientResponseException e) {
+            log.error("Customs API error (status {}): {}", e.getStatusCode(), e.getMessage());
+            // API 오류 시 형식 검증 결과 반환
+            return isValidFormat;
+        } catch (Exception e) {
+            log.error("HS code validation error for {}: {}", hsCode, e.getMessage());
+            // 오류 시 형식 검증 결과 반환
+            return isValidFormat;
+        }
     }
     
     /**

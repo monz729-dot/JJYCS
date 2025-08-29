@@ -4,6 +4,7 @@ import com.ycs.lms.entity.Order;
 import com.ycs.lms.entity.User;
 import com.ycs.lms.repository.OrderRepository;
 import com.ycs.lms.repository.UserRepository;
+import com.ycs.lms.service.EmailService;
 import com.ycs.lms.service.OrderService;
 import com.ycs.lms.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -28,8 +30,10 @@ public class AdminController {
     private final UserService userService;
     private final OrderRepository orderRepository;
     private final OrderService orderService;
+    private final EmailService emailService;
     
     @GetMapping("/users/pending")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> getPendingUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
@@ -47,6 +51,7 @@ public class AdminController {
     }
     
     @GetMapping("/users/all")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -86,6 +91,7 @@ public class AdminController {
     }
     
     @PostMapping("/users/{userId}/approve")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> approveUser(
             @PathVariable Long userId,
             @RequestBody Map<String, String> request) {
@@ -120,6 +126,19 @@ public class AdminController {
             
             userRepository.save(user);
             
+            // 승인 이메일 발송
+            try {
+                emailService.sendApprovalEmail(
+                    user.getEmail(), 
+                    user.getName(), 
+                    user.getUserType().toString()
+                );
+                log.info("Approval email sent to user: {}", user.getEmail());
+            } catch (Exception emailEx) {
+                log.error("Failed to send approval email to: {}", user.getEmail(), emailEx);
+                // 이메일 발송 실패해도 승인 처리는 성공으로 처리
+            }
+            
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "User approved successfully",
@@ -133,6 +152,7 @@ public class AdminController {
     }
     
     @PostMapping("/users/{userId}/reject")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> rejectUser(
             @PathVariable Long userId,
             @RequestBody Map<String, String> request) {
@@ -157,6 +177,20 @@ public class AdminController {
             
             userRepository.save(user);
             
+            // 거절 이메일 발송
+            try {
+                emailService.sendRejectionEmail(
+                    user.getEmail(), 
+                    user.getName(), 
+                    user.getUserType().toString(),
+                    request.get("reason")
+                );
+                log.info("Rejection email sent to user: {}", user.getEmail());
+            } catch (Exception emailEx) {
+                log.error("Failed to send rejection email to: {}", user.getEmail(), emailEx);
+                // 이메일 발송 실패해도 거절 처리는 성공으로 처리
+            }
+            
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "User rejected successfully",
@@ -170,6 +204,7 @@ public class AdminController {
     }
     
     @GetMapping("/dashboard/summary")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> getDashboardSummary() {
         return ResponseEntity.ok(Map.of(
             "pendingUsers", userRepository.countByStatus(User.UserStatus.PENDING),
@@ -183,6 +218,7 @@ public class AdminController {
     
     // Order Management Endpoints
     @GetMapping("/orders")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> getAllOrders(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -231,6 +267,7 @@ public class AdminController {
     }
     
     @GetMapping("/orders/{orderId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> getOrderById(@PathVariable Long orderId) {
         try {
             Optional<Order> orderOpt = orderRepository.findById(orderId);
@@ -251,6 +288,7 @@ public class AdminController {
     }
     
     @PutMapping("/orders/{orderId}/status")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> updateOrderStatus(
             @PathVariable Long orderId,
             @RequestBody Map<String, String> request) {
@@ -298,6 +336,7 @@ public class AdminController {
     }
     
     @GetMapping("/orders/search")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> searchOrders(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -338,6 +377,7 @@ public class AdminController {
     }
     
     @GetMapping("/stats")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> getAdminStats() {
         try {
             return ResponseEntity.ok(Map.of(

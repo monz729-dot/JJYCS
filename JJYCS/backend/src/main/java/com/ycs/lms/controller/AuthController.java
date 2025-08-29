@@ -99,12 +99,25 @@ public class AuthController {
                 message = "회원가입이 완료되었습니다.";
             }
             
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", message,
-                "user", savedUser,
-                "isPending", savedUser.getStatus() == User.UserStatus.PENDING
-            ));
+            // JWT 토큰 생성 (승인 대기 상태가 아닌 경우)
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", message);
+            response.put("user", savedUser);
+            response.put("isPending", savedUser.getStatus() == User.UserStatus.PENDING);
+            
+            if (savedUser.getStatus() != User.UserStatus.PENDING) {
+                String accessToken = jwtUtil.generateToken(savedUser);
+                String refreshToken = jwtUtil.generateRefreshToken(savedUser);
+                
+                response.put("accessToken", accessToken);
+                response.put("refreshToken", refreshToken);
+                response.put("token", accessToken); // 기존 호환성을 위해 유지
+                response.put("tokenType", "Bearer");
+                response.put("expiresIn", 86400); // 24시간 (초 단위)
+            }
+            
+            return ResponseEntity.ok(response);
             
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
@@ -283,10 +296,34 @@ public class AuthController {
     }
     
     @PostMapping("/logout")
-    public ResponseEntity<Map<String, Object>> logout(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+    public ResponseEntity<Map<String, Object>> logout(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestBody(required = false) LogoutRequest request) {
         try {
-            // 실제 구현에서는 토큰을 블랙리스트에 추가하거나 Redis에서 제거할 수 있습니다
-            // 현재는 단순히 성공 응답만 반환
+            String token = null;
+            
+            // Authorization 헤더에서 토큰 추출
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                token = authHeader.substring(7);
+            }
+            
+            // 리프레시 토큰 처리
+            String refreshToken = null;
+            if (request != null && request.getRefreshToken() != null) {
+                refreshToken = request.getRefreshToken();
+            }
+            
+            // 토큰 블랙리스트 추가 (현재는 JWT 무상태이므로 실제 블랙리스트 구현은 향후 Redis 등으로)
+            if (token != null) {
+                // TODO: 실제 구현에서는 Redis 등에 토큰을 블랙리스트로 저장
+                System.out.println("Adding access token to blacklist: " + token.substring(0, Math.min(20, token.length())) + "...");
+            }
+            
+            if (refreshToken != null) {
+                // TODO: 리프레시 토큰도 블랙리스트에 추가
+                System.out.println("Adding refresh token to blacklist: " + refreshToken.substring(0, Math.min(20, refreshToken.length())) + "...");
+            }
+            
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "로그아웃 성공"
@@ -584,6 +621,13 @@ public class AuthController {
     }
     
     public static class RefreshTokenRequest {
+        private String refreshToken;
+        
+        public String getRefreshToken() { return refreshToken; }
+        public void setRefreshToken(String refreshToken) { this.refreshToken = refreshToken; }
+    }
+    
+    public static class LogoutRequest {
         private String refreshToken;
         
         public String getRefreshToken() { return refreshToken; }

@@ -281,4 +281,158 @@ public class EmailService {
             throw new RuntimeException("Failed to send email", e);
         }
     }
+    
+    /**
+     * 회원 승인 알림 이메일 발송
+     */
+    @Async
+    public void sendApprovalEmail(String to, String name, String userType) {
+        if (!emailEnabled) {
+            log.info("Email sending is disabled. Would send approval email to: {} ({})", to, name);
+            return;
+        }
+
+        try {
+            String subject = "[YCS LMS] 계정 승인 완료 안내";
+            String loginUrl = frontendBaseUrl + "/login";
+            String userTypeKorean = getUserTypeKorean(userType);
+            
+            String htmlContent = String.format("""
+                <html>
+                <body style="font-family: Arial, sans-serif; margin: 40px; color: #333;">
+                    <div style="max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+                        <div style="background: linear-gradient(135deg, #28a745 0%%, #20c997 100%%); color: white; padding: 30px; text-align: center;">
+                            <h1 style="margin: 0; font-size: 28px;">YCS 물류관리시스템</h1>
+                            <p style="margin: 10px 0 0 0; opacity: 0.9;">계정 승인 완료</p>
+                        </div>
+                        <div style="padding: 40px 30px;">
+                            <h2 style="color: #2c3e50; margin-bottom: 20px;">축하합니다, %s님!</h2>
+                            <p style="line-height: 1.6; margin-bottom: 25px;">
+                                %s 계정 승인이 완료되었습니다.<br>
+                                이제 YCS 물류관리시스템의 모든 기능을 이용하실 수 있습니다.
+                            </p>
+                            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 25px 0;">
+                                <h3 style="margin: 0 0 10px 0; color: #495057;">계정 정보</h3>
+                                <p style="margin: 5px 0; color: #6c757d;">이메일: %s</p>
+                                <p style="margin: 5px 0; color: #6c757d;">계정 유형: %s</p>
+                                <p style="margin: 5px 0; color: #6c757d;">승인일: %s</p>
+                            </div>
+                            <div style="text-align: center; margin: 35px 0;">
+                                <a href="%s" style="display: inline-block; padding: 15px 40px; background: linear-gradient(135deg, #28a745 0%%, #20c997 100%%); color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+                                    지금 로그인하기
+                                </a>
+                            </div>
+                            <div style="border-top: 1px solid #dee2e6; padding-top: 25px; margin-top: 35px;">
+                                <h4 style="color: #495057; margin-bottom: 15px;">다음 단계</h4>
+                                <ul style="color: #6c757d; line-height: 1.6;">
+                                    <li>로그인 후 프로필을 완성해보세요</li>
+                                    <li>첫 주문을 생성해보세요</li>
+                                    <li>고객지원팀과 연락하여 추가 설정을 진행하세요</li>
+                                </ul>
+                            </div>
+                            <p style="color: #6c757d; font-size: 14px; margin-top: 25px;">
+                                문의사항이 있으시면 언제든 고객지원팀으로 연락주세요.
+                            </p>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 20px 30px; text-align: center; border-top: 1px solid #dee2e6;">
+                            <p style="margin: 0; font-size: 12px; color: #6c757d;">
+                                © 2024 YCS 물류관리시스템. All rights reserved.
+                            </p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """, name, userTypeKorean, to, userTypeKorean, 
+                java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy년 MM월 dd일 HH:mm")), 
+                loginUrl);
+
+            sendHtmlEmail(to, subject, htmlContent);
+            log.info("Approval email sent to: {} ({})", to, name);
+
+        } catch (Exception e) {
+            log.error("Failed to send approval email to: {}", to, e);
+        }
+    }
+    
+    /**
+     * 회원 거절 알림 이메일 발송
+     */
+    @Async
+    public void sendRejectionEmail(String to, String name, String userType, String reason) {
+        if (!emailEnabled) {
+            log.info("Email sending is disabled. Would send rejection email to: {} ({})", to, name);
+            return;
+        }
+
+        try {
+            String subject = "[YCS LMS] 계정 심사 결과 안내";
+            String userTypeKorean = getUserTypeKorean(userType);
+            
+            String htmlContent = String.format("""
+                <html>
+                <body style="font-family: Arial, sans-serif; margin: 40px; color: #333;">
+                    <div style="max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+                        <div style="background: linear-gradient(135deg, #dc3545 0%%, #c82333 100%%); color: white; padding: 30px; text-align: center;">
+                            <h1 style="margin: 0; font-size: 28px;">YCS 물류관리시스템</h1>
+                            <p style="margin: 10px 0 0 0; opacity: 0.9;">계정 심사 결과</p>
+                        </div>
+                        <div style="padding: 40px 30px;">
+                            <h2 style="color: #2c3e50; margin-bottom: 20px;">%s님께</h2>
+                            <p style="line-height: 1.6; margin-bottom: 25px;">
+                                안녕하세요.<br>
+                                YCS 물류관리시스템 %s 계정 심사 결과를 안내드립니다.
+                            </p>
+                            <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 20px; border-radius: 8px; margin: 25px 0;">
+                                <h3 style="margin: 0 0 15px 0; color: #856404;">심사 결과: 승인 보류</h3>
+                                <p style="margin: 0; color: #856404; line-height: 1.6;">
+                                    죄송하지만 현재 제출해주신 정보로는 계정 승인이 어려운 상황입니다.
+                                </p>
+                            </div>
+                            %s
+                            <div style="border-top: 1px solid #dee2e6; padding-top: 25px; margin-top: 35px;">
+                                <h4 style="color: #495057; margin-bottom: 15px;">다음 단계</h4>
+                                <ul style="color: #6c757d; line-height: 1.6;">
+                                    <li>필요한 서류를 보완하여 다시 신청해주세요</li>
+                                    <li>고객지원팀(support@ycs.com)으로 문의주세요</li>
+                                    <li>평일 09:00-18:00 전화상담도 가능합니다</li>
+                                </ul>
+                            </div>
+                            <p style="color: #6c757d; font-size: 14px; margin-top: 25px;">
+                                더 나은 서비스를 제공하기 위한 조치이니 양해 부탁드립니다.<br>
+                                언제든 재신청이 가능하오니 서류 보완 후 다시 시도해주세요.
+                            </p>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 20px 30px; text-align: center; border-top: 1px solid #dee2e6;">
+                            <p style="margin: 0; font-size: 12px; color: #6c757d;">
+                                © 2024 YCS 물류관리시스템. All rights reserved.
+                            </p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """, name, userTypeKorean, 
+                reason != null && !reason.trim().isEmpty() ? 
+                    String.format("<div style=\"background: #f8d7da; border: 1px solid #f5c6cb; padding: 20px; border-radius: 8px; margin: 25px 0;\"><h4 style=\"margin: 0 0 10px 0; color: #721c24;\">사유</h4><p style=\"margin: 0; color: #721c24; line-height: 1.6;\">%s</p></div>", reason) : 
+                    "");
+
+            sendHtmlEmail(to, subject, htmlContent);
+            log.info("Rejection email sent to: {} ({})", to, name);
+
+        } catch (Exception e) {
+            log.error("Failed to send rejection email to: {}", to, e);
+        }
+    }
+    
+    /**
+     * 사용자 타입을 한국어로 변환
+     */
+    private String getUserTypeKorean(String userType) {
+        return switch (userType.toUpperCase()) {
+            case "CORPORATE" -> "기업회원";
+            case "PARTNER" -> "파트너";
+            case "GENERAL" -> "일반회원";
+            case "ADMIN" -> "관리자";
+            default -> userType;
+        };
+    }
 }

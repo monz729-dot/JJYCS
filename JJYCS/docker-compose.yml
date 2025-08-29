@@ -71,7 +71,10 @@ services:
       SPRING_REDIS_PORT: 6379
       # External APIs
       EMS_API_KEY: ${EMS_API_KEY}
-      HS_CODE_API_KEY: ${HS_CODE_API_KEY}
+      # HS Code API (app.api.hscode 섹션에서 사용)
+      HSCODE_SEARCH_API_KEY: ${HSCODE_SEARCH_API_KEY}
+      HSCODE_TARIFF_API_KEY: ${HSCODE_TARIFF_API_KEY}
+      HSCODE_EXCHANGE_API_KEY: ${HSCODE_EXCHANGE_API_KEY}
       EXCHANGE_RATE_API_KEY: ${EXCHANGE_RATE_API_KEY}
       # Email
       MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
