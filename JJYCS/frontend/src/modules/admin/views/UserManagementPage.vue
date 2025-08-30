@@ -79,7 +79,7 @@
     <!-- Users Table -->
     <div class="bg-white rounded-lg shadow-sm">
       <div class="px-6 py-4 border-b border-gray-200">
-        <h2 class="text-lg font-semibold text-gray-900">All Users</h2>
+        <h2 class="text-lg font-semibold text-gray-900">전체 사용자</h2>
       </div>
 
       <div v-if="loading" class="p-6">
@@ -104,8 +104,8 @@
         <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
         </svg>
-        <h3 class="mt-2 text-sm font-medium text-gray-900">No users found</h3>
-        <p class="mt-1 text-sm text-gray-500">Try adjusting your search filters.</p>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">사용자가 없습니다</h3>
+        <p class="mt-1 text-sm text-gray-500">검색 필터를 조정해보세요.</p>
       </div>
 
       <div v-else class="overflow-x-auto">
@@ -113,22 +113,25 @@
           <thead class="bg-gray-50">
             <tr>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                User
+                사용자
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Type
+                유형
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
+                상태
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Company
+                승인 상태
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Registered
+                회사
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                가입일
               </th>
               <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
+                작업
               </th>
             </tr>
           </thead>
@@ -164,9 +167,23 @@
                     <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                       <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
                     </svg>
-                    Verified
+                    인증됨
                   </span>
                 </div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div v-if="requiresApproval(user)" class="flex items-center space-x-2">
+                  <span v-if="user.status === 'PENDING'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                    승인 대기
+                  </span>
+                  <span v-else-if="user.status === 'REJECTED'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                    승인 거절
+                  </span>
+                  <span v-else class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    승인 완료
+                  </span>
+                </div>
+                <div v-else class="text-gray-400 text-sm">-</div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                 <div v-if="user.companyName">
@@ -184,21 +201,35 @@
                     @click="viewUser(user)"
                     class="text-indigo-600 hover:text-indigo-900"
                   >
-                    View
+                    보기
                   </button>
                   <button
                     v-if="user.status === 'ACTIVE'"
                     @click="toggleUserStatus(user)"
                     class="text-yellow-600 hover:text-yellow-900"
                   >
-                    Suspend
+                    정지
                   </button>
                   <button
                     v-else-if="user.status === 'INACTIVE'"
                     @click="toggleUserStatus(user)"
                     class="text-green-600 hover:text-green-900"
                   >
-                    Activate
+                    활성화
+                  </button>
+                  <button
+                    v-if="requiresApproval(user) && user.status === 'PENDING'"
+                    @click="approveUser(user)"
+                    class="text-blue-600 hover:text-blue-900"
+                  >
+                    승인
+                  </button>
+                  <button
+                    v-if="requiresApproval(user) && user.status === 'PENDING'"
+                    @click="rejectUser(user)"
+                    class="text-red-600 hover:text-red-900"
+                  >
+                    거절
                   </button>
                 </div>
               </td>
@@ -321,11 +352,16 @@ const loadUsers = async () => {
     const response = await adminApi.getUsers()
     console.log('API Response:', response)
     
-    if (response.success && response.data?.users) {
-      users.value = response.data.users
-    } else if (response.data?.users) {
-      // API response format might be different
-      users.value = response.data.users
+    if (response.success && response.data) {
+      // API가 직접 배열을 반환하는지 확인
+      if (Array.isArray(response.data)) {
+        users.value = response.data
+      } else if (response.data.users && Array.isArray(response.data.users)) {
+        users.value = response.data.users
+        console.log(`✅ Loaded ${response.data.users.length} users from API`)
+      } else {
+        users.value = []
+      }
     } else {
       console.warn('No users data found, falling back to mock data')
       // Mock data for testing
@@ -407,14 +443,71 @@ const loadUsers = async () => {
 const viewUser = (user: User) => {
   // TODO: Implement user detail view or modal
   console.log('Viewing user:', user)
-  alert(`User Details:\nName: ${user.name}\nEmail: ${user.email}\nType: ${user.userType}\nStatus: ${user.status}`)
+  alert(`사용자 정보:\n이름: ${user.name}\n이메일: ${user.email}\n유형: ${user.userType}\n상태: ${user.status}`)
+}
+
+const requiresApproval = (user: User) => {
+  return user.userType === 'CORPORATE' || user.userType === 'PARTNER'
+}
+
+const approveUser = async (user: User) => {
+  if (confirm(`${user.name}님의 ${user.userType === 'CORPORATE' ? '기업' : '파트너'} 가입을 승인하시겠습니까?`)) {
+    try {
+      const response = await adminApi.approveUser(user.id)
+      
+      if (response.success) {
+        // Update user in list
+        const userIndex = users.value.findIndex(u => u.id === user.id)
+        if (userIndex !== -1) {
+          users.value[userIndex] = {
+            ...users.value[userIndex],
+            status: 'ACTIVE'
+          }
+        }
+        alert(`${user.name}님의 가입이 승인되었습니다.`)
+        console.log(`✅ 사용자 승인 완료: ${user.name}`)
+      } else {
+        throw new Error(response.error || '사용자 승인에 실패했습니다')
+      }
+    } catch (error: any) {
+      console.error('Failed to approve user:', error)
+      alert(`사용자 승인에 실패했습니다. ${error.message || '다시 시도해주세요.'}`)
+    }
+  }
+}
+
+const rejectUser = async (user: User) => {
+  const reason = prompt(`${user.name}님의 가입을 거절하는 이유를 입력해주세요:`)
+  if (reason && confirm(`정말로 ${user.name}님의 가입을 거절하시겠습니까?`)) {
+    try {
+      const response = await adminApi.rejectUser(user.id, reason)
+      
+      if (response.success) {
+        // Update user in list
+        const userIndex = users.value.findIndex(u => u.id === user.id)
+        if (userIndex !== -1) {
+          users.value[userIndex] = {
+            ...users.value[userIndex],
+            status: 'REJECTED'
+          }
+        }
+        alert(`${user.name}님의 가입이 거절되었습니다.`)
+        console.log(`✅ 사용자 거절 완료: ${user.name}`)
+      } else {
+        throw new Error(response.error || '사용자 거절에 실패했습니다')
+      }
+    } catch (error: any) {
+      console.error('Failed to reject user:', error)
+      alert(`사용자 거절에 실패했습니다. ${error.message || '다시 시도해주세요.'}`)
+    }
+  }
 }
 
 const toggleUserStatus = async (user: User) => {
   const newStatus = user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'
-  const action = newStatus === 'ACTIVE' ? 'activate' : 'suspend'
+  const actionKorean = newStatus === 'ACTIVE' ? '활성화' : '정지'
   
-  if (confirm(`Are you sure you want to ${action} ${user.name}?`)) {
+  if (confirm(`정말로 ${user.name}님을 ${actionKorean}하시겠습니까?`)) {
     try {
       const response = await adminApi.updateUser(user.id, { status: newStatus })
       
@@ -427,13 +520,13 @@ const toggleUserStatus = async (user: User) => {
             status: newStatus
           }
         }
-        console.log(`✅ User ${action}d successfully: ${user.name}`)
+        console.log(`✅ 사용자 ${actionKorean} 완료: ${user.name}`)
       } else {
-        throw new Error(response.error || `Failed to ${action} user`)
+        throw new Error(response.error || `사용자 ${actionKorean}에 실패했습니다`)
       }
     } catch (error: any) {
-      console.error(`Failed to ${action} user:`, error)
-      alert(`Failed to ${action} user. ${error.message || 'Please try again.'}`)
+      console.error(`Failed to change user status:`, error)
+      alert(`사용자 ${actionKorean}에 실패했습니다. ${error.message || '다시 시도해주세요.'}`)
     }
   }
 }

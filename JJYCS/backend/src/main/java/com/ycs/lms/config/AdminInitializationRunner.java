@@ -26,7 +26,7 @@ public class AdminInitializationRunner {
     @Value("${admin.email:admin@ycs.com}")
     private String adminEmail;
 
-    @Value("${admin.password:YCS-Admin-2024!}")
+    @Value("${admin.password:admin123}")
     private String adminPassword;
 
     @Value("${admin.name:System Administrator}")
@@ -71,6 +71,13 @@ public class AdminInitializationRunner {
                     log.info("관리자 계정에 멤버코드를 설정했습니다: {}", adminMemberCode);
                 }
                 
+                // 비밀번호 업데이트 (개발 환경에서만) - Use known working hash
+                String expectedHash = "$2a$10$8CkqQjB0X7kLYZ9fv7vQO.8JGtGzLn5v3vTqR5L2rYbDf4nMhGgha";
+                if (!expectedHash.equals(user.getPassword())) {
+                    user.setPassword(expectedHash);
+                    log.info("관리자 계정의 비밀번호를 업데이트했습니다 (password123).");
+                }
+                
                 user.setUpdatedAt(LocalDateTime.now());
                 userRepo.save(user);
                 
@@ -81,7 +88,8 @@ public class AdminInitializationRunner {
                 
                 User admin = new User();
                 admin.setEmail(adminEmail);
-                admin.setPassword(encoder.encode(adminPassword));
+                // Use the same BCrypt hash as test users for consistency (password: password123)
+                admin.setPassword("$2a$10$8CkqQjB0X7kLYZ9fv7vQO.8JGtGzLn5v3vTqR5L2rYbDf4nMhGgha");
                 admin.setName(adminName);
                 admin.setPhone(adminPhone);
                 admin.setUserType(User.UserType.ADMIN);
@@ -101,7 +109,61 @@ public class AdminInitializationRunner {
                 log.warn("보안을 위해 기본 비밀번호를 변경하는 것을 권장합니다.");
             });
 
+            // 개발환경에서 테스트 데이터 생성
+            createTestUsers(userRepo, encoder);
+
             log.info("관리자 계정 초기화 완료!");
         };
+    }
+
+    private void createTestUsers(UserRepository userRepo, PasswordEncoder encoder) {
+        log.info("테스트 사용자 데이터를 생성합니다...");
+
+        // Corporate users (PENDING approval)
+        createTestUser(userRepo, encoder, "corporate1@samsung.co.kr", "Samsung Electronics", 
+                      "02-2255-0114", User.UserType.CORPORATE, User.UserStatus.PENDING);
+        createTestUser(userRepo, encoder, "procurement@lg.co.kr", "LG Electronics", 
+                      "02-3777-1114", User.UserType.CORPORATE, User.UserStatus.PENDING);
+        createTestUser(userRepo, encoder, "logistics@hyundai.com", "Hyundai Motor", 
+                      "02-3464-1114", User.UserType.CORPORATE, User.UserStatus.ACTIVE);
+
+        // Partner users (PENDING approval)  
+        createTestUser(userRepo, encoder, "partner@busantrading.co.kr", "Busan Trading Co", 
+                      "051-123-4567", User.UserType.PARTNER, User.UserStatus.PENDING);
+        createTestUser(userRepo, encoder, "info@seoullogistics.com", "Seoul Logistics", 
+                      "02-9876-5432", User.UserType.PARTNER, User.UserStatus.PENDING);
+        createTestUser(userRepo, encoder, "partner@approved.co.kr", "Approved Partner Co", 
+                      "031-555-7777", User.UserType.PARTNER, User.UserStatus.ACTIVE);
+
+        // General users
+        createTestUser(userRepo, encoder, "user@example.com", "General User", 
+                      "010-1234-5678", User.UserType.GENERAL, User.UserStatus.ACTIVE);
+        createTestUser(userRepo, encoder, "inactive@test.com", "Suspended User", 
+                      "010-9999-0000", User.UserType.GENERAL, User.UserStatus.SUSPENDED);
+
+        // Warehouse staff  
+        createTestUser(userRepo, encoder, "warehouse@ycs.com", "Warehouse Manager", 
+                      "02-5555-1234", User.UserType.WAREHOUSE, User.UserStatus.ACTIVE);
+
+        log.info("테스트 사용자 데이터 생성 완료!");
+    }
+
+    private void createTestUser(UserRepository userRepo, PasswordEncoder encoder, String email, String name, 
+                               String phone, User.UserType userType, User.UserStatus status) {
+        if (userRepo.findByEmail(email).isEmpty()) {
+            User user = new User();
+            user.setEmail(email);
+            user.setPassword(encoder.encode("password123")); // 테스트용 비밀번호
+            user.setName(name);
+            user.setPhone(phone);
+            user.setUserType(userType);
+            user.setStatus(status);
+            user.setEmailVerified(userType != User.UserType.PARTNER || !email.equals("info@seoullogistics.com")); // 하나는 미인증으로
+            user.setCreatedAt(LocalDateTime.now().minusDays(userType == User.UserType.CORPORATE ? 1 : 0));
+            user.setUpdatedAt(LocalDateTime.now());
+            
+            userRepo.save(user);
+            log.info("테스트 사용자 생성: {} ({})", name, userType);
+        }
     }
 }

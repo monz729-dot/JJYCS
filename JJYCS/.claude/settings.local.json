@@ -97,7 +97,10 @@
       "Bash(set:*)",
       "Bash(del \"C:\\YCS-ver2\\JJYCS\\backend\\.h2\\ycs-lms-dev.*\")",
       "Bash(del .h2\\ycs-lms-dev.*)",
-      "Bash(ping:*)"
+      "Bash(ping:*)",
+      "Bash(init-admin.cmd dev)",
+      "Bash(scriptsinit-admin.cmd dev)",
+      "Bash(del \".h2\\ycs-lms-dev.*\")"
     ],
     "deny": [],
     "ask": [],

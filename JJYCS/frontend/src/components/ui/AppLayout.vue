@@ -180,6 +180,10 @@ const isDesktop = ref(window.innerWidth >= 1024)
 
 // 레이아웃 계산
 const showHeader = computed(() => {
+  // 관리자 라우트일 때는 전역 헤더 숨김
+  if (route.meta?.admin) {
+    return false
+  }
   return authStore.isAuthenticated && !route.meta?.hideHeader
 })
 

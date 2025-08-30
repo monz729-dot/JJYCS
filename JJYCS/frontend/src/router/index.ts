@@ -85,7 +85,8 @@ const router = createRouter({
       component: () => import('@/modules/orders/views/CreateOrderPage.vue'),
       meta: { 
         requiresAuth: true,
-        allowedRoles: [USER_TYPE.GENERAL, USER_TYPE.CORPORATE]
+        requiresEmailVerified: true, // 이메일 인증 필수
+        allowedRoles: [USER_TYPE.GENERAL, USER_TYPE.CORPORATE, USER_TYPE.ADMIN]
       }
     },
     {
@@ -103,7 +104,7 @@ const router = createRouter({
       component: () => import('@/modules/orders/views/TrackingPage.vue'),
       meta: { 
         requiresAuth: true,
-        allowedRoles: [USER_TYPE.GENERAL, USER_TYPE.CORPORATE]
+        allowedRoles: [USER_TYPE.GENERAL, USER_TYPE.CORPORATE, USER_TYPE.ADMIN]
       }
     },
 
@@ -169,39 +170,29 @@ const router = createRouter({
     // Admin routes
     {
       path: '/admin',
-      name: 'admin-dashboard',
-      component: () => import('@/modules/admin/views/AdminDashboard.vue'),
+      component: () => import('@/modules/admin/layout/AdminLayout.vue'),
       meta: { 
         requiresAuth: true,
-        allowedRoles: [USER_TYPE.ADMIN]
-      }
-    },
-    {
-      path: '/admin/users',
-      name: 'admin-users',
-      component: () => import('@/modules/admin/views/UserManagementPage.vue'),
-      meta: { 
-        requiresAuth: true,
-        allowedRoles: [USER_TYPE.ADMIN]
-      }
-    },
-    {
-      path: '/admin/approvals',
-      name: 'admin-approvals',
-      component: () => import('@/modules/admin/views/ApprovalDashboard.vue'),
-      meta: { 
-        requiresAuth: true,
-        allowedRoles: [USER_TYPE.ADMIN]
-      }
-    },
-    {
-      path: '/admin/orders',
-      name: 'admin-orders',
-      component: () => import('@/modules/admin/views/OrderManagementPage.vue'),
-      meta: { 
-        requiresAuth: true,
-        allowedRoles: [USER_TYPE.ADMIN]
-      }
+        allowedRoles: [USER_TYPE.ADMIN],
+        admin: true               // ★ 관리자 화면 표시용 플래그
+      },
+      children: [
+        { 
+          path: '', 
+          name: 'admin-dashboard',
+          component: () => import('@/modules/admin/views/AdminDashboard.vue') 
+        },
+        { 
+          path: 'users', 
+          name: 'admin-users',
+          component: () => import('@/modules/admin/views/UserManagementPage.vue') 
+        },
+        { 
+          path: 'orders', 
+          name: 'admin-orders',
+          component: () => import('@/modules/admin/views/OrderManagementPage.vue') 
+        },
+      ],
     },
 
     // Profile routes
@@ -264,6 +255,22 @@ router.beforeEach(async (to, from, next) => {
         next({
           name: 'login',
           query: { redirect: to.fullPath }
+        })
+        return
+      }
+    }
+
+    // Check email verification requirement (특히 주문 작성 페이지)
+    if (to.meta.requiresEmailVerified && authStore.user) {
+      if (!authStore.user.emailVerified) {
+        // 이메일 미인증 시 대시보드로 리다이렉트하고 경고 메시지 표시
+        const dashboardRoute = getDashboardRoute(authStore.user.userType)
+        next({ 
+          name: dashboardRoute, 
+          query: { 
+            message: 'email_verification_required',
+            returnUrl: to.fullPath
+          } 
         })
         return
       }

@@ -128,6 +128,7 @@ public class BusinessLogicService {
             if (hsCodeForApi.length() < 10) {
                 hsCodeForApi = hsCodeForApi + "0000000000".substring(hsCodeForApi.length());
             }
+            final String finalHsCodeForApi = hsCodeForApi; // 람다에서 사용할 final 변수
             
             String response = webClient.get()
                 .uri(uriBuilder -> uriBuilder
@@ -135,7 +136,7 @@ public class BusinessLogicService {
                     .host("unipass.customs.go.kr")
                     .path("/ext/rest/hsCodeInqry/hsCodeInqry.do")
                     .queryParam("apiKey", customsApiKey)
-                    .queryParam("hsCode", hsCodeForApi.substring(0, 10))
+                    .queryParam("hsCode", finalHsCodeForApi.substring(0, 10))
                     .queryParam("responseType", "JSON")
                     .build())
                 .retrieve()

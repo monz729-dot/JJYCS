@@ -42,7 +42,7 @@ spring:
         generate_statistics: true
     defer-datasource-initialization: true
 
-  # SQL Initialization - Disabled (using AdminInitializationRunner instead)
+  # SQL Initialization - Disabled (use AdminInitializationRunner instead)
   sql:
     init:
       # Disable SQL initialization, use AdminInitializationRunner for admin account
@@ -62,11 +62,18 @@ spring:
     username: monz729@gmail.com
     password: eyubylejwyuqnqvj
     properties:
-      mail.smtp.auth: true
-      mail.smtp.starttls.enable: true
-      mail.smtp.connectiontimeout: 5000
-      mail.smtp.timeout: 5000
-      mail.smtp.writetimeout: 5000
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 10000
+          timeout: 10000
+          writetimeout: 10000
+          ssl:
+            trust: smtp.gmail.com
+      mail.debug: true  # SMTP 디버깅 활성화
     default-encoding: UTF-8
 
 # Server Configuration
@@ -77,7 +84,7 @@ server:
 app:
   notification:
     email:
-      enabled: false  # 개발환경에서는 이메일 전송 비활성화
+      enabled: true   # 개발환경에서도 이메일 전송 활성화 (테스트용)
       from: monz729@gmail.com
       from-name: "YCS 물류관리시스템"
 

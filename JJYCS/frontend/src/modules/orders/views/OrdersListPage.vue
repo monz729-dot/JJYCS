@@ -184,118 +184,97 @@ const filters = reactive({
   orderNumber: ''
 })
 
-// 데모 주문 데이터
-const ordersData = ref([
-  {
-    id: 'YCS202401008',
-    orderNumber: 'YCS202401008',
-    date: '2024-01-20',
-    status: 'delivered',
-    statusText: '배송완료',
-    items: [
-      { name: '스마트폰 케이스', quantity: 2, price: 25000 },
-      { name: '무선 이어폰', quantity: 1, price: 150000 }
-    ],
-    total: 200000,
-    recipient: '홍길동',
-    address: '서울시 강남구 테헤란로 123'
-  },
-  {
-    id: 'YCS202401007',
-    orderNumber: 'YCS202401007',
-    date: '2024-01-18',
-    status: 'shipping',
-    statusText: '배송중',
-    items: [
-      { name: '화장품 세트', quantity: 1, price: 80000 },
-      { name: '향수', quantity: 2, price: 120000 }
-    ],
-    total: 320000,
-    recipient: '김영희',
-    address: '부산시 해운대구 해운대로 456'
-  },
-  {
-    id: 'YCS202401006',
-    orderNumber: 'YCS202401006',
-    date: '2024-01-15',
-    status: 'preparing',
-    statusText: '준비중',
-    items: [
-      { name: '운동화', quantity: 1, price: 180000 }
-    ],
-    total: 180000,
-    recipient: '박민수',
-    address: '대구시 중구 중앙로 789'
-  },
-  {
-    id: 'YCS202401005',
-    orderNumber: 'YCS202401005',
-    date: '2024-01-12',
-    status: 'delivered',
-    statusText: '배송완료',
-    items: [
-      { name: '노트북 가방', quantity: 1, price: 90000 },
-      { name: '마우스 패드', quantity: 3, price: 45000 }
-    ],
-    total: 135000,
-    recipient: '이수진',
-    address: '인천시 남동구 논현로 321'
-  },
-  {
-    id: 'YCS202401004',
-    orderNumber: 'YCS202401004',
-    date: '2024-01-10',
-    status: 'cancelled',
-    statusText: '취소',
-    items: [
-      { name: '블루투스 스피커', quantity: 2, price: 200000 }
-    ],
-    total: 400000,
-    recipient: '최민호',
-    address: '광주시 서구 상무대로 654'
-  },
-  {
-    id: 'YCS202401003',
-    orderNumber: 'YCS202401003',
-    date: '2024-01-08',
-    status: 'delivered',
-    statusText: '배송완료',
-    items: [
-      { name: '의류 세트', quantity: 3, price: 150000 }
-    ],
-    total: 450000,
-    recipient: '정영우',
-    address: '대전시 유성구 대학로 987'
-  },
-  {
-    id: 'YCS202401002',
-    orderNumber: 'YCS202401002',
-    date: '2024-01-05',
-    status: 'delivered',
-    statusText: '배송완료',
-    items: [
-      { name: '건강 보조식품', quantity: 2, price: 120000 }
-    ],
-    total: 240000,
-    recipient: '김영희',
-    address: '울산시 남구 삼산로 147'
-  },
-  {
-    id: 'YCS202401001',
-    orderNumber: 'YCS202401001',
-    date: '2024-01-03',
-    status: 'delivered',
-    statusText: '배송완료',
-    items: [
-      { name: '전자책 리더기', quantity: 1, price: 300000 }
-    ],
-    total: 300000,
-    recipient: '홍길동',
-    address: '세종시 한누리대로 258'
-  }
-])
+// 주문 데이터 
+const ordersData = ref([])
+const filteredOrders = ref([])
 
-const filteredOrders = ref([...ordersData.value])
+// API 함수들
+const fetchOrders = async () => {
+  try {
+    loading.value = true
+    const response = await fetch('/api/orders/user/me', {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+        'Content-Type': 'application/json'
+      }
+    })
+    
+    const result = await response.json()
+    
+    if (result.success && result.data) {
+      // 백엔드 데이터를 프론트엔드 형식에 맞게 변환
+      ordersData.value = result.data.map(order => ({
+        id: order.id,
+        orderNumber: order.orderNumber,
+        date: order.createdAt.split('T')[0], // ISO 날짜에서 날짜 부분만
+        status: mapBackendStatus(order.status),
+        statusText: getStatusText(mapBackendStatus(order.status)),
+        items: order.items || [], 
+        total: calculateTotal(order.items || []),
+        recipient: getRecipientName(order),
+        address: getRecipientAddress(order),
+        // 태국 전용 필드들
+        shippingType: order.shippingType,
+        destCountry: order.destCountry || 'TH',
+        repacking: order.repacking || false,
+        inboundMethod: order.inboundMethod,
+        courierCompany: order.courierCompany,
+        waybillNo: order.waybillNo,
+        emsVerified: order.emsVerified || false,
+        thailandPostalVerified: order.thailandPostalVerified || false
+      }))
+    } else {
+      console.error('Failed to fetch orders:', result.message)
+      ordersData.value = []
+    }
+  } catch (error) {
+    console.error('Error fetching orders:', error)
+    ordersData.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+// 백엔드 상태를 프론트엔드 상태로 매핑
+const mapBackendStatus = (backendStatus) => {
+  const statusMap = {
+    'RECEIVED': 'requested',
+    'ARRIVED': 'preparing', 
+    'REPACKING': 'preparing',
+    'SHIPPING': 'shipping',
+    'DELIVERED': 'delivered',
+    'BILLING': 'preparing',
+    'PAYMENT_PENDING': 'preparing',
+    'PAYMENT_CONFIRMED': 'preparing',
+    'COMPLETED': 'delivered'
+  }
+  return statusMap[backendStatus] || 'requested'
+}
+
+// 수취인 이름 추출 (다중 수취인 지원)
+const getRecipientName = (order) => {
+  if (order.recipientsJson && order.recipientsJson.length > 0) {
+    const primary = order.recipientsJson.find(r => r.isPrimary) || order.recipientsJson[0]
+    return primary.name
+  }
+  return order.recipientName || '수취인 정보 없음'
+}
+
+// 수취인 주소 추출 (다중 수취인 지원)
+const getRecipientAddress = (order) => {
+  if (order.recipientsJson && order.recipientsJson.length > 0) {
+    const primary = order.recipientsJson.find(r => r.isPrimary) || order.recipientsJson[0]
+    return primary.address
+  }
+  return order.recipientAddress || '주소 정보 없음'
+}
+
+// 총 금액 계산
+const calculateTotal = (items) => {
+  return items.reduce((total, item) => {
+    return total + (item.totalPrice || item.unitPrice * item.quantity || 0)
+  }, 0)
+}
 
 // Computed properties
 const totalOrders = computed(() => filteredOrders.value.length)
@@ -348,10 +327,14 @@ const formatCurrency = (amount: number) => {
 }
 
 const getItemsSummary = (items: any[]) => {
-  if (items.length > 1) {
-    return `${items[0].name} 외 ${items.length - 1}건`
+  if (!items || items.length === 0) {
+    return '품목 없음'
   }
-  return items[0].name
+  if (items.length > 1) {
+    const firstItemName = items[0].description || items[0].name || '품목'
+    return `${firstItemName} 외 ${items.length - 1}건`
+  }
+  return items[0].description || items[0].name || '품목'
 }
 
 // Filter and pagination functions
@@ -407,9 +390,7 @@ const reorder = async (orderId: string) => {
 }
 
 onMounted(async () => {
-  // 로딩 시뮬레이션
-  await new Promise(resolve => setTimeout(resolve, 1000))
-  loading.value = false
+  await fetchOrders()
   applyFilters()
 })
 </script>

@@ -242,36 +242,9 @@ const alerts = ref([
 const dailyFlowChart = ref<HTMLCanvasElement | null>(null)
 const statusPieChart = ref<HTMLCanvasElement | null>(null)
 
-// Sample activity data
+// 실제 창고 활동 데이터 (목업 데이터 제거)
 const recentActivities = ref([
-  {
-    type: 'inbound',
-    title: '주문 YCS240827001 입고 완료',
-    description: '위치: A1-02-15, 담당자: 김창고',
-    timestamp: new Date().toISOString(),
-    status: 'success'
-  },
-  {
-    type: 'outbound',
-    title: '일괄 출고 처리',
-    description: '25개 항목 출고 완료',
-    timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-    status: 'success'
-  },
-  {
-    type: 'inspection',
-    title: '검품 이상 발견',
-    description: '주문 YCS240827002 - 박스 손상 확인',
-    timestamp: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
-    status: 'warning'
-  },
-  {
-    type: 'hold',
-    title: '항목 보류 처리',
-    description: '문서 불일치로 3개 항목 보류',
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    status: 'error'
-  }
+  // 빈 배열 - 실제 창고 활동은 API에서 가져와야 함
 ])
 
 // Computed

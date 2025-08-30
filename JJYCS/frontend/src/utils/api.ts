@@ -450,11 +450,11 @@ export const adminApi = {
   getUsers: (params: any = {}) =>
     api.get('/admin/users/all', { params }),
   
-  approveUser: (userId: number, data: any) =>
-    api.post(`/admin/users/${userId}/approve`, data),
+  approveUser: (userId: number, notes?: string) =>
+    api.post(`/admin/users/${userId}/approve`, { notes: notes || '' }),
   
-  rejectUser: (userId: number, data: any) =>
-    api.post(`/admin/users/${userId}/reject`, data),
+  rejectUser: (userId: number, reason: string) =>
+    api.post(`/admin/users/${userId}/reject`, { reason }),
   
   updateUser: (userId: number, data: any) =>
     api.put(`/admin/users/${userId}`, data),

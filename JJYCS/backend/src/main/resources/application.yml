@@ -24,7 +24,8 @@ spring:
       - org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchRepositoriesAutoConfiguration
       - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
       - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
-      - org.springframework.boot.autoconfigure.sql.init.DataSourceInitializationAutoConfiguration
+      # DataSourceInitializationAutoConfiguration 주석 처리 (SQL 파일 실행 활성화)
+      # - org.springframework.boot.autoconfigure.sql.init.DataSourceInitializationAutoConfiguration
       # Mail 자동 설정을 활성화 (Gmail SMTP 사용)
   
   # Database and JPA configurations are in profile-specific files
@@ -146,48 +147,43 @@ business:
     auto-assign-location: true
     default-location-prefix: "A"
     
-# External APIs Configuration
-external-api:
-  ems:
-    base-url: https://mock-ems-api.com
-    api-key: ${EMS_API_KEY:mock-key}
-    enabled: false
-  exchange-rate:
-    base-url: https://mock-exchange-api.com
-    api-key: ${EXCHANGE_API_KEY:mock-key}
-    enabled: false
-
-# HS Code API Configuration and App Settings
+# API Configuration - 태국(TH) 고정 전제
 app:
+  # 배송 설정 (태국 고정)
+  shipping:
+    default-country: TH
+    country-name: "태국"
+    country-code: TH
+    timezone: "Asia/Bangkok"
+  
   api:
-    # data.go.kr API 설정
+    # data.go.kr EMS API - 주 검증 API
     data-go-kr:
       service-key: ${DATA_GO_KR_SERVICE_KEY:}
       base-url: http://apis.data.go.kr/1390802/ems
       enabled: true
       timeout-seconds: 10
+      retry-count: 3
     
-    # 관세청 API 설정
+    # EMS API - 우편번호/주소 보조 API (태국 전용)
+    ems:
+      base-url: ${EMS_API_BASE_URL:https://ems.epost.go.kr/api}
+      api-key: ${EMS_API_KEY:}
+      enabled: true
+      timeout-seconds: 10
+      retry-count: 3
+      # 태국 우편번호 검증 전용
+      thailand:
+        postal-code-pattern: "^[0-9]{5}$"
+        phone-pattern: "^[+]?[0-9\\s\\-]{9,15}$"
+    
+    # 관세청 HS Code API
     customs:
       api-key: ${CUSTOMS_API_KEY:}
       base-url: https://unipass.customs.go.kr/ext/rest
       enabled: true
       timeout-seconds: 10
-    
-    # 기존 HS Code API 설정 (호환성 유지)
-    hscode:
-      search:
-        key: ${HSCODE_SEARCH_API_KEY:test-key-default}
-        url: https://apis.data.go.kr/1360000/000000/getVilageFcstInfoService
-        enabled: true
-      tariff:
-        key: ${HSCODE_TARIFF_API_KEY:test-key-default}  
-        url: https://apis.data.go.kr/1360000/000000/getTariffRateService
-        enabled: true
-      exchange:
-        key: ${HSCODE_EXCHANGE_API_KEY:test-key-default}
-        url: https://apis.data.go.kr/1360000/000000/getExchangeRateService
-        enabled: true
+      retry-count: 3
   notification:
     email:
       enabled: true

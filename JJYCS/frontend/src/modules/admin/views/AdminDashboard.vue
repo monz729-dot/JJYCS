@@ -1,27 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- 헤더 -->
-    <div class="bg-white shadow-sm border-b">
-      <div class="max-w-7xl mx-auto px-4 py-4">
-        <div class="flex items-center justify-between">
-          <div>
-            <h1 class="text-2xl font-bold text-gray-900">어드민 대시보드</h1>
-            <p class="text-sm text-gray-600">YCS LMS 시스템 관리 및 모니터링</p>
-          </div>
-          <div class="flex items-center space-x-4">
-            <div class="text-right">
-              <div class="text-sm font-medium text-gray-900">관리자</div>
-              <div class="text-xs text-gray-500">{{ currentTime }}</div>
-            </div>
-            <div class="h-8 w-8 bg-blue-500 rounded-full flex items-center justify-center">
-              <span class="text-white font-medium text-sm">관</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+  <div class="space-y-6">
       <!-- 핵심 지표 -->
       <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <!-- 전체 주문 -->
@@ -129,7 +107,7 @@
           <h2 class="text-lg font-semibold text-gray-900">빠른 작업</h2>
         </div>
         <div class="p-6">
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <button 
               @click="navigateToOrders" 
               class="group relative bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-green-500 border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-green-50"
@@ -169,23 +147,26 @@
             </button>
 
             <button 
-              @click="navigateToUserApproval" 
-              class="group relative bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-yellow-500 border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-yellow-50"
+              @click="navigateToUserManagement" 
+              class="group relative bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-blue-500 border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-blue-50"
             >
               <div>
-                <span class="rounded-lg inline-flex p-3 bg-yellow-50 text-yellow-700 ring-4 ring-white text-2xl">
+                <span class="rounded-lg inline-flex p-3 bg-blue-50 text-blue-700 ring-4 ring-white text-2xl">
                   👥
                 </span>
               </div>
               <div class="mt-4">
                 <h3 class="text-lg font-medium text-gray-900">
-                  사용자 승인
+                  사용자 관리
                 </h3>
                 <p class="mt-2 text-sm text-gray-500">
-                  기업/파트너 승인 처리
+                  모든 사용자 조회 및 관리
                 </p>
               </div>
             </button>
+
+            <!-- ★ '승인 대기/시뮬레이터/전체페이지/설정' 등은 노출하지 않음 -->
+            <!-- 사용자 승인 카드 제거됨 -->
 
             <button 
               @click="navigateToSettings" 
@@ -253,7 +234,6 @@
           </div>
         </div>
       </div>
-    </div>
   </div>
 </template>
 
@@ -445,8 +425,8 @@ const navigateToWarehouse = () => {
   window.open('/warehouse-scan.html', '_blank')
 }
 
-const navigateToUserApproval = () => {
-  router.push('/admin/approvals')
+const navigateToUserManagement = () => {
+  router.push('/admin/users')
 }
 
 const navigateToSettings = () => {

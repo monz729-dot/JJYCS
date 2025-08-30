@@ -40,12 +40,12 @@
           <label class="block text-sm font-medium text-gray-700 mb-1">사용자 유형</label>
           <select v-model="filters.userType" class="input-field" @change="filterUsers">
             <option value="">모든 유형</option>
-            <option value="CORPORATE">Corporate</option>
-            <option value="PARTNER">Partner</option>
+            <option value="CORPORATE">기업</option>
+            <option value="PARTNER">파트너</option>
           </select>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Registration Date</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">가입일</label>
           <input
             v-model="filters.dateFrom"
             type="date"
@@ -57,7 +57,7 @@
           <label class="block text-sm font-medium text-gray-700 mb-1">상태</label>
           <select v-model="filters.status" class="input-field" @change="filterUsers">
             <option value="">모든 상태</option>
-            <option value="PENDING">Pending</option>
+            <option value="PENDING">승인 대기</option>
             <option value="APPROVED">승인됨</option>
             <option value="REJECTED">거절됨</option>
           </select>
@@ -68,7 +68,7 @@
     <!-- Pending Approvals -->
     <div class="bg-white rounded-lg shadow-sm">
       <div class="px-6 py-4 border-b border-gray-200">
-        <h2 class="text-lg font-semibold text-gray-900">Pending Approvals</h2>
+        <h2 class="text-lg font-semibold text-gray-900">승인 대기 목록</h2>
       </div>
 
       <div v-if="loading" class="p-6">
@@ -93,8 +93,8 @@
         <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
         </svg>
-        <h3 class="mt-2 text-sm font-medium text-gray-900">No pending approvals</h3>
-        <p class="mt-1 text-sm text-gray-500">All user registrations have been processed.</p>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">승인 대기 중인 사용자가 없습니다</h3>
+        <p class="mt-1 text-sm text-gray-500">모든 사용자 가입 요청이 처리되었습니다.</p>
       </div>
 
       <div v-else class="divide-y divide-gray-200">
@@ -152,7 +152,7 @@
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 0V6a2 2 0 012-2h2a2 2 0 012 2v1m-6 0h6m-6 0l-.5-1.5A2 2 0 0111.172 4H12.828a2 2 0 011.672 1l.5 1.5M15 7v8a2 2 0 01-2 2H9a2 2 0 01-2-2V7m8 0V6a2 2 0 00-2-2H11a2 2 0 00-2 2v1"></path>
                     </svg>
-                    Registered {{ formatDate(user.createdAt) }}
+                    {{ formatDate(user.createdAt) }} 가입
                   </div>
                 </div>
               </div>

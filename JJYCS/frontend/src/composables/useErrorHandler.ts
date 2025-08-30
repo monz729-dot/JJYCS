@@ -222,6 +222,85 @@ export function useErrorHandler() {
         return Number(value) > 0 ? true : message
       },
       message
+    }),
+
+    pattern: (regex: RegExp | string, message = '올바른 형식이 아닙니다.'): ValidationRule => ({
+      validator: (value) => {
+        if (!value) return true
+        
+        // RegExp 객체이거나 문자열 패턴을 RegExp로 변환
+        let regexPattern: RegExp
+        if (typeof regex === 'string') {
+          regexPattern = new RegExp(regex)
+        } else if (regex instanceof RegExp) {
+          regexPattern = regex
+        } else {
+          // 패턴이 함수나 기타 형태일 경우 안전 가드
+          console.warn('Invalid pattern type:', typeof regex, regex)
+          return true
+        }
+        
+        return regexPattern.test(value) ? true : message
+      },
+      message
+    }),
+
+    // 태국 전용 검증 룰들
+    thailandPostalCode: (message = '태국 우편번호는 5자리 숫자입니다.'): ValidationRule => ({
+      validator: (value) => {
+        if (!value) return true
+        const pattern = /^[0-9]{5}$/
+        return pattern.test(value) ? true : message
+      },
+      message
+    }),
+
+    thailandPhone: (message = '올바른 태국 전화번호를 입력해주세요.'): ValidationRule => ({
+      validator: (value) => {
+        if (!value) return true
+        // 태국 전화번호: +66, 0으로 시작하거나 직접 번호, 9-15자리
+        const pattern = /^[\+]?[0-9\s\-]{9,15}$/
+        return pattern.test(value.trim()) ? true : message
+      },
+      message
+    }),
+
+    emsTrackingNumber: (message = 'EMS 송장번호는 13자리 형식입니다. (예: EE123456789KR)'): ValidationRule => ({
+      validator: (value) => {
+        if (!value) return true
+        const pattern = /^[A-Z]{2}[0-9]{9}[A-Z]{2}$/
+        return pattern.test(value) ? true : message
+      },
+      message
+    }),
+
+    hsCode: (message = '올바른 HS Code 형식이 아닙니다.'): ValidationRule => ({
+      validator: (value) => {
+        if (!value) return true
+        // HS Code: 4-10자리 숫자, 점 포함 가능
+        const pattern = /^\d{4}(\.\d{1,6})?$/
+        return pattern.test(value) ? true : message
+      },
+      message
+    }),
+
+    thbAmount: (message = 'THB 금액을 올바르게 입력해주세요.'): ValidationRule => ({
+      validator: (value) => {
+        if (!value) return true
+        const num = parseFloat(value)
+        return !isNaN(num) && num > 0 ? true : message
+      },
+      message
+    }),
+
+    courierTrackingNumber: (message = '송장번호를 입력해주세요.'): ValidationRule => ({
+      validator: (value) => {
+        if (!value) return true
+        // 택배 송장번호: 숫자와 하이픈 허용, 최소 8자리
+        const pattern = /^[0-9\-]{8,}$/
+        return pattern.test(value) ? true : message
+      },
+      message
     })
   }
 

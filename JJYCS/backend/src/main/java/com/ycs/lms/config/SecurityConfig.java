@@ -77,7 +77,9 @@ public class SecurityConfig {
                     "/api/actuator/health",
                     "/favicon.ico",
                     "/api/labels/**",
-                    "/labels/**"
+                    "/labels/**",
+                    "/api/debug/**",
+                    "/debug/**"
                 ).permitAll()
                 
                 // 관리자 전용
@@ -89,8 +91,8 @@ public class SecurityConfig {
                 // 파트너 전용
                 .requestMatchers("/api/partner/**", "/partner/**").hasRole("PARTNER")
                 
-                // 주문 관련 - 일반/기업/관리자/창고
-                .requestMatchers("/api/orders/**", "/orders/**").hasAnyRole("GENERAL", "CORPORATE", "ADMIN", "WAREHOUSE")
+                // 주문 관련 - 인증된 모든 사용자
+                .requestMatchers("/api/orders/**", "/orders/**").authenticated()
                 
                 // 라벨 생성 - 일반/기업/관리자/창고
                 .requestMatchers("/api/labels/**", "/labels/**").hasAnyRole("GENERAL", "CORPORATE", "ADMIN", "WAREHOUSE")

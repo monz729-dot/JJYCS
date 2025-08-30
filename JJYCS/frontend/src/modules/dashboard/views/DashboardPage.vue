@@ -376,46 +376,16 @@ const loadDashboardData = async () => {
 }
 
 const loadMockData = () => {
-  // Fallback mock data - set to 0 to indicate no data loaded
-  console.warn('Loading mock data due to API failure')
+  // 실제 빈 상태로 표시 (목업 데이터 완전 제거)
+  console.warn('API failed - showing empty state instead of mock data')
   stats.totalOrders = 0
   stats.pendingOrders = 0
   stats.completedOrders = 0
   stats.monthlyShipping = 0
-
-  recentOrders.value = [
-    {
-      id: 1,
-      orderNumber: 'YCS240822001',
-      items: [{ description: '전자제품' }],
-      origin: '태국',
-      destination: '한국',
-      status: 'BILLING',
-      createdAt: '2024-08-22'
-    },
-    {
-      id: 2,
-      orderNumber: 'YCS240821002',
-      items: [{ description: '의류' }, { description: '신발' }, { description: '가방' }],
-      origin: '태국',
-      destination: '한국',
-      status: 'DELIVERED',
-      createdAt: '2024-08-21'
-    }
-  ]
-
-  warehouseItems.value = [
-    {
-      id: 1,
-      orderNumber: 'YCS240115001',
-      items: [{ description: '빼빼로, 초콜릿 과자' }],
-      actualWeight: 2.5,
-      status: 'REPACKING',
-      storageLocation: 'A-01-03',
-      storageArea: 'A열 1행 3번',
-      arrivedAt: '2024-01-18'
-    }
-  ]
+  
+  // 빈 배열로 설정하여 "데이터 없음" 상태 표시
+  recentOrders.value = []
+  warehouseItems.value = []
 }
 
 onMounted(() => {

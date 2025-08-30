@@ -7,6 +7,7 @@ import com.ycs.lms.service.EmailService;
 import com.ycs.lms.service.UserService;
 import com.ycs.lms.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +20,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
+@Slf4j
 public class AuthController {
     
     private final UserService userService;
@@ -536,10 +538,20 @@ public class AuthController {
     @PostMapping("/verify-code")
     public ResponseEntity<Map<String, Object>> verifyCode(@RequestBody VerifyCodeRequest request) {
         try {
+            log.info("Verifying code: {} for email: {}", request.getCode(), request.getEmail());
+            
             var tokenOpt = tokenRepository.findByTokenAndTokenTypeAndUsedFalse(
                 request.getCode(), EmailVerificationToken.TokenType.EMAIL_VERIFICATION);
             
             if (tokenOpt.isEmpty()) {
+                log.warn("Token not found for code: {} and email: {}", request.getCode(), request.getEmail());
+                
+                // 추가 디버깅: 해당 이메일의 모든 토큰 확인
+                var allTokens = tokenRepository.findByEmailAndTokenType(
+                    request.getEmail(), EmailVerificationToken.TokenType.EMAIL_VERIFICATION);
+                log.info("All tokens for email {}: {}", request.getEmail(), 
+                    allTokens.stream().map(t -> "token=" + t.getToken() + ", used=" + t.isUsed() + ", expired=" + t.isExpired()).toList());
+                
                 return ResponseEntity.badRequest()
                     .body(Map.of("success", false, "error", "잘못된 인증코드입니다."));
             }

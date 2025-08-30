@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import jakarta.annotation.PostConstruct;
 
 @Service
 @RequiredArgsConstructor
@@ -19,8 +20,14 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
-    @Value("${app.notification.email.enabled:false}")
+    @Value("${app.notification.email.enabled:true}")
     private boolean emailEnabled;
+    
+    @PostConstruct
+    public void init() {
+        log.info("EmailService initialized with emailEnabled={}, fromEmail={}, fromName={}", 
+            emailEnabled, fromEmail, fromName);
+    }
 
     @Value("${spring.mail.username:monz729@gmail.com}")
     private String fromEmail;

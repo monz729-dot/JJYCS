@@ -65,7 +65,7 @@ if "%ENVIRONMENT%"=="prod" (
 
 :: 백엔드 서버 실행 확인
 echo 백엔드 서버 연결 확인...
-set BACKEND_URL=http://localhost:8080/api
+set BACKEND_URL=http://localhost:8081/api
 
 curl -s -f "%BACKEND_URL%/actuator/health" >nul 2>&1
 if errorlevel 1 (
@@ -155,6 +155,6 @@ if "%ENVIRONMENT%"=="prod" (
 )
 
 echo 관리자 대시보드: http://localhost:3001/admin
-echo H2 데이터베이스 콘솔: http://localhost:8080/api/h2-console
+echo H2 데이터베이스 콘솔: http://localhost:8081/api/h2-console
 
 endlocal
