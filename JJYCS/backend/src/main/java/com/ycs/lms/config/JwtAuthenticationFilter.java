@@ -62,18 +62,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     // 토큰 유효성 검증
                     if (jwtUtil.validateToken(jwt, userEmail)) {
                         
-                        // UserDetails로 변환
-                        String role = "ROLE_" + user.getUserType().toString();
-                        log.debug("Creating UserDetails with role: {} for user: {}", role, userEmail);
+                        // UserDetails로 변환 - PENDING 상태도 허용
+                        String role;
+                        if (user.getStatus() == com.ycs.lms.entity.User.UserStatus.PENDING) {
+                            // PENDING 상태의 사용자는 PENDING 역할 부여
+                            role = "ROLE_PENDING";
+                        } else {
+                            // 활성 상태의 사용자는 원래 역할 부여
+                            role = "ROLE_" + user.getUserType().toString();
+                        }
+                        log.debug("Creating UserDetails with role: {} for user: {} (status: {})", role, userEmail, user.getStatus());
                         
                         UserDetails userDetails = org.springframework.security.core.userdetails.User.builder()
                                 .username(user.getEmail())
                                 .password(user.getPassword())
                                 .authorities(role)
                                 .accountExpired(false)
-                                .accountLocked(user.getStatus() != com.ycs.lms.entity.User.UserStatus.ACTIVE)
+                                .accountLocked(user.getStatus() == com.ycs.lms.entity.User.UserStatus.SUSPENDED || 
+                                              user.getStatus() == com.ycs.lms.entity.User.UserStatus.DELETED)
                                 .credentialsExpired(false)
-                                .disabled(user.getStatus() != com.ycs.lms.entity.User.UserStatus.ACTIVE)
+                                .disabled(user.getStatus() == com.ycs.lms.entity.User.UserStatus.WITHDRAWN ||
+                                         user.getStatus() == com.ycs.lms.entity.User.UserStatus.DELETED)
                                 .build();
                         
                         // 인증 토큰 생성

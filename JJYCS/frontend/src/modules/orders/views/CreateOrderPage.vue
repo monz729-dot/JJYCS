@@ -898,15 +898,7 @@ const totalCBM = computed(() => {
   return orderForm.items.reduce((sum, item) => sum + (item.cbm || 0), 0)
 })
 
-const getPostalCodeGuide = (country) => {
-  const guides = {
-    thailand: '5자리 숫자 (예: 10110)',
-    vietnam: '6자리 숫자 (예: 700000)',
-    philippines: '4자리 숫자 (예: 1000)',
-    indonesia: '5자리 숫자 (예: 10110)'
-  }
-  return guides[country] || '우편번호를 입력하세요'
-}
+// 태국 전용 시스템이므로 getPostalCodeGuide 함수 제거됨 - 불필요
 
 const calculateCBM = (item) => {
   if (item.width && item.height && item.depth) {

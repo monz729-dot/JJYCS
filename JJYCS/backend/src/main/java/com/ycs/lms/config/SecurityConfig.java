@@ -91,8 +91,13 @@ public class SecurityConfig {
                 // 파트너 전용
                 .requestMatchers("/api/partner/**", "/partner/**").hasRole("PARTNER")
                 
-                // 주문 관련 - 인증된 모든 사용자
-                .requestMatchers("/api/orders/**", "/orders/**").authenticated()
+                // 주문 생성 - 승인 대기 중인 사용자도 주문 생성 가능 (제한된 기능)
+                .requestMatchers("/api/orders", "/orders").hasAnyRole("GENERAL", "CORPORATE", "ADMIN", "WAREHOUSE", "PENDING")
+                .requestMatchers("/api/orders/validate*", "/orders/validate*").hasAnyRole("GENERAL", "CORPORATE", "ADMIN", "WAREHOUSE", "PENDING")
+                .requestMatchers("/api/orders/calculate-cbm", "/orders/calculate-cbm").hasAnyRole("GENERAL", "CORPORATE", "ADMIN", "WAREHOUSE", "PENDING")
+                
+                // 주문 관리 - 일반/기업/관리자/창고만 (PENDING 제외)
+                .requestMatchers("/api/orders/**", "/orders/**").hasAnyRole("GENERAL", "CORPORATE", "ADMIN", "WAREHOUSE")
                 
                 // 라벨 생성 - 일반/기업/관리자/창고
                 .requestMatchers("/api/labels/**", "/labels/**").hasAnyRole("GENERAL", "CORPORATE", "ADMIN", "WAREHOUSE")

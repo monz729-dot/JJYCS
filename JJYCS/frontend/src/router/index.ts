@@ -188,6 +188,11 @@ const router = createRouter({
           component: () => import('@/modules/admin/views/UserManagementPage.vue') 
         },
         { 
+          path: 'approvals', 
+          name: 'admin-approvals',
+          component: () => import('@/modules/admin/views/AdminApprovals.vue') 
+        },
+        { 
           path: 'orders', 
           name: 'admin-orders',
           component: () => import('@/modules/admin/views/OrderManagementPage.vue') 
