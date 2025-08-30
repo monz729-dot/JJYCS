@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * YCS LMS API Demo Test Script
+ * YSC LMS API Demo Test Script
  * 이 스크립트는 백엔드 API의 주요 기능들을 테스트하고 데모 데이터를 생성합니다.
  */
 
@@ -102,7 +102,7 @@ async function testUserRegistration() {
       name: 'Corporate Manager',
       phone: '+82-10-2345-6789',
       enterpriseProfile: {
-        companyName: 'YCS Demo Corp',
+        companyName: 'YSC Demo Corp',
         businessNumber: '123-45-67890',
         companyAddress: {
           line1: '456 Business Ave',
@@ -384,7 +384,7 @@ async function testSystemHealth() {
 
 // 메인 테스트 실행
 async function runAllTests() {
-  log('🚀 YCS LMS API 데모 테스트 시작', 'bright')
+  log('🚀 YSC LMS API 데모 테스트 시작', 'bright')
   log('='.repeat(50), 'bright')
   
   try {

@@ -1,4 +1,4 @@
-# YCS LMS Makefile
+# YSC LMS Makefile
 .PHONY: help build test deploy clean
 
 # Variables
@@ -14,7 +14,7 @@ YELLOW := \033[1;33m
 NC := \033[0m
 
 help: ## Show this help message
-	@echo "YCS LMS Build & Deployment Commands"
+	@echo "YSC LMS Build & Deployment Commands"
 	@echo "===================================="
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "$(GREEN)%-20s$(NC) %s\n", $$1, $$2}'
 
@@ -168,7 +168,7 @@ rollback: ## Rollback deployment
 
 # Info
 version: ## Show version information
-	@echo "YCS LMS Version Information"
+	@echo "YSC LMS Version Information"
 	@echo "=========================="
 	@echo "Backend Version: $(VERSION)"
 	@echo "Java Version: $(shell java -version 2>&1 | head -n 1)"

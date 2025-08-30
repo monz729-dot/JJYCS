@@ -68,20 +68,20 @@
       <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-            <svg class=\"w-5 h-5 text-blue-600\" fill=\"currentColor\" viewBox=\"0 0 20 20\">
-              <path d=\"M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z\"/>
+            <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>
             </svg>
           </div>
-          <div class=\"flex-1\">
-            <h2 class=\"text-base font-semibold text-gray-900\">{{ authStore.user?.name }}</h2>
-            <div class=\"flex items-center gap-2 mt-1\">
-              <span class=\"text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full\">{{ getUserTypeText }}</span>
-              <span class=\"text-xs text-gray-500\">{{ authStore.user?.memberCode || 'No code' }}</span>
+          <div class="flex-1">
+            <h2 class="text-base font-semibold text-gray-900">{{ authStore.user?.name }}</h2>
+            <div class="flex items-center gap-2 mt-1">
+              <span class="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full">{{ getUserTypeText }}</span>
+              <span class="text-xs text-gray-500">{{ authStore.user?.memberCode || 'No code' }}</span>
             </div>
           </div>
-          <div v-if=\"!authStore.user?.memberCode || authStore.user?.memberCode === 'No code'\" class=\"text-orange-500\">
-            <svg class=\"w-4 h-4\" fill=\"currentColor\" viewBox=\"0 0 20 20\">
-              <path fill-rule=\"evenodd\" d=\"M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z\" clip-rule=\"evenodd\"/>
+          <div v-if="!authStore.user?.memberCode || authStore.user?.memberCode === 'No code'" class="text-orange-500">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
             </svg>
           </div>
         </div>
@@ -449,18 +449,18 @@
             </div>
           </div>
 
-          <!-- YCS 접수지 선택 -->
+          <!-- YSC 접수지 선택 -->
           <div class="mt-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">YCS 접수지 <span class="text-red-500">*</span></label>
+            <label class="block text-sm font-medium text-gray-700 mb-2">YSC 접수지 <span class="text-red-500">*</span></label>
             <select 
               class="w-full h-11 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base" 
               v-model="orderForm.inboundLocationId"
               required
             >
-              <option value="">YCS 접수지를 선택하세요</option>
-              <option value="1">YCS 본사 (서울 강남구)</option>
-              <option value="2">YCS 부산센터 (부산 해운대구)</option>
-              <option value="3">YCS 인천센터 (인천 연수구)</option>
+              <option value="">YSC 접수지를 선택하세요</option>
+              <option value="1">YSC 본사 (서울 강남구)</option>
+              <option value="2">YSC 부산센터 (부산 해운대구)</option>
+              <option value="3">YSC 인천센터 (인천 연수구)</option>
             </select>
             <p class="text-xs text-gray-500 mt-1">선택한 접수지 주소로 물품을 발송해주세요</p>
           </div>
@@ -1039,7 +1039,7 @@ const validateOrderForm = (): { isValid: boolean; errors: Record<string, string>
       message: '수취인 정보를 확인해주세요.'
     }],
     inboundMethod: [validationRules.required('접수 방법을 선택해주세요.')],
-    inboundLocationId: [validationRules.required('YCS 접수지를 선택해주세요.')],
+    inboundLocationId: [validationRules.required('YSC 접수지를 선택해주세요.')],
     items: [{
       validator: (items) => {
         if (!items || items.length === 0) return '최소 1개 이상의 품목을 추가해주세요.'

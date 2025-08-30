@@ -9,13 +9,13 @@ const api = axios.create({
 
 async function testBackupSystem() {
   try {
-    console.log('🔧 Testing YCS LMS Backup and Data Persistence System...\n');
+    console.log('🔧 Testing YSC LMS Backup and Data Persistence System...\n');
 
     // Login as admin first
     console.log('1. Authenticating as admin...');
     const loginResponse = await api.post('/auth/login', {
       email: 'yadmin@ycs.com',
-      password: 'YCSAdmin2024!'
+      password: 'YSCAdmin2024!'
     });
 
     if (loginResponse.data.success) {
@@ -217,7 +217,7 @@ async function testBackupSystem() {
     console.log('• Review backup retention policies');
 
     console.log('\n🎉 Data Persistence and Backup System Implementation Complete!');
-    console.log('   The YCS LMS now has enterprise-grade backup and disaster recovery capabilities.');
+    console.log('   The YSC LMS now has enterprise-grade backup and disaster recovery capabilities.');
     
   } catch (error) {
     console.error('❌ Backup system test failed:', error.message);

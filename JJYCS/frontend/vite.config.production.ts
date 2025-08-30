@@ -5,7 +5,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 import { visualizer } from 'rollup-plugin-visualizer'
 import { compression } from 'vite-plugin-compression'
 
-// Production-optimized Vite configuration for YCS LMS
+// Production-optimized Vite configuration for YSC LMS
 export default defineConfig({
   plugins: [
     vue({
@@ -56,9 +56,9 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 3000000 // 3MB
       },
       manifest: {
-        name: 'YCS LMS',
-        short_name: 'YCS LMS',
-        description: 'YCS Logistics Management System',
+        name: 'YSC LMS',
+        short_name: 'YSC LMS',
+        description: 'YSC Logistics Management System',
         theme_color: '#1f2937',
         background_color: '#ffffff',
         display: 'standalone',

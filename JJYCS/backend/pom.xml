@@ -10,11 +10,11 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.ycs</groupId>
-    <artifactId>ycs-lms</artifactId>
+    <groupId>com.ysc</groupId>
+    <artifactId>ysc-lms</artifactId>
     <version>1.0.0</version>
-    <name>YCS-LMS</name>
-    <description>YCS 물류관리 시스템(LMS)</description>
+    <name>YSC-LMS</name>
+    <description>YSC 물류관리 시스템(LMS)</description>
 
     <properties>
         <java.version>17</java.version>
@@ -139,6 +139,18 @@
             <artifactId>caffeine</artifactId>
         </dependency>
         
+        <!-- Spring Retry for Carrier API resilience -->
+        <dependency>
+            <groupId>org.springframework.retry</groupId>
+            <artifactId>spring-retry</artifactId>
+        </dependency>
+        
+        <!-- Apache HttpClient for better HTTP connection handling -->
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+        </dependency>
+        
         <!-- Actuator for Monitoring -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -229,7 +241,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>com.ycs.lms.YcsLmsApplication</mainClass>
+                    <mainClass>com.ysc.lms.YscLmsApplication</mainClass>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>

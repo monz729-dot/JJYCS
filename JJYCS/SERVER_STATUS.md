@@ -1,4 +1,4 @@
-# 🚀 YCS LMS 서버 실행 상태
+# 🚀 YSC LMS 서버 실행 상태
 
 **업데이트**: 2024-08-24  
 **서버 상태**: 🟢 **전체 서비스 가동 중**
@@ -9,7 +9,7 @@
 - **URL**: `http://localhost:8081`
 - **상태**: 🟢 **RUNNING**
 - **헬스체크**: `http://localhost:8081/api/health`
-- **응답**: `{"message":"YCS LMS is running","status":"UP"}`
+- **응답**: `{"message":"YSC LMS is running","status":"UP"}`
 - **포트**: 8081
 - **프로세스**: Spring Boot 3.0.3 with H2 Database
 
@@ -68,10 +68,10 @@ netstat -an | findstr "8081\|3004"
 ### 서버 재시작
 ```bash
 # Backend 재시작
-cd "C:\YCS-ver2\JJYCS\backend" && powershell.exe -Command ".\mvnw.cmd spring-boot:run"
+cd "C:\YSC-ver2\JJYSC\backend" && powershell.exe -Command ".\mvnw.cmd spring-boot:run"
 
 # Frontend 재시작  
-cd "C:\YCS-ver2\JJYCS\frontend" && npm run dev
+cd "C:\YSC-ver2\JJYSC\frontend" && npm run dev
 ```
 
 ---
@@ -100,7 +100,7 @@ tail -f backend/logs/application.log
 1. **프론트엔드 접속**: `http://localhost:3004`
 2. **관리자 로그인**: 
    - 이메일: `yadmin@ycs.com`
-   - 비밀번호: `YCSAdmin2024!`
+   - 비밀번호: `YSCAdmin2024!`
 
 ### 📱 모바일 테스트
 - Chrome DevTools에서 모바일 뷰 전환
@@ -111,7 +111,7 @@ tail -f backend/logs/application.log
 # 로그인 테스트
 curl -X POST http://localhost:8081/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"yadmin@ycs.com","password":"YCSAdmin2024!"}'
+  -d '{"email":"yadmin@ycs.com","password":"YSCAdmin2024!"}'
 ```
 
 ---
@@ -147,7 +147,7 @@ curl -X POST http://localhost:8081/api/auth/login \
 ### 🟢 Backend: `http://localhost:8081` - **RUNNING**
 ### 🟢 Frontend: `http://localhost:3004` - **RUNNING**
 
-**이제 브라우저에서 `http://localhost:3004`에 접속하여 YCS LMS 시스템을 사용하실 수 있습니다!**
+**이제 브라우저에서 `http://localhost:3004`에 접속하여 YSC LMS 시스템을 사용하실 수 있습니다!**
 
 ---
 

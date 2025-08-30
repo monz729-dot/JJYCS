@@ -1,4 +1,4 @@
-# YCS LMS Backup and Disaster Recovery Guide
+# YSC LMS Backup and Disaster Recovery Guide
 
 ## Table of Contents
 
@@ -15,7 +15,7 @@
 
 ## Overview
 
-The YCS LMS backup and disaster recovery system provides comprehensive data protection through multiple layers of backup strategies, automated scheduling, and robust recovery procedures. The system is designed to meet business continuity requirements while maintaining data integrity and minimizing downtime.
+The YSC LMS backup and disaster recovery system provides comprehensive data protection through multiple layers of backup strategies, automated scheduling, and robust recovery procedures. The system is designed to meet business continuity requirements while maintaining data integrity and minimizing downtime.
 
 ### Key Features
 
@@ -31,7 +31,7 @@ The YCS LMS backup and disaster recovery system provides comprehensive data prot
 
 ### 3-2-1 Backup Rule
 
-The YCS LMS follows the industry-standard 3-2-1 backup rule:
+The YSC LMS follows the industry-standard 3-2-1 backup rule:
 
 - **3 copies** of critical data (1 primary + 2 backups)
 - **2 different storage media** (local and cloud)
@@ -289,7 +289,7 @@ The comprehensive backup script provides various backup options:
 # Get admin token
 TOKEN=$(curl -s -X POST http://localhost:8081/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"yadmin@ycs.com","password":"YCSAdmin2024!"}' \
+  -d '{"email":"yadmin@ycs.com","password":"YSCAdmin2024!"}' \
   | jq -r '.token')
 
 # Trigger full backup

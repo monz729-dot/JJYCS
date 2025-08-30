@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# YCS 물류관리시스템 관리자 계정 초기화 스크립트
+# YSC 물류관리시스템 관리자 계정 초기화 스크립트
 # Usage: ./init-admin.sh [environment]
 
 set -e
@@ -9,7 +9,7 @@ ENVIRONMENT=${1:-dev}
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-echo "=== YCS LMS 관리자 계정 초기화 ==="
+echo "=== YSC LMS 관리자 계정 초기화 ==="
 echo "환경: $ENVIRONMENT"
 echo "프로젝트 루트: $PROJECT_ROOT"
 echo ""
@@ -25,7 +25,7 @@ case $ENVIRONMENT in
     ;;
   "prod"|"production")
     ADMIN_EMAIL=${ADMIN_EMAIL:-"admin@ycs.com"}
-    ADMIN_PASSWORD=${ADMIN_PASSWORD:-"YCS-Admin-2024!"}
+    ADMIN_PASSWORD=${ADMIN_PASSWORD:-"YSC-Admin-2024!"}
     ADMIN_NAME=${ADMIN_NAME:-"System Administrator"}
     ADMIN_PHONE=${ADMIN_PHONE:-"010-0000-0000"}
     ADMIN_MEMBER_CODE=${ADMIN_MEMBER_CODE:-"ADM001"}
@@ -47,7 +47,7 @@ echo ""
 
 # 비밀번호 보안 경고
 if [ "$ENVIRONMENT" = "prod" ] || [ "$ENVIRONMENT" = "production" ]; then
-  if [ "$ADMIN_PASSWORD" = "YCS-Admin-2024!" ]; then
+  if [ "$ADMIN_PASSWORD" = "YSC-Admin-2024!" ]; then
     echo "⚠️  경고: 프로덕션 환경에서 기본 비밀번호를 사용하고 있습니다!"
     echo "   ADMIN_PASSWORD 환경변수를 설정하여 보안이 강화된 비밀번호를 사용하세요."
     echo ""

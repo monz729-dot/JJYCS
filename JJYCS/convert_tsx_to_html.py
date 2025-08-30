@@ -125,7 +125,7 @@ class TSXToHTMLConverter:
         # CamelCase를 공백으로 분리
         title = re.sub(r'([A-Z])', r' \1', component_name).strip()
         title = title.replace('Page', '').replace('Component', '').strip()
-        return f"{title} - YCS 물류 시스템"
+        return f"{title} - YSC 물류 시스템"
     
     def extract_jsx_content(self, tsx_content):
         """TSX에서 JSX 내용 추출"""
@@ -447,8 +447,8 @@ class TSXToHTMLConverter:
 
 if __name__ == "__main__":
     # 실행 경로 설정
-    source_dir = r"C:\YCS-ver2\jjycs"
-    output_dir = r"C:\YCS-ver2\jjycs\html"
+    source_dir = r"C:\YSC-ver2\jjycs"
+    output_dir = r"C:\YSC-ver2\jjycs\html"
     
     # 변환기 생성 및 실행
     converter = TSXToHTMLConverter(source_dir, output_dir)

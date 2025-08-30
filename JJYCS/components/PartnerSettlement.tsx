@@ -95,7 +95,7 @@ export function PartnerSettlement({ user, onNavigate }: PartnerSettlementProps) 
 
   const [orderCommissions] = useState<OrderCommission[]>([
     {
-      orderId: 'YCS-2024-156',
+      orderId: 'YSC-2024-156',
       date: '2024-12-10',
       customer: '김○○',
       items: '의류 5개',
@@ -105,7 +105,7 @@ export function PartnerSettlement({ user, onNavigate }: PartnerSettlementProps) 
       status: 'pending'
     },
     {
-      orderId: 'YCS-2024-155',
+      orderId: 'YSC-2024-155',
       date: '2024-12-10',
       customer: '이○○',
       items: '전자제품 2개',
@@ -115,7 +115,7 @@ export function PartnerSettlement({ user, onNavigate }: PartnerSettlementProps) 
       status: 'pending'
     },
     {
-      orderId: 'YCS-2024-154',
+      orderId: 'YSC-2024-154',
       date: '2024-12-09',
       customer: '박○○',
       items: '건강식품 10개',
@@ -125,7 +125,7 @@ export function PartnerSettlement({ user, onNavigate }: PartnerSettlementProps) 
       status: 'pending'
     },
     {
-      orderId: 'YCS-2024-153',
+      orderId: 'YSC-2024-153',
       date: '2024-12-09',
       customer: '최○○',
       items: '화장품 8개',

@@ -1,4 +1,4 @@
-# 🎉 YCS LMS 서버 실행 완료!
+# 🎉 YSC LMS 서버 실행 완료!
 
 **최종 업데이트**: 2024-08-24 19:35  
 **상태**: ✅ **모든 서버 정상 가동 중**
@@ -9,7 +9,7 @@
 - **URL**: `http://localhost:8081`
 - **상태**: 🟢 **RUNNING & HEALTHY**
 - **기술스택**: Spring Boot 3.0.3 + H2 Database + JWT
-- **헬스체크**: `http://localhost:8081/api/health` → `{"message":"YCS LMS is running","status":"UP"}`
+- **헬스체크**: `http://localhost:8081/api/health` → `{"message":"YSC LMS is running","status":"UP"}`
 
 ### ✅ Frontend Web Server  
 - **URL**: `http://localhost:3005`
@@ -29,7 +29,7 @@ http://localhost:3005
 ### 2. 🔐 로그인 정보
 ```
 이메일: yadmin@ycs.com
-비밀번호: YCSAdmin2024!
+비밀번호: YSCAdmin2024!
 ```
 
 ### 3. 📱 테스트 방법
@@ -131,7 +131,7 @@ curl http://localhost:8081/api/health
 # 로그인 테스트  
 curl -X POST http://localhost:8081/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"yadmin@ycs.com","password":"YCSAdmin2024!"}'
+  -d '{"email":"yadmin@ycs.com","password":"YSCAdmin2024!"}'
 # 응답: 100ms 내 (양호)
 ```
 
@@ -159,7 +159,7 @@ curl -X POST http://localhost:8081/api/auth/login \
 
 ---
 
-**🎉 YCS LMS 시스템 구동 완료! 성공적인 사용을 기원합니다! 🎉**
+**🎉 YSC LMS 시스템 구동 완료! 성공적인 사용을 기원합니다! 🎉**
 
 ---
 

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 프로젝트 개요
 
-**YCS 물류관리 시스템(LMS) v2.0**
+**YSC 물류관리 시스템(LMS) v2.0**
 - 모바일 중심의 물류관리 플랫폼
 - Spring Boot 3.0.3 + Vue.js 3.4 + TypeScript
 - 다중 사용자 역할 지원 (일반/기업/파트너/창고/관리자)
@@ -44,8 +44,8 @@ npm run dev
 
 ### 전체 시스템 실행 (Windows)
 ```cmd
-start "YCS Backend" cmd /c "cd backend && ./mvnw.cmd spring-boot:run"
-start "YCS Frontend" cmd /c "cd frontend && npm run dev"
+start "YSC Backend" cmd /c "cd backend && ./mvnw.cmd spring-boot:run"
+start "YSC Frontend" cmd /c "cd frontend && npm run dev"
 start "H2 Console" "http://localhost:8081/api/h2-console"
 ```
 
@@ -289,7 +289,7 @@ grep -i "cache hit\|cache miss" logs/application.log
 
 ## 연락처 및 지원
 
-- **개발팀**: YCS Development Team
+- **개발팀**: YSC Development Team
 - **문의사항**: 이슈 트래커 또는 개발팀 연락
 - **문서 업데이트**: 매 Sprint 종료 시점
 

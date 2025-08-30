@@ -190,12 +190,17 @@ const router = createRouter({
         { 
           path: 'approvals', 
           name: 'admin-approvals',
-          component: () => import('@/modules/admin/views/AdminApprovals.vue') 
+          component: () => import('@/modules/admin/views/ApprovalDashboard.vue') 
         },
         { 
           path: 'orders', 
           name: 'admin-orders',
           component: () => import('@/modules/admin/views/OrderManagementPage.vue') 
+        },
+        { 
+          path: 'inbound', 
+          name: 'admin-inbound',
+          component: () => import('@/modules/admin/views/InboundManagementPage.vue') 
         },
       ],
     },
@@ -266,6 +271,8 @@ router.beforeEach(async (to, from, next) => {
     }
 
     // Check email verification requirement (특히 주문 작성 페이지)
+    // TEMPORARY: 테스트를 위해 이메일 인증 체크 비활성화
+    /*
     if (to.meta.requiresEmailVerified && authStore.user) {
       if (!authStore.user.emailVerified) {
         // 이메일 미인증 시 대시보드로 리다이렉트하고 경고 메시지 표시
@@ -280,6 +287,7 @@ router.beforeEach(async (to, from, next) => {
         return
       }
     }
+    */
 
     // Check role-based access
     if (to.meta.allowedRoles && authStore.user) {

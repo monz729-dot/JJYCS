@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>주문 내역 - YCS 물류 시스템</title>
+    <title>주문 내역 - YSC 물류 시스템</title>
     <link rel="stylesheet" href="../../css/globals.css">
     <style>
         * {
@@ -609,7 +609,7 @@
                     <div style="font-size: 11px; line-height: 1.4;">
                         <p>새로운 워크플로우가 적용되었습니다:</p>
                         <div style="background: #374151; padding: 8px; border-radius: 4px; margin-top: 8px;">
-                            <p>• 접수완료 → YCS창고도착 → 리패킹진행</p>
+                            <p>• 접수완료 → YSC창고도착 → 리패킹진행</p>
                             <p>• 청구서발행 → 입금대기 → 입금확인</p>
                             <p>• 배송중 → 배송완료</p>
                             <p>• 무통장 입금만 지원</p>
@@ -724,7 +724,7 @@
         // 주문 상태 정의
         const orderStatuses = {
             'received': { label: '접수완료', color: 'status-received', description: '우체국 송장번호 등록, 주문 생성됨' },
-            'arrived': { label: 'YCS창고도착', color: 'status-arrived', description: '창고 도착, 무게 확인' },
+            'arrived': { label: 'YSC창고도착', color: 'status-arrived', description: '창고 도착, 무게 확인' },
             'repacking': { label: '리패킹진행', color: 'status-repacking', description: '리패킹 작업 및 사진 업로드' },
             'billing': { label: '청구서발행', color: 'status-billing', description: '최종 비용 산정 및 청구서 발행' },
             'payment_pending': { label: '입금대기', color: 'status-payment_pending', description: '무통장 입금 대기 중' },
@@ -736,8 +736,8 @@
         // Mock 주문 데이터
         const mockOrders = [
             {
-                id: 'YCS-2024-001',
-                orderNumber: 'YCS-240115-001',
+                id: 'YSC-2024-001',
+                orderNumber: 'YSC-240115-001',
                 date: '2024-01-15',
                 status: 'payment_pending',
                 items: [
@@ -771,8 +771,8 @@
                 }
             },
             {
-                id: 'YCS-2024-002',
-                orderNumber: 'YCS-240114-002',
+                id: 'YSC-2024-002',
+                orderNumber: 'YSC-240114-002',
                 date: '2024-01-14',
                 status: 'billing',
                 items: [
@@ -807,8 +807,8 @@
                 }
             },
             {
-                id: 'YCS-2024-003',
-                orderNumber: 'YCS-240113-003',
+                id: 'YSC-2024-003',
+                orderNumber: 'YSC-240113-003',
                 date: '2024-01-13',
                 status: 'delivered',
                 items: [

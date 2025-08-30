@@ -2,9 +2,9 @@
   <div class="auth-container">
     <div class="auth-card">
       <div class="auth-header">
-        <div class="auth-logo">YCS</div>
+        <div class="auth-logo">YSC</div>
         <h1 class="auth-title">로그인</h1>
-        <p class="auth-subtitle">YCS 물류 시스템에 오신 것을 환영합니다</p>
+        <p class="auth-subtitle">YSC 물류 시스템에 오신 것을 환영합니다</p>
       </div>
       
       <form class="auth-form" @submit.prevent="handleLogin">

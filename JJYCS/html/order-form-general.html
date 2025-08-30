@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YCS 물류 시스템 - 배송 접수</title>
+    <title>YSC 물류 시스템 - 배송 접수</title>
     <link rel="stylesheet" href="css/globals.css">
     <style>
         .page-container {
@@ -844,8 +844,8 @@
             
             // 폼 데이터 수집
             const orderData = {
-                id: 'YCS' + Date.now(),
-                orderNumber: 'YCS' + new Date().toISOString().slice(2, 10).replace(/-/g, '') + String(Math.floor(Math.random() * 1000)).padStart(3, '0'),
+                id: 'YSC' + Date.now(),
+                orderNumber: 'YSC' + new Date().toISOString().slice(2, 10).replace(/-/g, '') + String(Math.floor(Math.random() * 1000)).padStart(3, '0'),
                 orderDate: new Date().toISOString(),
                 status: 'pending',
                 type: totalCBM > 29 ? 'air' : 'sea',

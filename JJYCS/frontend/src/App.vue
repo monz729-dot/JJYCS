@@ -7,7 +7,7 @@ const authStore = useAuthStore()
 
 onMounted(() => {
   // Initialize any app-level setup
-  console.log('YCS LMS App initialized')
+  console.log('YSC LMS App initialized')
 })
 </script>
 

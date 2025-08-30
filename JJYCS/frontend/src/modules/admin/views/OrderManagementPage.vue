@@ -454,7 +454,7 @@ const loadMockOrders = (page: number = 1) => {
   const mockOrders: Order[] = [
     {
       id: 1,
-      orderNumber: 'YCS202401001',
+      orderNumber: 'YSC202401001',
       trackingNumber: 'TRK001',
       recipientName: '김철수',
       recipientPhone: '010-1234-5678',
@@ -465,7 +465,7 @@ const loadMockOrders = (page: number = 1) => {
     },
     {
       id: 2,
-      orderNumber: 'YCS202401002',
+      orderNumber: 'YSC202401002',
       trackingNumber: 'TRK002',
       recipientName: '이영희',
       recipientPhone: '010-2345-6789',
@@ -476,7 +476,7 @@ const loadMockOrders = (page: number = 1) => {
     },
     {
       id: 3,
-      orderNumber: 'YCS202401003',
+      orderNumber: 'YSC202401003',
       trackingNumber: 'TRK003',
       recipientName: '박민준',
       recipientPhone: '010-3456-7890',
@@ -487,7 +487,7 @@ const loadMockOrders = (page: number = 1) => {
     },
     {
       id: 4,
-      orderNumber: 'YCS202401004',
+      orderNumber: 'YSC202401004',
       trackingNumber: 'TRK004',
       recipientName: '정수진',
       recipientPhone: '010-4567-8901',
@@ -498,7 +498,7 @@ const loadMockOrders = (page: number = 1) => {
     },
     {
       id: 5,
-      orderNumber: 'YCS202401005',
+      orderNumber: 'YSC202401005',
       trackingNumber: 'TRK005',
       recipientName: '최동호',
       recipientPhone: '010-5678-9012',

@@ -317,7 +317,7 @@ export function OrderForm({ user, onNavigate }: OrderFormProps) {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', 'YCS_품목일괄등록_양식.csv');
+    link.setAttribute('download', 'YSC_품목일괄등록_양식.csv');
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -440,8 +440,8 @@ export function OrderForm({ user, onNavigate }: OrderFormProps) {
     setIsLoading(true);
     
     setTimeout(() => {
-      const receiptNumber = `YCS-${Date.now().toString().slice(-8)}`;
-      setSuccess(`접수완료! 접수번호: ${receiptNumber} - YCS 창고 도착 후 청구서를 발행해드립니다.`);
+      const receiptNumber = `YSC-${Date.now().toString().slice(-8)}`;
+      setSuccess(`접수완료! 접수번호: ${receiptNumber} - YSC 창고 도착 후 청구서를 발행해드립니다.`);
       setIsLoading(false);
       
       // 3초 후 대시보드로 이동

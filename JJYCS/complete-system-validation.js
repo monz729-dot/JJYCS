@@ -1,7 +1,7 @@
-// YCS LMS 완전한 시스템 검증
+// YSC LMS 완전한 시스템 검증
 
 async function completeSystemValidation() {
-    console.log('🚀 === YCS LMS 완전한 시스템 검증 시작 ===\n');
+    console.log('🚀 === YSC LMS 완전한 시스템 검증 시작 ===\n');
     
     const baseUrl = 'http://localhost:8080/api';
     let testResults = {
@@ -176,9 +176,9 @@ async function completeSystemValidation() {
         // 8. 시스템 접속 정보
         console.log('\n🌐 === 시스템 접속 정보 ===');
         console.log('📋 사용자 인터페이스:');
-        console.log('  - 주문 생성: file:///C:/YCS-ver2/JJYCS/html/pages/common/order-form.html');
-        console.log('  - 어드민 관리: file:///C:/YCS-ver2/JJYCS/html/admin-order-list.html');
-        console.log('  - 창고 스캔: file:///C:/YCS-ver2/JJYCS/html/warehouse-scan.html');
+        console.log('  - 주문 생성: file:///C:/YSC-ver2/JJYSC/html/pages/common/order-form.html');
+        console.log('  - 어드민 관리: file:///C:/YSC-ver2/JJYSC/html/admin-order-list.html');
+        console.log('  - 창고 스캔: file:///C:/YSC-ver2/JJYSC/html/warehouse-scan.html');
         
         console.log('\n🔗 API 엔드포인트:');
         console.log('  - 백엔드 API: http://localhost:8080/api');
@@ -196,7 +196,7 @@ async function completeSystemValidation() {
         
         if (successRate >= 80) {
             console.log('\n🎉 === 시스템 검증 완료 ===');
-            console.log('✅ YCS LMS 시스템이 성공적으로 구축되었습니다!');
+            console.log('✅ YSC LMS 시스템이 성공적으로 구축되었습니다!');
             console.log('프론트엔드 ↔ 백엔드 ↔ 데이터베이스가 유기적으로 연동되어 작동합니다.');
         } else {
             console.log('\n⚠️ === 시스템 개선 필요 ===');

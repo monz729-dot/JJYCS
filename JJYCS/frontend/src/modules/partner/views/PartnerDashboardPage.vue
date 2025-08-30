@@ -5,10 +5,10 @@
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-4">
           <div class="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg">
-            YCS
+            YSC
           </div>
           <div>
-            <h1 class="text-xl font-bold text-blue-900">YCS 물류 시스템</h1>
+            <h1 class="text-xl font-bold text-blue-900">YSC 물류 시스템</h1>
             <p class="text-sm text-blue-600">{{ getUserTypeText }}</p>
           </div>
         </div>
@@ -30,7 +30,7 @@
     <div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-6 mb-6 text-white shadow-blue-100 shadow-lg">
       <div class="relative">
         <h1 class="text-2xl font-bold mb-2">안녕하세요, {{ authStore.user?.name || '사용자' }}님!</h1>
-        <p class="text-blue-100">오늘도 YCS와 함께 고객을 위한 안전하고 빠른 배송을 시작하세요.</p>
+        <p class="text-blue-100">오늘도 YSC와 함께 고객을 위한 안전하고 빠른 배송을 시작하세요.</p>
       </div>
     </div>
 

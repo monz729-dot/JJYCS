@@ -95,9 +95,9 @@ export function PartnerOrderManagement({ user, onNavigate }: PartnerOrderManagem
   // 데모 주문 데이터
   const [orders, setOrders] = useState<OrderData[]>([
     {
-      managementNumber: 'YCS-2024120001',
+      managementNumber: 'YSC-2024120001',
       managementCode: 'MNG001',
-      orderId: 'YCS-20241202001',
+      orderId: 'YSC-20241202001',
       customerId: 'KYP001',
       customerName: '김철수',
       customerEmail: 'kimcs@email.com',
@@ -143,9 +143,9 @@ export function PartnerOrderManagement({ user, onNavigate }: PartnerOrderManagem
       notes: ''
     },
     {
-      managementNumber: 'YCS-2024120002',
+      managementNumber: 'YSC-2024120002',
       managementCode: 'MNG002',
-      orderId: 'YCS-20241201003',
+      orderId: 'YSC-20241201003',
       customerId: 'KYC002',
       customerName: '박영희',
       customerEmail: 'park@company.com',
@@ -180,9 +180,9 @@ export function PartnerOrderManagement({ user, onNavigate }: PartnerOrderManagem
       notes: '우선 처리 완료'
     },
     {
-      managementNumber: 'YCS-2024120003',
+      managementNumber: 'YSC-2024120003',
       managementCode: 'MNG003',
-      orderId: 'YCS-20241130005',
+      orderId: 'YSC-20241130005',
       customerId: 'KYP003',
       customerName: '이민수',
       customerEmail: 'lee@email.com',

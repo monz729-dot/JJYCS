@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>무통장 입금 - YCS 물류관리 시스템</title>
+    <title>무통장 입금 - YSC 물류관리 시스템</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .shadow-blue { box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06); }
@@ -362,7 +362,7 @@
     <script>
         // Mock 결제 정보
         let paymentInfo = {
-            orderNumber: 'YCS-240115-001',
+            orderNumber: 'YSC-240115-001',
             customerName: '김철수',
             customerPhone: '010-1234-5678',
             totalAmount: 151975,
@@ -386,24 +386,24 @@
             }
         };
 
-        // YCS 무통장 입금 계좌 정보
+        // YSC 무통장 입금 계좌 정보
         const bankAccounts = [
             {
                 bankName: '국민은행',
                 accountNumber: '123456-78-901234',
-                accountHolder: '(주)YCS물류',
+                accountHolder: '(주)YSC물류',
                 bankCode: '004'
             },
             {
                 bankName: '신한은행',
                 accountNumber: '987-654-321098',
-                accountHolder: '(주)YCS물류',
+                accountHolder: '(주)YSC물류',
                 bankCode: '088'
             },
             {
                 bankName: '우리은행',
                 accountNumber: '1005-123-456789',
-                accountHolder: '(주)YCS물류',
+                accountHolder: '(주)YSC물류',
                 bankCode: '020'
             }
         ];
@@ -606,13 +606,13 @@
             // 뒤로가기 버튼들
             document.getElementById('back-button').addEventListener('click', () => {
                 const urlParams = new URLSearchParams(window.location.search);
-                const orderId = urlParams.get('orderId') || 'YCS-2024-001';
+                const orderId = urlParams.get('orderId') || 'YSC-2024-001';
                 window.location.href = `order-detail.html?orderId=${orderId}`;
             });
 
             document.getElementById('back-to-detail').addEventListener('click', () => {
                 const urlParams = new URLSearchParams(window.location.search);
-                const orderId = urlParams.get('orderId') || 'YCS-2024-001';
+                const orderId = urlParams.get('orderId') || 'YSC-2024-001';
                 window.location.href = `order-detail.html?orderId=${orderId}`;
             });
 

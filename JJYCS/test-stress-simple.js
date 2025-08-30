@@ -6,7 +6,7 @@ const api = axios.create({
 });
 
 async function simpleStressTest() {
-  console.log('🔥 YCS LMS Simple Stress Test');
+  console.log('🔥 YSC LMS Simple Stress Test');
   console.log('==============================\n');
 
   try {
@@ -14,7 +14,7 @@ async function simpleStressTest() {
     console.log('🔐 Authenticating...');
     const loginResponse = await api.post('/auth/login', {
       email: 'yadmin@ycs.com',
-      password: 'YCSAdmin2024!'
+      password: 'YSCAdmin2024!'
     });
 
     if (!loginResponse.data.success) {

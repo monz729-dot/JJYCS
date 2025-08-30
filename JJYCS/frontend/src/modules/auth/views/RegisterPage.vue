@@ -2,9 +2,9 @@
   <div class="auth-container">
     <div class="auth-card">
       <div class="auth-header">
-        <div class="auth-logo">YCS</div>
+        <div class="auth-logo">YSC</div>
         <h1 class="auth-title">회원가입</h1>
-        <p class="auth-subtitle">YCS 물류 시스템에 가입하고 전문 배송 서비스를 이용하세요</p>
+        <p class="auth-subtitle">YSC 물류 시스템에 가입하고 전문 배송 서비스를 이용하세요</p>
       </div>
       
       <!-- 회원 유형 선택 -->

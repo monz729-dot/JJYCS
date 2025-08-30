@@ -4,7 +4,7 @@
     <div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-6 mb-6 text-white shadow-blue-100 shadow-lg">
       <div class="relative">
         <h1 class="text-2xl font-bold mb-2">안녕하세요, {{ authStore.user?.name || '사용자' }}님!</h1>
-        <p class="text-blue-100">오늘도 YCS와 함께 안전하고 빠른 배송을 시작하세요.</p>
+        <p class="text-blue-100">오늘도 YSC와 함께 안전하고 빠른 배송을 시작하세요.</p>
       </div>
     </div>
 

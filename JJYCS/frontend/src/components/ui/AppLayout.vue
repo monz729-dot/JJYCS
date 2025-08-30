@@ -14,7 +14,7 @@
           </svg>
         </button>
         
-        <h1 class="app-title">YCS LMS</h1>
+        <h1 class="app-title">YSC LMS</h1>
         
         <div class="header-actions">
           <!-- 알림 버튼 -->
@@ -274,14 +274,14 @@ const loadNotifications = async () => {
     {
       id: 1,
       title: '새 주문 접수',
-      message: '주문 #YCS-2024-001이 접수되었습니다.',
+      message: '주문 #YSC-2024-001이 접수되었습니다.',
       createdAt: new Date(Date.now() - 1000 * 60 * 5).toISOString(), // 5분 전
       read: false
     },
     {
       id: 2,
       title: '배송 완료',
-      message: '주문 #YCS-2024-002가 배송 완료되었습니다.',
+      message: '주문 #YSC-2024-002가 배송 완료되었습니다.',
       createdAt: new Date(Date.now() - 1000 * 60 * 60).toISOString(), // 1시간 전
       read: true
     }

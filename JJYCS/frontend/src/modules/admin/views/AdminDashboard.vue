@@ -369,7 +369,7 @@ const loadDashboardData = async () => {
         {
           id: 1,
           type: 'order_created',
-          description: '새 주문 YCS-250824-012이(가) 테스트 수취인님에 의해 생성됨',
+          description: '새 주문 YSC-250824-012이(가) 테스트 수취인님에 의해 생성됨',
           timestamp: new Date(Date.now() - 300000) // 5분 전
         },
         {
@@ -387,7 +387,7 @@ const loadDashboardData = async () => {
         {
           id: 4,
           type: 'status_changed',
-          description: '주문 YCS-250824-011 상태가 배송중으로 변경됨',
+          description: '주문 YSC-250824-011 상태가 배송중으로 변경됨',
           timestamp: new Date(Date.now() - 7200000) // 2시간 전
         },
         {

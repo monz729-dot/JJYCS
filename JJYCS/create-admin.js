@@ -10,9 +10,9 @@ async function createAdmin() {
     console.log('🔍 Creating fresh admin account...\n');
 
     const adminData = {
-      name: 'YCS Administrator',
+      name: 'YSC Administrator',
       email: 'yadmin@ycs.com', // Use different email to avoid conflicts
-      password: 'YCSAdmin2024!',
+      password: 'YSCAdmin2024!',
       phone: '02-1234-5678',
       userType: 'ADMIN'
     };
@@ -79,7 +79,7 @@ async function createAdmin() {
     if (error.response?.data?.message?.includes('already exists')) {
       console.log('\nℹ️  Admin account already exists. Try using:');
       console.log('   Email: yadmin@ycs.com');
-      console.log('   Password: YCSAdmin2024!');
+      console.log('   Password: YSCAdmin2024!');
     }
   }
 }

@@ -260,7 +260,7 @@ class AdvancedTSXToHTMLConverter {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${title} - YCS 물류 시스템</title>
+    <title>${title} - YSC 물류 시스템</title>
     <link rel="stylesheet" href="../../css/globals.css">
     <style>
         ${this.generateCSS()}
@@ -632,8 +632,8 @@ class AdvancedTSXToHTMLConverter {
 
 // 실행
 if (require.main === module) {
-    const sourceDir = 'C:\\YCS-ver2\\jjycs';
-    const outputDir = 'C:\\YCS-ver2\\jjycs\\html';
+    const sourceDir = 'C:\\YSC-ver2\\jjycs';
+    const outputDir = 'C:\\YSC-ver2\\jjycs\\html';
     
     const converter = new AdvancedTSXToHTMLConverter(sourceDir, outputDir);
     converter.convertAll();

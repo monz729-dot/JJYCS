@@ -24,7 +24,7 @@ let testResults = {};
 
 async function performanceBenchmark() {
   try {
-    console.log('🚀 YCS LMS Performance Benchmark Test');
+    console.log('🚀 YSC LMS Performance Benchmark Test');
     console.log('=====================================\n');
 
     // Initialize authentication
@@ -69,7 +69,7 @@ async function initializeAuth() {
   try {
     const loginResponse = await api.post('/auth/login', {
       email: 'yadmin@ycs.com',
-      password: 'YCSAdmin2024!'
+      password: 'YSCAdmin2024!'
     });
 
     if (loginResponse.data.success) {
@@ -152,7 +152,7 @@ async function makeRequest(endpoint) {
       case '/auth/login':
         config.data = {
           email: 'yadmin@ycs.com',
-          password: 'YCSAdmin2024!'
+          password: 'YSCAdmin2024!'
         };
         break;
       case '/orders':

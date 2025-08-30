@@ -33,7 +33,7 @@ const testOrderData = {
 
 async function performCompleteSystemTest() {
   try {
-    console.log('🎯 YCS LMS Complete System Validation & Performance Test');
+    console.log('🎯 YSC LMS Complete System Validation & Performance Test');
     console.log('=========================================================\n');
 
     let adminToken = '';
@@ -48,7 +48,7 @@ async function performCompleteSystemTest() {
     console.log('1.1 Testing admin authentication...');
     const loginResponse = await api.post('/auth/login', {
       email: 'yadmin@ycs.com',
-      password: 'YCSAdmin2024!'
+      password: 'YSCAdmin2024!'
     });
 
     if (loginResponse.data.success) {
@@ -414,7 +414,7 @@ if (require.main === module) {
   performCompleteSystemTest()
     .then(result => {
       if (result.success) {
-        console.log('\n✨ All systems operational - YCS LMS ready for production!');
+        console.log('\n✨ All systems operational - YSC LMS ready for production!');
         process.exit(0);
       } else {
         console.log('\n💥 System validation completed with issues');

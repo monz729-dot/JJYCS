@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>주문 상세 - YCS 물류 시스템</title>
+    <title>주문 상세 - YSC 물류 시스템</title>
     <link rel="stylesheet" href="../../css/globals.css">
     <style>
         * {
@@ -496,7 +496,7 @@
             </button>
             <div>
                 <h1 class="page-title">주문 상세</h1>
-                <p class="page-subtitle" id="orderNumber">YCS-240115-001 - 청구서 및 배송 정보</p>
+                <p class="page-subtitle" id="orderNumber">YSC-240115-001 - 청구서 및 배송 정보</p>
             </div>
         </div>
         
@@ -541,7 +541,7 @@
                 <div class="card-content">
                     <div class="info-row">
                         <span class="info-label">주문번호</span>
-                        <span class="info-value mono" id="orderNum">YCS-240115-001</span>
+                        <span class="info-value mono" id="orderNum">YSC-240115-001</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">고객 아이디</span>
@@ -605,7 +605,7 @@
             <div class="card-header">
                 <div class="card-title">
                     <div class="title-with-icon">
-                        📦 YCS 창고 정보
+                        📦 YSC 창고 정보
                     </div>
                 </div>
             </div>
@@ -824,7 +824,7 @@
         // 페이지 초기화
         function initPage() {
             const urlParams = new URLSearchParams(window.location.search);
-            const orderId = urlParams.get('orderId') || 'YCS-2024-001';
+            const orderId = urlParams.get('orderId') || 'YSC-2024-001';
             
             loadOrderDetail(orderId);
         }
@@ -834,7 +834,7 @@
             // Mock 데이터
             orderDetail = {
                 orderId: orderId,
-                orderNumber: 'YCS-240115-001',
+                orderNumber: 'YSC-240115-001',
                 customerId: 'KYP001',
                 orderDate: '2024-01-15',
                 status: 'payment_pending',
@@ -998,7 +998,7 @@
         function renderWorkflow() {
             const workflowStatuses = [
                 { key: 'received', label: '접수완료', icon: '✅', description: '우체국 송장번호 등록', completed: true, active: false, date: orderDetail.orderDate },
-                { key: 'arrived', label: 'YCS창고도착', icon: '📦', description: '창고 도착, 무게 확인', completed: !!orderDetail.warehouse.arrivedDate, active: orderDetail.status === 'arrived', date: orderDetail.warehouse.arrivedDate },
+                { key: 'arrived', label: 'YSC창고도착', icon: '📦', description: '창고 도착, 무게 확인', completed: !!orderDetail.warehouse.arrivedDate, active: orderDetail.status === 'arrived', date: orderDetail.warehouse.arrivedDate },
                 { key: 'repacking', label: '리패킹진행', icon: '🔧', description: '리패킹 작업 및 사진 업로드', completed: orderDetail.warehouse.repackingCompleted, active: orderDetail.status === 'repacking' },
                 { key: 'billing', label: '청구서발행', icon: '📄', description: '최종 비용 산정', completed: orderDetail.billing.proformaIssued, active: orderDetail.status === 'billing', date: orderDetail.billing.proformaDate },
                 { key: 'payment_pending', label: '입금대기', icon: '⏰', description: '무통장 입금 대기', completed: orderDetail.billing.paymentStatus === 'confirmed' || orderDetail.billing.paymentStatus === 'completed', active: orderDetail.status === 'payment_pending' },

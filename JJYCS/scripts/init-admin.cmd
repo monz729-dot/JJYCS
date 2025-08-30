@@ -1,7 +1,7 @@
 @echo off
 setlocal enabledelayedexpansion
 
-:: YCS 물류관리시스템 관리자 계정 초기화 스크립트 (Windows)
+:: YSC 물류관리시스템 관리자 계정 초기화 스크립트 (Windows)
 :: Usage: init-admin.cmd [environment]
 
 set ENVIRONMENT=%1
@@ -10,7 +10,7 @@ if "%ENVIRONMENT%"=="" set ENVIRONMENT=dev
 set SCRIPT_DIR=%~dp0
 set PROJECT_ROOT=%SCRIPT_DIR:~0,-9%
 
-echo === YCS LMS 관리자 계정 초기화 ===
+echo === YSC LMS 관리자 계정 초기화 ===
 echo 환경: %ENVIRONMENT%
 echo 프로젝트 루트: %PROJECT_ROOT%
 echo.
@@ -26,7 +26,7 @@ echo 사용 가능한 환경: dev, development, prod, production
 exit /b 1
 
 :set_dev
-if "%ADMIN_EMAIL%"=="" set ADMIN_EMAIL=admin@ycs.com
+if "%ADMIN_EMAIL%"=="" set ADMIN_EMAIL=admin@ysc.com
 if "%ADMIN_PASSWORD%"=="" set ADMIN_PASSWORD=password
 if "%ADMIN_NAME%"=="" set ADMIN_NAME=Administrator
 if "%ADMIN_PHONE%"=="" set ADMIN_PHONE=010-0000-0000
@@ -34,8 +34,8 @@ if "%ADMIN_MEMBER_CODE%"=="" set ADMIN_MEMBER_CODE=ADM001
 goto :config_done
 
 :set_prod
-if "%ADMIN_EMAIL%"=="" set ADMIN_EMAIL=admin@ycs.com
-if "%ADMIN_PASSWORD%"=="" set ADMIN_PASSWORD=YCS-Admin-2024!
+if "%ADMIN_EMAIL%"=="" set ADMIN_EMAIL=admin@ysc.com
+if "%ADMIN_PASSWORD%"=="" set ADMIN_PASSWORD=YSC-Admin-2024!
 if "%ADMIN_NAME%"=="" set ADMIN_NAME=System Administrator
 if "%ADMIN_PHONE%"=="" set ADMIN_PHONE=010-0000-0000
 if "%ADMIN_MEMBER_CODE%"=="" set ADMIN_MEMBER_CODE=ADM001
@@ -51,7 +51,7 @@ echo.
 
 :: 비밀번호 보안 경고
 if "%ENVIRONMENT%"=="prod" (
-  if "%ADMIN_PASSWORD%"=="YCS-Admin-2024!" (
+  if "%ADMIN_PASSWORD%"=="YSC-Admin-2024!" (
     echo ⚠️  경고: 프로덕션 환경에서 기본 비밀번호를 사용하고 있습니다!
     echo    ADMIN_PASSWORD 환경변수를 설정하여 보안이 강화된 비밀번호를 사용하세요.
     echo.

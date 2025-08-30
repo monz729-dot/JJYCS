@@ -33,7 +33,7 @@ export function AdminDashboard({ user, onNavigate }: AdminDashboardProps) {
   // 운송 의뢰 접수 대기 목록
   const pendingRequests = [
     {
-      id: 'YCS-2024-004',
+      id: 'YSC-2024-004',
       customerName: '홍길동',
       customerType: '일반',
       submitDate: '2024-01-22',
@@ -47,7 +47,7 @@ export function AdminDashboard({ user, onNavigate }: AdminDashboardProps) {
       repacking: true
     },
     {
-      id: 'YCS-2024-005',
+      id: 'YSC-2024-005',
       customerName: '(주)ABC무역',
       customerType: '기업',
       submitDate: '2024-01-22',
@@ -66,7 +66,7 @@ export function AdminDashboard({ user, onNavigate }: AdminDashboardProps) {
   // 진행 중인 주문 목록
   const activeOrders = [
     {
-      id: 'YCS-2024-001',
+      id: 'YSC-2024-001',
       customerName: '김철수',
       status: '입고완료',
       statusColor: 'bg-green-100 text-green-800',
@@ -78,7 +78,7 @@ export function AdminDashboard({ user, onNavigate }: AdminDashboardProps) {
       paymentStatus: '결제완료'
     },
     {
-      id: 'YCS-2024-002',
+      id: 'YSC-2024-002',
       customerName: '이영희',
       status: '배송중',
       statusColor: 'bg-blue-100 text-blue-800',

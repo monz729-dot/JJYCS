@@ -66,7 +66,7 @@ export function MyPage({ user, onNavigate }: MyPageProps) {
   // 주문 데이터
   const orders = [
     {
-      id: 'YCS-2024-001',
+      id: 'YSC-2024-001',
       date: '2024-01-15',
       status: '배송중',
       statusColor: 'bg-blue-100 text-blue-800',
@@ -79,7 +79,7 @@ export function MyPage({ user, onNavigate }: MyPageProps) {
       destination: '태국 방콕'
     },
     {
-      id: 'YCS-2024-002',
+      id: 'YSC-2024-002',
       date: '2024-01-14',
       status: '준비중',
       statusColor: 'bg-orange-100 text-orange-800',
@@ -93,7 +93,7 @@ export function MyPage({ user, onNavigate }: MyPageProps) {
       destination: '태국 치앙마이'
     },
     {
-      id: 'YCS-2024-003',
+      id: 'YSC-2024-003',
       date: '2024-01-13',
       status: '완료',
       statusColor: 'bg-green-100 text-green-800',

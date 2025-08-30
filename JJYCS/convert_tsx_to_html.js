@@ -92,7 +92,7 @@ class TSXToHTMLConverter {
         // CamelCase를 공백으로 분리
         let title = componentName.replace(/([A-Z])/g, ' $1').trim();
         title = title.replace('Page', '').replace('Component', '').trim();
-        return `${title} - YCS 물류 시스템`;
+        return `${title} - YSC 물류 시스템`;
     }
 
     extractJsxContent(tsxContent) {
@@ -399,8 +399,8 @@ class TSXToHTMLConverter {
 
 // 실행
 if (require.main === module) {
-    const sourceDir = 'C:\\YCS-ver2\\jjycs';
-    const outputDir = 'C:\\YCS-ver2\\jjycs\\html';
+    const sourceDir = 'C:\\YSC-ver2\\jjycs';
+    const outputDir = 'C:\\YSC-ver2\\jjycs\\html';
     
     const converter = new TSXToHTMLConverter(sourceDir, outputDir);
     converter.convertAll();

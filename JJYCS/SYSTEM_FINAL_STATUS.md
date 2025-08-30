@@ -1,4 +1,4 @@
-# 🎉 YCS LMS 시스템 최종 가동 완료!
+# 🎉 YSC LMS 시스템 최종 가동 완료!
 
 **최종 검증 완료일**: 2024-08-24 19:42  
 **시스템 상태**: ✅ **모든 컴포넌트 정상 가동**
@@ -9,7 +9,7 @@
 
 ### ✅ **Backend API Server** - 완전 가동
 - **URL**: `http://localhost:8081`
-- **Health**: `http://localhost:8081/api/health` → `{"message":"YCS LMS is running","status":"UP"}`
+- **Health**: `http://localhost:8081/api/health` → `{"message":"YSC LMS is running","status":"UP"}`
 - **상태**: 🟢 **RUNNING & HEALTHY**
 - **인증**: JWT 토큰 생성/검증 정상
 - **데이터베이스**: H2 In-Memory 연결 및 쿼리 정상
@@ -76,7 +76,7 @@ cors:
 ### 2. 🔐 **관리자 로그인**
 ```
 이메일: yadmin@ycs.com
-비밀번호: YCSAdmin2024!
+비밀번호: YSCAdmin2024!
 ```
 
 ### 3. 💾 **데이터베이스 콘솔 접속**
@@ -206,7 +206,7 @@ kubectl apply -f k8s/ycs-lms-production.yaml
 ### 1. **관리자 워크플로우 테스트**
 ```
 1. http://localhost:3006 접속
-2. yadmin@ycs.com / YCSAdmin2024! 로그인
+2. yadmin@ycs.com / YSCAdmin2024! 로그인
 3. 관리자 → 사용자 승인 메뉴
 4. 승인 대기 사용자 처리
 ```
@@ -226,7 +226,7 @@ kubectl apply -f k8s/ycs-lms-production.yaml
 ```
 1. 창고 → QR 스캔 메뉴  
 2. 카메라 권한 허용
-3. QR 코드 스캔 또는 "YCS-250824-001" 수동 입력
+3. QR 코드 스캔 또는 "YSC-250824-001" 수동 입력
 4. 입고/출고 처리 확인
 ```
 
@@ -263,7 +263,7 @@ kubectl apply -f k8s/ycs-lms-production.yaml
 
 ## 🎉 **축하합니다!**
 
-**YCS Logistics Management System (LMS)이 성공적으로 완성되어 즉시 사용할 수 있는 상태입니다!**
+**YSC Logistics Management System (LMS)이 성공적으로 완성되어 즉시 사용할 수 있는 상태입니다!**
 
 ### 🌟 **다음 단계**:
 1. **웹 브라우저에서 `http://localhost:3006` 접속**
@@ -271,7 +271,7 @@ kubectl apply -f k8s/ycs-lms-production.yaml
 3. **모든 기능을 자유롭게 테스트 및 사용**
 4. **프로덕션 배포 시 제공된 Docker/Kubernetes 설정 활용**
 
-**🎊 성공적인 YCS LMS 시스템 운영을 기원합니다! 🎊**
+**🎊 성공적인 YSC LMS 시스템 운영을 기원합니다! 🎊**
 
 ---
 

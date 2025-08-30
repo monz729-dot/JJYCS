@@ -113,7 +113,7 @@ ycs:
 # Logging for backup operations
 logging:
   level:
-    com.ycs.lms.backup: DEBUG
+    com.ysc.lms.backup: DEBUG
     org.springframework.scheduling: INFO
   pattern:
     file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [BACKUP] %logger{36} - %msg%n"

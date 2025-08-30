@@ -1,10 +1,10 @@
-# YCS Logistics Management System (LMS)
+# YSC Logistics Management System (LMS)
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](package.json)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
 
-**YCS LMS**는 현대적인 웹 기술을 활용하여 구축된 포괄적인 물류 관리 시스템입니다. 주문 처리, 창고 관리, 파트너 협업을 위한 통합 플랫폼을 제공합니다.
+**YSC LMS**는 현대적인 웹 기술을 활용하여 구축된 포괄적인 물류 관리 시스템입니다. 주문 처리, 창고 관리, 파트너 협업을 위한 통합 플랫폼을 제공합니다.
 
 ## 🚀 빠른 시작 (2단계)
 
@@ -24,7 +24,7 @@ node server.js
 
 ### 2. 브라우저에서 접속
 - **로그인**: http://localhost:3000/auth-login.html
-- **테스트 계정**: `admin@ycs.com` / `password` (백엔드 연동 시)
+- **테스트 계정**: `admin@ysc.com` / `password` (백엔드 연동 시)
 - **대시보드**: 로그인 후 자동 이동
 
 > ⚠️ **중요**: 
@@ -137,8 +137,8 @@ node create-admin.js
 ```
 
 기본 관리자 계정:
-- Email: `yadmin@ycs.com`
-- Password: `YCSAdmin2024!`
+- Email: `yadmin@ysc.com`
+- Password: `YSCAdmin2024!`
 
 ## 🔧 환경 설정
 
@@ -433,4 +433,4 @@ npm install
 
 ---
 
-**Made with ❤️ by the YCS Team**
+**Made with ❤️ by the YSC Team**

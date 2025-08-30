@@ -91,11 +91,11 @@ app:
 # Logging - Development
 logging:
   level:
-    com.ycs.lms: DEBUG
+    com.ysc.lms: DEBUG
     org.springframework.security: INFO
     org.springframework.mail: INFO
     org.springframework.web: WARN
-    com.ycs.lms.service.EmailService: INFO
+    com.ysc.lms.service.EmailService: INFO
     org.hibernate.SQL: WARN
     org.hibernate.type.descriptor.sql.BasicBinder: WARN
     org.hibernate.engine.internal.StatisticalLoggingSessionEventListener: OFF

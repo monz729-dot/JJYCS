@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: ycs-lms
+  name: ysc-lms
   labels:
-    name: ycs-lms
+    name: ysc-lms
     environment: production

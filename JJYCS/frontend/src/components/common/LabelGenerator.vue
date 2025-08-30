@@ -110,7 +110,7 @@
           <label>주문번호 목록 (줄바꿈으로 구분)</label>
           <textarea 
             v-model="batchOrderNumbers" 
-            placeholder="YCS-2024-001&#10;YCS-2024-002&#10;YCS-2024-003"
+            placeholder="YSC-2024-001&#10;YSC-2024-002&#10;YSC-2024-003"
             class="form-textarea"
           ></textarea>
         </div>

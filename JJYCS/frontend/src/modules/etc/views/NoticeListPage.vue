@@ -2,7 +2,7 @@
   <div class="container mx-auto px-4 py-6 max-w-4xl">
     <div class="mb-6">
       <h1 class="text-2xl font-bold text-gray-900">공지사항</h1>
-      <p class="mt-2 text-gray-600">YCS 물류 시스템의 중요한 소식과 업데이트를 확인하세요.</p>
+      <p class="mt-2 text-gray-600">YSC 물류 시스템의 중요한 소식과 업데이트를 확인하세요.</p>
     </div>
 
     <div class="bg-white rounded-lg shadow">

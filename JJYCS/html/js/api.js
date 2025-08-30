@@ -1,9 +1,9 @@
 /**
- * YCS LMS Real API Client
+ * YSC LMS Real API Client
  * Spring Boot 백엔드와 연동하는 실제 API
  */
 
-class YCSAPI {
+class YSCAPI {
     constructor() {
         // API 요청은 상대 경로로 - server.js의 프록시를 통해 백엔드로 전달됨
         this.baseUrl = '/api';
@@ -244,4 +244,4 @@ class YCSAPI {
 }
 
 // 전역 API 인스턴스
-window.ycsAPI = new YCSAPI();
+window.ycsAPI = new YSCAPI();

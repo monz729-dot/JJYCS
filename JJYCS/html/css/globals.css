@@ -1,4 +1,4 @@
-/* YCS 물류 시스템 - 완전한 디자인 시스템 */
+/* YSC 물류 시스템 - 완전한 디자인 시스템 */
 
 /* ===== CSS 변수 정의 ===== */
 :root {
@@ -1031,7 +1031,7 @@ body {
   border-color: var(--primary-200);
 }
 
-/* YCS 로고 스타일 */
+/* YSC 로고 스타일 */
 .ycs-logo {
   background: var(--primary-500);
   color: white;

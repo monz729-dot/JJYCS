@@ -7,7 +7,7 @@ const api = axios.create({
 
 async function quickPerformanceTest() {
   try {
-    console.log('⚡ YCS LMS Quick Performance Test');
+    console.log('⚡ YSC LMS Quick Performance Test');
     console.log('=================================\n');
 
     // Login first
@@ -15,7 +15,7 @@ async function quickPerformanceTest() {
     const loginStart = Date.now();
     const loginResponse = await api.post('/auth/login', {
       email: 'yadmin@ycs.com',
-      password: 'YCSAdmin2024!'
+      password: 'YSCAdmin2024!'
     });
     const loginTime = Date.now() - loginStart;
     

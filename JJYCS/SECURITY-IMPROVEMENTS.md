@@ -1,4 +1,4 @@
-# YCS LMS 보안 개선 가이드
+# YSC LMS 보안 개선 가이드
 
 ## 🚨 즉시 수정 필요한 보안 이슈
 
@@ -26,7 +26,7 @@ configuration.setAllowedOrigins(Arrays.asList(
 ```yaml
 # 현재 (위험)
 jwt:
-  secret: YCS-LMS-2024-SECRET-KEY-FOR-JWT-TOKEN-GENERATION-MUST-BE-LONG-ENOUGH
+  secret: YSC-LMS-2024-SECRET-KEY-FOR-JWT-TOKEN-GENERATION-MUST-BE-LONG-ENOUGH
 
 # 수정 필요
 jwt:

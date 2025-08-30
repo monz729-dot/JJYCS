@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Smoke test script for YCS LMS
+# Smoke test script for YSC LMS
 # Usage: ./smoke-test.sh <base_url>
 
 set -e

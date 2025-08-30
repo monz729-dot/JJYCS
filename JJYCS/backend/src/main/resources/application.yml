@@ -42,6 +42,25 @@ jwt:
   secret: YCS-LMS-2024-SECRET-KEY-FOR-JWT-TOKEN-GENERATION-MUST-BE-LONG-ENOUGH
   expiration: 86400000 # 24 hours in milliseconds
   refresh-expiration: 604800000 # 7 days in milliseconds
+
+# 택배사 API 설정
+carrier:
+  api:
+    connection-timeout: 5000
+    read-timeout: 10000
+    timeout: 10000
+  cj:
+    api:
+      url: https://www.doortodoor.co.kr/parcel/api/tracking
+  hanjin:
+    api:
+      url: https://www.hanjin.co.kr/kor/CMS/DeliveryMgr/WaybillResult.do
+  lotte:
+    api:
+      url: https://www.lotteglogis.com/open/tracking
+  post:
+    api:
+      url: https://service.epost.go.kr/trace.RetrieveTraceList.comm
       
   # Gmail SMTP Configuration
   mail:
@@ -92,7 +111,7 @@ server:
 # Logging
 logging:
   level:
-    com.ycs.lms: DEBUG
+    com.ysc.lms: DEBUG
     org.springframework.security: DEBUG
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE

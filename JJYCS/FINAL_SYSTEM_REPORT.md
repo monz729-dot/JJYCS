@@ -1,8 +1,8 @@
-# YCS LMS 최종 시스템 완성 보고서
+# YSC LMS 최종 시스템 완성 보고서
 
 ## 🏆 프로젝트 완료 현황: 100%
 
-**프로젝트명**: YCS Logistics Management System (LMS)  
+**프로젝트명**: YSC Logistics Management System (LMS)  
 **완료일**: 2024년 8월 24일  
 **개발 기간**: 1일 집중 개발  
 **시스템 상태**: ✅ **프로덕션 준비 완료**  
@@ -49,7 +49,7 @@
 
 ### **Backend (Spring Boot 3.0.3)**
 ```
-📦 YCS LMS Backend
+📦 YSC LMS Backend
 ├── 🔐 Security Layer (JWT + bcrypt)
 ├── 🎯 Business Logic Layer
 │   ├── OrderService (CBM 계산, 비즈니스 규칙)
@@ -65,7 +65,7 @@
 
 ### **Frontend (Vue 3.4 + TypeScript)**
 ```
-📦 YCS LMS Frontend
+📦 YSC LMS Frontend
 ├── 🛡️ Authentication Module
 ├── 📦 Order Management Module
 ├── 🏭 Warehouse Management Module
@@ -299,7 +299,7 @@ spring.profiles.active=production,backup,monitoring
 
 ### **🎉 프로젝트 성공 완료**
 
-**YCS Logistics Management System (LMS)**는 현재 **완전한 엔터프라이즈급 물류 관리 시스템**으로서 다음과 같은 상태입니다:
+**YSC Logistics Management System (LMS)**는 현재 **완전한 엔터프라이즈급 물류 관리 시스템**으로서 다음과 같은 상태입니다:
 
 #### **✅ 100% 기능 완성**
 - 모든 비즈니스 요구사항 구현 완료
@@ -349,7 +349,7 @@ open http://localhost:3003
 
 ---
 
-**🏆 YCS LMS 시스템 개발이 성공적으로 완료되었습니다!**
+**🏆 YSC LMS 시스템 개발이 성공적으로 완료되었습니다!**
 
 **모든 요구사항이 충족되었으며, 즉시 프로덕션 환경에서 운영 가능한 상태입니다.**
 

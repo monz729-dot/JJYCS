@@ -90,9 +90,9 @@
           </div>
         </div>
 
-        <!-- YCS 접수지 정보 -->
+        <!-- YSC 접수지 정보 -->
         <div class="space-y-4">
-          <h4 class="text-md font-medium text-gray-900 mb-3">YCS 접수지 정보</h4>
+          <h4 class="text-md font-medium text-gray-900 mb-3">YSC 접수지 정보</h4>
           
           <div v-if="inboundLocation" class="space-y-3">
             <div class="flex items-start space-x-3">

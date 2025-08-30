@@ -202,7 +202,7 @@ export function WorkflowSimulator({ onNavigate }: WorkflowSimulatorProps) {
   };
 
   const startNewOrder = () => {
-    const orderId = `YCS-${Date.now().toString().slice(-8)}`;
+    const orderId = `YSC-${Date.now().toString().slice(-8)}`;
     setCurrentOrderId(orderId);
     setProcessingStep(0);
     setOrderStatus('pending');
@@ -217,7 +217,7 @@ export function WorkflowSimulator({ onNavigate }: WorkflowSimulatorProps) {
       case 'partner':
         return { icon: Truck, color: 'text-green-600', bg: 'bg-green-100', label: '파트너' };
       case 'ysc':
-        return { icon: Building, color: 'text-purple-600', bg: 'bg-purple-100', label: 'YCS' };
+        return { icon: Building, color: 'text-purple-600', bg: 'bg-purple-100', label: 'YSC' };
       default:
         return { icon: User, color: 'text-gray-600', bg: 'bg-gray-100', label: '시스템' };
     }
@@ -245,7 +245,7 @@ export function WorkflowSimulator({ onNavigate }: WorkflowSimulatorProps) {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-2xl text-blue-900">워크플로우 시뮬레이터</CardTitle>
-                <p className="text-blue-600 mt-2">YCS 물류 시스템의 전체 프로세스를 시뮬레이션합니다</p>
+                <p className="text-blue-600 mt-2">YSC 물류 시스템의 전체 프로세스를 시뮬레이션합니다</p>
               </div>
               <Button 
                 variant="outline" 
@@ -536,10 +536,10 @@ export function WorkflowSimulator({ onNavigate }: WorkflowSimulatorProps) {
                 <CardContent>
                   <div className="space-y-4">
                     {[
-                      { id: 'YCS-12345678', status: '입고 완료', location: 'YCS 물류센터', time: '2분 전', type: 'warehouse' },
-                      { id: 'YCS-12345679', status: '픽업 완료', location: '배송 파트너', time: '15분 전', type: 'pickup' },
-                      { id: 'YCS-12345680', status: '배송 중', location: '태국 방콕', time: '1시간 전', type: 'transit' },
-                      { id: 'YCS-12345681', status: '배송 완료', location: '최종 목적지', time: '3시간 전', type: 'delivered' }
+                      { id: 'YSC-12345678', status: '입고 완료', location: 'YSC 물류센터', time: '2분 전', type: 'warehouse' },
+                      { id: 'YSC-12345679', status: '픽업 완료', location: '배송 파트너', time: '15분 전', type: 'pickup' },
+                      { id: 'YSC-12345680', status: '배송 중', location: '태국 방콕', time: '1시간 전', type: 'transit' },
+                      { id: 'YSC-12345681', status: '배송 완료', location: '최종 목적지', time: '3시간 전', type: 'delivered' }
                     ].map((item) => (
                       <div key={item.id} className="flex items-center justify-between p-3 border border-blue-100 rounded-lg bg-blue-50/30">
                         <div className="flex items-center gap-3">

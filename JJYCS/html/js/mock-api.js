@@ -1,5 +1,5 @@
 /**
- * YCS LMS Mock API
+ * YSC LMS Mock API
  * H2 데이터베이스 대신 로컬스토리지를 사용한 Mock API
  */
 
@@ -62,7 +62,7 @@ class MockAPI {
             const orders = [
                 {
                     id: 1,
-                    orderNumber: 'YCS-240115-001',
+                    orderNumber: 'YSC-240115-001',
                     userId: 2,
                     status: 'DELIVERED',
                     shippingType: 'SEA',
@@ -92,7 +92,7 @@ class MockAPI {
                 },
                 {
                     id: 2,
-                    orderNumber: 'YCS-240120-002',
+                    orderNumber: 'YSC-240120-002',
                     userId: 3,
                     status: 'BILLING',
                     shippingType: 'AIR',
@@ -122,7 +122,7 @@ class MockAPI {
                 },
                 {
                     id: 3,
-                    orderNumber: 'YCS-240125-003',
+                    orderNumber: 'YSC-240125-003',
                     userId: 2,
                     status: 'REPACKING',
                     shippingType: 'SEA',
@@ -160,7 +160,7 @@ class MockAPI {
                     id: 1,
                     bankName: 'KB국민은행',
                     accountNumber: '123-456-789012',
-                    accountHolder: 'YCS물류(주)',
+                    accountHolder: 'YSC물류(주)',
                     isActive: true,
                     isDefault: true,
                     displayOrder: 1,
@@ -172,7 +172,7 @@ class MockAPI {
                     id: 2,
                     bankName: '신한은행',
                     accountNumber: '110-123-456789',
-                    accountHolder: 'YCS물류(주)',
+                    accountHolder: 'YSC물류(주)',
                     isActive: true,
                     isDefault: false,
                     displayOrder: 2,
@@ -184,7 +184,7 @@ class MockAPI {
                     id: 3,
                     bankName: '우리은행',
                     accountNumber: '1002-123-456789',
-                    accountHolder: 'YCS물류(주)',
+                    accountHolder: 'YSC물류(주)',
                     isActive: true,
                     isDefault: false,
                     displayOrder: 3,

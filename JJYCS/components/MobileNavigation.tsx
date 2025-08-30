@@ -51,11 +51,11 @@ export function MobileNavigation({ currentPage, onNavigate, onLogout, user }: Mo
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold">YCS</span>
+              <span className="text-white font-bold">YSC</span>
             </div>
             <div>
               <h1 className="font-semibold text-blue-900">
-                YCS 물류 시스템
+                YSC 물류 시스템
                 {user?.type === 'corporate' && (
                   <Badge variant="outline" className="ml-2 border-orange-300 text-orange-700">
                     기업

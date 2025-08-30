@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>배송 접수 - YCS 물류관리시스템</title>
+    <title>배송 접수 - YSC 물류관리시스템</title>
     <link rel="stylesheet" href="../../common/common.css">
     <link rel="stylesheet" href="../../common/ui.css">
     <style>
@@ -1603,7 +1603,7 @@
             const link = document.createElement('a');
             const url = URL.createObjectURL(blob);
             link.setAttribute('href', url);
-            link.setAttribute('download', 'YCS_품목일괄등록_양식.csv');
+            link.setAttribute('download', 'YSC_품목일괄등록_양식.csv');
             link.style.visibility = 'hidden';
             document.body.appendChild(link);
             link.click();
@@ -1776,9 +1776,9 @@
                 }
 
                 const result = await response.json();
-                const receiptNumber = result.orderNumber || `YCS-${Date.now().toString().slice(-8)}`;
+                const receiptNumber = result.orderNumber || `YSC-${Date.now().toString().slice(-8)}`;
                 
-                showToast(`접수완료! 접수번호: ${receiptNumber} - YCS 창고 도착 후 청구서를 발행해드립니다.`, 'success');
+                showToast(`접수완료! 접수번호: ${receiptNumber} - YSC 창고 도착 후 청구서를 발행해드립니다.`, 'success');
                 
                 // 3초 후 대시보드로 이동
                 setTimeout(() => {

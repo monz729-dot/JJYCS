@@ -50,7 +50,7 @@ spring:
 # Logging - Production
 logging:
   level:
-    com.ycs.lms: INFO
+    com.ysc.lms: INFO
     org.springframework.security: WARN
     org.hibernate.SQL: WARN
   pattern:

@@ -1,7 +1,7 @@
 // 전체 시스템 통합 테스트
 
 async function runCompleteSystemTest() {
-    console.log('=== YCS LMS 시스템 전체 테스트 시작 ===\n');
+    console.log('=== YSC LMS 시스템 전체 테스트 시작 ===\n');
     
     const baseUrl = 'http://localhost:8081/api';
     let adminToken = '';
@@ -191,8 +191,8 @@ async function runCompleteSystemTest() {
         console.log('- 백엔드 API: http://localhost:8081/api');
         console.log('- 프론트엔드: http://localhost:3000');
         console.log('- H2 콘솔: http://localhost:8081/h2-console');
-        console.log('- 주문 폼: file:///C:/YCS-ver2/JJYCS/html/pages/common/order-form.html');
-        console.log('- 어드민 주문 관리: file:///C:/YCS-ver2/JJYCS/html/admin-order-list.html');
+        console.log('- 주문 폼: file:///C:/YSC-ver2/JJYSC/html/pages/common/order-form.html');
+        console.log('- 어드민 주문 관리: file:///C:/YSC-ver2/JJYSC/html/admin-order-list.html');
         
     } catch (error) {
         console.error('\n❌ 시스템 테스트 중 오류 발생:', error.message);

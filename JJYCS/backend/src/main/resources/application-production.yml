@@ -321,7 +321,7 @@ management:
 logging:
   level:
     root: INFO
-    com.ycs.lms: INFO
+    com.ysc.lms: INFO
     org.springframework.security: INFO
     org.springframework.web: INFO
     org.hibernate.SQL: WARN

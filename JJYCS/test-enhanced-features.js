@@ -13,7 +13,7 @@ async function testEnhancedFeatures() {
     console.log('1. Admin login for testing...');
     const loginResponse = await api.post('/auth/login', {
       email: 'yadmin@ycs.com',
-      password: 'YCSAdmin2024!'
+      password: 'YSCAdmin2024!'
     });
 
     if (loginResponse.data.success) {

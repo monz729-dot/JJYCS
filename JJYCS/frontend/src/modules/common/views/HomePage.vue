@@ -3,11 +3,11 @@
     <div class="container mx-auto px-4 py-12">
       <div class="text-center">
         <div class="mx-auto h-20 w-auto flex justify-center mb-8">
-          <img src="/ycs-logo.svg" alt="YCS LMS" class="h-20 w-auto" />
+          <img src="/ysc-logo.svg" alt="YSC LMS" class="h-20 w-auto" />
         </div>
         
         <h1 class="text-4xl md:text-6xl font-bold text-gray-900 mb-4">
-          YCS <span class="text-primary-600">LMS</span>
+          YSC <span class="text-primary-600">LMS</span>
         </h1>
         
         <p class="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
@@ -107,6 +107,6 @@
 import { onMounted } from 'vue'
 
 onMounted(() => {
-  document.title = 'YCS LMS - Logistics Management System'
+  document.title = 'YSC LMS - Logistics Management System'
 })
 </script>

@@ -106,8 +106,8 @@ export function OrderDetailPage({ onNavigate, orderId }: OrderDetailPageProps) {
     // 데모용 주문 상세 데이터 로드
     setTimeout(() => {
       const mockOrderDetail: OrderDetail = {
-        orderId: orderId || 'YCS-2024-001',
-        orderNumber: 'YCS-240115-001',
+        orderId: orderId || 'YSC-2024-001',
+        orderNumber: 'YSC-240115-001',
         customerId: 'KYP001',
         orderDate: '2024-01-15',
         status: 'payment_pending',
@@ -215,7 +215,7 @@ export function OrderDetailPage({ onNavigate, orderId }: OrderDetailPageProps) {
       },
       {
         key: 'arrived',
-        label: 'YCS창고도착',
+        label: 'YSC창고도착',
         icon: <Package className="h-4 w-4" />,
         description: '창고 도착, 무게 확인',
         completed: !!orderDetail.warehouse.arrivedDate,
@@ -482,7 +482,7 @@ export function OrderDetailPage({ onNavigate, orderId }: OrderDetailPageProps) {
           <CardHeader>
             <CardTitle className="text-blue-900 flex items-center gap-2">
               <Package className="h-5 w-5" />
-              YCS 창고 정보
+              YSC 창고 정보
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">

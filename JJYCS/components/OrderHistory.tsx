@@ -29,7 +29,7 @@ export function OrderHistory({ user, onNavigate }: OrderHistoryProps) {
   // 주문 상태 정의 (새로운 플로우 반영)
   const orderStatuses: OrderStatus[] = [
     { key: 'received', label: '접수완료', color: 'bg-blue-100 text-blue-800', description: '우체국 송장번호 등록, 주문 생성됨' },
-    { key: 'arrived', label: 'YCS창고도착', color: 'bg-green-100 text-green-800', description: '창고 도착, 무게 확인' },
+    { key: 'arrived', label: 'YSC창고도착', color: 'bg-green-100 text-green-800', description: '창고 도착, 무게 확인' },
     { key: 'repacking', label: '리패킹진행', color: 'bg-orange-100 text-orange-800', description: '리패킹 작업 및 사진 업로드' },
     { key: 'billing', label: '청구서발행', color: 'bg-purple-100 text-purple-800', description: '최종 비용 산정 및 청구서 발행' },
     { key: 'payment_pending', label: '입금대기', color: 'bg-yellow-100 text-yellow-800', description: '무통장 입금 대기 중' },
@@ -40,8 +40,8 @@ export function OrderHistory({ user, onNavigate }: OrderHistoryProps) {
 
   const orders = [
     {
-      id: 'YCS-2024-001',
-      orderNumber: 'YCS-240115-001',
+      id: 'YSC-2024-001',
+      orderNumber: 'YSC-240115-001',
       date: '2024-01-15',
       status: 'payment_pending',
       statusColor: 'bg-yellow-100 text-yellow-800',
@@ -76,8 +76,8 @@ export function OrderHistory({ user, onNavigate }: OrderHistoryProps) {
       }
     },
     {
-      id: 'YCS-2024-002',
-      orderNumber: 'YCS-240114-002',
+      id: 'YSC-2024-002',
+      orderNumber: 'YSC-240114-002',
       date: '2024-01-14',
       status: 'billing',
       statusColor: 'bg-purple-100 text-purple-800',
@@ -113,8 +113,8 @@ export function OrderHistory({ user, onNavigate }: OrderHistoryProps) {
       }
     },
     {
-      id: 'YCS-2024-003',
-      orderNumber: 'YCS-240113-003',
+      id: 'YSC-2024-003',
+      orderNumber: 'YSC-240113-003',
       date: '2024-01-13',
       status: 'delivered',
       statusColor: 'bg-emerald-100 text-emerald-800',
@@ -431,7 +431,7 @@ export function OrderHistory({ user, onNavigate }: OrderHistoryProps) {
                 <div className="text-sm space-y-2">
                   <p>새로운 워크플로우가 적용되었습니다:</p>
                   <div className="bg-gray-700 p-2 rounded text-xs space-y-1">
-                    <p>• 접수완료 → YCS창고도착 → 리패킹진행</p>
+                    <p>• 접수완료 → YSC창고도착 → 리패킹진행</p>
                     <p>• 청구서발행 → 입금대기 → 입금확인</p>
                     <p>• 배송중 → 배송완료</p>
                     <p>• 무통장 입금만 지원</p>

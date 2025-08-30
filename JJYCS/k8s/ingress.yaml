@@ -1,8 +1,8 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: ycs-lms-ingress
-  namespace: ycs-lms
+  name: ysc-lms-ingress
+  namespace: ysc-lms
   annotations:
     kubernetes.io/ingress.class: nginx
     cert-manager.io/cluster-issuer: letsencrypt-prod
@@ -19,10 +19,10 @@ metadata:
 spec:
   tls:
     - hosts:
-        - ycs-lms.example.com
-      secretName: ycs-lms-tls
+        - ysc-lms.example.com
+      secretName: ysc-lms-tls
   rules:
-    - host: ycs-lms.example.com
+    - host: ysc-lms.example.com
       http:
         paths:
           - path: /api

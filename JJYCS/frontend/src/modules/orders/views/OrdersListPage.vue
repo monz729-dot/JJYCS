@@ -5,7 +5,7 @@
       <div class="flex items-center justify-between max-w-6xl mx-auto">
         <div class="flex items-center gap-4">
           <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-white font-bold">
-            YCS
+            YSC
           </div>
           <div>
             <h1 class="text-lg font-semibold text-blue-800">주문 이력</h1>

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Health check script for YCS LMS production
+# Health check script for YSC LMS production
 # Usage: ./health-check.sh <base_url>
 
 set -e

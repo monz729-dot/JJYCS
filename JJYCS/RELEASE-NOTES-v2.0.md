@@ -1,4 +1,4 @@
-# YCS LMS Release Notes v2.0
+# YSC LMS Release Notes v2.0
 
 ## 📅 릴리즈 정보
 - **버전**: v2.0 (Phase 3 Complete)

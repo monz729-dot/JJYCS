@@ -5,7 +5,7 @@
       <div class="flex items-center justify-between max-w-6xl mx-auto">
         <div class="flex items-center gap-4">
           <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-white font-bold">
-            YCS
+            YSC
           </div>
           <div>
             <h1 class="text-lg font-semibold text-blue-800">주문 추적</h1>
@@ -25,7 +25,7 @@
           <input 
             v-model="orderNumber"
             type="text" 
-            placeholder="주문번호를 입력하세요 (예: YCS202401001)" 
+            placeholder="주문번호를 입력하세요 (예: YSC202401001)" 
             class="flex-1 p-4 border border-gray-200 rounded-xl text-base"
             required
           />

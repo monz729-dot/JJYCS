@@ -147,7 +147,7 @@
         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
           <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
         </svg>
-        YCS 창고 정보
+        YSC 창고 정보
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
@@ -338,7 +338,7 @@
                 <button @click="copyToClipboard('123456789012')" class="px-2 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50">복사</button>
               </div>
               <div class="font-mono text-lg font-bold text-blue-600 mb-1">123-456-789012</div>
-              <div class="text-sm text-gray-600">예금주: YCS물류(주)</div>
+              <div class="text-sm text-gray-600">예금주: YSC물류(주)</div>
             </div>
 
             <div class="bg-white border border-gray-300 rounded-lg p-4">
@@ -347,7 +347,7 @@
                 <button @click="copyToClipboard('110123456789')" class="px-2 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50">복사</button>
               </div>
               <div class="font-mono text-lg font-bold text-blue-600 mb-1">110-123-456789</div>
-              <div class="text-sm text-gray-600">예금주: YCS물류(주)</div>
+              <div class="text-sm text-gray-600">예금주: YSC물류(주)</div>
             </div>
           </div>
 
@@ -549,7 +549,7 @@ const workflowSteps = computed(() => [
   },
   {
     key: 'arrived',
-    label: 'YCS창고도착',
+    label: 'YSC창고도착',
     icon: '<svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4z"/></svg>',
     description: '창고 도착, 무게 확인',
     completed: !!orderDetail.value.warehouse?.arrivedDate,
@@ -710,7 +710,7 @@ const loadOrderDetail = async (orderId: string) => {
     // 데모 데이터 설정
     orderDetail.value = {
       orderId: orderId,
-      orderNumber: 'YCS-240115-001',
+      orderNumber: 'YSC-240115-001',
       customerId: 'KYP001',
       orderDate: '2024-01-15',
       status: 'delivered',
@@ -798,7 +798,7 @@ const loadOrderDetail = async (orderId: string) => {
 }
 
 onMounted(() => {
-  const orderId = route.params.id as string || route.query.id as string || 'YCS-2024-001'
+  const orderId = route.params.id as string || route.query.id as string || 'YSC-2024-001'
   loadOrderDetail(orderId)
 })
 </script>

@@ -14,8 +14,8 @@ export default defineConfig({
       },
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'YCS 물류관리 시스템',
-        short_name: 'YCS LMS',
+        name: 'YSC 물류관리 시스템',
+        short_name: 'YSC LMS',
         description: '한국-태국 물류관리 시스템',
         theme_color: '#ffffff',
         background_color: '#ffffff',

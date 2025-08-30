@@ -1,4 +1,4 @@
-# YCS 물류 시스템 퍼블리싱 가이드
+# YSC 물류 시스템 퍼블리싱 가이드
 
 ## 📋 목차
 1. [디자인 원칙](#1-디자인-원칙)
@@ -235,7 +235,7 @@
 <!-- Order Card -->
 <div class="card">
   <div class="card-header">
-    <h3 class="card-title">주문번호: YCS-2024-001</h3>
+    <h3 class="card-title">주문번호: YSC-2024-001</h3>
     <span class="status-badge status-progress">진행중</span>
   </div>
   <div class="card-body">
@@ -692,4 +692,4 @@ function t(key) {
 
 **작성일**: 2024.12.27  
 **버전**: 1.0.0  
-**담당**: YCS 물류 시스템 개발팀
+**담당**: YSC 물류 시스템 개발팀

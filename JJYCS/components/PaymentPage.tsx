@@ -52,24 +52,24 @@ export function PaymentPage({ user, onNavigate, orderId }: PaymentPageProps) {
   const [copiedField, setCopiedField] = useState<string>('');
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
 
-  // YCS 무통장 입금 계좌 정보
+  // YSC 무통장 입금 계좌 정보
   const bankAccounts: BankAccount[] = [
     {
       bankName: '국민은행',
       accountNumber: '123456-78-901234',
-      accountHolder: '(주)YCS물류',
+      accountHolder: '(주)YSC물류',
       bankCode: '004'
     },
     {
       bankName: '신한은행',
       accountNumber: '987-654-321098',
-      accountHolder: '(주)YCS물류',
+      accountHolder: '(주)YSC물류',
       bankCode: '088'
     },
     {
       bankName: '우리은행',
       accountNumber: '1005-123-456789',
-      accountHolder: '(주)YCS물류',
+      accountHolder: '(주)YSC물류',
       bankCode: '020'
     }
   ];
@@ -78,7 +78,7 @@ export function PaymentPage({ user, onNavigate, orderId }: PaymentPageProps) {
     // 주문 결제 정보 로딩 (데모 데이터)
     setTimeout(() => {
       const mockPaymentInfo: OrderPaymentInfo = {
-        orderNumber: 'YCS-240115-001',
+        orderNumber: 'YSC-240115-001',
         customerName: '김철수',
         customerPhone: '010-1234-5678',
         totalAmount: 151975,

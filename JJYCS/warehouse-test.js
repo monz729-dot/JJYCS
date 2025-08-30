@@ -121,7 +121,7 @@ async function testWarehouseScan() {
         
         // 7. 사용 가능한 URL 정보 출력
         console.log('\n📱 스캔 인터페이스 URL:');
-        console.log('- 창고 스캔 페이지: file:///C:/YCS-ver2/JJYCS/html/warehouse-scan.html');
+        console.log('- 창고 스캔 페이지: file:///C:/YSC-ver2/JJYSC/html/warehouse-scan.html');
         console.log('- 백엔드 API: http://localhost:8080/api/warehouse/scan');
         console.log('- 창고 현황 API: http://localhost:8080/api/warehouse/status');
         

@@ -7,7 +7,7 @@ export function Footer() {
       <div className="p-4 space-y-4">
         {/* 회사 정보 */}
         <div className="space-y-2">
-          <h3 className="font-semibold text-base">YCS 물류 시스템</h3>
+          <h3 className="font-semibold text-base">YSC 물류 시스템</h3>
           <div className="space-y-1 text-gray-300">
             <p>대표자: 김대표 | 사업자등록번호: 123-45-67890</p>
             <p>통신판매업신고번호: 2024-서울강남-0001</p>
@@ -52,7 +52,7 @@ export function Footer() {
         {/* 저작권 */}
         <div className="pt-4 border-t border-gray-700">
           <p className="text-gray-400 text-xs">
-            Copyright © 2024 YCS Logistics. All rights reserved.
+            Copyright © 2024 YSC Logistics. All rights reserved.
           </p>
         </div>
       </div>

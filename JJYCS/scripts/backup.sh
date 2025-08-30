@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# YCS LMS Backup Script
+# YSC LMS Backup Script
 # 
-# This script provides comprehensive backup functionality for the YCS LMS system
+# This script provides comprehensive backup functionality for the YSC LMS system
 # including database backups, file backups, configuration backups, and disaster recovery.
 # 
 # Usage: ./backup.sh [OPTION]
@@ -96,7 +96,7 @@ get_admin_token() {
         -H "Content-Type: application/json" \
         -d '{
             "email": "yadmin@ycs.com",
-            "password": "YCSAdmin2024!"
+            "password": "YSCAdmin2024!"
         }' 2>/dev/null || echo "")
     
     if [ -n "$response" ]; then
@@ -439,7 +439,7 @@ restore_backup() {
 # Show usage information
 show_help() {
     cat << EOF
-YCS LMS Backup Script
+YSC LMS Backup Script
 
 USAGE:
     $0 [OPTION]
@@ -480,7 +480,7 @@ main() {
     # Initialize backup environment
     init_backup
     
-    log "YCS LMS Backup Script started with arguments: $*"
+    log "YSC LMS Backup Script started with arguments: $*"
     
     # Parse command line arguments
     case "${1:---full}" in

@@ -1,12 +1,12 @@
-# YCS LMS Kubernetes Production Deployment
+# YSC LMS Kubernetes Production Deployment
 # Optimized for high availability, scalability, and performance
 
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: ycs-lms
+  name: ysc-lms
   labels:
-    name: ycs-lms
+    name: ysc-lms
     environment: production
 
 ---
@@ -14,20 +14,20 @@ metadata:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ycs-lms-config
-  namespace: ycs-lms
+  name: ysc-lms-config
+  namespace: ysc-lms
 data:
   # Application configuration
   SPRING_PROFILES_ACTIVE: "production,backup,monitoring"
   SERVER_PORT: "8081"
   
   # Database configuration
-  DB_HOST: "ycs-lms-mysql"
+  DB_HOST: "ysc-lms-mysql"
   DB_PORT: "3306"
   DB_NAME: "ycs_lms"
   
   # Redis configuration
-  REDIS_HOST: "ycs-lms-redis"
+  REDIS_HOST: "ysc-lms-redis"
   REDIS_PORT: "6379"
   
   # Monitoring
@@ -66,8 +66,8 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: ycs-lms-secrets
-  namespace: ycs-lms
+  name: ysc-lms-secrets
+  namespace: ysc-lms
 type: Opaque
 stringData:
   DB_USERNAME: "ycs_user"
@@ -85,21 +85,21 @@ stringData:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ycs-lms-mysql
-  namespace: ycs-lms
+  name: ysc-lms-mysql
+  namespace: ysc-lms
   labels:
-    app: ycs-lms-mysql
+    app: ysc-lms-mysql
 spec:
   replicas: 1
   strategy:
     type: Recreate
   selector:
     matchLabels:
-      app: ycs-lms-mysql
+      app: ysc-lms-mysql
   template:
     metadata:
       labels:
-        app: ycs-lms-mysql
+        app: ysc-lms-mysql
     spec:
       containers:
       - name: mysql
@@ -108,19 +108,19 @@ spec:
         - name: MYSQL_ROOT_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: ycs-lms-secrets
+              name: ysc-lms-secrets
               key: DB_PASSWORD
         - name: MYSQL_DATABASE
           value: ycs_lms
         - name: MYSQL_USER
           valueFrom:
             secretKeyRef:
-              name: ycs-lms-secrets
+              name: ysc-lms-secrets
               key: DB_USERNAME
         - name: MYSQL_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: ycs-lms-secrets
+              name: ysc-lms-secrets
               key: DB_PASSWORD
         args:
           - --innodb-buffer-pool-size=1G
@@ -177,11 +177,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: ycs-lms-mysql
-  namespace: ycs-lms
+  name: ysc-lms-mysql
+  namespace: ysc-lms
 spec:
   selector:
-    app: ycs-lms-mysql
+    app: ysc-lms-mysql
   ports:
   - port: 3306
     targetPort: 3306
@@ -194,7 +194,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: mysql-pvc
-  namespace: ycs-lms
+  namespace: ysc-lms
 spec:
   accessModes:
     - ReadWriteOnce
@@ -208,19 +208,19 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ycs-lms-redis
-  namespace: ycs-lms
+  name: ysc-lms-redis
+  namespace: ysc-lms
   labels:
-    app: ycs-lms-redis
+    app: ysc-lms-redis
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ycs-lms-redis
+      app: ysc-lms-redis
   template:
     metadata:
       labels:
-        app: ycs-lms-redis
+        app: ysc-lms-redis
     spec:
       containers:
       - name: redis
@@ -267,11 +267,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: ycs-lms-redis
-  namespace: ycs-lms
+  name: ysc-lms-redis
+  namespace: ysc-lms
 spec:
   selector:
-    app: ycs-lms-redis
+    app: ysc-lms-redis
   ports:
   - port: 6379
     targetPort: 6379
@@ -284,7 +284,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: redis-pvc
-  namespace: ycs-lms
+  namespace: ysc-lms
 spec:
   accessModes:
     - ReadWriteOnce
@@ -298,10 +298,10 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ycs-lms-backend
-  namespace: ycs-lms
+  name: ysc-lms-backend
+  namespace: ysc-lms
   labels:
-    app: ycs-lms-backend
+    app: ysc-lms-backend
 spec:
   replicas: 3
   strategy:
@@ -311,11 +311,11 @@ spec:
       maxUnavailable: 0
   selector:
     matchLabels:
-      app: ycs-lms-backend
+      app: ysc-lms-backend
   template:
     metadata:
       labels:
-        app: ycs-lms-backend
+        app: ysc-lms-backend
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8081"
@@ -323,21 +323,21 @@ spec:
     spec:
       containers:
       - name: backend
-        image: ycs-lms-backend:1.0.0
+        image: ysc-lms-backend:1.0.0
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8081
           name: http
         envFrom:
         - configMapRef:
-            name: ycs-lms-config
+            name: ysc-lms-config
         - secretRef:
-            name: ycs-lms-secrets
+            name: ysc-lms-secrets
         env:
         - name: DB_URL
-          value: "jdbc:mysql://ycs-lms-mysql:3306/ycs_lms?useSSL=true&serverTimezone=Asia/Seoul"
+          value: "jdbc:mysql://ysc-lms-mysql:3306/ycs_lms?useSSL=true&serverTimezone=Asia/Seoul"
         - name: REDIS_URL
-          value: "redis://ycs-lms-redis:6379"
+          value: "redis://ysc-lms-redis:6379"
         volumeMounts:
         - name: app-logs
           mountPath: /app/logs
@@ -387,13 +387,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: ycs-lms-backend
-  namespace: ycs-lms
+  name: ysc-lms-backend
+  namespace: ysc-lms
   labels:
-    app: ycs-lms-backend
+    app: ysc-lms-backend
 spec:
   selector:
-    app: ycs-lms-backend
+    app: ysc-lms-backend
   ports:
   - port: 8081
     targetPort: 8081
@@ -405,10 +405,10 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ycs-lms-frontend
-  namespace: ycs-lms
+  name: ysc-lms-frontend
+  namespace: ysc-lms
   labels:
-    app: ycs-lms-frontend
+    app: ysc-lms-frontend
 spec:
   replicas: 2
   strategy:
@@ -418,22 +418,22 @@ spec:
       maxUnavailable: 0
   selector:
     matchLabels:
-      app: ycs-lms-frontend
+      app: ysc-lms-frontend
   template:
     metadata:
       labels:
-        app: ycs-lms-frontend
+        app: ysc-lms-frontend
     spec:
       containers:
       - name: frontend
-        image: ycs-lms-frontend:1.0.0
+        image: ysc-lms-frontend:1.0.0
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80
           name: http
         env:
         - name: API_BASE_URL
-          value: "https://api.ycs.com"
+          value: "https://api.ysc.com"
         resources:
           requests:
             memory: "128Mi"
@@ -459,13 +459,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: ycs-lms-frontend
-  namespace: ycs-lms
+  name: ysc-lms-frontend
+  namespace: ysc-lms
   labels:
-    app: ycs-lms-frontend
+    app: ysc-lms-frontend
 spec:
   selector:
-    app: ycs-lms-frontend
+    app: ysc-lms-frontend
   ports:
   - port: 80
     targetPort: 80
@@ -477,13 +477,13 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: ycs-lms-backend-hpa
-  namespace: ycs-lms
+  name: ysc-lms-backend-hpa
+  namespace: ysc-lms
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: ycs-lms-backend
+    name: ysc-lms-backend
   minReplicas: 3
   maxReplicas: 10
   metrics:
@@ -518,8 +518,8 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: ycs-lms-ingress
-  namespace: ycs-lms
+  name: ysc-lms-ingress
+  namespace: ysc-lms
   annotations:
     kubernetes.io/ingress.class: "nginx"
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
@@ -534,28 +534,28 @@ metadata:
 spec:
   tls:
   - hosts:
-    - ycs.com
-    - api.ycs.com
-    secretName: ycs-lms-tls
+    - ysc.com
+    - api.ysc.com
+    secretName: ysc-lms-tls
   rules:
-  - host: ycs.com
+  - host: ysc.com
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: ycs-lms-frontend
+            name: ysc-lms-frontend
             port:
               number: 80
-  - host: api.ycs.com
+  - host: api.ysc.com
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: ycs-lms-backend
+            name: ysc-lms-backend
             port:
               number: 8081
 
@@ -564,8 +564,8 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: ycs-lms-network-policy
-  namespace: ycs-lms
+  name: ysc-lms-network-policy
+  namespace: ysc-lms
 spec:
   podSelector: {}
   policyTypes:
@@ -610,27 +610,27 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: ycs-lms-backend-pdb
-  namespace: ycs-lms
+  name: ysc-lms-backend-pdb
+  namespace: ysc-lms
 spec:
   minAvailable: 2
   selector:
     matchLabels:
-      app: ycs-lms-backend
+      app: ysc-lms-backend
 
 ---
 # ServiceMonitor for Prometheus monitoring
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: ycs-lms-backend-metrics
-  namespace: ycs-lms
+  name: ysc-lms-backend-metrics
+  namespace: ysc-lms
   labels:
-    app: ycs-lms-backend
+    app: ysc-lms-backend
 spec:
   selector:
     matchLabels:
-      app: ycs-lms-backend
+      app: ysc-lms-backend
   endpoints:
   - port: http
     path: /api/actuator/prometheus
@@ -643,7 +643,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: app-logs-pvc
-  namespace: ycs-lms
+  namespace: ysc-lms
 spec:
   accessModes:
     - ReadWriteMany
@@ -657,7 +657,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: app-uploads-pvc
-  namespace: ycs-lms
+  namespace: ysc-lms
 spec:
   accessModes:
     - ReadWriteMany
@@ -671,7 +671,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: backup-storage-pvc
-  namespace: ycs-lms
+  namespace: ysc-lms
 spec:
   accessModes:
     - ReadWriteMany

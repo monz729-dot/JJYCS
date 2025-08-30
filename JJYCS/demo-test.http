@@ -1,4 +1,4 @@
-### YCS LMS API Demo Test File
+### YSC LMS API Demo Test File
 ### 이 파일은 API 테스트 및 데모를 위한 HTTP 요청 모음입니다.
 
 ### 1. 사용자 회원가입 테스트
@@ -37,7 +37,7 @@ Content-Type: application/json
   "phone": "+82-10-2345-6789",
   "userType": "CORPORATE",
   "enterpriseProfile": {
-    "companyName": "YCS Demo Corp",
+    "companyName": "YSC Demo Corp",
     "businessNumber": "123-45-67890",
     "companyAddress": {
       "line1": "456 Business Ave",

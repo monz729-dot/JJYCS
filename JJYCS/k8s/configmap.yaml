@@ -1,8 +1,8 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ycs-lms-config
-  namespace: ycs-lms
+  name: ysc-lms-config
+  namespace: ysc-lms
 data:
   SPRING_PROFILES_ACTIVE: "prod"
   SPRING_DATASOURCE_URL: "jdbc:mysql://mysql-service:3306/ycs_lms?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true"

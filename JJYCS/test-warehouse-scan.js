@@ -43,7 +43,7 @@ async function testWarehouseScan() {
       console.log(`   Status: ${createResponse.data.order.status}`);
     } catch (createError) {
       console.log('❌ Failed to create order, using existing order instead');
-      testOrderNumber = 'YCS-250824-009'; // fallback to existing order
+      testOrderNumber = 'YSC-250824-009'; // fallback to existing order
     }
 
     // Test with the order (fresh or existing)

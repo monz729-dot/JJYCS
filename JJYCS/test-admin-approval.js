@@ -13,7 +13,7 @@ async function testAdminApproval() {
     console.log('1. Logging in as admin...');
     const loginResponse = await api.post('/auth/login', {
       email: 'yadmin@ycs.com',
-      password: 'YCSAdmin2024!'
+      password: 'YSCAdmin2024!'
     });
 
     if (loginResponse.data.success) {

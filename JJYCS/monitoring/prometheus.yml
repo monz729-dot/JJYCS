@@ -1,4 +1,4 @@
-# Prometheus Configuration for YCS LMS
+# Prometheus Configuration for YSC LMS
 # Optimized for production monitoring and alerting
 
 global:
@@ -32,7 +32,7 @@ scrape_configs:
     scrape_interval: 10s
     metrics_path: /metrics
 
-  # YCS LMS Backend Application
+  # YSC LMS Backend Application
   - job_name: 'ycs-lms-backend'
     static_configs:
       - targets: 

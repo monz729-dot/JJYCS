@@ -189,7 +189,7 @@ export function PageList({ user, onNavigate }: PageListProps) {
       userTypes: ['general'],
       requiresLogin: true,
       hasParams: true,
-      params: { orderId: 'YCS-2024-001' }
+      params: { orderId: 'YSC-2024-001' }
     },
     {
       id: 'payment',
@@ -200,7 +200,7 @@ export function PageList({ user, onNavigate }: PageListProps) {
       userTypes: ['general'],
       requiresLogin: true,
       hasParams: true,
-      params: { orderId: 'YCS-2024-001' }
+      params: { orderId: 'YSC-2024-001' }
     },
 
     // 기업 회원 페이지
@@ -251,7 +251,7 @@ export function PageList({ user, onNavigate }: PageListProps) {
       userTypes: ['corporate'],
       requiresLogin: true,
       hasParams: true,
-      params: { orderId: 'YCS-2024-001', userType: 'corporate' }
+      params: { orderId: 'YSC-2024-001', userType: 'corporate' }
     },
     {
       id: 'payment',
@@ -262,7 +262,7 @@ export function PageList({ user, onNavigate }: PageListProps) {
       userTypes: ['corporate'],
       requiresLogin: true,
       hasParams: true,
-      params: { orderId: 'YCS-2024-001', userType: 'corporate' }
+      params: { orderId: 'YSC-2024-001', userType: 'corporate' }
     },
 
     // 관리자 페이지
@@ -293,7 +293,7 @@ export function PageList({ user, onNavigate }: PageListProps) {
       userTypes: ['admin'],
       requiresLogin: true,
       hasParams: true,
-      params: { orderId: 'YCS-2024-001' }
+      params: { orderId: 'YSC-2024-001' }
     },
 
     // 파트너 페이지
@@ -493,7 +493,7 @@ export function PageList({ user, onNavigate }: PageListProps) {
           </Button>
         )}
         <div>
-          <h1 className="text-xl text-blue-900">YCS 물류 시스템 - 전체 페이지 목록</h1>
+          <h1 className="text-xl text-blue-900">YSC 물류 시스템 - 전체 페이지 목록</h1>
           <p className="text-sm text-blue-600">
             {user ? `${user.name}님이 접근 가능한 페이지: ${stats.accessible}/${stats.total}개` : `로그인하여 더 많은 페이지에 접근하세요 (${stats.total}개 페이지 이용 가능)`}
           </p>

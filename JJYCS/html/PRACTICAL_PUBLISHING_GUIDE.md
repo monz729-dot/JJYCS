@@ -1,4 +1,4 @@
-# YCS 물류 시스템 - 실용적 퍼블리싱 가이드
+# YSC 물류 시스템 - 실용적 퍼블리싱 가이드
 
 > 실제 TSX 컴포넌트 패턴을 기반으로 한 유연한 HTML/CSS 구현 가이드
 
@@ -216,11 +216,11 @@ const navigationItems = [
   <div class="flex items-center justify-between px-4 py-3">
     <div class="flex items-center gap-3">
       <div class="ycs-logo">
-        <span class="text-white font-bold">YCS</span>
+        <span class="text-white font-bold">YSC</span>
       </div>
       <div>
         <h1 class="font-semibold text-blue-900">
-          YCS 물류 시스템
+          YSC 물류 시스템
           <span class="badge badge-user-corporate ml-2">기업</span>
         </h1>
         <p class="text-xs text-blue-600">기업 고객 대시보드</p>
@@ -571,7 +571,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <h1 class="dashboard-title">안녕하세요, <span class="user-name">김기업</span>님</h1>
     <p class="dashboard-subtitle">
       <span class="badge badge-user-corporate">기업 고객</span>
-      오늘도 YCS와 함께 성공적인 배송을 시작하세요!
+      오늘도 YSC와 함께 성공적인 배송을 시작하세요!
     </p>
   </div>
 
@@ -622,7 +622,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="order-list">
         <div class="order-item">
           <div class="order-info">
-            <div class="order-number">#YCS240822001</div>
+            <div class="order-number">#YSC240822001</div>
             <div class="order-description">전자제품 5개 항목</div>
           </div>
           <div class="order-status">
@@ -632,7 +632,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         <div class="order-item">
           <div class="order-info">
-            <div class="order-number">#YCS240821003</div>
+            <div class="order-number">#YSC240821003</div>
             <div class="order-description">의류 3개 항목</div>
           </div>
           <div class="order-status">
@@ -762,7 +762,7 @@ function createButton(text, variant = 'default', size = 'default') {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>YCS 물류 시스템 - 기업 대시보드</title>
+  <title>YSC 물류 시스템 - 기업 대시보드</title>
   <link rel="stylesheet" href="css/globals.css">
 </head>
 <body class="user-corporate">

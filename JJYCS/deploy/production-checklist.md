@@ -1,4 +1,4 @@
-# YCS LMS Production Deployment Checklist
+# YSC LMS Production Deployment Checklist
 
 ## 🎯 Pre-Deployment Checklist
 

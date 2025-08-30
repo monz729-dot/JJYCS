@@ -35,7 +35,7 @@ app.listen(PORT, () => {
     console.log(`
 ╔════════════════════════════════════════════════════════╗
 ║                                                        ║
-║   🚀 YCS LMS Express Server Started                   ║
+║   🚀 YSC LMS Express Server Started                   ║
 ║                                                        ║
 ║   📱 Frontend: http://localhost:${PORT}                   ║
 ║   🔄 API Proxy: /api/* → ${BACKEND_URL}/api/*         ║

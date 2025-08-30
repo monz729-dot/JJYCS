@@ -546,10 +546,10 @@ export default function App() {
             <div className="flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
-                  <span className="text-white font-bold">YCS</span>
+                  <span className="text-white font-bold">YSC</span>
                 </div>
                 <div>
-                  <h1 className="font-semibold text-blue-900">YCS 물류 시스템</h1>
+                  <h1 className="font-semibold text-blue-900">YSC 물류 시스템</h1>
                   <p className="text-xs text-blue-600">
                     관리자 | {user?.name}
                   </p>

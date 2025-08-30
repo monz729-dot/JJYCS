@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: mysql-service
-  namespace: ycs-lms
+  namespace: ysc-lms
 spec:
   type: ClusterIP
   selector:
@@ -16,7 +16,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: mysql-pvc
-  namespace: ycs-lms
+  namespace: ysc-lms
 spec:
   accessModes:
     - ReadWriteOnce
@@ -29,7 +29,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: mysql
-  namespace: ycs-lms
+  namespace: ysc-lms
 spec:
   serviceName: mysql-service
   replicas: 1
@@ -52,7 +52,7 @@ spec:
               value: "ycs_lms"
           envFrom:
             - secretRef:
-                name: ycs-lms-secret
+                name: ysc-lms-secret
           volumeMounts:
             - name: mysql-storage
               mountPath: /var/lib/mysql

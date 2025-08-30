@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YCS 물류 시스템 - 주문 상세</title>
+    <title>YSC 물류 시스템 - 주문 상세</title>
     <link rel="stylesheet" href="css/globals.css">
     <script src="js/mock-api.js"></script>
     <style>
@@ -509,7 +509,7 @@
             </button>
             <div class="header-info">
                 <h1>주문 상세</h1>
-                <p id="orderSubtitle">YCS-240115-001 - 청구서 및 배송 정보</p>
+                <p id="orderSubtitle">YSC-240115-001 - 청구서 및 배송 정보</p>
             </div>
         </div>
 
@@ -586,7 +586,7 @@
                     <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
                     </svg>
-                    YCS 창고 정보
+                    YSC 창고 정보
                 </div>
             </div>
             
@@ -692,7 +692,7 @@
         // 페이지 로드 시 초기화
         window.addEventListener('load', function() {
             const urlParams = new URLSearchParams(window.location.search);
-            const orderId = urlParams.get('id') || 'YCS-2024-001';
+            const orderId = urlParams.get('id') || 'YSC-2024-001';
             
             loadOrderDetail(orderId);
         });
@@ -794,7 +794,7 @@
                 // 데모용 주문 상세 데이터 (기존 코드 유지)
                 orderDetail = {
                     orderId: orderId,
-                    orderNumber: 'YCS-240115-001',
+                    orderNumber: 'YSC-240115-001',
                     customerId: 'KYP001',
                     orderDate: '2024-01-15',
                     status: 'delivered', // 배송완료 상태로 설정하여 새 워크플로우 확인 가능
@@ -929,7 +929,7 @@
                 },
                 {
                     key: 'arrived',
-                    label: 'YCS창고도착',
+                    label: 'YSC창고도착',
                     icon: `<svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4z"/></svg>`,
                     description: '창고 도착, 무게 확인',
                     completed: !!orderDetail.warehouse.arrivedDate,
@@ -1299,7 +1299,7 @@
                                     <button class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="copyToClipboard('123456789012')">복사</button>
                                 </div>
                                 <div style="font-family: 'Monaco', 'Menlo', monospace; font-size: 1.125rem; font-weight: 700; color: #3b82f6; margin-bottom: 0.25rem;">123-456-789012</div>
-                                <div style="font-size: 0.875rem; color: #6b7280;">예금주: YCS물류(주)</div>
+                                <div style="font-size: 0.875rem; color: #6b7280;">예금주: YSC물류(주)</div>
                             </div>
                             
                             <div style="background: white; border: 1px solid #d1d5db; border-radius: 0.5rem; padding: 1rem;">
@@ -1308,7 +1308,7 @@
                                     <button class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="copyToClipboard('110123456789')">복사</button>
                                 </div>
                                 <div style="font-family: 'Monaco', 'Menlo', monospace; font-size: 1.125rem; font-weight: 700; color: #3b82f6; margin-bottom: 0.25rem;">110-123-456789</div>
-                                <div style="font-size: 0.875rem; color: #6b7280;">예금주: YCS물류(주)</div>
+                                <div style="font-size: 0.875rem; color: #6b7280;">예금주: YSC물류(주)</div>
                             </div>
                         </div>
                         

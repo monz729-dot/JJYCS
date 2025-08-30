@@ -1,7 +1,7 @@
 {
   "name": "ycs-lms-monorepo",
   "version": "1.0.0",
-  "description": "YCS Logistics Management System - Full Stack Application",
+  "description": "YSC Logistics Management System - Full Stack Application",
   "scripts": {
     "dev:api": "cd backend && ./mvnw.cmd spring-boot:run",
     "dev:web": "cd frontend && npm run dev",
@@ -22,7 +22,7 @@
     "vue",
     "spring-boot"
   ],
-  "author": "YCS Team",
+  "author": "YSC Team",
   "license": "MIT",
   "devDependencies": {
     "concurrently": "^9.2.1"

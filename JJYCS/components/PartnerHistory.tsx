@@ -28,7 +28,7 @@ export function PartnerHistory({ user, onNavigate }: PartnerHistoryProps) {
   // 데모 데이터
   const completedTasks = [
     {
-      id: 'YCS-2024-001',
+      id: 'YSC-2024-001',
       date: '2024-01-14',
       time: '15:30',
       customer: '(주)ABC무역',
@@ -43,7 +43,7 @@ export function PartnerHistory({ user, onNavigate }: PartnerHistoryProps) {
       feedback: '정시 배송으로 만족합니다.'
     },
     {
-      id: 'YCS-2024-002',
+      id: 'YSC-2024-002',
       date: '2024-01-14',
       time: '11:20',
       customer: '개인고객',
@@ -58,7 +58,7 @@ export function PartnerHistory({ user, onNavigate }: PartnerHistoryProps) {
       feedback: '친절한 서비스 감사합니다.'
     },
     {
-      id: 'YCS-2024-003',
+      id: 'YSC-2024-003',
       date: '2024-01-13',
       time: '16:45',
       customer: '스타트업코리아',
@@ -73,7 +73,7 @@ export function PartnerHistory({ user, onNavigate }: PartnerHistoryProps) {
       feedback: '안전한 포장과 빠른 배송!'
     },
     {
-      id: 'YCS-2024-004',
+      id: 'YSC-2024-004',
       date: '2024-01-13',
       time: '09:15',
       customer: '(주)테크솔루션',
@@ -88,7 +88,7 @@ export function PartnerHistory({ user, onNavigate }: PartnerHistoryProps) {
       feedback: null
     },
     {
-      id: 'YCS-2024-005',
+      id: 'YSC-2024-005',
       date: '2024-01-12',
       time: '14:00',
       customer: '김개인',

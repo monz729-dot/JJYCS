@@ -33,8 +33,8 @@ export function NoticesPage({ onNavigate, user }: NoticesPageProps) {
     // 고정 공지사항
     {
       id: 'fixed-001',
-      title: 'YCS 물류 시스템 이용 안내',
-      content: 'YCS 물류 시스템을 이용해주셔서 감사합니다. 시스템 이용 중 문의사항은 고객센터로 연락해주세요.',
+      title: 'YSC 물류 시스템 이용 안내',
+      content: 'YSC 물류 시스템을 이용해주셔서 감사합니다. 시스템 이용 중 문의사항은 고객센터로 연락해주세요.',
       category: 'system',
       priority: 'high',
       date: '2024-01-01',

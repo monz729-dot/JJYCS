@@ -48,10 +48,10 @@ export function PartnerNavigation({ currentPage, onNavigate, onLogout }: Partner
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold">YCS</span>
+              <span className="text-white font-bold">YSC</span>
             </div>
             <div>
-              <h1 className="font-semibold text-blue-900">YCS 파트너 시스템</h1>
+              <h1 className="font-semibold text-blue-900">YSC 파트너 시스템</h1>
               <p className="text-xs text-blue-600">
                 {currentPage === 'partner-dashboard' && '파트너 대시보드'}
                 {currentPage === 'partner-tasks' && '파트너 업무'}

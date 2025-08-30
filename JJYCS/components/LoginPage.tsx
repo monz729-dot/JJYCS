@@ -236,10 +236,10 @@ export function LoginPage({ onLogin, onNavigate }: LoginPageProps) {
         {/* 로고 및 타이틀 */}
         <div className="text-center space-y-4">
           <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto shadow-lg animate-bounce-in">
-            <span className="text-white font-bold text-xl">YCS</span>
+            <span className="text-white font-bold text-xl">YSC</span>
           </div>
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-blue-900">YCS 물류 시스템</h1>
+            <h1 className="text-2xl font-bold text-blue-900">YSC 물류 시스템</h1>
             <p className="text-blue-600">안전하고 신뢰할 수 있는 물류 서비스</p>
           </div>
         </div>

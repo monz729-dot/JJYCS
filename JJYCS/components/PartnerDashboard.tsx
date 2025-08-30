@@ -37,7 +37,7 @@ export function PartnerDashboard({ user, onNavigate }: PartnerDashboardProps) {
 
   const [recentOrders] = useState<RecentOrder[]>([
     {
-      id: 'YCS-2024-001',
+      id: 'YSC-2024-001',
       type: 'new',
       description: '의류 5개 - 태국 방콕',
       time: '10분 전',
@@ -45,7 +45,7 @@ export function PartnerDashboard({ user, onNavigate }: PartnerDashboardProps) {
       status: 'pending'
     },
     {
-      id: 'YCS-2024-002',
+      id: 'YSC-2024-002',
       type: 'processing',
       description: '전자제품 2개 - 태국 치앙마이',
       time: '30분 전',
@@ -53,7 +53,7 @@ export function PartnerDashboard({ user, onNavigate }: PartnerDashboardProps) {
       status: 'processing'
     },
     {
-      id: 'YCS-2024-003',
+      id: 'YSC-2024-003',
       type: 'completed',
       description: '건강식품 10개 - 태국 파타야',
       time: '1시간 전',
@@ -61,7 +61,7 @@ export function PartnerDashboard({ user, onNavigate }: PartnerDashboardProps) {
       status: 'completed'
     },
     {
-      id: 'YCS-2024-004',
+      id: 'YSC-2024-004',
       type: 'completed',
       description: '화장품 8개 - 베트남 호치민',
       time: '2시간 전',
