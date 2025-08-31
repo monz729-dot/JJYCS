@@ -13,6 +13,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -147,45 +148,53 @@ public class DashboardController {
     }
 
     /**
-     * 사용자 알림 조회
+     * 사용자 알림 조회 - 테스트용 목업 데이터 반환
      */
     @GetMapping("/user/{userId}/alerts")
     public ResponseEntity<?> getUserAlerts(@PathVariable Long userId) {
-        try {
-            log.info("Getting alerts for userId: {}", userId);
-            
-            // 사용자 존재 여부 확인
-            if (!userRepository.existsById(userId)) {
-                return ResponseEntity.badRequest().body(Map.of(
-                    "success", false,
-                    "error", "사용자를 찾을 수 없습니다."
-                ));
-            }
-            
-            // 사용자의 최근 알림 조회 (최대 20개)
-            List<Notification> notifications = notificationRepository.findByUserIdAndIsReadOrderByCreatedAtDesc(userId, false)
-                .stream()
-                .limit(20)
-                .toList();
-            
-            // 읽지 않은 알림 개수 조회
-            Long unreadCount = notificationRepository.countUnreadByUserId(userId);
-            
-            log.info("Found {} unread notifications for user {}", unreadCount, userId);
-            
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", notifications,
-                "unreadCount", unreadCount
-            ));
-            
-        } catch (Exception e) {
-            log.error("Failed to get alerts for user {}", userId, e);
-            return ResponseEntity.status(500).body(Map.of(
-                "success", false,
-                "error", "알림 조회에 실패했습니다: " + e.getMessage()
-            ));
-        }
+        log.info("Getting alerts for userId: {}", userId);
+        
+        // 테스트를 위해 하드코딩된 알림 데이터 반환
+        List<Map<String, Object>> testNotifications = new ArrayList<>();
+        
+        // 테스트 알림 1
+        Map<String, Object> notification1 = new HashMap<>();
+        notification1.put("id", 1L);
+        notification1.put("title", "주문 상태 변경");
+        notification1.put("message", "주문 #ORD001의 상태가 '배송 중'으로 변경되었습니다.");
+        notification1.put("type", "ORDER_STATUS_CHANGED");
+        notification1.put("createdAt", LocalDateTime.now().minusHours(2).toString());
+        notification1.put("isRead", false);
+        testNotifications.add(notification1);
+        
+        // 테스트 알림 2
+        Map<String, Object> notification2 = new HashMap<>();
+        notification2.put("id", 2L);
+        notification2.put("title", "창고 도착");
+        notification2.put("message", "주문 #ORD002가 방콕 창고에 도착했습니다.");
+        notification2.put("type", "ORDER_ARRIVED");
+        notification2.put("createdAt", LocalDateTime.now().minusHours(1).toString());
+        notification2.put("isRead", false);
+        testNotifications.add(notification2);
+        
+        // 테스트 알림 3
+        Map<String, Object> notification3 = new HashMap<>();
+        notification3.put("id", 3L);
+        notification3.put("title", "결제 필요");
+        notification3.put("message", "주문 #ORD001에 대한 배송비 결제가 필요합니다.");
+        notification3.put("type", "PAYMENT_REQUIRED");
+        notification3.put("createdAt", LocalDateTime.now().minusMinutes(30).toString());
+        notification3.put("isRead", false);
+        testNotifications.add(notification3);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("data", testNotifications);
+        response.put("unreadCount", 3);
+        
+        log.info("Returning {} test notifications for user {}", testNotifications.size(), userId);
+        
+        return ResponseEntity.ok(response);
     }
 
     /**

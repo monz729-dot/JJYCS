@@ -106,23 +106,6 @@
             </div>
           </div>
           
-          <!-- EMS 송장번호 -->
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              EMS 송장번호 <span class="text-red-500">*</span>
-            </label>
-            <input 
-              type="text" 
-              class="w-full h-11 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base" 
-              v-model="orderForm.trackingNumber"
-              placeholder="EE123456789KR"
-              inputmode="text"
-              maxlength="13"
-              style="font-family: monospace;"
-              required
-            />
-            <p class="text-xs text-gray-500 mt-1">13자리 EMS 송장번호를 정확히 입력해주세요</p>
-          </div>
 
           <!-- 배송유형 토글 -->
           <div class="mb-4">
@@ -131,29 +114,16 @@
               <button 
                 type="button"
                 @click="orderForm.shippingType = 'sea'"
-                :class="['flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all', orderForm.shippingType === 'sea' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500']"
+                :class="['flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all text-center', orderForm.shippingType === 'sea' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500']"
               >
-                <div class="flex items-center gap-2">
-                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M3 4a1 1 0 011-1h10a1 1 0 010 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1zM3 16a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1z"/>
-                  </svg>
-                  해상운송
-                </div>
-                <div class="text-xs mt-0.5">경제적 • 15-30일</div>
+                해상운송
               </button>
               <button 
                 type="button"
                 @click="orderForm.shippingType = 'air'"
-                :class="['flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all ml-1', orderForm.shippingType === 'air' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500']"
+                :class="['flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all ml-1 text-center', orderForm.shippingType === 'air' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500']"
               >
-                <div class="flex items-center gap-2">
-                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M10 2L3 7v11c0 .55.45 1 1 1h12c.55 0 1-.45 1-1V7l-7-5z"/>
-                    <path d="M5 9l5-3 5 3v7H5V9z"/>
-                  </svg>
-                  항공운송
-                </div>
-                <div class="text-xs mt-0.5">신속 • 3-7일</div>
+                항공운송
               </button>
             </div>
           </div>
@@ -188,21 +158,6 @@
               </button>
             </div>
           </div>
-
-          <!-- 태국 우편번호 -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">태국 우편번호</label>
-            <input 
-              type="text" 
-              class="w-full h-11 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base" 
-              v-model="orderForm.postalCode"
-              placeholder="12345"
-              inputmode="numeric"
-              maxlength="5"
-              pattern="[0-9]{5}"
-            />
-            <p class="text-xs text-gray-500 mt-1">5자리 숫자로 입력해주세요</p>
-          </div>
         </div>
       </div>
 
@@ -212,113 +167,136 @@
           <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-2">
               <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"/>
+                <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>
               </svg>
               <h3 class="text-base font-semibold text-gray-900">수취인 정보</h3>
-              <span class="text-xs text-gray-500">({{ orderForm.recipients.length }}명)</span>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                {{ orderForm.recipients.length }}명
+              </span>
             </div>
             <button 
               type="button"
               @click="addRecipient"
               :disabled="orderForm.recipients.length >= maxRecipients"
-              :class="['flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg', orderForm.recipients.length >= maxRecipients ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-blue-50 text-blue-600 hover:bg-blue-100']"
+              :class="['flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors', orderForm.recipients.length >= maxRecipients ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700']"
             >
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/>
               </svg>
-              수취인 추가
+              추가
             </button>
           </div>
 
           <!-- 수취인 목록 -->
-          <div class="space-y-3">
+          <div class="space-y-2">
             <div 
               v-for="(recipient, index) in orderForm.recipients" 
               :key="index" 
-              class="border border-gray-200 rounded-lg p-3"
+              :class="['border rounded-lg transition-all', expandedRecipients.includes(index) ? 'border-blue-300 bg-blue-50/30' : 'border-gray-200 bg-white']"
             >
-              <div class="flex items-center justify-between mb-3">
-                <h4 class="text-sm font-medium text-gray-900">수취인 {{ index + 1 }}</h4>
-                <div class="flex items-center gap-2">
-                  <button 
-                    type="button"
-                    @click="toggleRecipientCard(index)"
-                    class="p-1 text-gray-400 hover:text-gray-600"
-                  >
-                    <svg 
-                      class="w-4 h-4 transform transition-transform"
-                      :class="{ 'rotate-180': expandedRecipients.includes(index) }"
-                      fill="currentColor" 
-                      viewBox="0 0 20 20"
+              <div class="p-3">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span class="text-xs font-semibold text-blue-600">{{ index + 1 }}</span>
+                    </div>
+                    <div v-if="!expandedRecipients.includes(index) && recipient.name">
+                      <p class="text-sm font-medium text-gray-900">{{ recipient.name }}</p>
+                      <p class="text-xs text-gray-500">{{ recipient.phone }}</p>
+                    </div>
+                    <div v-else-if="!expandedRecipients.includes(index)">
+                      <p class="text-sm text-gray-500">수취인 정보를 입력해주세요</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <button 
+                      type="button"
+                      @click="toggleRecipientCard(index)"
+                      class="p-1.5 text-gray-400 hover:text-gray-600 rounded hover:bg-gray-100"
                     >
-                      <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
-                    </svg>
-                  </button>
-                  <button 
-                    v-if="orderForm.recipients.length > 1"
-                    type="button" 
-                    @click="removeRecipient(index)"
-                    class="p-1 text-red-400 hover:text-red-600"
-                  >
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                    </svg>
-                  </button>
+                      <svg 
+                        class="w-4 h-4 transform transition-transform"
+                        :class="{ 'rotate-180': expandedRecipients.includes(index) }"
+                        fill="currentColor" 
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                      </svg>
+                    </button>
+                    <button 
+                      v-if="orderForm.recipients.length > 1"
+                      type="button" 
+                      @click="removeRecipient(index)"
+                      class="p-1.5 text-red-400 hover:text-red-600 rounded hover:bg-red-50"
+                    >
+                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                      </svg>
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              <div v-show="!expandedRecipients.includes(index) || expandedRecipients.includes(index)" class="space-y-3">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">
-                    이름 <span class="text-red-500">*</span>
-                  </label>
-                  <input 
-                    type="text" 
-                    class="w-full h-10 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" 
-                    v-model="recipient.name"
-                    :placeholder="'수취인 ' + (index + 1) + ' 이름'"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">
-                    연락처 <span class="text-red-500">*</span>
-                  </label>
-                  <input 
-                    type="tel" 
-                    class="w-full h-10 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" 
-                    v-model="recipient.phone"
-                    placeholder="태국 현지 연락처"
-                    inputmode="tel"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">
-                    주소 <span class="text-red-500">*</span>
-                  </label>
-                  <textarea 
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-none" 
-                    v-model="recipient.address"
-                    placeholder="태국 현지 주소 (영문/태국어)"
-                    rows="2"
-                    required
-                  ></textarea>
-                </div>
-                
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">우편번호</label>
-                  <input 
-                    type="text" 
-                    class="w-full h-10 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" 
-                    v-model="recipient.postalCode"
-                    placeholder="12345"
-                    inputmode="numeric"
-                    maxlength="5"
-                    pattern="[0-9]{5}"
-                  />
+                <div v-show="expandedRecipients.includes(index)" class="mt-3 space-y-3">
+                  <div class="grid grid-cols-2 gap-3">
+                    <div>
+                      <label class="block text-xs font-medium text-gray-700 mb-1">
+                        이름 <span class="text-red-500">*</span>
+                      </label>
+                      <input 
+                        type="text" 
+                        class="w-full h-9 px-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" 
+                        v-model="recipient.name"
+                        placeholder="수취인 이름"
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <label class="block text-xs font-medium text-gray-700 mb-1">
+                        연락처 <span class="text-red-500">*</span>
+                      </label>
+                      <div class="relative">
+                        <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-500">+66</span>
+                        <input 
+                          type="tel" 
+                          class="w-full h-9 pl-10 pr-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" 
+                          v-model="recipient.phone"
+                          placeholder="8-xxxx-xxxx"
+                          inputmode="tel"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">
+                      주소 <span class="text-red-500">*</span>
+                    </label>
+                    <textarea 
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-none" 
+                      v-model="recipient.address"
+                      placeholder="예: 123/45 Sukhumvit Rd, Klongtoey, Bangkok"
+                      rows="2"
+                      required
+                    ></textarea>
+                  </div>
+                  
+                  <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">
+                      우편번호 <span class="text-xs text-gray-500">(선택)</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      class="w-full h-9 px-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" 
+                      v-model="recipient.postalCode"
+                      placeholder="10110 (방콕)"
+                      inputmode="numeric"
+                      maxlength="5"
+                      pattern="[1-9][0-9]{4}"
+                    />
+                    <p class="text-xs text-gray-500 mt-1">태국 우편번호는 10xxx ~ 96xxx 범위입니다</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -465,21 +443,6 @@
             </div>
           </div>
 
-          <!-- YSC 접수지 선택 -->
-          <div class="mt-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">YSC 접수지 <span class="text-red-500">*</span></label>
-            <select 
-              class="w-full h-11 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base" 
-              v-model="orderForm.inboundLocationId"
-              required
-            >
-              <option value="">YSC 접수지를 선택하세요</option>
-              <option value="1">YSC 본사 (서울 강남구)</option>
-              <option value="2">YSC 부산센터 (부산 해운대구)</option>
-              <option value="3">YSC 인천센터 (인천 연수구)</option>
-            </select>
-            <p class="text-xs text-gray-500 mt-1">선택한 접수지 주소로 물품을 발송해주세요</p>
-          </div>
 
           <!-- 접수 관련 요청사항 -->
           <div class="mt-4">
@@ -713,6 +676,115 @@
         </div>
       </div>
 
+      <!-- 실시간 요약 정보 카드 -->
+      <div class="mx-4 mt-4">
+        <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+          <h3 class="text-base font-semibold text-gray-900 mb-3">주문 요약</h3>
+          
+          <!-- CBM 정보 -->
+          <div class="mb-3">
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-600">총 CBM</span>
+              <div class="flex items-center gap-2">
+                <span :class="['text-lg font-bold', isCBMExceeded ? 'text-red-600' : 'text-gray-900']">
+                  {{ totalCBM.toFixed(3) }} m³
+                </span>
+                <span v-if="!isCBMExceeded" class="text-xs text-gray-500">/ 29 m³</span>
+              </div>
+            </div>
+            <div v-if="isCBMExceeded" class="mt-2 p-2 bg-red-50 rounded-lg">
+              <div class="flex items-start gap-2">
+                <svg class="w-5 h-5 text-red-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-red-800">CBM 한도 초과</p>
+                  <p class="text-xs text-red-700 mt-1">
+                    29m³를 초과하여 자동으로 항공운송으로 전환됩니다.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="mt-2 bg-gray-50 rounded p-2">
+              <div class="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  :class="['h-2 rounded-full transition-all', isCBMExceeded ? 'bg-red-600' : 'bg-blue-600']"
+                  :style="`width: ${Math.min((totalCBM / 29) * 100, 100)}%`"
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- THB 정보 -->
+          <div class="mb-3">
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-600">총 상품가액</span>
+              <span :class="['text-lg font-bold', isTHBExceeded ? 'text-orange-600' : 'text-gray-900']">
+                ฿ {{ totalTHBValue.toLocaleString() }}
+              </span>
+            </div>
+            <div v-if="isTHBExceeded" class="mt-2 p-2 bg-orange-50 rounded-lg">
+              <div class="flex items-start gap-2">
+                <svg class="w-5 h-5 text-orange-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                </svg>
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-orange-800">THB 1,500 초과</p>
+                  <p class="text-xs text-orange-700 mt-1">
+                    수취인 추가 정보 입력이 필요할 수 있습니다.
+                  </p>
+                  <button 
+                    @click="showTHBModal = true"
+                    class="mt-2 text-xs text-orange-800 underline hover:text-orange-900"
+                  >
+                    추가 정보 입력하기
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 회원 코드 경고 -->
+          <div v-if="!authStore.user?.memberCode || authStore.user?.memberCode === 'No code'" class="mb-3">
+            <div class="p-2 bg-yellow-50 rounded-lg">
+              <div class="flex items-start gap-2">
+                <svg class="w-5 h-5 text-yellow-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                </svg>
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-yellow-800">회원코드 미등록</p>
+                  <p class="text-xs text-yellow-700 mt-1">
+                    회원코드가 없어 발송이 지연될 수 있습니다.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 요약 정보 -->
+          <div class="border-t pt-3">
+            <div class="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <span class="text-gray-500">배송 방식</span>
+                <p class="font-medium">{{ orderForm.shippingType === 'air' ? '항공운송' : '해상운송' }}</p>
+              </div>
+              <div>
+                <span class="text-gray-500">리패킹</span>
+                <p class="font-medium">{{ orderForm.repacking ? '신청' : '미신청' }}</p>
+              </div>
+              <div>
+                <span class="text-gray-500">수취인</span>
+                <p class="font-medium">{{ orderForm.recipients.length }}명</p>
+              </div>
+              <div>
+                <span class="text-gray-500">품목</span>
+                <p class="font-medium">{{ orderForm.items.length }}개</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- 하단 여백 (고정 버튼을 위한 공간) -->
       <div class="h-24"></div>
     </form>
@@ -763,6 +835,165 @@
       @close="showHSModal = false"
       @select="selectHSCodeFromModal"
     />
+
+    <!-- THB Threshold Modal -->
+    <div v-if="showTHBModal" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" @click="showTHBModal = false"></div>
+        
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+          <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div class="sm:flex sm:items-start">
+              <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-orange-100 sm:mx-0 sm:h-10 sm:w-10">
+                <svg class="h-6 w-6 text-orange-600" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                </svg>
+              </div>
+              <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left flex-1">
+                <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                  수취인 추가 정보 입력
+                </h3>
+                <div class="mt-2">
+                  <p class="text-sm text-gray-500">
+                    품목 가액이 THB 1,500을 초과하여 세관 신고를 위한 수취인 추가 정보 입력이 필요합니다.
+                  </p>
+                </div>
+                
+                <!-- 추가 정보 입력 폼 -->
+                <div class="mt-4 space-y-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                      수취인 신분증 번호 <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      v-model="thbAdditionalInfo.nationalId"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                      placeholder="태국 신분증 번호 13자리"
+                      maxlength="13"
+                      pattern="[0-9]{13}"
+                    />
+                    <p class="text-xs text-gray-500 mt-1">예: 1234567890123</p>
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                      수취인 직업 <span class="text-red-500">*</span>
+                    </label>
+                    <select 
+                      v-model="thbAdditionalInfo.occupation"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    >
+                      <option value="">직업을 선택하세요</option>
+                      <option value="employee">회사원</option>
+                      <option value="business">사업자</option>
+                      <option value="student">학생</option>
+                      <option value="housewife">주부</option>
+                      <option value="freelancer">프리랜서</option>
+                      <option value="retired">퇴직자</option>
+                      <option value="other">기타</option>
+                    </select>
+                  </div>
+                  
+                  <div v-if="thbAdditionalInfo.occupation === 'other'">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                      기타 직업 명시 <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      v-model="thbAdditionalInfo.occupationOther"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                      placeholder="직업을 입력하세요"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                      수취인과의 관계 <span class="text-red-500">*</span>
+                    </label>
+                    <select 
+                      v-model="thbAdditionalInfo.relationship"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    >
+                      <option value="">관계를 선택하세요</option>
+                      <option value="self">본인</option>
+                      <option value="family">가족</option>
+                      <option value="friend">친구</option>
+                      <option value="business">비즈니스</option>
+                      <option value="other">기타</option>
+                    </select>
+                  </div>
+                  
+                  <div v-if="thbAdditionalInfo.relationship === 'other'">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                      기타 관계 명시 <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      v-model="thbAdditionalInfo.relationshipOther"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                      placeholder="관계를 입력하세요"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                      발송 목적 <span class="text-red-500">*</span>
+                    </label>
+                    <select 
+                      v-model="thbAdditionalInfo.purpose"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    >
+                      <option value="">목적을 선택하세요</option>
+                      <option value="gift">선물</option>
+                      <option value="personal">개인 사용</option>
+                      <option value="business">상업적 목적</option>
+                      <option value="sample">샘플</option>
+                      <option value="other">기타</option>
+                    </select>
+                  </div>
+                  
+                  <div v-if="thbAdditionalInfo.purpose === 'other'">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                      기타 목적 명시 <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      v-model="thbAdditionalInfo.purposeOther"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                      placeholder="목적을 입력하세요"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+            <button 
+              type="button" 
+              @click="saveTHBAdditionalInfo"
+              :disabled="!isThbFormValid"
+              :class="[
+                'w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm',
+                isThbFormValid ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'
+              ]"
+            >
+              저장
+            </button>
+            <button 
+              type="button" 
+              @click="showTHBModal = false"
+              class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+            >
+              취소
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -793,6 +1024,18 @@ const businessWarnings = ref<Array<{title: string, message: string}>>([])
 const showHSModal = ref(false)
 const hsSearchTerm = ref('')
 const currentItemIndex = ref<number>(-1)
+
+// THB Modal variables
+const showTHBModal = ref(false)
+const thbAdditionalInfo = reactive({
+  nationalId: '',
+  occupation: '',
+  occupationOther: '',
+  relationship: '',
+  relationshipOther: '',
+  purpose: '',
+  purposeOther: ''
+})
 
 // Helper functions for error handling
 const removeWarning = (index: number) => {
@@ -879,7 +1122,9 @@ const orderForm = reactive({
   quickPhone: '',
   inboundLocationId: null,
   inboundNote: '',
-  specialRequests: ''
+  specialRequests: '',
+  // THB 1,500 초과 시 추가 정보
+  thbAdditionalInfo: null
 })
 
 // 새 상태 변수들
@@ -925,8 +1170,49 @@ const getUserTypeText = computed(() => {
 })
 
 const totalCBM = computed(() => {
-  return orderForm.items.reduce((sum, item) => sum + (item.cbm || 0), 0)
+  return orderForm.items.reduce((sum, item) => {
+    const cbm = item.width && item.height && item.depth
+      ? (item.width * item.height * item.depth) / 1000000
+      : 0
+    return sum + cbm
+  }, 0)
 })
+
+const isCBMExceeded = computed(() => totalCBM.value > 29)
+const totalTHBValue = computed(() => {
+  return orderForm.items.reduce((sum, item) => sum + ((item.unitPrice || 0) * (item.quantity || 0)), 0)
+})
+const isTHBExceeded = computed(() => totalTHBValue.value > 1500)
+
+// THB Modal validation
+const isThbFormValid = computed(() => {
+  const info = thbAdditionalInfo
+  return (
+    info.nationalId && 
+    info.nationalId.length === 13 && 
+    /^[0-9]{13}$/.test(info.nationalId) &&
+    info.occupation &&
+    (info.occupation !== 'other' || info.occupationOther) &&
+    info.relationship &&
+    (info.relationship !== 'other' || info.relationshipOther) &&
+    info.purpose &&
+    (info.purpose !== 'other' || info.purposeOther)
+  )
+})
+
+// THB Modal functions
+const saveTHBAdditionalInfo = () => {
+  if (!isThbFormValid.value) {
+    businessWarning('validation', '모든 필수 정보를 입력해주세요.')
+    return
+  }
+  
+  // Add to order form or save separately
+  orderForm.thbAdditionalInfo = { ...thbAdditionalInfo }
+  
+  showTHBModal.value = false
+  showSuccess('수취인 추가 정보가 저장되었습니다.')
+}
 
 // 태국 전용 시스템이므로 getPostalCodeGuide 함수 제거됨 - 불필요
 
@@ -1035,7 +1321,6 @@ const getAppliedTariffRate = (tariffInfo: any): number => {
 // Enhanced form validation using the new error handler  
 const validateOrderForm = (): { isValid: boolean; errors: Record<string, string> } => {
   const formData = {
-    trackingNumber: orderForm.trackingNumber,
     recipientName: orderForm.recipientName,
     recipientPhone: orderForm.recipientPhone,
     recipientAddress: orderForm.recipientAddress,
@@ -1045,13 +1330,6 @@ const validateOrderForm = (): { isValid: boolean; errors: Record<string, string>
   }
 
   const rules = {
-    trackingNumber: [
-      validationRules.required('EMS 송장번호를 입력해주세요.'),
-      validationRules.emsTrackingNumber()
-    ],
-    postalCode: [
-      validationRules.thailandPostalCode()
-    ],
     recipients: [{
       validator: (recipients) => {
         if (!recipients || recipients.length === 0) return '최소 1명의 수취인을 등록해주세요.'
@@ -1069,7 +1347,6 @@ const validateOrderForm = (): { isValid: boolean; errors: Record<string, string>
       message: '수취인 정보를 확인해주세요.'
     }],
     inboundMethod: [validationRules.required('접수 방법을 선택해주세요.')],
-    inboundLocationId: [validationRules.required('YSC 접수지를 선택해주세요.')],
     items: [{
       validator: (items) => {
         if (!items || items.length === 0) return '최소 1개 이상의 품목을 추가해주세요.'
@@ -1124,29 +1401,51 @@ const submitOrder = async () => {
     // Prepare order data for backend API
     const orderData = {
       userId: authStore.user?.id,
-      trackingNumber: orderForm.trackingNumber,
       shippingType: orderForm.shippingType,
       country: orderForm.country,
-      postalCode: orderForm.postalCode,
-      recipientName: orderForm.recipientName,
-      recipientPhone: orderForm.recipientPhone,
-      recipientAddress: orderForm.recipientAddress,
-      recipientPostalCode: orderForm.recipientPostalCode,
-      items: orderForm.items.map(item => ({
+      // 첫 번째 수취인을 메인 수취인으로 설정
+      recipientName: orderForm.recipients[0]?.name || '',
+      recipientPhone: orderForm.recipients[0]?.phone || '',
+      recipientAddress: orderForm.recipients[0]?.address || '',
+      recipientPostalCode: orderForm.recipients[0]?.postalCode || '',
+      // 추가 수취인 정보
+      additionalRecipients: orderForm.recipients.slice(1).map(r => ({
+        name: r.name,
+        phone: r.phone,
+        address: r.address,
+        postalCode: r.postalCode
+      })),
+      // 배대지 접수 정보
+      inboundMethod: orderForm.inboundMethod,
+      courierCompany: orderForm.courierCompany,
+      waybillNo: orderForm.waybillNo,
+      quickVendor: orderForm.quickVendor,
+      quickPhone: orderForm.quickPhone,
+      inboundNote: orderForm.inboundNote,
+      // 리패킹 정보
+      repacking: orderForm.repacking,
+      // 품목 정보
+      orderItems: orderForm.items.map(item => ({
         hsCode: item.hsCode,
         description: item.description,
-        englishName: item.englishName,
+        englishName: item.englishName || '',
         quantity: item.quantity,
         weight: item.weight,
         width: item.width,
         height: item.height,
         depth: item.depth,
         unitPrice: item.unitPrice,
-        cbm: item.cbm,
-        tariffInfo: item.tariffInfo,
-        dutyResult: item.dutyResult
+        cbm: parseFloat(calculateCBM(item)),
+        tariffInfo: item.tariffInfo || null,
+        dutyResult: item.dutyResult || null
       })),
-      specialRequests: orderForm.specialRequests || ''
+      specialRequests: orderForm.specialRequests || '',
+      // 비즈니스 규칙 플래그
+      totalCbm: totalCBM.value,
+      totalThbValue: totalTHBValue.value,
+      cbmExceeded: isCBMExceeded.value,
+      thbExceeded: isTHBExceeded.value,
+      noMemberCode: !authStore.user?.memberCode || authStore.user?.memberCode === 'No code'
     }
 
     console.log('Submitting order data:', orderData)
@@ -1215,6 +1514,40 @@ watch(
   },
   { deep: true }
 )
+
+// CBM 초과 시 자동으로 항공운송 전환
+watch(isCBMExceeded, (exceeded) => {
+  if (exceeded && orderForm.shippingType === 'sea') {
+    orderForm.shippingType = 'air'
+    businessWarnings.value = []
+    addBusinessWarning(
+      'CBM 한도 초과로 배송방식 변경',
+      `총 CBM이 ${totalCBM.value.toFixed(2)}m³로 29m³를 초과하여 항공운송으로 자동 전환되었습니다.`
+    )
+  }
+})
+
+// THB 1,500 초과 시 추가 정보 입력 안내 (한 번만 표시)
+const thbModalShown = ref(false)
+watch(isTHBExceeded, (exceeded) => {
+  if (exceeded && !orderForm.thbAdditionalInfo && !thbModalShown.value) {
+    thbModalShown.value = true
+    setTimeout(() => {
+      if (!orderForm.thbAdditionalInfo) {
+        businessWarning('thb', `품목 가액이 THB 1,500을 초과했습니다. 수취인 추가 정보 입력을 권장합니다.`)
+      }
+    }, 1000)
+  }
+  
+  if (!exceeded) {
+    thbModalShown.value = false
+  }
+})
+
+// 품목 변경 시 실시간 CBM 계산
+watch(() => orderForm.items, () => {
+  updateItemCBM()
+}, { deep: true })
 
 const goBack = () => {
   router.go(-1)

@@ -20,7 +20,7 @@
           <!-- 알림 버튼 -->
           <button 
             v-if="authStore.isAuthenticated"
-            @click="showNotifications = !showNotifications"
+            @click="toggleNotifications"
             class="notification-button"
             :class="{ 'has-unread': unreadNotifications > 0 }"
             aria-label="알림"
@@ -95,6 +95,13 @@
           <MenuItem label="마이페이지" :to="{name:'mypage'}" icon="user" @done="closeHamburgerMenu" />
           <MenuItem label="주문서 작성" :to="{name:'order-create'}" icon="file-plus" @done="closeHamburgerMenu" />
           <MenuItem label="주문내역" :to="{name:'orders'}" icon="list" @done="closeHamburgerMenu" />
+          <MenuItem 
+            v-if="authStore.user?.userType === 'CORPORATE' || authStore.user?.userType === 'PARTNER'"
+            label="일괄 등록" 
+            :to="{name:'bulk-management'}" 
+            icon="upload" 
+            @done="closeHamburgerMenu" 
+          />
           <MenuItem label="공지사항" :to="{name:'notices'}" icon="bell" @done="closeHamburgerMenu" />
           <MenuItem label="FAQ" :to="{name:'faq'}" icon="help-circle" @done="closeHamburgerMenu" />
           <div class="border-t my-1"></div>
@@ -231,6 +238,15 @@ const toggleSidebar = () => {
   sidebarOpen.value = !sidebarOpen.value
 }
 
+const toggleNotifications = async () => {
+  showNotifications.value = !showNotifications.value
+  
+  // 알림 패널을 열 때마다 최신 알림 데이터 로드
+  if (showNotifications.value && authStore.isAuthenticated) {
+    await loadNotifications()
+  }
+}
+
 const closeAllPanels = () => {
   sidebarOpen.value = false
   showNotifications.value = false
@@ -269,24 +285,77 @@ const updateScreenSize = () => {
 
 // 알림 로드
 const loadNotifications = async () => {
-  // TODO: 실제 알림 API 연동
-  notifications.value = [
-    {
-      id: 1,
-      title: '새 주문 접수',
-      message: '주문 #YSC-2024-001이 접수되었습니다.',
-      createdAt: new Date(Date.now() - 1000 * 60 * 5).toISOString(), // 5분 전
-      read: false
-    },
-    {
-      id: 2,
-      title: '배송 완료',
-      message: '주문 #YSC-2024-002가 배송 완료되었습니다.',
-      createdAt: new Date(Date.now() - 1000 * 60 * 60).toISOString(), // 1시간 전
-      read: true
+  try {
+    // 사용자 정보 확인
+    const userId = authStore.user?.id
+    if (!userId) {
+      // 로그인하지 않은 경우 조용히 종료
+      notifications.value = []
+      unreadNotifications.value = 0
+      return
     }
-  ]
-  unreadNotifications.value = notifications.value.filter(n => !n.read).length
+
+    // 실제 알림 API 호출 - 올바른 엔드포인트 사용
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/notifications/user/${userId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`,
+        'Content-Type': 'application/json'
+      }
+    })
+
+    if (!response.ok) {
+      // 404 에러는 알림이 없는 경우이므로 정상 처리
+      if (response.status === 404) {
+        notifications.value = []
+        unreadNotifications.value = 0
+        return
+      }
+      
+      // 401 에러는 인증 문제이므로 조용히 처리
+      if (response.status === 401) {
+        notifications.value = []
+        unreadNotifications.value = 0
+        return
+      }
+      
+      // 기타 에러만 로그에 기록
+      console.warn(`Notification API returned status: ${response.status}`)
+      notifications.value = []
+      unreadNotifications.value = 0
+      return
+    }
+
+    const result = await response.json()
+    
+    if (result.success && result.data) {
+      // API 응답 데이터를 프론트엔드 형식으로 변환
+      notifications.value = result.data.map(notification => ({
+        id: notification.id,
+        title: notification.title,
+        message: notification.message,
+        createdAt: notification.createdAt,
+        read: notification.isRead || false,
+        type: notification.type,
+        actionUrl: notification.actionUrl
+      }))
+      
+      // 읽지 않은 알림 개수 업데이트
+      unreadNotifications.value = result.unreadCount || notifications.value.filter(n => !n.read).length
+    } else {
+      // API 응답은 성공했지만 데이터가 없는 경우 - 정상 상황
+      notifications.value = []
+      unreadNotifications.value = 0
+    }
+  } catch (error) {
+    // 네트워크 에러 등은 조용히 처리
+    console.debug('Notification loading skipped:', error.message)
+    notifications.value = []
+    unreadNotifications.value = 0
+    
+    // 사용자에게 에러 메시지를 표시하지 않음
+    // 알림은 부가 기능이므로 실패해도 주요 기능에 영향 없음
+  }
 }
 
 // PWA 업데이트 감지

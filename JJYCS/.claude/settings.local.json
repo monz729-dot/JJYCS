@@ -19,7 +19,9 @@
       "WebFetch(domain:localhost)",
       "Bash(curl:*)",
       "Bash(./mvnw.cmd spring-boot:run:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": [],

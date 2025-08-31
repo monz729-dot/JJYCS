@@ -2,8 +2,11 @@ package com.ysc.lms.config;
 
 import com.ysc.lms.entity.User;
 import com.ysc.lms.entity.Notification;
+import com.ysc.lms.entity.Order;
+import com.ysc.lms.entity.OrderItem;
 import com.ysc.lms.repository.UserRepository;
 import com.ysc.lms.repository.NotificationRepository;
+import com.ysc.lms.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,6 +16,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -41,7 +45,7 @@ public class AdminInitializationRunner {
     private String adminMemberCode;
 
     @Bean
-    ApplicationRunner initializeAdminAccount(UserRepository userRepo, PasswordEncoder encoder, NotificationRepository notificationRepo) {
+    ApplicationRunner initializeAdminAccount(UserRepository userRepo, PasswordEncoder encoder, NotificationRepository notificationRepo, OrderRepository orderRepo) {
         return args -> {
             log.info("프로덕션 환경 관리자 계정 초기화를 시작합니다...");
 
@@ -114,6 +118,9 @@ public class AdminInitializationRunner {
             
             // 테스트 알림 데이터 생성
             createTestNotifications(userRepo, notificationRepo);
+
+            // 테스트 주문 데이터 생성 - 서버 크래시 방지를 위해 비활성화
+            // createTestOrders(userRepo, orderRepo);
 
             log.info("관리자 계정 초기화 완료!");
         };
@@ -220,5 +227,137 @@ public class AdminInitializationRunner {
         }
 
         log.info("테스트 알림 데이터 생성 완료!");
+    }
+
+    private void createTestOrders(UserRepository userRepo, OrderRepository orderRepo) {
+        log.info("테스트 주문 데이터를 생성합니다...");
+
+        // 일반 사용자 주문 5개 생성
+        User generalUser = userRepo.findByEmail("user@example.com").orElse(null);
+        if (generalUser != null && orderRepo.countByUserId(generalUser.getId()) == 0) {
+            createTestOrdersForUser(generalUser, orderRepo, "일반사용자");
+        }
+
+        // 기업 사용자 주문 5개 생성
+        User corporateUser = userRepo.findByEmail("logistics@hyundai.com").orElse(null);
+        if (corporateUser != null && orderRepo.countByUserId(corporateUser.getId()) == 0) {
+            createTestOrdersForUser(corporateUser, orderRepo, "기업사용자");
+        }
+
+        // 활성화된 파트너 사용자 주문 3개 생성
+        User partnerUser = userRepo.findByEmail("partner@approved.co.kr").orElse(null);
+        if (partnerUser != null && orderRepo.countByUserId(partnerUser.getId()) == 0) {
+            createTestOrdersForUser(partnerUser, orderRepo, "파트너사용자", 3);
+        }
+
+        log.info("테스트 주문 데이터 생성 완료!");
+    }
+
+    private void createTestOrdersForUser(User user, OrderRepository orderRepo, String userType) {
+        createTestOrdersForUser(user, orderRepo, userType, 5);
+    }
+
+    private void createTestOrdersForUser(User user, OrderRepository orderRepo, String userType, int orderCount) {
+        for (int i = 1; i <= orderCount; i++) {
+            String orderNumber = generateOrderNumber(i);
+            
+            Order order = new Order();
+            order.setOrderNumber(orderNumber);
+            order.setUser(user);
+            
+            // 다양한 상태로 설정
+            Order.OrderStatus[] statuses = {
+                Order.OrderStatus.RECEIVED, 
+                Order.OrderStatus.ARRIVED, 
+                Order.OrderStatus.REPACKING, 
+                Order.OrderStatus.SHIPPING, 
+                Order.OrderStatus.DELIVERED
+            };
+            order.setStatus(statuses[(i - 1) % statuses.length]);
+            
+            // 배송 타입 설정 (일부는 CBM에 따라 항공으로)
+            if (i == 2 || i == 4) { // 2번, 4번 주문은 항공 운송
+                order.setShippingType(Order.ShippingType.AIR);
+                order.setOrderType(Order.OrderType.AIR);
+                order.setTotalCbm(new BigDecimal("30.5")); // CBM 29 초과
+                order.setCbmWarningMessage("CBM이 29m³를 초과하여 항공 운송으로 변경되었습니다.");
+            } else {
+                order.setShippingType(Order.ShippingType.SEA);
+                order.setOrderType(Order.OrderType.SEA);
+                order.setTotalCbm(new BigDecimal("15.2"));
+            }
+            
+            // 국가 설정
+            String[] countries = {"태국", "베트남", "말레이시아", "싱가포르", "인도네시아"};
+            order.setCountry(countries[(i - 1) % countries.length]);
+            
+            // 수취인 정보
+            order.setRecipientName("수취인" + i + " (" + userType + ")");
+            order.setRecipientPhone("010-" + String.format("%04d", 1000 + i) + "-" + String.format("%04d", 5000 + i));
+            order.setRecipientAddress(countries[(i - 1) % countries.length] + " " + userType + " 테스트 주소 " + i + "번지");
+            order.setRecipientPostalCode(String.format("%05d", 10000 + i));
+            order.setPostalCode(String.format("%05d", 10000 + i));
+            
+            // 무게 및 CBM 설정
+            order.setTotalWeight(new BigDecimal("5.5"));
+            
+            // 비즈니스 룰 플래그 설정 (일부 주문에만)
+            if (i == 3) { // 3번 주문은 THB 1500 초과
+                order.setRequiresExtraRecipient(true);
+                order.setThbWarningMessage("총 금액이 THB 1,500을 초과합니다. 수취인 추가 정보가 필요합니다.");
+            }
+            if (i == 5) { // 5번 주문은 회원코드 미기재
+                order.setNoMemberCode(true);
+                order.setMemberCodeWarningMessage("회원코드가 기재되지 않아 배송이 지연될 수 있습니다.");
+            }
+            
+            // 창고 정보 (일부 주문만)
+            if (order.getStatus() == Order.OrderStatus.ARRIVED || order.getStatus() == Order.OrderStatus.REPACKING) {
+                order.setStorageLocation("A-0" + i + "-0" + (i % 3 + 1));
+                order.setStorageArea("A열 " + i + "행 " + (i % 3 + 1) + "번");
+                order.setArrivedAt(LocalDateTime.now().minusDays(i));
+                order.setActualWeight(new BigDecimal("5.3"));
+            }
+            
+            // 배송 정보
+            if (order.getStatus() == Order.OrderStatus.SHIPPING || order.getStatus() == Order.OrderStatus.DELIVERED) {
+                order.setShippedAt(LocalDateTime.now().minusDays(i - 1));
+                order.setTrackingNumber("TRK" + orderNumber.replace("YCS-", ""));
+                order.setEstimatedDelivery(LocalDateTime.now().plusDays(7 - i));
+            }
+            
+            if (order.getStatus() == Order.OrderStatus.DELIVERED) {
+                order.setDeliveredAt(LocalDateTime.now().minusHours(i * 6));
+            }
+            
+            // 특별 요청사항
+            order.setSpecialRequests("테스트 주문 " + i + "번 - " + userType + " 샘플 데이터");
+            
+            // 리패킹 정보
+            if (i == 2 || i == 4) {
+                order.setRepackingRequested(true);
+                if (order.getStatus() == Order.OrderStatus.SHIPPING || order.getStatus() == Order.OrderStatus.DELIVERED) {
+                    order.setRepackingCompleted(true);
+                }
+            }
+            
+            // 생성일 설정 (최근 30일 내에 분산)
+            order.setCreatedAt(LocalDateTime.now().minusDays(i * 5).minusHours(i * 3));
+            order.setUpdatedAt(LocalDateTime.now().minusDays(i * 2));
+            
+            orderRepo.save(order);
+            
+            log.info("{} 테스트 주문 생성: {} (상태: {})", userType, orderNumber, order.getStatus());
+        }
+    }
+
+
+    private String generateOrderNumber(int sequence) {
+        LocalDateTime now = LocalDateTime.now();
+        String datePart = String.format("%02d%02d%02d", 
+            now.getYear() % 100, 
+            now.getMonthValue(), 
+            now.getDayOfMonth());
+        return "YCS-" + datePart + "-" + String.format("%03d", sequence);
     }
 }

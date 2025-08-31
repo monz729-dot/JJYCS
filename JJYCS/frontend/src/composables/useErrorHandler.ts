@@ -249,8 +249,16 @@ export function useErrorHandler() {
     thailandPostalCode: (message = '태국 우편번호는 5자리 숫자입니다.'): ValidationRule => ({
       validator: (value) => {
         if (!value) return true
-        const pattern = /^[0-9]{5}$/
-        return pattern.test(value) ? true : message
+        const pattern = /^[1-9][0-9]{4}$/  // 태국 우편번호는 0으로 시작하지 않음
+        if (!pattern.test(value)) return message
+        
+        // 태국 우편번호 지역별 검증
+        const firstTwo = parseInt(value.substring(0, 2))
+        if (firstTwo < 10 || firstTwo > 96) {
+          return '유효한 태국 우편번호 범위가 아닙니다. (10xxx ~ 96xxx)'
+        }
+        
+        return true
       },
       message
     }),
@@ -258,9 +266,29 @@ export function useErrorHandler() {
     thailandPhone: (message = '올바른 태국 전화번호를 입력해주세요.'): ValidationRule => ({
       validator: (value) => {
         if (!value) return true
-        // 태국 전화번호: +66, 0으로 시작하거나 직접 번호, 9-15자리
-        const pattern = /^[\+]?[0-9\s\-]{9,15}$/
-        return pattern.test(value.trim()) ? true : message
+        
+        // 공백, 하이픈, 괄호 제거
+        const cleanedNumber = value.replace(/[\s\-\(\)]/g, '')
+        
+        // 태국 전화번호 형식:
+        // 모바일: 06/08/09 + 7-8자리 (총 9-10자리)
+        // 방콕 지역번호: 02 + 7자리 (총 9자리)
+        // 기타 지역번호: 03/04/05/07 + 7자리 (총 9자리)
+        // 국제번호: +66 뒤에 0을 제외한 번호
+        
+        const thaiMobilePattern = /^(0[689]\d{7,8}|\+66[689]\d{7,8})$/
+        const thaiBangkokPattern = /^(02\d{7}|\+662\d{7})$/
+        const thaiLandlinePattern = /^(0[3457]\d{7}|\+66[3457]\d{7})$/
+        
+        const isValid = thaiMobilePattern.test(cleanedNumber) || 
+                       thaiBangkokPattern.test(cleanedNumber) || 
+                       thaiLandlinePattern.test(cleanedNumber)
+        
+        if (!isValid) {
+          return '태국 전화번호 형식: 08-xxxx-xxxx 또는 +66-8-xxxx-xxxx'
+        }
+        
+        return true
       },
       message
     }),

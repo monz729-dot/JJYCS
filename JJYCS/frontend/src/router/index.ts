@@ -167,6 +167,17 @@ const router = createRouter({
     //   }
     // },
 
+    // Bulk Management routes (for Corporate and Partner users)
+    {
+      path: '/bulk',
+      name: 'bulk-management',
+      component: () => import('@/modules/bulk/views/BulkManagementPage.vue'),
+      meta: { 
+        requiresAuth: true,
+        allowedRoles: [USER_TYPE.CORPORATE, USER_TYPE.PARTNER]
+      }
+    },
+
     // Admin routes
     {
       path: '/admin',
