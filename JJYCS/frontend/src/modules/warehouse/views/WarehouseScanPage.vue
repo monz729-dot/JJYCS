@@ -792,16 +792,34 @@ onUnmounted(() => {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 500;
-  color: var(--text-primary);
+  color: #374151;
+  font-size: 0.875rem;
 }
 
 .input-group input,
 .input-group textarea {
   width: 100%;
-  padding: 0.75rem;
-  border: 1px solid var(--border-color);
-  border-radius: 0.5rem;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
   font-size: 1rem;
+  transition: all 0.2s ease;
+  background: white;
+  box-sizing: border-box;
+}
+
+.input-group input:focus,
+.input-group textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.status-filter:focus,
+.search-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .input-group textarea {
@@ -895,9 +913,13 @@ onUnmounted(() => {
 
 .status-filter,
 .search-input {
-  padding: 0.5rem;
-  border: 1px solid var(--border-color);
-  border-radius: 0.5rem;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  background: white;
+  box-sizing: border-box;
 }
 
 .search-input {

@@ -61,7 +61,14 @@ public class UserService {
         
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
-        user.setEmailVerified(false); // 실제로는 이메일 인증 로직 필요
+        
+        // 개발 환경에서는 일반 사용자의 경우 이메일 인증을 생략
+        // 실제 운영환경에서는 모든 사용자가 이메일 인증을 거쳐야 함
+        if (user.getUserType() == User.UserType.GENERAL) {
+            user.setEmailVerified(true); // 개발 환경: 일반 사용자는 즉시 인증 완료
+        } else {
+            user.setEmailVerified(false); // 기업/파트너는 이메일 인증 + 관리자 승인 필요
+        }
         
         return userRepository.save(user);
     }
@@ -257,5 +264,21 @@ public class UserService {
             sb.append(entry.getKey()).append(":").append(entry.getValue());
         }
         return sb.toString();
+    }
+    
+    // 비밀번호 찾기를 위한 사용자 검색 (이름, 연락처, 이메일로 검색)
+    public Optional<User> findByEmailAndNameAndPhone(String email, String name, String phone) {
+        return userRepository.findByEmailAndNameAndPhone(email, name, phone);
+    }
+    
+    // 비밀번호 업데이트 (ID로)
+    @Transactional
+    public void updatePassword(Long userId, String encodedPassword) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다"));
+        
+        user.setPassword(encodedPassword);
+        user.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(user);
     }
 }

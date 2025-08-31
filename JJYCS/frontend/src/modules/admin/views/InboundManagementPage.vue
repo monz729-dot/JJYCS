@@ -882,7 +882,7 @@ onUnmounted(() => {
 
 .flow-steps {
   display: flex;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(90deg, #1e40af 0%, #2563eb 100%);
   padding: 1rem 0;
 }
 
@@ -909,12 +909,12 @@ onUnmounted(() => {
 }
 
 .flow-steps .step.active .step-number {
-  background: #48bb78;
+  background: #3b82f6;
   transform: scale(1.1);
 }
 
 .flow-steps .step.completed .step-number {
-  background: #38a169;
+  background: #1d4ed8;
 }
 
 .flow-steps .step.completed .step-number::after {
@@ -977,7 +977,7 @@ onUnmounted(() => {
 }
 
 .input-method-tabs .tab-button.active {
-  background: #667eea;
+  background: #1e40af;
   color: white;
   transform: translateY(-2px);
 }
@@ -1321,27 +1321,29 @@ onUnmounted(() => {
 
 .form-group label {
   font-weight: 500;
-  color: #4a5568;
+  color: #374151;
   margin-bottom: 0.5rem;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
 }
 
 .form-group .form-input,
 .form-group .form-select,
 .form-group .form-textarea {
-  padding: 0.75rem;
-  border: 2px solid #e2e8f0;
-  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
   font-size: 1rem;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  background: white;
+  box-sizing: border-box;
 }
 
 .form-group .form-input:focus,
 .form-group .form-select:focus,
 .form-group .form-textarea:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .form-group .form-textarea {
@@ -1412,7 +1414,7 @@ onUnmounted(() => {
 .checkbox-grid .checkbox-label input[type="checkbox"] {
   width: 18px;
   height: 18px;
-  accent-color: #667eea;
+  accent-color: #1e40af;
 }
 
 .checkbox-grid .checkbox-label .checkbox-text {
@@ -1523,12 +1525,12 @@ onUnmounted(() => {
 }
 
 .btn.btn-primary {
-  background: #667eea;
+  background: #1e40af;
   color: white;
 }
 
 .btn.btn-primary:hover:not(:disabled) {
-  background: #5a67d8;
+  background: #1d4ed8;
   transform: translateY(-1px);
 }
 
@@ -1564,12 +1566,12 @@ onUnmounted(() => {
 
 .btn.btn-outline {
   background: transparent;
-  color: #667eea;
-  border: 2px solid #667eea;
+  color: #1e40af;
+  border: 2px solid #1e40af;
 }
 
 .btn.btn-outline:hover:not(:disabled) {
-  background: #667eea;
+  background: #1e40af;
   color: white;
   transform: translateY(-1px);
 }
@@ -1601,7 +1603,7 @@ onUnmounted(() => {
 
 .loading-overlay .loading-spinner i {
   font-size: 2rem;
-  color: #667eea;
+  color: #1e40af;
   margin-bottom: 1rem;
 }
 
@@ -1626,29 +1628,254 @@ onUnmounted(() => {
 @media (max-width: 768px) {
   .inbound-management {
     padding: 1rem;
+    margin: 0;
+    max-width: 100%;
+  }
+  
+  .page-header {
+    text-align: left;
+    margin-bottom: 1.5rem;
+  }
+  
+  .page-header .page-title {
+    font-size: 1.5rem;
+  }
+  
+  .flow-steps {
+    padding: 0.75rem 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .flow-steps .step {
+    min-width: 80px;
+    flex-shrink: 0;
+  }
+  
+  .flow-steps .step .step-number {
+    width: 1.5rem;
+    height: 1.5rem;
+    font-size: 0.75rem;
   }
   
   .flow-steps .step .step-title {
-    font-size: 0.8rem;
+    font-size: 0.7rem;
+    line-height: 1.2;
+    padding: 0 0.25rem;
+  }
+  
+  .flow-content {
+    padding: 1rem;
+  }
+  
+  .input-method-tabs {
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-bottom: 1.5rem;
+    border: none;
+    background: #f8fafc;
+    padding: 0.5rem;
+    border-radius: 8px;
+  }
+  
+  .input-method-tabs .tab-button {
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    text-align: center;
   }
   
   .form-grid {
     grid-template-columns: 1fr;
+    gap: 1rem;
   }
   
   .manual-input .form-row {
     grid-template-columns: 1fr;
+    gap: 1rem;
   }
   
-  .action-buttons,
+  .info-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    gap: 0.75rem;
+    position: sticky;
+    bottom: 0;
+    background: white;
+    padding: 1rem;
+    border-top: 1px solid #e2e8f0;
+    margin: 0 -1rem -1rem;
+  }
+  
   .form-actions {
     flex-direction: column;
+    gap: 0.75rem;
     align-items: stretch;
+    position: sticky;
+    bottom: 0;
+    background: white;
+    padding: 1rem;
+    border-top: 1px solid #e2e8f0;
+    margin: 1rem -1rem -1rem;
+  }
+  
+  .btn {
+    min-height: 48px;
+    font-size: 1rem;
+  }
+  
+  .camera-scan .camera-container {
+    max-width: 100%;
+    margin-bottom: 1rem;
   }
   
   .camera-controls,
   .barcode-controls {
     flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .order-card {
+    margin-bottom: 1rem;
+  }
+  
+  .order-card .order-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .checkbox-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  .completion-summary .summary-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  .photo-upload .photo-list {
+    gap: 0.5rem;
+  }
+  
+  .photo-upload .photo-list .photo-item .photo-thumb {
+    width: 60px;
+    height: 60px;
+  }
+}
+
+/* 아주 작은 화면 (iPhone SE 등) */
+@media (max-width: 375px) {
+  .page-header .page-title {
+    font-size: 1.25rem;
+  }
+  
+  .flow-steps .step {
+    min-width: 70px;
+  }
+  
+  .flow-steps .step .step-title {
+    font-size: 0.625rem;
+  }
+  
+  .form-section {
+    padding: 1rem;
+  }
+  
+  .btn {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
+  
+  .camera-scan .camera-container .scan-overlay p {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.75rem;
+  }
+  
+  .input-method-tabs .tab-button {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.85rem;
+  }
+}
+
+/* 가로 모드 최적화 */
+@media (max-width: 768px) and (orientation: landscape) {
+  .flow-steps {
+    padding: 0.5rem 0;
+  }
+  
+  .flow-steps .step .step-number {
+    width: 1.25rem;
+    height: 1.25rem;
+    font-size: 0.7rem;
+  }
+  
+  .flow-steps .step .step-title {
+    font-size: 0.6rem;
+  }
+  
+  .form-section {
+    margin-bottom: 1rem;
+  }
+  
+  .action-buttons,
+  .form-actions {
+    flex-direction: row;
+    position: static;
+    margin: 1rem 0;
+    border-top: none;
+    padding: 0;
+  }
+}
+
+/* 터치 디바이스 최적화 */
+@media (hover: none) and (pointer: coarse) {
+  .btn,
+  .tab-button,
+  .form-input,
+  .form-select,
+  .form-textarea {
+    min-height: 44px;
+  }
+  
+  .checkbox-grid .checkbox-label input[type="checkbox"] {
+    width: 24px;
+    height: 24px;
+    margin-right: 0.5rem;
+  }
+  
+  .flow-steps .step .step-number {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  
+  .input-method-tabs .tab-button {
+    min-height: 48px;
+  }
+  
+  /* 스와이프 가능한 영역 표시 */
+  .flow-steps::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 20px;
+    background: linear-gradient(to left, rgba(30, 64, 175, 0.1), transparent);
+    pointer-events: none;
+  }
+  
+  /* 터치 피드백 강화 */
+  .btn:active {
+    transform: scale(0.98);
+  }
+  
+  .tab-button:active {
+    transform: scale(0.95);
   }
 }
 </style>

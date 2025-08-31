@@ -431,6 +431,81 @@ public class EmailService {
     }
     
     /**
+     * 비밀번호 찾기 인증번호 발송
+     */
+    @Async
+    public void sendPasswordResetVerificationCode(String to, String name, String verificationCode) {
+        if (!emailEnabled) {
+            log.info("Email sending is disabled. Password reset verification code: {}", verificationCode);
+            return;
+        }
+
+        try {
+            String subject = "[YCS LMS] 비밀번호 재설정 인증번호";
+            
+            String htmlContent = String.format("""
+                <html>
+                <body style="font-family: Arial, sans-serif; margin: 40px; color: #333;">
+                    <div style="max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+                        <div style="background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%); color: white; padding: 30px; text-align: center;">
+                            <h1 style="margin: 0; font-size: 28px;">YCS 물류관리시스템</h1>
+                            <p style="margin: 10px 0 0 0; opacity: 0.9;">비밀번호 재설정 인증</p>
+                        </div>
+                        <div style="padding: 40px 30px;">
+                            <h2 style="color: #2c3e50; margin-bottom: 20px;">안녕하세요, %s님!</h2>
+                            <p style="line-height: 1.6; margin-bottom: 25px;">
+                                비밀번호 재설정을 위한 인증번호를 발송해드립니다.<br>
+                                아래 인증번호를 입력하여 본인 확인을 완료해주세요.
+                            </p>
+                            
+                            <div style="background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%); padding: 30px; border-radius: 12px; text-align: center; margin: 30px 0;">
+                                <p style="color: white; margin: 0 0 10px 0; font-size: 16px; opacity: 0.9;">인증번호</p>
+                                <div style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 8px; backdrop-filter: blur(10px);">
+                                    <span style="color: white; font-size: 32px; font-weight: bold; letter-spacing: 8px; font-family: 'Courier New', monospace;">%s</span>
+                                </div>
+                            </div>
+                            
+                            <div style="background: #fff3cd; padding: 20px; border-radius: 8px; border-left: 4px solid #ffc107; margin: 25px 0;">
+                                <p style="margin: 0; font-size: 14px; color: #856404;">
+                                    <strong>⏰ 유효시간 안내</strong><br>
+                                    이 인증번호는 발송 시점부터 <strong>10분간</strong> 유효합니다.
+                                </p>
+                            </div>
+                            
+                            <div style="background: #f8d7da; padding: 20px; border-radius: 8px; border-left: 4px solid #dc3545; margin: 25px 0;">
+                                <p style="margin: 0; font-size: 14px; color: #721c24;">
+                                    <strong>🔒 보안 안내</strong><br>
+                                    본인이 요청하지 않았다면 이 메일을 무시하고 즉시 계정 보안을 확인해주세요.<br>
+                                    인증번호는 절대 타인과 공유하지 마세요.
+                                </p>
+                            </div>
+                            
+                            <div style="text-align: center; margin-top: 30px;">
+                                <p style="color: #6c757d; font-size: 14px; margin: 0;">
+                                    문제가 있으시면 고객지원팀으로 연락해주세요.
+                                </p>
+                            </div>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 20px 30px; text-align: center; border-top: 1px solid #dee2e6;">
+                            <p style="margin: 0; font-size: 12px; color: #6c757d;">
+                                © 2024 YCS 물류관리시스템. All rights reserved.
+                            </p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """, name, verificationCode);
+
+            sendHtmlEmail(to, subject, htmlContent);
+            log.info("Password reset verification code sent to: {}", to);
+
+        } catch (Exception e) {
+            log.error("Failed to send password reset verification code to: {}", to, e);
+            throw new RuntimeException("인증번호 발송에 실패했습니다.", e);
+        }
+    }
+    
+    /**
      * 사용자 타입을 한국어로 변환
      */
     private String getUserTypeKorean(String userType) {

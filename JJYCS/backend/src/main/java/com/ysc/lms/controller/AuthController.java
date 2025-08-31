@@ -133,11 +133,28 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@RequestBody LoginRequest request) {
         try {
+            // 입력값 유효성 검사
+            if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "이메일을 입력해주세요.", "field", "email"));
+            }
+            
+            if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "비밀번호를 입력해주세요.", "field", "password"));
+            }
+            
+            // 이메일 형식 검증
+            if (!request.getEmail().contains("@") || !request.getEmail().contains(".")) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "올바른 이메일 형식을 입력해주세요.", "field", "email"));
+            }
             
             var userOpt = userService.findByEmail(request.getEmail());
             if (userOpt.isEmpty()) {
                 return ResponseEntity.badRequest()
-                    .body(Map.of("success", false, "error", "이메일 또는 비밀번호가 올바르지 않습니다."));
+                    .body(Map.of("success", false, "error", "user not found", "field", "email", 
+                                "message", "등록되지 않은 이메일입니다."));
             }
             
             User user = userOpt.get();
@@ -145,23 +162,39 @@ public class AuthController {
             // 비밀번호 확인
             if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
                 return ResponseEntity.badRequest()
-                    .body(Map.of("success", false, "error", "이메일 또는 비밀번호가 올바르지 않습니다."));
+                    .body(Map.of("success", false, "error", "invalid password", "field", "password",
+                                "message", "비밀번호가 일치하지 않습니다."));
             }
             
             // 계정 상태 확인
             if (user.getStatus() == User.UserStatus.PENDING) {
                 return ResponseEntity.badRequest()
-                    .body(Map.of("success", false, "error", "계정이 승인 대기 중입니다. 관리자 승인 후 이용 가능합니다."));
+                    .body(Map.of("success", false, "error", "pending approval", "field", "email",
+                                "message", "승인 대기 중인 계정입니다. 관리자 승인 후 이용 가능합니다."));
             }
             
             if (user.getStatus() == User.UserStatus.REJECTED) {
                 return ResponseEntity.badRequest()
-                    .body(Map.of("success", false, "error", "계정이 거부되었습니다. 고객센터에 문의하세요."));
+                    .body(Map.of("success", false, "error", "account rejected", "field", "email",
+                                "message", "계정이 거부되었습니다. 고객센터에 문의하세요."));
+            }
+            
+            if (user.getStatus() == User.UserStatus.SUSPENDED) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "account suspended", "field", "email",
+                                "message", "정지된 계정입니다. 고객센터에 문의하세요."));
+            }
+            
+            if (!user.getEmailVerified()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "email not verified", "field", "email",
+                                "message", "이메일 인증이 필요합니다. 이메일을 확인해주세요."));
             }
             
             if (user.getStatus() != User.UserStatus.ACTIVE) {
                 return ResponseEntity.badRequest()
-                    .body(Map.of("success", false, "error", "계정이 비활성화되었습니다."));
+                    .body(Map.of("success", false, "error", "account inactive", "field", "email",
+                                "message", "비활성화된 계정입니다. 관리자에게 문의해주세요."));
             }
             
             // JWT 토큰 생성
@@ -184,8 +217,9 @@ public class AuthController {
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
+            log.error("Login error for email: " + request.getEmail(), e);
             return ResponseEntity.internalServerError()
-                .body(Map.of("success", false, "error", "로그인 처리 중 오류가 발생했습니다."));
+                .body(Map.of("success", false, "error", "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.", "field", "general"));
         }
     }
     
@@ -434,6 +468,251 @@ public class AuthController {
         }
     }
     
+    // 새로운 비밀번호 찾기 API - 이름, 연락처, 이메일로 사용자 확인 후 인증번호 발송
+    @PostMapping("/find-password")
+    @Transactional
+    public ResponseEntity<Map<String, Object>> findPassword(@RequestBody FindPasswordRequest request) {
+        try {
+            log.info("비밀번호 찾기 요청: name={}, phone={}, email={}", 
+                request.getName(), request.getPhone(), request.getEmail());
+                
+            // 입력값 검증
+            if (request.getName() == null || request.getName().trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "이름을 입력해주세요.", "field", "name"));
+            }
+            
+            if (request.getPhone() == null || request.getPhone().trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "연락처를 입력해주세요.", "field", "phone"));
+            }
+            
+            if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "이메일을 입력해주세요.", "field", "email"));
+            }
+            
+            // 이메일 형식 검증
+            String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
+            if (!request.getEmail().matches(emailRegex)) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "올바른 이메일 형식을 입력해주세요.", "field", "email"));
+            }
+            
+            // 사용자 정보로 계정 찾기
+            var userOpt = userService.findByEmailAndNameAndPhone(
+                request.getEmail(), request.getName(), request.getPhone());
+            
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "입력하신 정보와 일치하는 계정을 찾을 수 없습니다.", "field", "general"));
+            }
+            
+            User user = userOpt.get();
+            
+            // 계정 상태 확인
+            if (user.getStatus() != User.UserStatus.ACTIVE) {
+                String statusMessage = switch(user.getStatus()) {
+                    case PENDING -> "승인 대기 중인 계정입니다.";
+                    case REJECTED -> "거부된 계정입니다. 고객센터에 문의해주세요.";
+                    case SUSPENDED -> "정지된 계정입니다. 고객센터에 문의해주세요.";
+                    case WITHDRAWN -> "탈퇴된 계정입니다.";
+                    case DELETED -> "삭제된 계정입니다.";
+                    default -> "비활성화된 계정입니다.";
+                };
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", statusMessage, "field", "general"));
+            }
+            
+            // 기존 비밀번호 재설정 토큰들 삭제
+            tokenRepository.deleteByUserIdAndTokenType(user.getId(), 
+                EmailVerificationToken.TokenType.PASSWORD_RESET);
+            
+            // 6자리 인증번호 생성
+            String verificationCode = String.format("%06d", (int)(Math.random() * 1000000));
+            
+            // 인증번호 토큰 저장
+            EmailVerificationToken emailToken = new EmailVerificationToken();
+            emailToken.setToken(verificationCode);
+            emailToken.setEmail(user.getEmail());
+            emailToken.setUserId(user.getId());
+            emailToken.setTokenType(EmailVerificationToken.TokenType.PASSWORD_RESET);
+            emailToken.setCreatedAt(LocalDateTime.now());
+            emailToken.setExpiresAt(LocalDateTime.now().plusMinutes(10)); // 10분 유효
+            
+            tokenRepository.save(emailToken);
+            
+            // 인증번호 이메일 전송
+            try {
+                emailService.sendPasswordResetVerificationCode(user.getEmail(), user.getName(), verificationCode);
+                log.info("비밀번호 찾기 인증번호 발송 완료: {}", user.getEmail());
+            } catch (Exception e) {
+                log.error("비밀번호 찾기 인증번호 이메일 전송 실패: ", e);
+                return ResponseEntity.internalServerError()
+                    .body(Map.of("success", false, "error", "인증번호 발송에 실패했습니다. 잠시 후 다시 시도해주세요.", "field", "general"));
+            }
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "입력하신 이메일로 인증번호가 발송되었습니다. 10분 이내에 인증해주세요.",
+                "email", user.getEmail()
+            ));
+            
+        } catch (Exception e) {
+            log.error("비밀번호 찾기 중 오류: ", e);
+            return ResponseEntity.internalServerError()
+                .body(Map.of("success", false, "error", "비밀번호 찾기 중 오류가 발생했습니다.", "field", "general"));
+        }
+    }
+    
+    // 비밀번호 재설정 인증번호 검증
+    @PostMapping("/verify-password-reset")
+    public ResponseEntity<Map<String, Object>> verifyPasswordReset(@RequestBody VerifyPasswordResetRequest request) {
+        try {
+            log.info("비밀번호 재설정 인증번호 검증: email={}", request.getEmail());
+            
+            // 입력값 검증
+            if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "이메일을 입력해주세요.", "field", "email"));
+            }
+            
+            if (request.getVerificationCode() == null || request.getVerificationCode().trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "인증번호를 입력해주세요.", "field", "verificationCode"));
+            }
+            
+            // 인증번호 검증
+            var tokenOpt = tokenRepository.findByTokenAndTokenTypeAndUsedFalse(
+                request.getVerificationCode(), EmailVerificationToken.TokenType.PASSWORD_RESET);
+            
+            if (tokenOpt.isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "올바르지 않은 인증번호입니다.", "field", "verificationCode"));
+            }
+            
+            EmailVerificationToken token = tokenOpt.get();
+            
+            // 이메일 일치 확인
+            if (!token.getEmail().equals(request.getEmail())) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "이메일 정보가 일치하지 않습니다.", "field", "email"));
+            }
+            
+            // 토큰 만료 확인
+            if (token.getExpiresAt().isBefore(LocalDateTime.now())) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "인증번호가 만료되었습니다. 새로운 인증번호를 요청해주세요.", "field", "verificationCode"));
+            }
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "인증번호가 확인되었습니다. 새로운 비밀번호를 설정해주세요.",
+                "verified", true
+            ));
+            
+        } catch (Exception e) {
+            log.error("인증번호 검증 중 오류: ", e);
+            return ResponseEntity.internalServerError()
+                .body(Map.of("success", false, "error", "인증번호 검증 중 오류가 발생했습니다.", "field", "general"));
+        }
+    }
+    
+    // 비밀번호 직접 재설정
+    @PostMapping("/reset-password-direct")
+    @Transactional
+    public ResponseEntity<Map<String, Object>> resetPasswordDirect(@RequestBody ResetPasswordDirectRequest request) {
+        try {
+            log.info("비밀번호 직접 재설정: email={}", request.getEmail());
+            
+            // 입력값 검증
+            if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "이메일을 입력해주세요.", "field", "email"));
+            }
+            
+            if (request.getVerificationCode() == null || request.getVerificationCode().trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "인증번호를 입력해주세요.", "field", "verificationCode"));
+            }
+            
+            if (request.getNewPassword() == null || request.getNewPassword().trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "새 비밀번호를 입력해주세요.", "field", "newPassword"));
+            }
+            
+            if (request.getConfirmPassword() == null || request.getConfirmPassword().trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "비밀번호 확인을 입력해주세요.", "field", "confirmPassword"));
+            }
+            
+            // 비밀번호 일치 확인
+            if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "비밀번호와 비밀번호 확인이 일치하지 않습니다.", "field", "confirmPassword"));
+            }
+            
+            // 비밀번호 길이 검증
+            if (request.getNewPassword().length() < 6) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "비밀번호는 6자 이상이어야 합니다.", "field", "newPassword"));
+            }
+            
+            // 인증번호 검증
+            var tokenOpt = tokenRepository.findByTokenAndTokenTypeAndUsedFalse(
+                request.getVerificationCode(), EmailVerificationToken.TokenType.PASSWORD_RESET);
+            
+            if (tokenOpt.isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "올바르지 않은 인증번호입니다.", "field", "verificationCode"));
+            }
+            
+            EmailVerificationToken token = tokenOpt.get();
+            
+            // 이메일 일치 확인
+            if (!token.getEmail().equals(request.getEmail())) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "이메일 정보가 일치하지 않습니다.", "field", "email"));
+            }
+            
+            // 토큰 만료 확인
+            if (token.getExpiresAt().isBefore(LocalDateTime.now())) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "인증번호가 만료되었습니다. 처음부터 다시 진행해주세요.", "field", "verificationCode"));
+            }
+            
+            // 사용자 조회
+            var userOpt = userService.findById(token.getUserId());
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "사용자 정보를 찾을 수 없습니다.", "field", "general"));
+            }
+            
+            User user = userOpt.get();
+            
+            // 비밀번호 변경
+            String encodedPassword = passwordEncoder.encode(request.getNewPassword());
+            userService.updatePassword(user.getId(), encodedPassword);
+            
+            // 토큰 사용 처리
+            token.setUsed(true);
+            token.setUsedAt(LocalDateTime.now());
+            tokenRepository.save(token);
+            
+            log.info("비밀번호 재설정 완료: userId={}, email={}", user.getId(), user.getEmail());
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "비밀번호가 성공적으로 변경되었습니다. 새로운 비밀번호로 로그인해주세요."
+            ));
+            
+        } catch (Exception e) {
+            log.error("비밀번호 재설정 중 오류: ", e);
+            return ResponseEntity.internalServerError()
+                .body(Map.of("success", false, "error", "비밀번호 재설정 중 오류가 발생했습니다.", "field", "general"));
+        }
+    }
+    
     @PostMapping("/reset-password")
     public ResponseEntity<Map<String, Object>> resetPassword(@RequestBody ResetPasswordRequest request) {
         try {
@@ -535,6 +814,47 @@ public class AuthController {
     /**
      * 이메일 인증 코드 확인 (회원가입용)
      */
+    @PostMapping("/check-email")
+    public ResponseEntity<Map<String, Object>> checkEmail(@RequestBody CheckEmailRequest request) {
+        try {
+            // 입력값 유효성 검사
+            if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "이메일을 입력해주세요."));
+            }
+            
+            // 이메일 형식 검증
+            if (!request.getEmail().contains("@") || !request.getEmail().contains(".")) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "올바른 이메일 형식을 입력해주세요."));
+            }
+            
+            var userOpt = userService.findByEmail(request.getEmail());
+            boolean exists = userOpt.isPresent();
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("exists", exists);
+            
+            if (exists) {
+                User user = userOpt.get();
+                // 계정 상태 정보도 함께 반환 (로그인 시 미리 확인 가능)
+                response.put("status", user.getStatus().toString());
+                response.put("emailVerified", user.getEmailVerified());
+                response.put("userType", user.getUserType().toString());
+            } else {
+                response.put("message", "등록되지 않은 이메일입니다.");
+            }
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("Email check error: ", e);
+            return ResponseEntity.internalServerError()
+                .body(Map.of("success", false, "error", "이메일 확인 중 오류가 발생했습니다."));
+        }
+    }
+    
     @PostMapping("/verify-code")
     public ResponseEntity<Map<String, Object>> verifyCode(@RequestBody VerifyCodeRequest request) {
         try {
@@ -678,5 +998,52 @@ public class AuthController {
         public void setEmail(String email) { this.email = email; }
         public String getCode() { return code; }
         public void setCode(String code) { this.code = code; }
+    }
+    
+    public static class CheckEmailRequest {
+        private String email;
+        
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+    }
+    
+    // 새로운 비밀번호 찾기 방식을 위한 Request DTO들
+    public static class FindPasswordRequest {
+        private String name;
+        private String phone;
+        private String email;
+        
+        public String getName() { return name; }
+        public void setName(String name) { this.name = name; }
+        public String getPhone() { return phone; }
+        public void setPhone(String phone) { this.phone = phone; }
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+    }
+    
+    public static class VerifyPasswordResetRequest {
+        private String email;
+        private String verificationCode;
+        
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+        public String getVerificationCode() { return verificationCode; }
+        public void setVerificationCode(String verificationCode) { this.verificationCode = verificationCode; }
+    }
+    
+    public static class ResetPasswordDirectRequest {
+        private String email;
+        private String verificationCode;
+        private String newPassword;
+        private String confirmPassword;
+        
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+        public String getVerificationCode() { return verificationCode; }
+        public void setVerificationCode(String verificationCode) { this.verificationCode = verificationCode; }
+        public String getNewPassword() { return newPassword; }
+        public void setNewPassword(String newPassword) { this.newPassword = newPassword; }
+        public String getConfirmPassword() { return confirmPassword; }
+        public void setConfirmPassword(String confirmPassword) { this.confirmPassword = confirmPassword; }
     }
 }

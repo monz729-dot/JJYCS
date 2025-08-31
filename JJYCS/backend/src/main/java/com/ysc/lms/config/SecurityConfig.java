@@ -79,8 +79,12 @@ public class SecurityConfig {
                     "/api/labels/**",
                     "/labels/**",
                     "/api/debug/**",
-                    "/debug/**"
+                    "/debug/**",
+                    "/api/dashboard/test/**"
                 ).permitAll()
+                
+                // 입고확인 API - 관리자 또는 창고직원
+                .requestMatchers("/api/admin/inbound/**").hasAnyRole("ADMIN", "WAREHOUSE")
                 
                 // 관리자 전용
                 .requestMatchers("/api/admin/**", "/admin/**").hasRole("ADMIN")
@@ -115,6 +119,9 @@ public class SecurityConfig {
                 
                 // 은행계좌 - 일반/기업/관리자
                 .requestMatchers("/api/bank-accounts/**", "/bank-accounts/**").hasAnyRole("GENERAL", "CORPORATE", "ADMIN")
+                
+                // 대시보드 API - 모든 인증된 사용자 허용
+                .requestMatchers("/api/dashboard/**", "/dashboard/**").authenticated()
                 
                 // 기타 모든 요청은 인증 필요
                 .anyRequest().authenticated()

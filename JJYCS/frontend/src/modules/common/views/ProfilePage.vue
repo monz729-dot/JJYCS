@@ -7,31 +7,31 @@
           
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">이름</label>
+              <label class="block text-sm font-medium text-gray-700 mb-2" style="font-size: 0.875rem; color: #374151;">이름</label>
               <input 
                 v-model="profile.name"
                 type="text" 
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="form-input"
                 readonly
               >
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">이메일</label>
+              <label class="block text-sm font-medium text-gray-700 mb-2" style="font-size: 0.875rem; color: #374151;">이메일</label>
               <input 
                 v-model="profile.email"
                 type="email" 
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="form-input"
                 readonly
               >
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">전화번호</label>
+              <label class="block text-sm font-medium text-gray-700 mb-2" style="font-size: 0.875rem; color: #374151;">전화번호</label>
               <input 
                 v-model="profile.phone"
                 type="text" 
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="form-input"
               >
             </div>
             
@@ -92,3 +92,32 @@ onMounted(() => {
   }
 })
 </script>
+
+<style scoped>
+.form-input {
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  background: white;
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-input:read-only {
+  background-color: #f9fafb;
+  color: #6b7280;
+}
+
+.form-input.error {
+  border-color: #dc2626;
+  background-color: #fef2f2;
+}
+</style>

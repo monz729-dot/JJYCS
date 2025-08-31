@@ -25,3 +25,11 @@ INSERT INTO users (id, email, name, phone, password, user_type, status, email_ve
 -- 5. Warehouse staff  
 INSERT INTO users (id, email, name, phone, password, user_type, status, email_verified, created_at, updated_at) VALUES
 (10, 'warehouse@ycs.com', 'Warehouse Manager', '02-5555-1234', '$2a$10$8CkqQjB0X7kLYZ9fv7vQO.8JGtGzLn5v3vTqR5L2rYbDf4nMhGgha', 'WAREHOUSE', 'ACTIVE', true, DATEADD('DAY', -60, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP);
+
+-- 6. Test Notifications (for user testing) 
+INSERT INTO notifications (user_id, type, title, message, is_read, is_email_sent, is_sms_required, created_at) VALUES
+(8, 'ORDER_STATUS_CHANGED', '주문 상태 변경', '주문 #ORD001의 상태가 배송 중으로 변경되었습니다.', false, false, false, DATEADD('HOUR', -2, CURRENT_TIMESTAMP)),
+(8, 'ORDER_ARRIVED', '창고 도착', '주문 #ORD002가 방콕 창고에 도착했습니다.', false, false, false, DATEADD('HOUR', -1, CURRENT_TIMESTAMP)),
+(8, 'PAYMENT_REQUIRED', '결제 필요', '주문 #ORD001에 대한 배송비 결제가 필요합니다.', false, false, false, DATEADD('MINUTE', -30, CURRENT_TIMESTAMP)),
+(4, 'USER_APPROVED', '계정 승인', '기업 계정이 승인되었습니다. 이제 모든 기능을 이용하실 수 있습니다.', true, true, false, DATEADD('DAY', -9, CURRENT_TIMESTAMP)),
+(4, 'CBM_THRESHOLD_EXCEEDED', 'CBM 초과 경고', '주문의 총 CBM이 29를 초과하여 항공 운송으로 변경되었습니다.', false, false, false, DATEADD('DAY', -3, CURRENT_TIMESTAMP));

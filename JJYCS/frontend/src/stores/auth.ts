@@ -72,16 +72,53 @@ export const useAuthStore = defineStore('auth', () => {
           
           return { success: true }
         } else {
-          error.value = loginData.error || 'Login failed'
-          return { success: false, error: error.value }
+          // 백엔드에서 제공하는 상세한 에러 정보 처리
+          const errorInfo = {
+            error: loginData.error || loginData.message || 'Login failed',
+            field: loginData.field || 'general'
+          }
+          error.value = errorInfo.error
+          return { success: false, error: errorInfo.error, field: errorInfo.field }
         }
       } else {
-        error.value = response.error || 'Login failed'
-        return { success: false, error: error.value }
+        const errorInfo = {
+          error: response.error || response.message || 'Login failed',
+          field: response.field || 'general'
+        }
+        error.value = errorInfo.error
+        return { success: false, error: errorInfo.error, field: errorInfo.field }
       }
     } catch (err: any) {
-      error.value = err.message || 'Login failed'
-      return { success: false, error: error.value }
+      console.error('Login API Error:', err)
+      
+      // HTTP 상태별 에러 처리
+      if (err.response?.status === 400) {
+        const errorData = err.response.data
+        const errorInfo = {
+          error: errorData.message || errorData.error || '로그인 정보가 올바르지 않습니다.',
+          field: errorData.field || 'general'
+        }
+        error.value = errorInfo.error
+        return { success: false, error: errorInfo.error, field: errorInfo.field }
+      } else if (err.response?.status === 401) {
+        error.value = '인증에 실패했습니다. 이메일과 비밀번호를 확인해주세요.'
+        return { success: false, error: error.value, field: 'general' }
+      } else if (err.response?.status === 403) {
+        error.value = '접근이 거부되었습니다.'
+        return { success: false, error: error.value, field: 'general' }
+      } else if (err.response?.status === 429) {
+        error.value = '너무 많은 요청이 있었습니다. 잠시 후 다시 시도해주세요.'
+        return { success: false, error: error.value, field: 'general' }
+      } else if (err.response?.status >= 500) {
+        error.value = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+        return { success: false, error: error.value, field: 'general' }
+      } else if (err.code === 'NETWORK_ERROR' || !err.response) {
+        error.value = '네트워크 연결을 확인해주세요.'
+        return { success: false, error: error.value, field: 'general' }
+      } else {
+        error.value = '로그인 중 오류가 발생했습니다.'
+        return { success: false, error: error.value, field: 'general' }
+      }
     } finally {
       loading.value = false
     }

@@ -9,29 +9,62 @@
       
       <form class="auth-form" @submit.prevent="handleLogin">
         <div class="form-group">
-          <input 
-            id="email"
-            v-model="form.email" 
-            type="email" 
-            class="form-input" 
-            placeholder="이메일 주소" 
-            required
-            @input="clearError('email')"
-          />
-          <div v-if="errors.email" class="error-message show">{{ errors.email }}</div>
+          <div class="input-wrapper">
+            <input 
+              id="email"
+              v-model="form.email" 
+              type="email" 
+              class="form-input" 
+              :class="{ 'error-input': errors.email }"
+              placeholder="이메일 주소" 
+              required
+              @input="clearError('email')"
+              @blur="checkEmailExists(form.email)"
+            />
+            <svg v-if="isCheckingEmail" class="loading-icon" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" stroke-dasharray="32" stroke-dashoffset="32">
+                <animate attributeName="stroke-dashoffset" dur="2s" values="32;0;32" repeatCount="indefinite"/>
+              </circle>
+            </svg>
+            <svg v-else-if="errors.email" class="error-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <transition name="fade">
+            <div v-if="errors.email" class="error-message">
+              <svg class="warning-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              {{ errors.email }}
+            </div>
+          </transition>
         </div>
         
         <div class="form-group">
-          <input 
-            id="password"
-            v-model="form.password" 
-            type="password" 
-            class="form-input" 
-            placeholder="비밀번호" 
-            required
-            @input="clearError('password')"
-          />
-          <div v-if="errors.password" class="error-message show">{{ errors.password }}</div>
+          <div class="input-wrapper">
+            <input 
+              id="password"
+              v-model="form.password" 
+              type="password" 
+              class="form-input"
+              :class="{ 'error-input': errors.password }"
+              placeholder="비밀번호" 
+              required
+              @input="clearError('password')"
+              @blur="() => { if(form.password && form.password.length < 6) errors.password = '비밀번호는 6자 이상이어야 합니다.' }"
+            />
+            <svg v-if="errors.password" class="error-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <transition name="fade">
+            <div v-if="errors.password" class="error-message">
+              <svg class="warning-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              {{ errors.password }}
+            </div>
+          </transition>
         </div>
         
         <div class="form-checkbox">
@@ -69,6 +102,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { USER_TYPE } from '@/types'
 import type { UserType } from '@/types'
+import { authApi } from '@/utils/api'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -84,6 +118,8 @@ const errors = reactive({
   password: ''
 })
 
+const isCheckingEmail = ref(false)
+
 const clearError = (field: 'email' | 'password') => {
   errors[field] = ''
 }
@@ -91,6 +127,57 @@ const clearError = (field: 'email' | 'password') => {
 const validateEmail = (email: string) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   return emailRegex.test(email)
+}
+
+const checkEmailExists = async (email: string) => {
+  console.log('🔍 checkEmailExists called with:', email)
+  
+  if (!email || !validateEmail(email)) {
+    console.log('❌ Email validation failed or empty:', email)
+    return
+  }
+  
+  console.log('✅ Email validation passed, checking existence...')
+  isCheckingEmail.value = true
+  clearError('email')
+  
+  try {
+    const response = await authApi.checkEmail(email)
+    console.log('📡 API Response:', response)
+    
+    if (response.success && response.data) {
+      const data = response.data
+      console.log('📊 Response data:', data)
+      
+      if (!data.exists) {
+        console.log('❌ Email does not exist, setting error message')
+        errors.email = '등록되지 않은 이메일입니다. 회원가입을 먼저 진행해주세요.'
+      } else {
+        console.log('✅ Email exists, checking status...')
+        // 계정 상태 확인
+        if (data.status === 'PENDING') {
+          errors.email = '승인 대기 중인 계정입니다. 승인 후 로그인이 가능합니다.'
+        } else if (data.status === 'REJECTED') {
+          errors.email = '거부된 계정입니다. 고객센터에 문의해주세요.'
+        } else if (data.status === 'SUSPENDED') {
+          errors.email = '정지된 계정입니다. 고객센터에 문의해주세요.'
+        } else if (!data.emailVerified) {
+          errors.email = '이메일 인증이 필요합니다. 이메일을 확인해주세요.'
+        } else if (data.status !== 'ACTIVE') {
+          errors.email = '비활성화된 계정입니다. 관리자에게 문의해주세요.'
+        }
+        // 계정이 정상이면 에러 메시지 없음
+      }
+    } else {
+      console.log('❌ API response not successful or no data:', response)
+    }
+  } catch (error: any) {
+    console.error('🚨 이메일 확인 중 오류:', error)
+    // 네트워크 오류 등은 조용히 무시 (로그인 시 다시 확인됨)
+  } finally {
+    isCheckingEmail.value = false
+    console.log('🏁 checkEmailExists completed, errors.email:', errors.email)
+  }
 }
 
 const validateForm = () => {
@@ -162,10 +249,55 @@ const handleLogin = async () => {
             router.push('/dashboard')
         }
       }
+    } else {
+      // 백엔드에서 제공하는 field 정보를 활용한 에러 처리
+      const errorMessage = result.error?.toLowerCase() || ''
+      const errorField = result.field || 'general'
+      
+      // field 정보가 있는 경우 해당 필드에 에러 표시
+      if (errorField === 'email' || errorMessage.includes('user not found')) {
+        errors.email = result.error || '등록되지 않은 이메일입니다.'
+        errors.password = ''
+      } else if (errorField === 'password' || errorMessage.includes('invalid password')) {
+        errors.password = result.error || '비밀번호가 일치하지 않습니다.'
+        errors.email = ''
+      } else {
+        // 상세한 에러 메시지 분류
+        if (errorMessage.includes('user not found')) {
+          errors.email = '등록되지 않은 이메일입니다. 회원가입을 먼저 진행해주세요.'
+        } else if (errorMessage.includes('invalid password')) {
+          errors.password = '비밀번호가 일치하지 않습니다. 다시 확인해주세요.'
+        } else if (errorMessage.includes('pending')) {
+          errors.email = '승인 대기 중인 계정입니다. 승인 후 로그인이 가능합니다.'
+        } else if (errorMessage.includes('rejected')) {
+          errors.email = '거부된 계정입니다. 고객센터에 문의해주세요.'
+        } else if (errorMessage.includes('suspended')) {
+          errors.email = '정지된 계정입니다. 고객센터에 문의해주세요.'
+        } else if (errorMessage.includes('email not verified')) {
+          errors.email = '이메일 인증이 필요합니다. 이메일을 확인해주세요.'
+        } else if (errorMessage.includes('inactive')) {
+          errors.email = '비활성화된 계정입니다. 관리자에게 문의해주세요.'
+        } else {
+          // 기타 에러는 일반적인 메시지로 표시
+          errors.password = result.error || '로그인에 실패했습니다. 다시 시도해주세요.'
+        }
+      }
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('로그인 오류:', error)
-    errors.password = '로그인에 실패했습니다. 다시 시도해주세요.'
+    
+    // 네트워크 오류 처리
+    if (!navigator.onLine) {
+      errors.password = '네트워크 연결이 끊어졌습니다. 인터넷 연결을 확인해주세요.'
+    } else if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      errors.password = '서버 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.'
+    } else if (error.response?.status === 500) {
+      errors.password = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+    } else if (error.response?.status === 429) {
+      errors.password = '너무 많은 시도가 있었습니다. 잠시 후 다시 시도해주세요.'
+    } else {
+      errors.password = '로그인 중 오류가 발생했습니다. 다시 시도해주세요.'
+    }
   }
 }
 
@@ -272,11 +404,76 @@ onMounted(() => {
   box-shadow: 0 0 0 3px #dbeafe;
 }
 
+.input-wrapper {
+  position: relative;
+}
+
+.form-input.error-input {
+  border-color: #dc2626;
+  background-color: #fef2f2;
+}
+
+.form-input.error-input:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px #fee2e2;
+}
+
+.error-icon {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #dc2626;
+  pointer-events: none;
+}
+
+.loading-icon {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #3b82f6;
+  pointer-events: none;
+}
+
 .error-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   color: #dc2626;
   font-size: 0.875rem;
   margin-top: 0.5rem;
   font-weight: 500;
+  padding: 0.5rem;
+  background-color: #fef2f2;
+  border-radius: 0.375rem;
+  border: 1px solid #fecaca;
+}
+
+.warning-icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+/* 애니메이션 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: all 0.3s ease;
+}
+
+.fade-enter-from {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 
 .form-checkbox {

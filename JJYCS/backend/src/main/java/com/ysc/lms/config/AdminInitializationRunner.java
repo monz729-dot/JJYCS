@@ -1,7 +1,9 @@
 package com.ysc.lms.config;
 
 import com.ysc.lms.entity.User;
+import com.ysc.lms.entity.Notification;
 import com.ysc.lms.repository.UserRepository;
+import com.ysc.lms.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,7 +41,7 @@ public class AdminInitializationRunner {
     private String adminMemberCode;
 
     @Bean
-    ApplicationRunner initializeAdminAccount(UserRepository userRepo, PasswordEncoder encoder) {
+    ApplicationRunner initializeAdminAccount(UserRepository userRepo, PasswordEncoder encoder, NotificationRepository notificationRepo) {
         return args -> {
             log.info("프로덕션 환경 관리자 계정 초기화를 시작합니다...");
 
@@ -109,6 +111,9 @@ public class AdminInitializationRunner {
 
             // 개발환경에서 테스트 데이터 생성
             createTestUsers(userRepo, encoder);
+            
+            // 테스트 알림 데이터 생성
+            createTestNotifications(userRepo, notificationRepo);
 
             log.info("관리자 계정 초기화 완료!");
         };
@@ -163,5 +168,57 @@ public class AdminInitializationRunner {
             userRepo.save(user);
             log.info("테스트 사용자 생성: {} ({})", name, userType);
         }
+    }
+
+    private void createTestNotifications(UserRepository userRepo, NotificationRepository notificationRepo) {
+        log.info("테스트 알림 데이터를 생성합니다...");
+
+        // Find active general user for test notifications
+        User generalUser = userRepo.findByEmail("user@example.com").orElse(null);
+        User corporateUser = userRepo.findByEmail("logistics@hyundai.com").orElse(null);
+
+        if (generalUser != null) {
+            // Check if notifications already exist
+            if (notificationRepo.countUnreadByUserId(generalUser.getId()) == 0) {
+                // Create test notifications for general user
+                Notification notification1 = new Notification(generalUser, Notification.NotificationType.ORDER_STATUS_CHANGED, 
+                    "주문 상태 변경", "주문 #ORD001의 상태가 '배송 중'으로 변경되었습니다.");
+                notification1.setCreatedAt(LocalDateTime.now().minusHours(2));
+                notificationRepo.save(notification1);
+
+                Notification notification2 = new Notification(generalUser, Notification.NotificationType.ORDER_ARRIVED, 
+                    "창고 도착", "주문 #ORD002가 방콕 창고에 도착했습니다.");
+                notification2.setCreatedAt(LocalDateTime.now().minusHours(1));
+                notificationRepo.save(notification2);
+
+                Notification notification3 = new Notification(generalUser, Notification.NotificationType.PAYMENT_REQUIRED, 
+                    "결제 필요", "주문 #ORD001에 대한 배송비 결제가 필요합니다.");
+                notification3.setCreatedAt(LocalDateTime.now().minusMinutes(30));
+                notificationRepo.save(notification3);
+
+                log.info("일반 사용자 알림 생성: {}", generalUser.getEmail());
+            }
+        }
+
+        if (corporateUser != null) {
+            // Check if notifications already exist
+            if (notificationRepo.countUnreadByUserId(corporateUser.getId()) == 0) {
+                // Create test notifications for corporate user
+                Notification notification4 = new Notification(corporateUser, Notification.NotificationType.USER_APPROVED, 
+                    "계정 승인", "기업 계정이 승인되었습니다. 이제 모든 기능을 이용하실 수 있습니다.");
+                notification4.setCreatedAt(LocalDateTime.now().minusDays(9));
+                notification4.markAsRead(); // This one is read
+                notificationRepo.save(notification4);
+
+                Notification notification5 = new Notification(corporateUser, Notification.NotificationType.CBM_THRESHOLD_EXCEEDED, 
+                    "CBM 초과 경고", "주문의 총 CBM이 29를 초과하여 항공 운송으로 변경되었습니다.");
+                notification5.setCreatedAt(LocalDateTime.now().minusDays(3));
+                notificationRepo.save(notification5);
+
+                log.info("기업 사용자 알림 생성: {}", corporateUser.getEmail());
+            }
+        }
+
+        log.info("테스트 알림 데이터 생성 완료!");
     }
 }

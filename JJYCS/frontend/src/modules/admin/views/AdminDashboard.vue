@@ -8,7 +8,9 @@
             <div class="flex items-center">
               <div class="flex-shrink-0">
                 <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <span class="text-2xl">📦</span>
+                  <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1zM14 9a1 1 0 100 2h2a1 1 0 100-2h-2zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/>
+                  </svg>
                 </div>
               </div>
               <div class="ml-5 w-0 flex-1">

@@ -14,36 +14,25 @@
             </svg>
           </div>
           <h1 class="card-title">비밀번호 찾기</h1>
+          <p class="card-subtitle">본인 확인 후 새 비밀번호로 변경하실 수 있습니다</p>
         </div>
 
         <div class="card-content">
-          <!-- Step 1: 입력 -->
+          <!-- Step 1: 회원 정보 입력 -->
           <div v-if="currentStep === 'input'" class="step-content">
             <div class="auth-method-info">
               <div class="auth-method-header">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                 </svg>
-                <span class="auth-method-title">이메일 인증</span>
+                <span class="auth-method-title">본인 확인</span>
               </div>
               <p class="auth-method-description">
-                등록된 이메일 주소로 인증번호를 전송합니다.
+                회원가입 시 입력하신 이름, 연락처, 이메일을 정확히 입력해주세요.
               </p>
             </div>
 
             <form @submit.prevent="handleInputSubmit">
-              <div class="form-group">
-                <label for="userId" class="form-label">아이디</label>
-                <input
-                  id="userId"
-                  v-model="formData.userId"
-                  type="text"
-                  class="form-input"
-                  placeholder="아이디를 입력하세요"
-                  required
-                />
-              </div>
-
               <div class="form-group">
                 <label for="name" class="form-label">이름</label>
                 <input
@@ -51,9 +40,31 @@
                   v-model="formData.name"
                   type="text"
                   class="form-input"
+                  :class="{ 'error-input': fieldErrors.name }"
                   placeholder="이름을 입력하세요"
                   required
+                  @input="clearFieldError('name')"
                 />
+                <div v-if="fieldErrors.name" class="field-error">
+                  {{ fieldErrors.name }}
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="phone" class="form-label">연락처</label>
+                <input
+                  id="phone"
+                  v-model="formData.phone"
+                  type="tel"
+                  class="form-input"
+                  :class="{ 'error-input': fieldErrors.phone }"
+                  placeholder="연락처를 입력하세요 (예: 01012345678)"
+                  required
+                  @input="clearFieldError('phone')"
+                />
+                <div v-if="fieldErrors.phone" class="field-error">
+                  {{ fieldErrors.phone }}
+                </div>
               </div>
 
               <div class="form-group">
@@ -63,12 +74,20 @@
                   v-model="formData.email"
                   type="email"
                   class="form-input"
+                  :class="{ 'error-input': fieldErrors.email }"
                   placeholder="이메일을 입력해주세요"
                   required
+                  @input="clearFieldError('email')"
                 />
+                <div v-if="fieldErrors.email" class="field-error">
+                  {{ fieldErrors.email }}
+                </div>
               </div>
 
               <div v-if="errorMessage" class="alert alert-error">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z"/>
+                </svg>
                 <span>{{ errorMessage }}</span>
               </div>
 
@@ -81,7 +100,7 @@
             </form>
           </div>
 
-          <!-- Step 2: 인증 -->
+          <!-- Step 2: 인증번호 입력 -->
           <div v-if="currentStep === 'verify'" class="step-content">
             <div class="verify-info">
               <div class="verify-icon">
@@ -90,7 +109,7 @@
                 </svg>
               </div>
               <p class="verify-description">
-                {{ formData.email }}로<br>
+                <strong>{{ formData.email }}</strong>로<br>
                 인증번호를 전송했습니다.
               </p>
             </div>
@@ -103,18 +122,30 @@
                     id="verificationCode"
                     v-model="formData.verificationCode"
                     type="text"
-                    class="form-input"
+                    class="form-input verification-input"
+                    :class="{ 'error-input': fieldErrors.verificationCode }"
                     placeholder="6자리 인증번호"
                     maxlength="6"
                     required
+                    @input="formatVerificationCode"
                   />
-                  <button type="button" class="btn btn-outline btn-small" @click="resendCode" :disabled="isLoading">
-                    재전송
+                  <button type="button" class="btn btn-outline btn-small" @click="resendCode" :disabled="isLoading || !canResend">
+                    <span v-if="canResend">재전송</span>
+                    <span v-else>{{ resendCountdown }}초 후 재전송</span>
                   </button>
+                </div>
+                <div v-if="fieldErrors.verificationCode" class="field-error">
+                  {{ fieldErrors.verificationCode }}
+                </div>
+                <div class="verification-timer" v-if="verificationTimer > 0">
+                  ⏰ 남은 시간: {{ Math.floor(verificationTimer / 60) }}분 {{ verificationTimer % 60 }}초
                 </div>
               </div>
 
               <div v-if="errorMessage" class="alert alert-error">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z"/>
+                </svg>
                 <span>{{ errorMessage }}</span>
               </div>
 
@@ -154,7 +185,8 @@
                     v-model="formData.newPassword"
                     :type="showNewPassword ? 'text' : 'password'"
                     class="form-input password-input"
-                    placeholder="새 비밀번호를 입력하세요 (영문+숫자, 8자 이상)"
+                    :class="{ 'error-input': fieldErrors.newPassword }"
+                    placeholder="새 비밀번호를 입력하세요 (6자 이상)"
                     @input="handlePasswordChange"
                     required
                   />
@@ -177,23 +209,12 @@
                         <path v-if="passwordValidation.minLength" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
                       </svg>
-                      <span>8자 이상</span>
-                    </div>
-                    <div class="validation-item" :class="passwordValidation.hasLetter ? 'validation-valid' : 'validation-invalid'">
-                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path v-if="passwordValidation.hasLetter" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                      </svg>
-                      <span>영문 포함</span>
-                    </div>
-                    <div class="validation-item" :class="passwordValidation.hasNumber ? 'validation-valid' : 'validation-invalid'">
-                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path v-if="passwordValidation.hasNumber" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                      </svg>
-                      <span>숫자 포함</span>
+                      <span>6자 이상</span>
                     </div>
                   </div>
+                </div>
+                <div v-if="fieldErrors.newPassword" class="field-error">
+                  {{ fieldErrors.newPassword }}
                 </div>
               </div>
 
@@ -205,8 +226,10 @@
                     v-model="formData.confirmPassword"
                     :type="showConfirmPassword ? 'text' : 'password'"
                     class="form-input password-input"
+                    :class="{ 'error-input': fieldErrors.confirmPassword }"
                     placeholder="비밀번호를 다시 입력하세요"
                     required
+                    @input="clearFieldError('confirmPassword')"
                   />
                   <button type="button" class="password-toggle" @click="togglePassword('confirm')">
                     <svg v-if="showConfirmPassword" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -218,9 +241,15 @@
                     </svg>
                   </button>
                 </div>
+                <div v-if="fieldErrors.confirmPassword" class="field-error">
+                  {{ fieldErrors.confirmPassword }}
+                </div>
               </div>
 
               <div v-if="errorMessage" class="alert alert-error">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z"/>
+                </svg>
                 <span>{{ errorMessage }}</span>
               </div>
 
@@ -258,11 +287,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { authApi } from '../../../utils/api'
+import type { ApiResponse } from '../../../types'
 
 const router = useRouter()
 
+// 상태 관리
 const currentStep = ref<'input' | 'verify' | 'reset' | 'complete'>('input')
 const isLoading = ref(false)
 const errorMessage = ref('')
@@ -270,47 +302,68 @@ const errorMessage = ref('')
 const showNewPassword = ref(false)
 const showConfirmPassword = ref(false)
 
+const verificationTimer = ref(0)
+const resendCountdown = ref(0)
+const canResend = ref(true)
+
+// 타이머 참조
+let verificationInterval: NodeJS.Timeout | null = null
+let resendInterval: NodeJS.Timeout | null = null
+
+// 폼 데이터
 const formData = reactive({
-  userId: '',
   name: '',
+  phone: '',
   email: '',
   verificationCode: '',
   newPassword: '',
   confirmPassword: ''
 })
 
-const passwordValidation = reactive({
-  minLength: false,
-  hasLetter: false,
-  hasNumber: false
+// 필드별 에러 메시지
+const fieldErrors = reactive({
+  name: '',
+  phone: '',
+  email: '',
+  verificationCode: '',
+  newPassword: '',
+  confirmPassword: ''
 })
 
-// Mock 사용자 데이터
-const mockUsers: Record<string, { name: string; email: string }> = {
-  'hong123': {
-    name: '홍길동',
-    email: 'hong@example.com'
-  },
-  'kim123': {
-    name: '김철수',
-    email: 'kim@example.com'
-  },
-  'lee_younghee': {
-    name: '이영희',
-    email: 'lee@example.com'
+// 비밀번호 검증
+const passwordValidation = reactive({
+  minLength: false
+})
+
+// 유틸리티 함수들
+const clearFieldError = (field: keyof typeof fieldErrors) => {
+  fieldErrors[field] = ''
+  if (errorMessage.value) {
+    errorMessage.value = ''
   }
 }
 
+const clearAllErrors = () => {
+  Object.keys(fieldErrors).forEach(key => {
+    fieldErrors[key as keyof typeof fieldErrors] = ''
+  })
+  errorMessage.value = ''
+}
+
 const validatePassword = (password: string) => {
-  passwordValidation.minLength = password.length >= 8
-  passwordValidation.hasLetter = /[a-zA-Z]/.test(password)
-  passwordValidation.hasNumber = /[0-9]/.test(password)
-  
-  return passwordValidation.minLength && passwordValidation.hasLetter && passwordValidation.hasNumber
+  passwordValidation.minLength = password.length >= 6
+  return passwordValidation.minLength
 }
 
 const handlePasswordChange = () => {
   validatePassword(formData.newPassword)
+  clearFieldError('newPassword')
+}
+
+const formatVerificationCode = () => {
+  // 숫자만 입력되도록 필터링
+  formData.verificationCode = formData.verificationCode.replace(/\D/g, '')
+  clearFieldError('verificationCode')
 }
 
 const togglePassword = (type: 'new' | 'confirm') => {
@@ -321,114 +374,239 @@ const togglePassword = (type: 'new' | 'confirm') => {
   }
 }
 
+// 타이머 관리
+const startVerificationTimer = () => {
+  verificationTimer.value = 600 // 10분
+  verificationInterval = setInterval(() => {
+    verificationTimer.value--
+    if (verificationTimer.value <= 0) {
+      clearInterval(verificationInterval!)
+      verificationInterval = null
+    }
+  }, 1000)
+}
+
+const startResendTimer = () => {
+  canResend.value = false
+  resendCountdown.value = 60 // 60초
+  resendInterval = setInterval(() => {
+    resendCountdown.value--
+    if (resendCountdown.value <= 0) {
+      canResend.value = true
+      clearInterval(resendInterval!)
+      resendInterval = null
+    }
+  }, 1000)
+}
+
+// API 호출 함수들
 const handleInputSubmit = async () => {
   if (isLoading.value) return
   
-  errorMessage.value = ''
+  clearAllErrors()
   
   // 입력 검증
-  if (!formData.userId.trim()) {
-    errorMessage.value = '아이디를 입력해주세요.'
-    return
-  }
+  let hasError = false
   
   if (!formData.name.trim()) {
-    errorMessage.value = '이름을 입력해주세요.'
-    return
+    fieldErrors.name = '이름을 입력해주세요.'
+    hasError = true
+  }
+  
+  if (!formData.phone.trim()) {
+    fieldErrors.phone = '연락처를 입력해주세요.'
+    hasError = true
+  } else if (!/^01[0-9]{8,9}$/.test(formData.phone.replace(/-/g, ''))) {
+    fieldErrors.phone = '올바른 연락처 형식을 입력해주세요. (예: 01012345678)'
+    hasError = true
   }
 
   if (!formData.email.trim()) {
-    errorMessage.value = '이메일을 입력해주세요.'
-    return
+    fieldErrors.email = '이메일을 입력해주세요.'
+    hasError = true
+  } else {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.email)) {
+      fieldErrors.email = '올바른 이메일 형식을 입력해주세요.'
+      hasError = true
+    }
   }
 
-  // 이메일 형식 검증
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailRegex.test(formData.email)) {
-    errorMessage.value = '올바른 이메일 형식을 입력해주세요.'
-    return
-  }
+  if (hasError) return
 
   isLoading.value = true
 
-  // Mock API 호출
-  setTimeout(() => {
-    const mockUser = mockUsers[formData.userId]
-    if (!mockUser || mockUser.name !== formData.name || mockUser.email !== formData.email) {
-      errorMessage.value = '입력하신 정보와 일치하는 계정을 찾을 수 없습니다.'
-      isLoading.value = false
-      return
-    }
+  try {
+    const response = await authApi.findPassword({
+      name: formData.name,
+      phone: formData.phone,
+      email: formData.email
+    })
 
-    currentStep.value = 'verify'
+    if (response.success) {
+      console.log('✅ 비밀번호 찾기 성공:', response.data)
+      currentStep.value = 'verify'
+      startVerificationTimer()
+      startResendTimer()
+    } else {
+      const field = response.data?.field || 'general'
+      if (field === 'general') {
+        errorMessage.value = response.error || '계정 정보 확인 중 오류가 발생했습니다.'
+      } else {
+        fieldErrors[field as keyof typeof fieldErrors] = response.error || '입력 정보를 확인해주세요.'
+      }
+    }
+  } catch (error: any) {
+    console.error('❌ 비밀번호 찾기 오류:', error)
+    errorMessage.value = error.response?.data?.error || '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+  } finally {
     isLoading.value = false
-  }, 1500)
+  }
 }
 
 const handleVerifySubmit = async () => {
   if (isLoading.value) return
   
-  errorMessage.value = ''
+  clearAllErrors()
   
   if (!formData.verificationCode.trim()) {
-    errorMessage.value = '인증번호를 입력해주세요.'
+    fieldErrors.verificationCode = '인증번호를 입력해주세요.'
+    return
+  }
+
+  if (formData.verificationCode.length !== 6) {
+    fieldErrors.verificationCode = '6자리 인증번호를 입력해주세요.'
     return
   }
 
   isLoading.value = true
 
-  setTimeout(() => {
-    if (formData.verificationCode === '123456') {
+  try {
+    const response = await authApi.verifyPasswordReset({
+      email: formData.email,
+      verificationCode: formData.verificationCode
+    })
+
+    if (response.success) {
+      console.log('✅ 인증번호 확인 성공:', response.data)
       currentStep.value = 'reset'
     } else {
-      errorMessage.value = '인증번호가 일치하지 않습니다.'
+      const field = response.data?.field || 'verificationCode'
+      if (field === 'verificationCode') {
+        fieldErrors.verificationCode = response.error || '올바르지 않은 인증번호입니다.'
+      } else {
+        errorMessage.value = response.error || '인증번호 확인 중 오류가 발생했습니다.'
+      }
     }
+  } catch (error: any) {
+    console.error('❌ 인증번호 확인 오류:', error)
+    fieldErrors.verificationCode = error.response?.data?.error || '인증번호 확인 중 오류가 발생했습니다.'
+  } finally {
     isLoading.value = false
-  }, 1500)
+  }
 }
 
 const handleResetSubmit = async () => {
   if (isLoading.value) return
   
-  errorMessage.value = ''
+  clearAllErrors()
+  
+  let hasError = false
   
   if (!formData.newPassword) {
-    errorMessage.value = '새 비밀번호를 입력해주세요.'
-    return
+    fieldErrors.newPassword = '새 비밀번호를 입력해주세요.'
+    hasError = true
+  } else if (!validatePassword(formData.newPassword)) {
+    fieldErrors.newPassword = '비밀번호는 6자 이상이어야 합니다.'
+    hasError = true
   }
 
-  if (!validatePassword(formData.newPassword)) {
-    errorMessage.value = '비밀번호는 8자 이상, 영문과 숫자를 포함해야 합니다.'
-    return
+  if (!formData.confirmPassword) {
+    fieldErrors.confirmPassword = '비밀번호 확인을 입력해주세요.'
+    hasError = true
+  } else if (formData.newPassword !== formData.confirmPassword) {
+    fieldErrors.confirmPassword = '비밀번호가 일치하지 않습니다.'
+    hasError = true
   }
 
-  if (formData.newPassword !== formData.confirmPassword) {
-    errorMessage.value = '비밀번호가 일치하지 않습니다.'
-    return
-  }
+  if (hasError) return
 
   isLoading.value = true
 
-  setTimeout(() => {
-    currentStep.value = 'complete'
+  try {
+    const response = await authApi.resetPasswordDirect({
+      email: formData.email,
+      verificationCode: formData.verificationCode,
+      newPassword: formData.newPassword,
+      confirmPassword: formData.confirmPassword
+    })
+
+    if (response.success) {
+      console.log('✅ 비밀번호 재설정 성공:', response.data)
+      currentStep.value = 'complete'
+    } else {
+      const field = response.data?.field || 'general'
+      if (field === 'general') {
+        errorMessage.value = response.error || '비밀번호 변경 중 오류가 발생했습니다.'
+      } else {
+        fieldErrors[field as keyof typeof fieldErrors] = response.error || '입력 정보를 확인해주세요.'
+      }
+    }
+  } catch (error: any) {
+    console.error('❌ 비밀번호 재설정 오류:', error)
+    errorMessage.value = error.response?.data?.error || '비밀번호 변경 중 오류가 발생했습니다.'
+  } finally {
     isLoading.value = false
-  }, 1500)
+  }
 }
 
-const resendCode = () => {
-  if (isLoading.value) return
+const resendCode = async () => {
+  if (isLoading.value || !canResend.value) return
   
   isLoading.value = true
-  setTimeout(() => {
-    alert('인증번호가 이메일로 전송되었습니다. (데모: 123456)')
+  
+  try {
+    const response = await authApi.findPassword({
+      name: formData.name,
+      phone: formData.phone,
+      email: formData.email
+    })
+
+    if (response.success) {
+      console.log('✅ 인증번호 재전송 성공')
+      startResendTimer()
+      // 인증번호 초기화
+      formData.verificationCode = ''
+      clearFieldError('verificationCode')
+    } else {
+      errorMessage.value = response.error || '인증번호 재전송에 실패했습니다.'
+    }
+  } catch (error: any) {
+    console.error('❌ 인증번호 재전송 오류:', error)
+    errorMessage.value = '인증번호 재전송 중 오류가 발생했습니다.'
+  } finally {
     isLoading.value = false
-  }, 1000)
+  }
 }
 
+// 네비게이션
 const goToPrevious = () => {
-  errorMessage.value = ''
+  clearAllErrors()
   formData.verificationCode = ''
   currentStep.value = 'input'
+  
+  // 타이머 정리
+  if (verificationInterval) {
+    clearInterval(verificationInterval)
+    verificationInterval = null
+    verificationTimer.value = 0
+  }
+  if (resendInterval) {
+    clearInterval(resendInterval)
+    resendInterval = null
+    resendCountdown.value = 0
+    canResend.value = true
+  }
 }
 
 const handleBackButton = () => {
@@ -441,8 +619,8 @@ const handleBackButton = () => {
 
 const resetForm = () => {
   Object.assign(formData, {
-    userId: '',
     name: '',
+    phone: '',
     email: '',
     verificationCode: '',
     newPassword: '',
@@ -450,18 +628,39 @@ const resetForm = () => {
   })
   
   Object.assign(passwordValidation, {
-    minLength: false,
-    hasLetter: false,
-    hasNumber: false
+    minLength: false
   })
   
-  errorMessage.value = ''
+  clearAllErrors()
   currentStep.value = 'input'
+  
+  // 타이머 정리
+  if (verificationInterval) {
+    clearInterval(verificationInterval)
+    verificationInterval = null
+    verificationTimer.value = 0
+  }
+  if (resendInterval) {
+    clearInterval(resendInterval)
+    resendInterval = null
+    resendCountdown.value = 0
+    canResend.value = true
+  }
 }
 
 const goToLogin = () => {
   router.push('/login')
 }
+
+// 컴포넌트 언마운트 시 타이머 정리
+onUnmounted(() => {
+  if (verificationInterval) {
+    clearInterval(verificationInterval)
+  }
+  if (resendInterval) {
+    clearInterval(resendInterval)
+  }
+})
 </script>
 
 <style scoped>
@@ -531,7 +730,7 @@ const goToLogin = () => {
 
 .card-header {
   text-align: center;
-  padding: 2rem 2rem 0;
+  padding: 2rem 2rem 1rem;
   position: relative;
 }
 
@@ -581,7 +780,13 @@ const goToLogin = () => {
   font-size: 1.5rem;
   font-weight: 700;
   color: rgb(30 64 175);
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.card-subtitle {
+  font-size: 0.875rem;
+  color: rgb(107 114 128);
+  margin-bottom: 0;
 }
 
 .card-content {
@@ -622,43 +827,59 @@ const goToLogin = () => {
 .auth-method-description {
   font-size: 0.875rem;
   color: rgb(37 99 235);
+  line-height: 1.5;
 }
 
 .form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  margin-bottom: 1rem;
 }
 
 .form-label {
+  display: block;
   font-size: 0.875rem;
   font-weight: 500;
-  color: rgb(30 64 175);
+  color: #374151;
+  margin-bottom: 0.5rem;
 }
 
 .form-input {
-  height: 3.5rem;
-  padding: 0 1rem;
-  border: 1px solid rgb(191 219 254);
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  background: rgba(239, 246, 255, 0.3);
-  transition: all 0.3s;
-}
-
-.form-input:hover {
-  background: rgba(239, 246, 255, 0.5);
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  background: white;
+  box-sizing: border-box;
 }
 
 .form-input:focus {
   outline: none;
-  border-color: rgb(37 99 235);
-  background: white;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px #dbeafe;
 }
 
 .form-input::placeholder {
-  color: rgb(156 163 175);
+  color: #9ca3af;
+}
+
+.error-input {
+  border-color: #dc2626 !important;
+  background-color: #fef2f2 !important;
+}
+
+.error-input:focus {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 3px #fee2e2 !important;
+}
+
+.field-error {
+  font-size: 0.75rem;
+  color: #dc2626;
+  margin-top: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 .password-input-group {
@@ -705,6 +926,22 @@ const goToLogin = () => {
   flex: 1;
 }
 
+.verification-input {
+  font-size: 1.125rem;
+  font-weight: 500;
+  letter-spacing: 0.25rem;
+  text-align: center;
+  font-family: 'Courier New', monospace;
+}
+
+.verification-timer {
+  font-size: 0.75rem;
+  color: rgb(239 68 68);
+  text-align: center;
+  margin-top: 0.5rem;
+  font-weight: 500;
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -716,7 +953,7 @@ const goToLogin = () => {
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.5s;
+  transition: all 0.3s;
   border: none;
   text-decoration: none;
 }
@@ -728,19 +965,30 @@ const goToLogin = () => {
 
 .btn-primary {
   width: 100%;
-  background: rgba(37, 99, 235, 0.2);
-  border: 1px solid rgba(37, 99, 235, 0.3);
-  color: rgb(29 78 216);
-  opacity: 0.7;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 1rem;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgb(37 99 235) 0%, rgb(59 130 246) 100%);
-  border-color: rgb(37 99 235);
-  color: white;
-  transform: scale(1.02);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-  opacity: 1;
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .btn-outline {
@@ -759,7 +1007,9 @@ const goToLogin = () => {
 
 .btn-small {
   height: 3.5rem;
-  padding: 0 1.5rem;
+  padding: 0 1rem;
+  font-size: 0.75rem;
+  white-space: nowrap;
 }
 
 .button-group {
@@ -785,20 +1035,27 @@ const goToLogin = () => {
 }
 
 .alert {
-  padding: 0.75rem 1rem;
+  padding: 1rem;
   border-radius: 0.375rem;
   margin-bottom: 1rem;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.75rem;
   border: 1px solid;
   animation: scaleIn 0.3s ease-out;
 }
 
+.alert svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
 .alert-error {
-  background: rgba(239, 68, 68, 0.05);
-  border-color: #fecaca;
-  color: #991b1b;
+  background: rgba(254, 226, 226, 0.8);
+  border-color: rgb(252 165 165);
+  color: rgb(153 27 27);
 }
 
 .verify-info {
@@ -827,6 +1084,7 @@ const goToLogin = () => {
   font-size: 0.875rem;
   color: rgb(37 99 235);
   margin-bottom: 1.5rem;
+  line-height: 1.6;
 }
 
 .complete-icon {

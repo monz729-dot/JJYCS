@@ -28,6 +28,16 @@ spring:
       # - org.springframework.boot.autoconfigure.sql.init.DataSourceInitializationAutoConfiguration
       # Mail 자동 설정을 활성화 (Gmail SMTP 사용)
   
+  # Jackson JSON Configuration
+  jackson:
+    default-property-inclusion: NON_NULL
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+    locale: ko_KR
+    time-zone: Asia/Seoul
+
   # Database and JPA configurations are in profile-specific files
 
       

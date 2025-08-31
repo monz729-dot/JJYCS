@@ -1,8 +1,11 @@
 package com.ysc.lms.controller;
 
 import com.ysc.lms.entity.Order;
+import com.ysc.lms.entity.Notification;
+import com.ysc.lms.entity.User;
 import com.ysc.lms.repository.OrderRepository;
 import com.ysc.lms.repository.UserRepository;
+import com.ysc.lms.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +16,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/dashboard")
@@ -23,6 +27,7 @@ public class DashboardController {
 
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
+    private final NotificationRepository notificationRepository;
 
     /**
      * 사용자 대시보드 데이터 조회
@@ -147,10 +152,31 @@ public class DashboardController {
     @GetMapping("/user/{userId}/alerts")
     public ResponseEntity<?> getUserAlerts(@PathVariable Long userId) {
         try {
-            // TODO: 실제 알림 시스템 구현 시 교체
+            log.info("Getting alerts for userId: {}", userId);
+            
+            // 사용자 존재 여부 확인
+            if (!userRepository.existsById(userId)) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "error", "사용자를 찾을 수 없습니다."
+                ));
+            }
+            
+            // 사용자의 최근 알림 조회 (최대 20개)
+            List<Notification> notifications = notificationRepository.findByUserIdAndIsReadOrderByCreatedAtDesc(userId, false)
+                .stream()
+                .limit(20)
+                .toList();
+            
+            // 읽지 않은 알림 개수 조회
+            Long unreadCount = notificationRepository.countUnreadByUserId(userId);
+            
+            log.info("Found {} unread notifications for user {}", unreadCount, userId);
+            
             return ResponseEntity.ok(Map.of(
                 "success", true,
-                "data", List.of()
+                "data", notifications,
+                "unreadCount", unreadCount
             ));
             
         } catch (Exception e) {
@@ -194,5 +220,55 @@ public class DashboardController {
     private boolean isCompletedStatus(Order.OrderStatus status) {
         return List.of(Order.OrderStatus.DELIVERED, Order.OrderStatus.COMPLETED, Order.OrderStatus.PAYMENT_CONFIRMED)
             .contains(status);
+    }
+
+    @PostMapping("/test/create-notifications")
+    public ResponseEntity<?> createTestNotifications() {
+        try {
+            // Find an active general user for testing
+            Optional<User> userOpt = userRepository.findAll().stream()
+                .filter(user -> user.getStatus() == User.UserStatus.ACTIVE && user.getUserType() == User.UserType.GENERAL)
+                .findFirst();
+            
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "error", "No active general users found"
+                ));
+            }
+            
+            User user = userOpt.get();
+            
+            // Create sample notifications
+            Notification notification1 = new Notification(user, Notification.NotificationType.ORDER_STATUS_CHANGED, 
+                "주문 상태 변경", "주문 #ORD001의 상태가 '배송 중'으로 변경되었습니다.");
+            
+            Notification notification2 = new Notification(user, Notification.NotificationType.ORDER_ARRIVED, 
+                "창고 도착", "주문 #ORD002가 방콕 창고에 도착했습니다.");
+            
+            Notification notification3 = new Notification(user, Notification.NotificationType.PAYMENT_REQUIRED, 
+                "결제 필요", "주문 #ORD001에 대한 배송비 결제가 필요합니다.");
+            
+            notificationRepository.save(notification1);
+            notificationRepository.save(notification2);
+            notificationRepository.save(notification3);
+            
+            log.info("Created 3 test notifications for user: {}", user.getEmail());
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Test notifications created successfully",
+                "userId", user.getId(),
+                "userEmail", user.getEmail(),
+                "notificationCount", 3
+            ));
+            
+        } catch (Exception e) {
+            log.error("Error creating test notifications", e);
+            return ResponseEntity.internalServerError().body(Map.of(
+                "success", false,
+                "error", "Failed to create test notifications: " + e.getMessage()
+            ));
+        }
     }
 }

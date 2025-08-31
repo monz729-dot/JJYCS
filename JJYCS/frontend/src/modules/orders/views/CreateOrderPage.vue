@@ -133,7 +133,12 @@
                 @click="orderForm.shippingType = 'sea'"
                 :class="['flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all', orderForm.shippingType === 'sea' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500']"
               >
-                🚢 해상운송
+                <div class="flex items-center gap-2">
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M3 4a1 1 0 011-1h10a1 1 0 010 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1zM3 16a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1z"/>
+                  </svg>
+                  해상운송
+                </div>
                 <div class="text-xs mt-0.5">경제적 • 15-30일</div>
               </button>
               <button 
@@ -141,7 +146,13 @@
                 @click="orderForm.shippingType = 'air'"
                 :class="['flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all ml-1', orderForm.shippingType === 'air' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500']"
               >
-                ✈️ 항공운송
+                <div class="flex items-center gap-2">
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 2L3 7v11c0 .55.45 1 1 1h12c.55 0 1-.45 1-1V7l-7-5z"/>
+                    <path d="M5 9l5-3 5 3v7H5V9z"/>
+                  </svg>
+                  항공운송
+                </div>
                 <div class="text-xs mt-0.5">신속 • 3-7일</div>
               </button>
             </div>
@@ -347,7 +358,12 @@
                     <div v-if="orderForm.inboundMethod === 'courier'" class="w-2 h-2 bg-blue-500 rounded-full"></div>
                   </div>
                   <div>
-                    <div class="font-medium text-gray-900">📦 택배 발송</div>
+                    <div class="font-medium text-gray-900 flex items-center gap-2">
+                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1zM14 9a1 1 0 100 2h2a1 1 0 100-2h-2zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/>
+                      </svg>
+                      택배 발송
+                    </div>
                     <div class="text-sm text-gray-600">우체국, 한진, 롯데 등</div>
                   </div>
                 </div>
@@ -523,7 +539,9 @@
                     class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
                     @click="openHSCodeSearch(index)"
                   >
-                    🔍
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd"/>
+                    </svg>
                   </button>
                 </div>
               </div>
@@ -708,7 +726,12 @@
           @click="saveDraft"
           :disabled="loading"
         >
-          {{ loading ? '저장 중...' : '💾 임시저장' }}
+          <div class="flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586l-1.293-1.293zM9 4a1 1 0 012 0v2H9V4z"/>
+            </svg>
+            {{ loading ? '저장 중...' : '임시저장' }}
+          </div>
         </button>
         <button 
           type="button"
@@ -718,7 +741,14 @@
           :class="{'opacity-75 cursor-not-allowed': isSubmitting}"
           style="flex: 2;"
         >
-          <span v-if="!isSubmitting">✈️ 접수완료</span>
+          <span v-if="!isSubmitting" class="flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M3.5 6L12 2l8.5 4-8.5 4L3.5 6z"/>
+              <path d="M3 10l9-4 9 4-9 4-9-4z"/>
+              <path d="M3 14l9-4 9 4-9 4-9-4z"/>
+            </svg>
+            접수완료
+          </span>
           <div v-else class="flex items-center justify-center gap-2">
             <div class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
             <span>{{ savingProgress || '처리 중...' }}</span>

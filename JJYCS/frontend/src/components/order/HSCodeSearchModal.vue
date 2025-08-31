@@ -40,7 +40,7 @@
           <input
             v-model="searchQuery"
             :placeholder="searchType === 'product' ? '품목명을 입력하세요 (예: 화장품, 의류)' : 'HS Code를 입력하세요 (예: 3304.99)'"
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="form-input"
             @keyup.enter="performSearch"
           />
           <button
@@ -117,7 +117,7 @@
               type="number"
               min="1"
               step="1"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              class="form-input"
             />
           </div>
           <div>
@@ -127,7 +127,7 @@
               type="number"
               min="0"
               step="0.01"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              class="form-input"
             />
           </div>
         </div>
@@ -325,3 +325,32 @@ const confirmSelection = () => {
   })
 }
 </script>
+
+<style scoped>
+.form-input {
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  background: white;
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-input.error {
+  border-color: #dc2626;
+  background-color: #fef2f2;
+}
+
+label {
+  font-size: 0.875rem;
+  color: #374151;
+}
+</style>

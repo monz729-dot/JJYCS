@@ -60,4 +60,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // 코드 생성을 위한 최대 시퀀스 조회
     @Query(value = "SELECT member_code FROM users WHERE member_code LIKE :prefix% ORDER BY member_code DESC LIMIT 1", nativeQuery = true)
     String findMaxMemberCodeByPrefix(@Param("prefix") String prefix);
+    
+    // 비밀번호 찾기를 위한 사용자 검색 (이름, 연락처, 이메일로 검색)
+    Optional<User> findByEmailAndNameAndPhone(String email, String name, String phone);
 }

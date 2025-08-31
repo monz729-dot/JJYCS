@@ -246,7 +246,20 @@ export const authApi = {
     api.post('/auth/forgot-password', { email }),
   
   resetPassword: (token: string, password: string) =>
-    api.post('/auth/reset-password', { token, password })
+    api.post('/auth/reset-password', { token, password }),
+  
+  checkEmail: (email: string) =>
+    api.post('/auth/check-email', { email }),
+  
+  // 새로운 비밀번호 찾기 API
+  findPassword: (data: { name: string; phone: string; email: string }) =>
+    api.post('/auth/find-password', data),
+  
+  verifyPasswordReset: (data: { email: string; verificationCode: string }) =>
+    api.post('/auth/verify-password-reset', data),
+  
+  resetPasswordDirect: (data: { email: string; verificationCode: string; newPassword: string; confirmPassword: string }) =>
+    api.post('/auth/reset-password-direct', data)
 }
 
 // User Dashboard API

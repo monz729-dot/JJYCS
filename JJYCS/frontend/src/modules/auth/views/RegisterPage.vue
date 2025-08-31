@@ -275,7 +275,7 @@
             <label class="agreement-text" for="agreeTerms">
               <span class="agreement-required">[필수]</span> 서비스 이용약관에 동의합니다
             </label>
-            <a href="#" class="agreement-link">보기</a>
+            <button type="button" @click="showTermsModal = true" class="agreement-link">보기</button>
           </div>
           
           <div class="agreement-item">
@@ -290,7 +290,7 @@
             <label class="agreement-text" for="agreePrivacy">
               <span class="agreement-required">[필수]</span> 개인정보 처리방침에 동의합니다
             </label>
-            <a href="#" class="agreement-link">보기</a>
+            <button type="button" @click="showPrivacyModal = true" class="agreement-link">보기</button>
           </div>
           
           <div class="agreement-item">
@@ -304,6 +304,7 @@
             <label class="agreement-text" for="agreeMarketing">
               [선택] 마케팅 정보 수신에 동의합니다
             </label>
+            <button type="button" @click="showMarketingModal = true" class="agreement-link">보기</button>
           </div>
         </div>
         
@@ -319,6 +320,125 @@
       <div class="auth-links">
         <span style="color: #6b7280;">이미 계정이 있으신가요?</span>
         <router-link to="/login" class="auth-link">로그인</router-link>
+      </div>
+    </div>
+  </div>
+
+  <!-- 서비스 이용약관 모달 -->
+  <div v-if="showTermsModal" class="modal-overlay" @click="showTermsModal = false">
+    <div class="modal-content" @click.stop>
+      <div class="modal-header">
+        <h3>[필수] 서비스 이용약관</h3>
+        <button @click="showTermsModal = false" class="modal-close">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="terms-content">
+          <h4>제1조 (목적)</h4>
+          <p>본 약관은 <strong>YCS 물류 시스템(이하 '회사')</strong>이 제공하는 서비스(웹/모바일 포함)의 이용과 관련하여 회사와 이용자 간의 권리, 의무 및 책임사항을 규정하는 것을 목적으로 합니다.</p>
+          
+          <h4>제2조 (정의)</h4>
+          <p>"서비스"란 회사가 운영하는 물류 관리, 주문 접수, 배송 추적 등 관련 온라인 서비스를 말합니다.</p>
+          <p>"이용자"란 본 약관에 동의하고 서비스를 이용하는 회원 및 비회원을 말합니다.</p>
+          <p>"회원"이란 회사에 개인정보를 제공하고 회원 등록을 한 자를 의미합니다.</p>
+          
+          <h4>제3조 (약관의 효력 및 변경)</h4>
+          <p>본 약관은 서비스 화면에 게시하거나 기타의 방법으로 공지함으로써 효력이 발생합니다.</p>
+          <p>회사는 관련 법령을 위배하지 않는 범위에서 본 약관을 변경할 수 있으며, 변경 시 사전 공지합니다.</p>
+          
+          <h4>제4조 (서비스 제공 및 변경)</h4>
+          <p>회사는 물류 주문 접수, 배송현황 조회, 관세/HS Code 조회 등 다양한 서비스를 제공합니다.</p>
+          <p>회사는 필요 시 서비스 내용을 추가·변경할 수 있습니다.</p>
+          
+          <h4>제5조 (서비스 중단)</h4>
+          <p>천재지변, 시스템 점검, 통신 장애 등의 사유로 서비스 제공이 일시 중단될 수 있습니다.</p>
+          
+          <h4>제6조 (회원 가입 및 탈퇴)</h4>
+          <p>회원가입은 이용자가 약관에 동의하고 개인정보를 기재한 후 회사가 이를 승낙함으로써 성립됩니다.</p>
+          <p>회원은 언제든 탈퇴를 요청할 수 있으며, 회사는 즉시 탈퇴 처리합니다.</p>
+          
+          <h4>제7조 (개인정보 보호)</h4>
+          <p>회사는 「개인정보보호법」 등 관계 법령을 준수하며, 개인정보 처리방침을 따릅니다.</p>
+          
+          <h4>제8조 (이용자의 의무)</h4>
+          <p>이용자는 다음 행위를 하여서는 안 됩니다.</p>
+          <ul>
+            <li>타인의 정보를 도용하는 행위</li>
+            <li>회사 서비스의 정상 운영을 방해하는 행위</li>
+            <li>법령 및 공서양속에 위반되는 행위</li>
+          </ul>
+          
+          <h4>제9조 (책임 제한)</h4>
+          <p>회사는 무료로 제공되는 서비스 이용과 관련하여 발생하는 손해에 대해 책임을 지지 않습니다.</p>
+          
+          <h4>제10조 (준거법 및 관할)</h4>
+          <p>본 약관은 대한민국 법률에 따라 해석되며, 분쟁 발생 시 회사 본점 소재지 관할 법원을 제1심 관할 법원으로 합니다.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button @click="showTermsModal = false" class="btn btn-primary">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 개인정보 처리방침 모달 -->
+  <div v-if="showPrivacyModal" class="modal-overlay" @click="showPrivacyModal = false">
+    <div class="modal-content" @click.stop>
+      <div class="modal-header">
+        <h3>[필수] 개인정보 처리방침</h3>
+        <button @click="showPrivacyModal = false" class="modal-close">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="terms-content">
+          <h4>1. 개인정보 수집 항목</h4>
+          <p><strong>회원가입 시:</strong> 이름, 이메일, 연락처, 비밀번호</p>
+          <p><strong>주문 서비스 이용 시:</strong> 송장번호, 수취인 정보, 배송지 주소, 결제정보 등</p>
+          
+          <h4>2. 개인정보 수집 및 이용 목적</h4>
+          <ul>
+            <li>회원가입 및 본인 확인</li>
+            <li>주문/배송 서비스 제공 및 고객 지원</li>
+            <li>공지사항 및 서비스 안내 발송</li>
+            <li>법령에 따른 보관 의무 준수</li>
+          </ul>
+          
+          <h4>3. 개인정보 보관 및 이용 기간</h4>
+          <p>회원 탈퇴 시 즉시 파기</p>
+          <p>단, 법령에 따라 거래기록 등은 일정 기간 보관</p>
+          
+          <h4>4. 개인정보 제3자 제공</h4>
+          <p>회사는 원칙적으로 이용자의 동의 없이 개인정보를 외부에 제공하지 않습니다. 단, 관세청 등 법령에 따라 제공이 필요한 경우 예외로 합니다.</p>
+          
+          <h4>5. 개인정보 처리 위탁</h4>
+          <p>회사는 원활한 서비스 제공을 위해 필요한 경우 일부 업무를 외부 업체에 위탁할 수 있으며, 이 경우 개인정보 보호법을 준수합니다.</p>
+          
+          <h4>6. 이용자의 권리</h4>
+          <p>이용자는 언제든 자신의 개인정보를 조회·수정·삭제할 수 있습니다.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button @click="showPrivacyModal = false" class="btn btn-primary">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 마케팅 수신 동의 모달 -->
+  <div v-if="showMarketingModal" class="modal-overlay" @click="showMarketingModal = false">
+    <div class="modal-content" @click.stop>
+      <div class="modal-header">
+        <h3>[선택] 마케팅 수신 동의</h3>
+        <button @click="showMarketingModal = false" class="modal-close">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="terms-content">
+          <p>회사는 이용자에게 보다 나은 서비스를 제공하기 위해 이벤트, 프로모션, 할인 혜택, 신규 서비스 안내 등의 정보를 이메일, 문자메시지, 푸시 알림 등을 통해 발송할 수 있습니다.</p>
+          
+          <p>동의를 하지 않더라도 서비스 이용에는 제한이 없습니다.</p>
+          
+          <p>수신 동의 후에도 언제든지 <strong>[마이페이지 > 알림 설정]</strong>에서 수신 거부가 가능합니다.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button @click="showMarketingModal = false" class="btn btn-primary">확인</button>
       </div>
     </div>
   </div>
@@ -364,6 +484,11 @@ const verificationTimeLeft = ref(0)
 const passwordError = ref('')
 const uploadedFile = ref<File | null>(null)
 const agreeAll = ref(false)
+
+// 약관 모달 상태
+const showTermsModal = ref(false)
+const showPrivacyModal = ref(false)
+const showMarketingModal = ref(false)
 
 let verificationTimer: NodeJS.Timeout | null = null
 
@@ -781,10 +906,10 @@ onUnmounted(() => {
 
 .form-input {
   width: 100%;
-  padding: 0.875rem 1rem;
+  padding: 1rem;
   border: 1px solid #e5e7eb;
   border-radius: 0.75rem;
-  font-size: 0.875rem;
+  font-size: 1rem;
   transition: all 0.2s ease;
   background: white;
   box-sizing: border-box;
@@ -793,7 +918,7 @@ onUnmounted(() => {
 .form-input:focus {
   outline: none;
   border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 3px #dbeafe;
 }
 
 .form-input:disabled {
@@ -1034,6 +1159,136 @@ onUnmounted(() => {
   }
   
   .form-section {
+    padding: 1rem;
+  }
+}
+
+/* 약관 모달 스타일 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+  color: #374151;
+  background: #f3f4f6;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+.modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.terms-content {
+  line-height: 1.6;
+}
+
+.terms-content h4 {
+  margin: 1.5rem 0 0.75rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.terms-content h4:first-child {
+  margin-top: 0;
+}
+
+.terms-content p {
+  margin: 0.75rem 0;
+  color: #374151;
+}
+
+.terms-content ul {
+  margin: 0.75rem 0;
+  padding-left: 1.5rem;
+}
+
+.terms-content li {
+  margin: 0.5rem 0;
+  color: #374151;
+}
+
+.agreement-link {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  font-size: 0.875rem;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 0.5rem;
+}
+
+.agreement-link:hover {
+  color: #2563eb;
+}
+
+@media (max-width: 640px) {
+  .modal-content {
+    margin: 0.5rem;
+    max-width: none;
+  }
+  
+  .modal-header,
+  .modal-body,
+  .modal-footer {
     padding: 1rem;
   }
 }

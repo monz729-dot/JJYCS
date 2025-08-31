@@ -2,8 +2,10 @@ package com.ysc.lms.controller;
 
 import com.ysc.lms.entity.Order;
 import com.ysc.lms.entity.User;
+import com.ysc.lms.entity.Notification;
 import com.ysc.lms.repository.OrderRepository;
 import com.ysc.lms.repository.UserRepository;
+import com.ysc.lms.repository.NotificationRepository;
 import com.ysc.lms.service.EmailService;
 import com.ysc.lms.service.OrderService;
 import com.ysc.lms.service.UserService;
@@ -31,6 +33,7 @@ public class AdminController {
     private final OrderRepository orderRepository;
     private final OrderService orderService;
     private final EmailService emailService;
+    private final NotificationRepository notificationRepository;
     
     @GetMapping("/users/pending")
     @PreAuthorize("hasRole('ADMIN')")
@@ -399,6 +402,53 @@ public class AdminController {
         }
     }
     
+    @PostMapping("/test/create-notifications")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> createTestNotifications() {
+        try {
+            // Find the first active user to create notifications for
+            Optional<User> userOpt = userRepository.findAll().stream()
+                .filter(user -> user.getStatus() == User.UserStatus.ACTIVE)
+                .findFirst();
+            
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "No active users found to create notifications for"));
+            }
+            
+            User user = userOpt.get();
+            
+            // Create sample notifications
+            Notification notification1 = new Notification(user, Notification.NotificationType.ORDER_STATUS_CHANGED, 
+                "주문 상태 변경", "주문 #ORD001의 상태가 '배송 중'으로 변경되었습니다.");
+            
+            Notification notification2 = new Notification(user, Notification.NotificationType.ORDER_ARRIVED, 
+                "창고 도착", "주문 #ORD002가 방콕 창고에 도착했습니다.");
+            
+            Notification notification3 = new Notification(user, Notification.NotificationType.PAYMENT_REQUIRED, 
+                "결제 필요", "주문 #ORD001에 대한 배송비 결제가 필요합니다.");
+            
+            notificationRepository.save(notification1);
+            notificationRepository.save(notification2);
+            notificationRepository.save(notification3);
+            
+            log.info("Created 3 test notifications for user: {}", user.getEmail());
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Test notifications created successfully",
+                "userId", user.getId(),
+                "userEmail", user.getEmail(),
+                "notificationCount", 3
+            ));
+            
+        } catch (Exception e) {
+            log.error("Error creating test notifications", e);
+            return ResponseEntity.internalServerError()
+                .body(Map.of("success", false, "error", "Failed to create test notifications: " + e.getMessage()));
+        }
+    }
+
     private String generateMemberCode(String prefix) {
         // 해당 타입의 마지막 멤버 코드 조회하여 순차 생성
         String pattern = prefix + "%";
