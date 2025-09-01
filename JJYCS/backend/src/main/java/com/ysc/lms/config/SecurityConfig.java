@@ -75,19 +75,19 @@ public class SecurityConfig {
                     "/swagger-ui.html",
                     "/actuator/health",
                     "/api/actuator/health",
-                    "/favicon.ico",
-                    "/api/labels/**",
-                    "/labels/**",
-                    "/api/debug/**",
-                    "/debug/**",
-                    "/api/dashboard/test/**"
+                    "/favicon.ico"
                 ).permitAll()
                 
                 // 입고확인 API - 관리자 또는 창고직원
                 .requestMatchers("/api/admin/inbound/**").hasAnyRole("ADMIN", "WAREHOUSE")
                 
-                // 관리자 전용
-                .requestMatchers("/api/admin/**", "/admin/**").hasRole("ADMIN")
+                // 관리자 전용 - 가장 구체적인 경로부터 매칭
+                .requestMatchers("/api/admin/users/pending").hasRole("ADMIN")
+                .requestMatchers("/api/admin/users/{id}/approve").hasRole("ADMIN")
+                .requestMatchers("/api/admin/users/{id}/reject").hasRole("ADMIN")
+                .requestMatchers("/api/admin/performance/**").hasRole("ADMIN")
+                .requestMatchers("/api/admin/users").hasRole("ADMIN")
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 
                 // 창고 및 관리자
                 .requestMatchers("/api/warehouse/**", "/warehouse/**").hasAnyRole("WAREHOUSE", "ADMIN")
@@ -110,12 +110,8 @@ public class SecurityConfig {
                 // 라벨 생성 - 일반/기업/관리자/창고
                 .requestMatchers("/api/labels/**", "/labels/**").hasAnyRole("GENERAL", "CORPORATE", "ADMIN", "WAREHOUSE")
                 
-                // 비즈니스 룰 테스트용 - 임시 허용
-                .requestMatchers("/api/orders/calculate-cbm", "/api/orders/validate", "/api/orders/validate-business-rules").permitAll()
-                .requestMatchers("/orders/calculate-cbm", "/orders/validate", "/orders/validate-business-rules").permitAll()
-                
-                // HS Code 조회 - 임시로 모든 요청 허용 (테스트용)
-                .requestMatchers("/api/hscode/**", "/hscode/**").permitAll()
+                // HS Code 조회 - 인증된 사용자만 허용 (GENERAL 사용자 포함)
+                .requestMatchers("/api/hscode/**", "/hscode/**").hasAnyRole("ADMIN", "WAREHOUSE", "PARTNER", "CORPORATE", "GENERAL")
                 
                 // 은행계좌 - 일반/기업/관리자
                 .requestMatchers("/api/bank-accounts/**", "/bank-accounts/**").hasAnyRole("GENERAL", "CORPORATE", "ADMIN")

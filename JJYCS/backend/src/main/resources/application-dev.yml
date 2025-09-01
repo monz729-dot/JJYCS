@@ -3,30 +3,31 @@ spring:
   application:
     name: ycs-lms-dev
 
-  # Database Configuration - H2 File-based (for testing)
+  # Database Configuration - H2 File-based (for development)
   datasource:
-    # ✅ 파일 기반 H2 (데이터 영구 저장)
-    url: jdbc:h2:file:./.h2/ycs-lms-dev;AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1
+    # ✅ 파일 기반 H2 (데이터 영구 저장) - 운영 준비 상태
+    url: jdbc:h2:file:./data/ycs-lms-dev;AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1;MODE=MySQL;DATABASE_TO_LOWER=TRUE
     driver-class-name: org.h2.Driver
     username: sa
     password: 
     generate-unique-name: false
 
     hikari:
-      maximum-pool-size: 10
-      minimum-idle: 2
+      maximum-pool-size: 20
+      minimum-idle: 5
       idle-timeout: 300000
       connection-timeout: 20000
       max-lifetime: 1800000
       pool-name: YCS-LMS-Dev-Pool
       connection-test-query: SELECT 1
+      auto-commit: false
 
   h2:
     console:
       enabled: true
-      path: /h2-console   # ← /api 붙이지 마세요
+      path: /h2-console
       settings:
-        web-allow-others: true
+        web-allow-others: false  # 보안을 위해 로컬에서만 접근 허용
 
   # JPA Configuration - Development
   jpa:
@@ -57,10 +58,10 @@ spring:
 
   # Mail Configuration - Gmail SMTP (Development)
   mail:
-    host: smtp.gmail.com
-    port: 587
-    username: monz729@gmail.com
-    password: eyubylejwyuqnqvj
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME:monz729@gmail.com}
+    password: ${SMTP_PASSWORD:eyubylejwyuqnqvj}
     properties:
       mail:
         smtp:
@@ -72,8 +73,8 @@ spring:
           timeout: 10000
           writetimeout: 10000
           ssl:
-            trust: smtp.gmail.com
-      mail.debug: true  # SMTP 디버깅 활성화
+            trust: ${SMTP_HOST:smtp.gmail.com}
+      mail.debug: ${SMTP_DEBUG:true}  # SMTP 디버깅 (개발환경에서만)
     default-encoding: UTF-8
 
 # Server Configuration

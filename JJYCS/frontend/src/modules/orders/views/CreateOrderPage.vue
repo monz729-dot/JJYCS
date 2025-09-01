@@ -1006,11 +1006,10 @@ import { useToast } from '@/composables/useToast'
 import { ordersApi } from '@/utils/api'
 import { USER_TYPE } from '@/types'
 import HSCodeSearchModal from '@/components/order/HSCodeSearchModal.vue'
-import InlineMessage from '@/components/ui/InlineMessage.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
-const { handleApiError, handleCBMExceeded, handleTHBThresholdExceeded, handleMemberCodeMissing, validateForm, validationRules } = useErrorHandler()
+const { handleApiError, validateForm, validationRules } = useErrorHandler()
 const { success: showSuccess, businessWarning } = useToast()
 
 const loading = ref(false)
@@ -1088,14 +1087,14 @@ const checkBusinessRules = () => {
 const orderForm = reactive({
   trackingNumber: '',
   shippingType: 'sea',
-  country: 'TH', // 태국 고정
-  repacking: false, // 리패킹 여부
+  country: 'TH',
+  repacking: false,
   postalCode: '',
   recipientName: '',
   recipientPhone: '',
   recipientAddress: '',
   recipientPostalCode: '',
-  recipients: [ // 다중 수취인 지원
+  recipients: [
     {
       name: '',
       phone: '',
@@ -1114,8 +1113,7 @@ const orderForm = reactive({
     unitPrice: 0,
     cbm: 0
   }],
-  // 배대지 접수 정보
-  inboundMethod: 'courier', // courier, quick, other
+  inboundMethod: 'courier',
   courierCompany: '',
   waybillNo: '',
   quickVendor: '',
@@ -1123,16 +1121,14 @@ const orderForm = reactive({
   inboundLocationId: null,
   inboundNote: '',
   specialRequests: '',
-  // THB 1,500 초과 시 추가 정보
   thbAdditionalInfo: null
 })
 
-// 새 상태 변수들
 const showRepackingTooltip = ref(false)
 const showRecipientModal = ref(false)
 const currentRecipientIndex = ref(0)
-const expandedRecipients = ref([0]) // 첫 번째 수취인은 펼쳐진 상태로 시작
-const maxRecipients = ref(3) // 최대 수취인 수 (어드민에서 설정 가능)
+const expandedRecipients = ref([0])
+const maxRecipients = ref(3)
 
 const hsCodes = [
   { code: '1905.31', description: 'Korean Chocolate Sticks' },
@@ -1214,7 +1210,6 @@ const saveTHBAdditionalInfo = () => {
   showSuccess('수취인 추가 정보가 저장되었습니다.')
 }
 
-// 태국 전용 시스템이므로 getPostalCodeGuide 함수 제거됨 - 불필요
 
 const calculateCBM = (item) => {
   if (item.width && item.height && item.depth) {
@@ -1243,7 +1238,6 @@ const removeItem = (index) => {
   }
 }
 
-// 수취인 관리 함수들
 const addRecipient = () => {
   if (orderForm.recipients.length < maxRecipients.value) {
     const newIndex = orderForm.recipients.length
@@ -1253,7 +1247,6 @@ const addRecipient = () => {
       address: '',
       postalCode: ''
     })
-    // 새 수취인 카드를 펼쳐진 상태로 추가
     expandedRecipients.value.push(newIndex)
   }
 }
@@ -1261,7 +1254,6 @@ const addRecipient = () => {
 const removeRecipient = (index) => {
   if (orderForm.recipients.length > 1) {
     orderForm.recipients.splice(index, 1)
-    // 펼쳐진 목록에서도 제거하고 인덱스 조정
     expandedRecipients.value = expandedRecipients.value
       .filter(i => i !== index)
       .map(i => i > index ? i - 1 : i)
@@ -1326,6 +1318,8 @@ const validateOrderForm = (): { isValid: boolean; errors: Record<string, string>
     recipientAddress: orderForm.recipientAddress,
     country: orderForm.country,
     recipientPostalCode: orderForm.recipientPostalCode,
+    recipients: orderForm.recipients,
+    inboundMethod: orderForm.inboundMethod,
     items: orderForm.items
   }
 
@@ -1527,7 +1521,6 @@ watch(isCBMExceeded, (exceeded) => {
   }
 })
 
-// THB 1,500 초과 시 추가 정보 입력 안내 (한 번만 표시)
 const thbModalShown = ref(false)
 watch(isTHBExceeded, (exceeded) => {
   if (exceeded && !orderForm.thbAdditionalInfo && !thbModalShown.value) {
@@ -1544,7 +1537,6 @@ watch(isTHBExceeded, (exceeded) => {
   }
 })
 
-// 품목 변경 시 실시간 CBM 계산
 watch(() => orderForm.items, () => {
   updateItemCBM()
 }, { deep: true })
@@ -1553,7 +1545,6 @@ const goBack = () => {
   router.go(-1)
 }
 
-// Calculate CBM on mounted and when dimensions change
 const updateItemCBM = () => {
   orderForm.items.forEach(item => {
     if (item.width && item.height && item.depth) {

@@ -21,7 +21,13 @@
       "Bash(./mvnw.cmd spring-boot:run:*)",
       "Bash(timeout:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(copy frontendpublictsc-logo.svg frontendpublicysc-logo.svg)",
+      "Bash(cmd /c:*)",
+      "Bash(dir html)",
+      "Bash(node e2e-test.js)",
+      "Bash(node:*)",
+      "Bash(del \"C:\\YCS-ver2\\JJYCS\\backend\\src\\main\\java\\com\\ysc\\lms\\config\\ProductionSecurityConfig.java\")"
     ],
     "deny": [],
     "ask": [],

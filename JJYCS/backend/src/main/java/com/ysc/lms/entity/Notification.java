@@ -78,6 +78,7 @@ public class Notification {
         USER_REJECTED,          // 사용자 거부
         USER_STATUS_CHANGED,    // 사용자 상태 변경
         SYSTEM_MAINTENANCE,     // 시스템 점검
+        SYSTEM_ANNOUNCEMENT,    // 시스템 공지
         PROMOTION,              // 프로모션
         CBM_THRESHOLD_EXCEEDED, // CBM 29 초과
         THB_THRESHOLD_EXCEEDED, // THB 1500 초과

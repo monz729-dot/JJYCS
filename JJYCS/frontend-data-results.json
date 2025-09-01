@@ -1,0 +1,187 @@
+{
+  "summary": {
+    "total": 25,
+    "passed": 18,
+    "failed": 7,
+    "successRate": 72,
+    "duration": 1,
+    "timestamp": "2025-09-01T05:49:33.241Z"
+  },
+  "details": [
+    {
+      "test": "시스템 헬스체크",
+      "passed": true,
+      "message": "상태: UP",
+      "details": null,
+      "timestamp": "2025-09-01T05:49:32.337Z"
+    },
+    {
+      "test": "관리자 API 로그인",
+      "passed": true,
+      "message": "토큰 획득: eyJhbGciOiJIUzUxMiJ9...",
+      "details": null,
+      "timestamp": "2025-09-01T05:49:32.422Z"
+    },
+    {
+      "test": "통계 데이터 조회",
+      "passed": true,
+      "message": "총 사용자: 11, 총 주문: 0",
+      "details": null,
+      "timestamp": "2025-09-01T05:49:32.439Z"
+    },
+    {
+      "test": "통계 데이터 유효성",
+      "passed": true,
+      "message": "데이터 형식: number, number",
+      "details": null,
+      "timestamp": "2025-09-01T05:49:32.439Z"
+    },
+    {
+      "test": "사용자 목록 조회",
+      "passed": false,
+      "message": "조회 실패: Request failed with status code 403",
+      "details": null,
+      "timestamp": "2025-09-01T05:49:32.457Z"
+    },
+    {
+      "test": "승인 대기 목록 조회",
+      "passed": true,
+      "message": "승인 대기: 0명",
+      "details": null,
+      "timestamp": "2025-09-01T05:49:32.472Z"
+    },
+    {
+      "test": "관리자 통계 접근",
+      "passed": true,
+      "message": "상태: 200",
+      "details": null,
+      "timestamp": "2025-09-01T05:49:32.489Z"
+    },
+    {
+      "test": "사용자 관리 접근",
+      "passed": false,
+      "message": "상태: 403",
+      "details": null,
+      "timestamp": "2025-09-01T05:49:32.503Z"
+    },
+    {
+      "test": "승인 관리 접근",
+      "passed": true,
+      "message": "상태: 200",
+      "details": null,
+      "timestamp": "2025-09-01T05:49:32.515Z"
+    },
+    {
+      "test": "이메일 형식 검증",
+      "passed": true,
+      "message": "잘못된 이메일 처리: 400",
+      "details": null,
+      "timestamp": "2025-09-01T05:49:32.596Z"
+    },
+    {
+      "test": "존재하지 않는 이메일 처리",
+      "passed": true,
+      "message": "존재 여부: false",
+      "details": null,
+      "timestamp": "2025-09-01T05:49:32.602Z"
+    },
+    {
+      "test": "잘못된 비밀번호 처리",
+      "passed": true,
+      "message": "로그인 실패 처리: 비밀번호가 일치하지 않습니다.",
+      "details": null,
+      "timestamp": "2025-09-01T05:49:32.682Z"
+    },
+    {
+      "test": "HS 코드 검색 API",
+      "passed": true,
+      "message": "상태: 403, 응답: Request failed with status code 403",
+      "details": null,
+      "timestamp": "2025-09-01T05:49:32.701Z"
+    },
+    {
+      "test": "환율 조회 API",
+      "passed": false,
+      "message": "상태: 500",
+      "details": null,
+      "timestamp": "2025-09-01T05:49:32.890Z"
+    },
+    {
+      "test": "관세율 조회 API",
+      "passed": false,
+      "message": "상태: 500",
+      "details": null,
+      "timestamp": "2025-09-01T05:49:32.934Z"
+    },
+    {
+      "test": "첫 번째 API 요청",
+      "passed": true,
+      "message": "응답 시간: 26ms",
+      "details": null,
+      "timestamp": "2025-09-01T05:49:32.960Z"
+    },
+    {
+      "test": "두 번째 API 요청 (캐시)",
+      "passed": true,
+      "message": "응답 시간: 27ms",
+      "details": null,
+      "timestamp": "2025-09-01T05:49:32.988Z"
+    },
+    {
+      "test": "캐시 성능 개선",
+      "passed": false,
+      "message": "성능 개선: -4%",
+      "details": null,
+      "timestamp": "2025-09-01T05:49:32.988Z"
+    },
+    {
+      "test": "이메일 존재 확인 플로우",
+      "passed": true,
+      "message": "이메일 존재: true, 상태: ACTIVE",
+      "details": null,
+      "timestamp": "2025-09-01T05:49:32.997Z"
+    },
+    {
+      "test": "프론트엔드 로그인 플로우",
+      "passed": true,
+      "message": "로그인 성공, 사용자 타입: ADMIN",
+      "details": null,
+      "timestamp": "2025-09-01T05:49:33.094Z"
+    },
+    {
+      "test": "사용자 정보 초기화",
+      "passed": true,
+      "message": "사용자: System Administrator",
+      "details": null,
+      "timestamp": "2025-09-01T05:49:33.105Z"
+    },
+    {
+      "test": "대시보드 데이터 로딩",
+      "passed": true,
+      "message": "통계 데이터 로딩: 성공",
+      "details": null,
+      "timestamp": "2025-09-01T05:49:33.125Z"
+    },
+    {
+      "test": "404 에러 처리",
+      "passed": false,
+      "message": "상태: 403",
+      "details": null,
+      "timestamp": "2025-09-01T05:49:33.138Z"
+    },
+    {
+      "test": "타임아웃 에러 처리",
+      "passed": true,
+      "message": "에러 타입: ECONNABORTED",
+      "details": null,
+      "timestamp": "2025-09-01T05:49:33.146Z"
+    },
+    {
+      "test": "인증 실패 처리",
+      "passed": false,
+      "message": "인증 실패 상태: 403",
+      "details": null,
+      "timestamp": "2025-09-01T05:49:33.155Z"
+    }
+  ]
+}

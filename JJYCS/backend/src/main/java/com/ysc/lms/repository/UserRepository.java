@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -63,4 +64,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
     
     // 비밀번호 찾기를 위한 사용자 검색 (이름, 연락처, 이메일로 검색)
     Optional<User> findByEmailAndNameAndPhone(String email, String name, String phone);
+    
+    // AdminController에서 필요한 추가 메소드들
+    Long countByUserType(User.UserType userType);
+    Long countByCreatedAtAfter(LocalDateTime date);
+    List<User> findTop10ByCreatedAtAfterOrderByCreatedAtDesc(LocalDateTime date);
+    List<User> findByStatusAndUserType(User.UserStatus status, User.UserType userType);
 }

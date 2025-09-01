@@ -231,4 +231,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     // 코드 생성을 위한 최대 주문코드 조회
     @Query(value = "SELECT order_number FROM orders WHERE order_number LIKE :prefix ORDER BY order_number DESC LIMIT 1", nativeQuery = true)
     String findMaxOrderCodeByPrefix(@Param("prefix") String prefix);
+    
+    // AdminController에서 필요한 추가 메소드들
+    Long countByOrderType(Order.ShippingType orderType);
+    Long countByCreatedAtAfter(LocalDateTime date);
+    List<Order> findTop10ByCreatedAtAfterOrderByCreatedAtDesc(LocalDateTime date);
 }

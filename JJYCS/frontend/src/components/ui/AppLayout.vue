@@ -54,11 +54,11 @@
     >
       <div class="sidebar-content">
         <AdminNavigation 
-          v-if="authStore.user?.userType === 'ADMIN'" 
+          v-if="canAccessAdmin" 
           :compact="true"
         />
         <PartnerNavigation 
-          v-else-if="authStore.user?.userType === 'PARTNER'" 
+          v-else-if="canAccessPartner && !canAccessAdmin" 
           :compact="true"
         />
       </div>
@@ -93,15 +93,17 @@
         <nav class="py-1">
           <MenuItem label="홈" :to="{name:'dashboard'}" icon="home" @done="closeHamburgerMenu" />
           <MenuItem label="마이페이지" :to="{name:'mypage'}" icon="user" @done="closeHamburgerMenu" />
-          <MenuItem label="주문서 작성" :to="{name:'order-create'}" icon="file-plus" @done="closeHamburgerMenu" />
+          <MenuItem v-if="canManageOrders" label="주문서 작성" :to="{name:'order-create'}" icon="file-plus" @done="closeHamburgerMenu" />
           <MenuItem label="주문내역" :to="{name:'orders'}" icon="list" @done="closeHamburgerMenu" />
           <MenuItem 
-            v-if="authStore.user?.userType === 'CORPORATE' || authStore.user?.userType === 'PARTNER'"
+            v-if="canAccessCorporate || canAccessPartner"
             label="일괄 등록" 
             :to="{name:'bulk-management'}" 
             icon="upload" 
             @done="closeHamburgerMenu" 
           />
+          <MenuItem v-if="canAccessWarehouse" label="창고 관리" :to="{name:'warehouse-dashboard'}" icon="package" @done="closeHamburgerMenu" />
+          <MenuItem v-if="canAccessAdmin" label="관리자" :to="{name:'admin-dashboard'}" icon="settings" @done="closeHamburgerMenu" />
           <MenuItem label="공지사항" :to="{name:'notices'}" icon="bell" @done="closeHamburgerMenu" />
           <MenuItem label="FAQ" :to="{name:'faq'}" icon="help-circle" @done="closeHamburgerMenu" />
           <div class="border-t my-1"></div>
@@ -163,6 +165,7 @@ import { ref, computed, onMounted, watchEffect } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import { useToast } from '../../composables/useToast'
+import { useRoleCheck } from '../../composables/useRoleCheck'
 import ToastContainer from './ToastContainer.vue'
 import { AdminNavigation, PartnerNavigation } from '../navigation'
 import MenuItem from '../common/MenuItem.vue'
@@ -171,6 +174,7 @@ const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const { showToast } = useToast()
+const { canAccessAdmin, canAccessWarehouse, canAccessPartner, canAccessCorporate, canManageOrders } = useRoleCheck()
 
 // 반응형 상태
 const sidebarOpen = ref(false)

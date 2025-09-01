@@ -1,0 +1,110 @@
+{
+  "summary": {
+    "total": 14,
+    "passed": 6,
+    "failed": 8,
+    "successRate": 43,
+    "duration": 6,
+    "timestamp": "2025-09-01T04:23:32.889Z"
+  },
+  "details": [
+    {
+      "test": "프론트엔드 접근",
+      "passed": true,
+      "message": "페이지 로드 성공 - YSC - 물류관리시스템",
+      "details": null,
+      "timestamp": "2025-09-01T04:23:29.016Z"
+    },
+    {
+      "test": "모바일 뷰포트",
+      "passed": true,
+      "message": "뷰포트: 375x667",
+      "details": null,
+      "timestamp": "2025-09-01T04:23:29.016Z"
+    },
+    {
+      "test": "프론트엔드 접근",
+      "passed": false,
+      "message": "접근 실패: SyntaxError: Failed to execute 'querySelector' on 'Document': 'button:contains(\"로그인\")' is not a valid selector.",
+      "details": null,
+      "timestamp": "2025-09-01T04:23:29.021Z"
+    },
+    {
+      "test": "관리자 UI 로그인",
+      "passed": false,
+      "message": "오류: SyntaxError: Failed to execute 'querySelector' on 'Document': 'button[type=\"submit\"], button:contains(\"로그인\")' is not a valid selector.",
+      "details": null,
+      "timestamp": "2025-09-01T04:23:29.830Z"
+    },
+    {
+      "test": "폼 검증 및 에러 처리",
+      "passed": false,
+      "message": "오류: page.waitForTimeout is not a function",
+      "details": null,
+      "timestamp": "2025-09-01T04:23:31.786Z"
+    },
+    {
+      "test": "반응형 디자인",
+      "passed": false,
+      "message": "오류: page.waitForTimeout is not a function",
+      "details": null,
+      "timestamp": "2025-09-01T04:23:32.437Z"
+    },
+    {
+      "test": "언어 전환 UI",
+      "passed": false,
+      "message": "언어 전환 UI 없음",
+      "details": null,
+      "timestamp": "2025-09-01T04:23:32.444Z"
+    },
+    {
+      "test": "국제화",
+      "passed": false,
+      "message": "오류: SyntaxError: Failed to execute 'querySelector' on 'Document': ':contains(\"로그인\"), :contains(\"대시보드\"), :contains(\"주문\")' is not a valid selector.",
+      "details": null,
+      "timestamp": "2025-09-01T04:23:32.445Z"
+    },
+    {
+      "test": "Service Worker 지원",
+      "passed": true,
+      "message": "Service Worker API 지원 확인",
+      "details": null,
+      "timestamp": "2025-09-01T04:23:32.445Z"
+    },
+    {
+      "test": "PWA Manifest",
+      "passed": false,
+      "message": "PWA Manifest 파일 링크 존재",
+      "details": null,
+      "timestamp": "2025-09-01T04:23:32.446Z"
+    },
+    {
+      "test": "PWA 기능",
+      "passed": false,
+      "message": "오류: page.waitForTimeout is not a function",
+      "details": null,
+      "timestamp": "2025-09-01T04:23:32.572Z"
+    },
+    {
+      "test": "DOM 로딩 성능",
+      "passed": true,
+      "message": "DOM 로딩: 113ms",
+      "details": null,
+      "timestamp": "2025-09-01T04:23:32.578Z"
+    },
+    {
+      "test": "페이지 로딩 성능",
+      "passed": true,
+      "message": "페이지 로딩: 123ms",
+      "details": null,
+      "timestamp": "2025-09-01T04:23:32.578Z"
+    },
+    {
+      "test": "메모리 사용량",
+      "passed": true,
+      "message": "메모리 사용량: 1MB",
+      "details": null,
+      "timestamp": "2025-09-01T04:23:32.580Z"
+    }
+  ]
+}

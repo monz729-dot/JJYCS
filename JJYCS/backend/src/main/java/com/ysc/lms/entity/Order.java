@@ -124,6 +124,10 @@ public class Order {
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by")
+    private User createdBy;
 
     // 연관 관계
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -276,8 +280,11 @@ public class Order {
 
     public enum OrderStatus {
         RECEIVED,           // 접수완료
+        CONFIRMED,          // 확인됨 (AdminController용)
         ARRIVED,           // 창고도착
+        IN_WAREHOUSE,       // 창고보관 중
         REPACKING,         // 리패킹진행
+        HOLD,              // 보류
         SHIPPING,          // 배송중
         DELIVERED,         // 배송완료
         BILLING,           // 청구서발행

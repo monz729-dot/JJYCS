@@ -42,6 +42,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         jwt = jwtUtil.extractTokenFromHeader(authHeader);
         
         try {
+            // JWT 토큰 유효성 사전 검사
+            if (!jwtUtil.isTokenValid(jwt)) {
+                log.warn("Invalid JWT token detected: {}", jwt.substring(0, Math.min(jwt.length(), 20)) + "...");
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.setCharacterEncoding("UTF-8");
+                response.getWriter().write("{\"success\":false,\"error\":\"유효하지 않은 토큰입니다.\",\"code\":\"INVALID_TOKEN\"}");
+                return;
+            }
+            
             userEmail = jwtUtil.getUsernameFromToken(jwt);
             
             // 이미 인증된 사용자가 아닌 경우만 처리
@@ -108,6 +118,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         } catch (Exception e) {
             log.error("JWT authentication error: {}", e.getMessage());
+            // JWT 토큰이 있지만 유효하지 않은 경우 401 응답
+            if (jwt != null && !jwt.isEmpty()) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.setCharacterEncoding("UTF-8");
+                response.getWriter().write("{\"success\":false,\"error\":\"인증에 실패했습니다. 다시 로그인해주세요.\",\"code\":\"AUTHENTICATION_FAILED\"}");
+                return;
+            }
         }
         
         filterChain.doFilter(request, response);

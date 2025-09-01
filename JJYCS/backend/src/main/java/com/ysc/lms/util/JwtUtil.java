@@ -180,4 +180,48 @@ public class JwtUtil {
             return false;
         }
     }
+    
+    /**
+     * JWT 토큰의 기본 유효성 검사 (형식 및 서명)
+     */
+    public boolean isTokenValid(String token) {
+        try {
+            if (token == null || token.trim().isEmpty()) {
+                return false;
+            }
+            
+            // JWT 형식 검사 (3개 파트로 구성되어야 함)
+            String[] tokenParts = token.split("\\.");
+            if (tokenParts.length != 3) {
+                log.warn("Invalid JWT format: expected 3 parts, found {}", tokenParts.length);
+                return false;
+            }
+            
+            // 서명 검증 및 만료 확인
+            Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token);
+                
+            return true;
+        } catch (ExpiredJwtException e) {
+            log.debug("JWT token expired: {}", e.getMessage());
+            return false;
+        } catch (UnsupportedJwtException e) {
+            log.debug("Unsupported JWT token: {}", e.getMessage());
+            return false;
+        } catch (MalformedJwtException e) {
+            log.debug("Malformed JWT token: {}", e.getMessage());
+            return false;
+        } catch (SignatureException e) {
+            log.debug("Invalid JWT signature: {}", e.getMessage());
+            return false;
+        } catch (IllegalArgumentException e) {
+            log.debug("JWT claims string is empty: {}", e.getMessage());
+            return false;
+        } catch (Exception e) {
+            log.warn("JWT token validation failed: {}", e.getMessage());
+            return false;
+        }
+    }
 }

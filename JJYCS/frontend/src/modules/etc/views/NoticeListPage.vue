@@ -5,17 +5,24 @@
       <p class="mt-2 text-gray-600">YSC 물류 시스템의 중요한 소식과 업데이트를 확인하세요.</p>
     </div>
 
-    <div class="bg-white rounded-lg shadow">
+    <div v-if="loading" class="bg-white rounded-lg shadow p-8 text-center">
+      <span class="text-gray-500">공지사항을 불러오는 중...</span>
+    </div>
+
+    <div v-else class="bg-white rounded-lg shadow">
       <!-- 공지사항 목록 -->
       <div class="divide-y divide-gray-200">
-        <div v-for="notice in notices" :key="notice.id" class="p-4 hover:bg-gray-50 cursor-pointer">
+        <div v-for="notice in notices" :key="notice.id" class="p-4 hover:bg-gray-50 cursor-pointer" @click="viewNotice(notice.id)">
           <div class="flex items-start justify-between">
             <div class="flex-1">
-              <h3 class="text-lg font-medium text-gray-900">{{ notice.title }}</h3>
-              <p class="mt-1 text-sm text-gray-600">{{ notice.preview }}</p>
+              <div class="flex items-center gap-2">
+                <span v-if="notice.isPinned" class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs">고정</span>
+                <h3 class="text-lg font-medium text-gray-900">{{ notice.title }}</h3>
+              </div>
+              <p class="mt-1 text-sm text-gray-600">{{ notice.content.substring(0, 100) }}...</p>
               <div class="mt-2 flex items-center gap-4 text-sm text-gray-500">
-                <span>{{ notice.date }}</span>
-                <span v-if="notice.isImportant" class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs">중요</span>
+                <span>{{ formatDate(notice.createdAt) }}</span>
+                <span>조회수: {{ notice.viewCount }}</span>
               </div>
             </div>
           </div>
@@ -34,32 +41,51 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import axios from 'axios'
+import { useToast } from '@/composables/useToast'
 
-// 샘플 데이터
-const notices = ref([
-  {
-    id: 1,
-    title: '2025년 설 연휴 배송 안내',
-    preview: '설 연휴 기간 동안 배송 일정이 변경됩니다. 자세한 내용을 확인해주세요.',
-    date: '2025-01-15',
-    isImportant: true
-  },
-  {
-    id: 2,
-    title: '시스템 정기 점검 안내',
-    preview: '시스템 안정성 향상을 위한 정기 점검이 예정되어 있습니다.',
-    date: '2025-01-10',
-    isImportant: false
-  },
-  {
-    id: 3,
-    title: '신규 서비스 오픈 안내',
-    preview: '더욱 빠르고 편리한 배송 서비스를 제공합니다.',
-    date: '2025-01-05',
-    isImportant: false
+const router = useRouter()
+const { showToast } = useToast()
+const notices = ref<any[]>([])
+const loading = ref(true)
+const currentPage = ref(0)
+const totalPages = ref(0)
+
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('ko-KR')
+}
+
+const fetchNotices = async (page = 0) => {
+  try {
+    loading.value = true
+    const response = await axios.get('/api/notices', {
+      params: { page, size: 10 }
+    })
+    if (response.data.success) {
+      notices.value = response.data.data
+      totalPages.value = response.data.totalPages
+      currentPage.value = response.data.currentPage
+    } else {
+      showToast('공지사항을 불러오는데 실패했습니다.', 'error')
+    }
+  } catch (error) {
+    console.error('공지사항 로딩 오류:', error)
+    showToast('공지사항을 불러오는데 실패했습니다.', 'error')
+  } finally {
+    loading.value = false
   }
-])
+}
+
+const viewNotice = (id: number) => {
+  router.push(`/notices/${id}`)
+}
+
+onMounted(() => {
+  fetchNotices()
+})
 </script>
 
 <style scoped>

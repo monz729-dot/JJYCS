@@ -2,6 +2,10 @@ spring:
   application:
     name: ycs-lms
   
+  # MVC configuration for better 404 handling
+  mvc:
+    throw-exception-if-no-handler-found: true
+  
   # Active profile (default: dev)
   profiles:
     active: dev
@@ -44,14 +48,14 @@ spring:
   # Security
   security:
     jwt:
-      secret-key: YCS-LMS-2024-SECRET-KEY-FOR-JWT-TOKEN-GENERATION-MUST-BE-LONG-ENOUGH
-      expiration-time: 86400000 # 24 hours in milliseconds
+      secret-key: ${JWT_SECRET_KEY:YCS-LMS-2024-SECRET-KEY-FOR-JWT-TOKEN-GENERATION-MUST-BE-LONG-ENOUGH}
+      expiration-time: ${JWT_EXPIRATION:86400000} # 24 hours in milliseconds
 
 # JWT Configuration (for JwtUtil)
 jwt:
-  secret: YCS-LMS-2024-SECRET-KEY-FOR-JWT-TOKEN-GENERATION-MUST-BE-LONG-ENOUGH
-  expiration: 86400000 # 24 hours in milliseconds
-  refresh-expiration: 604800000 # 7 days in milliseconds
+  secret: ${JWT_SECRET_KEY:YCS-LMS-2024-SECRET-KEY-FOR-JWT-TOKEN-GENERATION-MUST-BE-LONG-ENOUGH}
+  expiration: ${JWT_EXPIRATION:86400000} # 24 hours in milliseconds
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000} # 7 days in milliseconds
 
 # 택배사 API 설정
 carrier:
@@ -71,13 +75,78 @@ carrier:
   post:
     api:
       url: https://service.epost.go.kr/trace.RetrieveTraceList.comm
+
+# HS Code 및 관세청 API 설정
+app:
+  api:
+    hscode:
+      search:
+        # 관세청 품목분류번호 검색 API 키 (실제 발급받은 키로 교체 필요)
+        key: ${HSCODE_SEARCH_API_KEY:s240o275s078n237g000a070s0}
+        url: https://unipass.customs.go.kr:38010/ext/rest/hsCodeSearchService/search
+      tariff:
+        # 관세율기본조회 API 키 (실제 발급받은 키로 교체 필요)
+        key: ${HSCODE_TARIFF_API_KEY:s240o275s078n237g000a070s0}
+        url: https://unipass.customs.go.kr:38010/ext/rest/tariffBasicService/search
+      exchange:
+        # 관세환율정보조회 API 키 (실제 발급받은 키로 교체 필요)
+        key: ${HSCODE_EXCHANGE_API_KEY:s240o275s078n237g000a070s0}
+        url: https://unipass.customs.go.kr:38010/ext/rest/tariffExchangeService/search
+    # API 호출 설정
+    timeout: 10000 # 10초
+    retry-attempts: 3
+    cache-duration: 3600000 # 1시간 (밀리초)
+    
+    # data.go.kr EMS API - 주 검증 API
+    data-go-kr:
+      service-key: ${DATA_GO_KR_SERVICE_KEY:}
+      base-url: http://apis.data.go.kr/1390802/ems
+      enabled: true
+      timeout-seconds: 10
+      retry-count: 3
+    
+    # EMS API - 우편번호/주소 보조 API (태국 전용)
+    ems:
+      base-url: ${EMS_API_BASE_URL:https://ems.epost.go.kr/api}
+      api-key: ${EMS_API_KEY:}
+      enabled: true
+      timeout-seconds: 10
+      retry-count: 3
+      # 태국 우편번호 검증 전용
+      thailand:
+        postal-code-pattern: "^[0-9]{5}$"
+        phone-pattern: "^[+]?[0-9\\s\\-]{9,15}$"
+    
+    # 관세청 HS Code API
+    customs:
+      api-key: ${CUSTOMS_API_KEY:}
+      base-url: https://unipass.customs.go.kr/ext/rest
+      enabled: true
+      timeout-seconds: 10
+      retry-count: 3
+  
+  # 배송 설정 (태국 고정)
+  shipping:
+    default-country: TH
+    country-name: "태국"
+    country-code: TH
+    timezone: "Asia/Bangkok"
+  
+  notification:
+    email:
+      enabled: true
+      from: monz729@gmail.com
+      from-name: "YCS 물류관리시스템"
+      
+  frontend:
+    base-url: http://localhost:3007
       
   # Gmail SMTP Configuration
   mail:
-    host: smtp.gmail.com
-    port: 587
-    username: monz729@gmail.com
-    password: eyubylejwyuqnqvj
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME:monz729@gmail.com}
+    password: ${SMTP_PASSWORD:eyubylejwyuqnqvj}
     properties:
       mail:
         smtp:
@@ -123,6 +192,8 @@ logging:
   level:
     com.ysc.lms: DEBUG
     org.springframework.security: DEBUG
+    org.springframework.security.web: DEBUG
+    org.springframework.security.access: DEBUG
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
     org.hibernate.stat: DEBUG
@@ -176,50 +247,6 @@ business:
     auto-assign-location: true
     default-location-prefix: "A"
     
-# API Configuration - 태국(TH) 고정 전제
-app:
-  # 배송 설정 (태국 고정)
-  shipping:
-    default-country: TH
-    country-name: "태국"
-    country-code: TH
-    timezone: "Asia/Bangkok"
-  
-  api:
-    # data.go.kr EMS API - 주 검증 API
-    data-go-kr:
-      service-key: ${DATA_GO_KR_SERVICE_KEY:}
-      base-url: http://apis.data.go.kr/1390802/ems
-      enabled: true
-      timeout-seconds: 10
-      retry-count: 3
-    
-    # EMS API - 우편번호/주소 보조 API (태국 전용)
-    ems:
-      base-url: ${EMS_API_BASE_URL:https://ems.epost.go.kr/api}
-      api-key: ${EMS_API_KEY:}
-      enabled: true
-      timeout-seconds: 10
-      retry-count: 3
-      # 태국 우편번호 검증 전용
-      thailand:
-        postal-code-pattern: "^[0-9]{5}$"
-        phone-pattern: "^[+]?[0-9\\s\\-]{9,15}$"
-    
-    # 관세청 HS Code API
-    customs:
-      api-key: ${CUSTOMS_API_KEY:}
-      base-url: https://unipass.customs.go.kr/ext/rest
-      enabled: true
-      timeout-seconds: 10
-      retry-count: 3
-  notification:
-    email:
-      enabled: true
-      from: monz729@gmail.com
-      from-name: "YCS 물류관리시스템"
-  frontend:
-    base-url: http://localhost:3007
     
 # File Upload Configuration
 

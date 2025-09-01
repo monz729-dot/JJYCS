@@ -5,10 +5,10 @@ spring:
 
   # Database Configuration - MySQL
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/ycs_lms?useSSL=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
+    url: ${DB_URL:jdbc:mysql://localhost:3306/ycs_lms?useSSL=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8&allowPublicKeyRetrieval=false}
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: ${DB_USERNAME:ycs_user}
-    password: ${DB_PASSWORD:ycs_password}
+    password: ${DB_PASSWORD}
     
     hikari:
       maximum-pool-size: 50
@@ -23,29 +23,156 @@ spring:
 
   h2:
     console:
-      enabled: false  # Disabled in production
+      enabled: false  # Disabled in production for security
 
   # JPA Configuration - Production
   jpa:
     database-platform: org.hibernate.dialect.MySQL8Dialect
     hibernate:
-      ddl-auto: validate
+      ddl-auto: validate  # Never auto-create in production
     show-sql: false
     properties:
       hibernate:
         format_sql: false
         use_sql_comments: false
+        generate_statistics: false
+        order_inserts: true
+        order_updates: true
+        jdbc:
+          batch_size: 25
 
   # SQL Initialization - Disabled
   sql:
     init:
       mode: never
 
-  # Enable Flyway for production
+  # Enable Flyway for production database migration
   flyway:
     enabled: true
     locations: classpath:db/migration
     baseline-on-migrate: true
+    validate-on-migrate: true
+    
+  # Mail Configuration - Production SMTP
+  mail:
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME}
+    password: ${SMTP_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 10000
+          timeout: 10000
+          writetimeout: 10000
+          ssl:
+            trust: ${SMTP_HOST:smtp.gmail.com}
+      mail.debug: false  # Disable debug in production
+    default-encoding: UTF-8
+
+# Server Configuration
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /api
+  error:
+    include-stacktrace: never  # Never expose stack traces in production
+
+# Security Configuration
+spring:
+  security:
+    jwt:
+      secret-key: ${JWT_SECRET_KEY}
+      expiration-time: ${JWT_EXPIRATION:86400000}
+
+# JWT Configuration (for JwtUtil)
+jwt:
+  secret: ${JWT_SECRET_KEY}
+  expiration: ${JWT_EXPIRATION:86400000}
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+
+# Email Notification Settings
+app:
+  notification:
+    email:
+      enabled: true
+      from: ${NOTIFICATION_FROM_EMAIL}
+      from-name: ${NOTIFICATION_FROM_NAME:YCS 물류관리시스템}
+  
+  # HS Code API Configuration
+  api:
+    hscode:
+      search:
+        key: ${HSCODE_SEARCH_API_KEY}
+        url: ${HSCODE_SEARCH_API_URL:https://unipass.customs.go.kr:38010/ext/rest/hsCodeSearchService/search}
+      tariff:
+        key: ${HSCODE_TARIFF_API_KEY}
+        url: ${HSCODE_TARIFF_API_URL:https://unipass.customs.go.kr:38010/ext/rest/tariffBasicService/search}
+      exchange:
+        key: ${HSCODE_EXCHANGE_API_KEY}
+        url: ${HSCODE_EXCHANGE_API_URL:https://unipass.customs.go.kr:38010/ext/rest/tariffExchangeService/search}
+    timeout: 10000
+    retry-attempts: 3
+    cache-duration: 3600000
+
+# CORS Configuration - Restricted for production
+cors:
+  allowed-origins:
+    - ${FRONTEND_URL:https://yourdomain.com}
+    - ${ADMIN_FRONTEND_URL:https://admin.yourdomain.com}
+  allowed-methods:
+    - GET
+    - POST
+    - PUT
+    - DELETE
+    - OPTIONS
+  allowed-headers:
+    - "Authorization"
+    - "Content-Type"
+    - "Accept"
+    - "Origin"
+    - "X-Requested-With"
+  allow-credentials: true
+  max-age: 3600
+
+# Actuator for Monitoring
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,loggers
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+    metrics:
+      enabled: true
+    loggers:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: ${spring.application.name}
+      environment: production
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      percentiles:
+        http.server.requests: 0.5,0.9,0.95,0.99
+  health:
+    db:
+      enabled: true
+    diskspace:
+      enabled: true
+      threshold: 10GB
 
 # Logging - Production
 logging:
@@ -53,5 +180,24 @@ logging:
     com.ysc.lms: INFO
     org.springframework.security: WARN
     org.hibernate.SQL: WARN
+    org.springframework.web: WARN
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: ${LOG_FILE_PATH:/var/log/ycs-lms/application.log}
+    max-size: 100MB
+    max-history: 30
+    total-size-cap: 3GB
+
+# Performance Monitoring Configuration
+app:
+  monitoring:
+    performance:
+      enabled: true
+      slow-request-threshold: 1000 # milliseconds
+      track-user-actions: true
+    cache:
+      statistics:
+        enabled: true
+        log-interval: 300000 # 5 minutes

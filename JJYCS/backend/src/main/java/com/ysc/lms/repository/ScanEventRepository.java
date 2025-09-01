@@ -30,4 +30,7 @@ public interface ScanEventRepository extends JpaRepository<ScanEvent, Long> {
                                                @Param("startDate") LocalDateTime startDate);
     
     long countByProcessed(Boolean processed);
+    
+    @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END FROM ScanEvent s WHERE s.order.orderNumber = :orderNumber AND s.scanType = :scanType")
+    boolean existsByOrderNumberAndScanType(@Param("orderNumber") String orderNumber, @Param("scanType") ScanEvent.ScanType scanType);
 }

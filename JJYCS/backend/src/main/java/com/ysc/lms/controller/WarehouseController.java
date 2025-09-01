@@ -1,8 +1,12 @@
 package com.ysc.lms.controller;
 
+import com.ysc.lms.entity.ScanEvent;
+import com.ysc.lms.service.WarehouseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -17,27 +21,33 @@ import java.util.ArrayList;
 @CrossOrigin(origins = "*")
 @Slf4j
 public class WarehouseController {
+    
+    private final WarehouseService warehouseService;
 
     /**
      * 창고 스캔 - 입고
      */
     @PostMapping("/scan/inbound")
-    public ResponseEntity<?> scanInbound(@RequestBody Map<String, Object> request) {
+    @PreAuthorize("hasRole('ADMIN') or hasRole('WAREHOUSE')")
+    public ResponseEntity<?> scanInbound(@RequestBody Map<String, Object> request, 
+                                       Authentication authentication) {
         try {
-            String trackingNumber = (String) request.get("trackingNumber");
+            String scanCode = (String) request.get("scanCode");
             String location = (String) request.get("location");
+            String scannedBy = authentication.getName();
             
-            log.info("Processing inbound scan for tracking: {}, location: {}", trackingNumber, location);
+            if (scanCode == null || scanCode.trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "스캔 코드가 필요합니다."));
+            }
             
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "입고 스캔이 완료되었습니다.");
-            response.put("trackingNumber", trackingNumber);
-            response.put("location", location);
-            response.put("scanTime", LocalDateTime.now());
-            response.put("scanType", "INBOUND");
+            Map<String, Object> result = warehouseService.processInboundScan(scanCode, location, scannedBy);
             
-            return ResponseEntity.ok(response);
+            if ((Boolean) result.get("success")) {
+                return ResponseEntity.ok(result);
+            } else {
+                return ResponseEntity.badRequest().body(result);
+            }
         } catch (Exception e) {
             log.error("Inbound scan error", e);
             return ResponseEntity.badRequest()
@@ -49,22 +59,26 @@ public class WarehouseController {
      * 창고 스캔 - 출고
      */
     @PostMapping("/scan/outbound")
-    public ResponseEntity<?> scanOutbound(@RequestBody Map<String, Object> request) {
+    @PreAuthorize("hasRole('ADMIN') or hasRole('WAREHOUSE')")
+    public ResponseEntity<?> scanOutbound(@RequestBody Map<String, Object> request,
+                                        Authentication authentication) {
         try {
-            String trackingNumber = (String) request.get("trackingNumber");
+            String scanCode = (String) request.get("scanCode");
             String destination = (String) request.get("destination");
+            String scannedBy = authentication.getName();
             
-            log.info("Processing outbound scan for tracking: {}, destination: {}", trackingNumber, destination);
+            if (scanCode == null || scanCode.trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "스캔 코드가 필요합니다."));
+            }
             
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "출고 스캔이 완료되었습니다.");
-            response.put("trackingNumber", trackingNumber);
-            response.put("destination", destination);
-            response.put("scanTime", LocalDateTime.now());
-            response.put("scanType", "OUTBOUND");
+            Map<String, Object> result = warehouseService.processOutboundScan(scanCode, destination, scannedBy);
             
-            return ResponseEntity.ok(response);
+            if ((Boolean) result.get("success")) {
+                return ResponseEntity.ok(result);
+            } else {
+                return ResponseEntity.badRequest().body(result);
+            }
         } catch (Exception e) {
             log.error("Outbound scan error", e);
             return ResponseEntity.badRequest()
@@ -76,21 +90,42 @@ public class WarehouseController {
      * 일반 창고 스캔
      */
     @PostMapping("/scan")
-    public ResponseEntity<?> scanItem(@RequestBody Map<String, Object> request) {
+    @PreAuthorize("hasRole('ADMIN') or hasRole('WAREHOUSE')")
+    public ResponseEntity<?> scanItem(@RequestBody Map<String, Object> request,
+                                    Authentication authentication) {
         try {
-            String itemCode = (String) request.get("itemCode");
-            String scanType = (String) request.get("scanType");
+            String scanCode = (String) request.get("scanCode");
+            String scanTypeStr = (String) request.get("scanType");
+            String location = (String) request.get("location");
+            String notes = (String) request.get("notes");
+            String scannedBy = authentication.getName();
             
-            log.info("Processing warehouse scan for item: {}, type: {}", itemCode, scanType);
+            if (scanCode == null || scanCode.trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "스캔 코드가 필요합니다."));
+            }
             
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "스캔이 완료되었습니다.");
-            response.put("itemCode", itemCode);
-            response.put("scanType", scanType);
-            response.put("scanTime", LocalDateTime.now());
+            if (scanTypeStr == null || scanTypeStr.trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "스캔 타입이 필요합니다."));
+            }
             
-            return ResponseEntity.ok(response);
+            ScanEvent.ScanType scanType;
+            try {
+                scanType = ScanEvent.ScanType.valueOf(scanTypeStr.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "유효하지 않은 스캔 타입입니다: " + scanTypeStr));
+            }
+            
+            Map<String, Object> result = warehouseService.processWarehouseScan(
+                scanCode, scanType, location, scannedBy, notes);
+            
+            if ((Boolean) result.get("success")) {
+                return ResponseEntity.ok(result);
+            } else {
+                return ResponseEntity.badRequest().body(result);
+            }
         } catch (Exception e) {
             log.error("Warehouse scan error", e);
             return ResponseEntity.badRequest()
@@ -102,26 +137,38 @@ public class WarehouseController {
      * 일괄 처리
      */
     @PostMapping("/batch")
-    public ResponseEntity<?> batchProcess(@RequestBody Map<String, Object> request) {
+    @PreAuthorize("hasRole('ADMIN') or hasRole('WAREHOUSE')")
+    public ResponseEntity<?> batchProcess(@RequestBody Map<String, Object> request,
+                                        Authentication authentication) {
         try {
             @SuppressWarnings("unchecked")
             List<String> itemCodes = (List<String>) request.get("itemCodes");
             String processType = (String) request.get("processType");
+            String location = (String) request.get("location");
+            String scannedBy = authentication.getName();
+            
+            if (itemCodes == null || itemCodes.isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "처리할 아이템 코드가 필요합니다."));
+            }
+            
+            if (processType == null || processType.trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "처리 타입이 필요합니다."));
+            }
             
             log.info("Processing batch operation for {} items, type: {}", itemCodes.size(), processType);
             
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", itemCodes.size() + "개 아이템의 일괄 처리가 완료되었습니다.");
-            response.put("processedCount", itemCodes.size());
-            response.put("processType", processType);
-            response.put("processTime", LocalDateTime.now());
+            Map<String, Object> batchResult = warehouseService.processBatchOperation(
+                itemCodes, processType, location, scannedBy
+            );
             
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(batchResult);
+            
         } catch (Exception e) {
             log.error("Batch processing error", e);
             return ResponseEntity.badRequest()
-                .body(Map.of("success", false, "error", "일괄 처리 중 오류가 발생했습니다."));
+                .body(Map.of("success", false, "error", "일괄 처리 중 오류가 발생했습니다: " + e.getMessage()));
         }
     }
 
@@ -129,41 +176,20 @@ public class WarehouseController {
      * 재고 조회
      */
     @GetMapping("/{warehouseId}/inventory")
-    public ResponseEntity<?> getInventory(@PathVariable int warehouseId, 
+    @PreAuthorize("hasRole('ADMIN') or hasRole('WAREHOUSE')")
+    public ResponseEntity<?> getInventory(@PathVariable String warehouseId, 
                                         @RequestParam(required = false) String status) {
         try {
             log.info("Getting inventory for warehouse: {}, status: {}", warehouseId, status);
             
-            // Mock inventory data
-            List<Map<String, Object>> inventory = new ArrayList<>();
+            Map<String, Object> inventoryData = warehouseService.getInventoryStatus(warehouseId, status);
             
-            Map<String, Object> item1 = new HashMap<>();
-            item1.put("id", 1);
-            item1.put("orderNumber", "YCS-240115-001");
-            item1.put("location", "A-01-03");
-            item1.put("status", "ARRIVED");
-            item1.put("arrivedAt", "2024-08-25T10:00:00");
-            inventory.add(item1);
+            return ResponseEntity.ok(inventoryData);
             
-            Map<String, Object> item2 = new HashMap<>();
-            item2.put("id", 2);
-            item2.put("orderNumber", "YCS-240120-002");
-            item2.put("location", "B-02-15");
-            item2.put("status", "PROCESSING");
-            item2.put("arrivedAt", "2024-08-26T14:30:00");
-            inventory.add(item2);
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("inventory", inventory);
-            response.put("warehouseId", warehouseId);
-            response.put("totalCount", inventory.size());
-            
-            return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Get inventory error", e);
             return ResponseEntity.badRequest()
-                .body(Map.of("success", false, "error", "재고 조회 중 오류가 발생했습니다."));
+                .body(Map.of("success", false, "error", "재고 조회 중 오류가 발생했습니다: " + e.getMessage()));
         }
     }
 
@@ -224,6 +250,67 @@ public class WarehouseController {
             log.error("Location assignment error", e);
             return ResponseEntity.badRequest()
                 .body(Map.of("success", false, "error", "위치 할당 중 오류가 발생했습니다."));
+        }
+    }
+    
+    /**
+     * 스캔 히스토리 조회
+     */
+    @GetMapping("/scan-history/{orderNumber}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('WAREHOUSE')")
+    public ResponseEntity<?> getScanHistory(@PathVariable String orderNumber) {
+        try {
+            List<ScanEvent> history = warehouseService.getScanHistory(orderNumber);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("orderNumber", orderNumber);
+            response.put("history", history);
+            response.put("totalEvents", history.size());
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Scan history error", e);
+            return ResponseEntity.badRequest()
+                .body(Map.of("success", false, "error", "스캔 히스토리 조회 중 오류가 발생했습니다."));
+        }
+    }
+    
+    /**
+     * 창고 대시보드 통계
+     */
+    @GetMapping("/dashboard/stats")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('WAREHOUSE')")
+    public ResponseEntity<?> getDashboardStats() {
+        try {
+            log.info("Getting warehouse dashboard statistics");
+            
+            Map<String, Object> stats = warehouseService.getWarehouseStats();
+            
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            log.error("Dashboard stats error", e);
+            return ResponseEntity.badRequest()
+                .body(Map.of("success", false, "error", "대시보드 통계 조회 중 오류가 발생했습니다: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * 처리 대기 목록
+     */
+    @GetMapping("/pending")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('WAREHOUSE')")
+    public ResponseEntity<?> getPendingItems(@RequestParam(required = false) String type) {
+        try {
+            log.info("Getting pending items, type: {}", type);
+            
+            Map<String, Object> pendingData = warehouseService.getPendingItems(type);
+            
+            return ResponseEntity.ok(pendingData);
+        } catch (Exception e) {
+            log.error("Get pending items error", e);
+            return ResponseEntity.badRequest()
+                .body(Map.of("success", false, "error", "대기 목록 조회 중 오류가 발생했습니다: " + e.getMessage()));
         }
     }
 }

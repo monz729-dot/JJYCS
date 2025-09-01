@@ -23,9 +23,6 @@ public class BulkItemController {
     private final BulkItemService bulkItemService;
     private final UserRepository userRepository;
 
-    /**
-     * 품목 정보 일괄 업로드 (CSV 파일)
-     */
     @PostMapping("/upload")
     @PreAuthorize("hasAnyRole('CORPORATE', 'PARTNER')")
     public ResponseEntity<?> uploadItems(
@@ -55,9 +52,6 @@ public class BulkItemController {
         }
     }
 
-    /**
-     * 사용자별 등록된 품목 목록 조회
-     */
     @GetMapping("/list")
     @PreAuthorize("hasAnyRole('CORPORATE', 'PARTNER')")
     public ResponseEntity<?> getItemList(
@@ -86,9 +80,6 @@ public class BulkItemController {
         }
     }
 
-    /**
-     * 품목 검색 (HS코드, 품목명)
-     */
     @GetMapping("/search")
     @PreAuthorize("hasAnyRole('CORPORATE', 'PARTNER')")
     public ResponseEntity<?> searchItems(
@@ -115,9 +106,6 @@ public class BulkItemController {
         }
     }
 
-    /**
-     * 품목 정보 수정
-     */
     @PutMapping("/{itemId}")
     @PreAuthorize("hasAnyRole('CORPORATE', 'PARTNER')")
     public ResponseEntity<?> updateItem(

@@ -96,9 +96,6 @@ public class OrderController {
         }
     }
     
-    /**
-     * 주문 생성 요청 데이터 유효성 검증
-     */
     private void validateOrderRequest(CreateOrderRequest request) {
         log.debug("Validating order request");
         
@@ -136,9 +133,6 @@ public class OrderController {
         }
     }
     
-    /**
-     * 주문 아이템 개별 유효성 검증
-     */
     private void validateOrderItem(CreateOrderRequest.OrderItemRequest item, int itemIndex) {
         String prefix = "상품 " + itemIndex + "번: ";
         

@@ -35,9 +35,14 @@ public class HSCodeService {
     private final Map<String, CacheEntry<TariffExchangeResponse>> exchangeCache = new ConcurrentHashMap<>();
     private static final long CACHE_DURATION_MS = 3600000; // 1시간
     
-    // 캐시 통계를 위한 카운터
+    // 캐시 통계 및 성능 모니터링을 위한 카운터
     private volatile long cacheHits = 0;
     private volatile long cacheMisses = 0;
+    private volatile long cacheEvictions = 0;
+    private volatile long totalApiCalls = 0;
+    private volatile long totalCacheResponseTime = 0;
+    private volatile long totalApiResponseTime = 0;
+    private volatile long lastStatisticsLogTime = System.currentTimeMillis();
     
     // 캐시 엔트리 클래스
     private static class CacheEntry<T> {
@@ -414,6 +419,62 @@ public class HSCodeService {
         }
     }
 
+    /**
+     * 캐시 정리 (만료된 항목 제거)
+     */
+    public void cleanupExpiredCache() {
+        long beforeCount = hsCodeCache.size() + tariffCache.size() + exchangeCache.size();
+        
+        // HS Code 캐시 정리
+        hsCodeCache.entrySet().removeIf(entry -> entry.getValue().isExpired());
+        
+        // 관세율 캐시 정리
+        tariffCache.entrySet().removeIf(entry -> entry.getValue().isExpired());
+        
+        // 환율 캐시 정리
+        exchangeCache.entrySet().removeIf(entry -> entry.getValue().isExpired());
+        
+        long afterCount = hsCodeCache.size() + tariffCache.size() + exchangeCache.size();
+        long evicted = beforeCount - afterCount;
+        
+        if (evicted > 0) {
+            cacheEvictions += evicted;
+            log.info("Cache cleanup completed: {} entries evicted, total evictions: {}", evicted, cacheEvictions);
+        }
+    }
+
+    /**
+     * 캐시 통계 조회
+     */
+    public Map<String, Object> getCacheStats() {
+        long total = cacheHits + cacheMisses;
+        double hitRate = total > 0 ? (double) cacheHits / total * 100 : 0.0;
+        
+        return Map.of(
+            "cacheHits", cacheHits,
+            "cacheMisses", cacheMisses,
+            "cacheEvictions", cacheEvictions,
+            "hitRate", Math.round(hitRate * 100) / 100.0,
+            "totalRequests", total,
+            "currentCacheSize", Map.of(
+                "hsCode", hsCodeCache.size(),
+                "tariff", tariffCache.size(),
+                "exchange", exchangeCache.size()
+            ),
+            "lastUpdated", java.time.LocalDateTime.now()
+        );
+    }
+
+    /**
+     * 캐시 초기화
+     */
+    public void clearAllCache() {
+        hsCodeCache.clear();
+        tariffCache.clear();
+        exchangeCache.clear();
+        log.info("All caches cleared");
+    }
+
     // Response DTOs
     public static class HSCodeSearchResponse {
         private boolean success;
@@ -446,6 +507,7 @@ public class HSCodeService {
         // Getters and setters
         public boolean isSuccess() { return success; }
         public String getError() { return error; }
+        public String getErrorMessage() { return error; } // HSCodeController용 호환성 메소드
         public List<HSCodeItem> getItems() { return items; }
     }
 
@@ -729,20 +791,6 @@ public class HSCodeService {
         return response;
     }
     
-    /**
-     * 캐시 통계 정보 조회
-     */
-    public Map<String, Object> getCacheStats() {
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("cacheHits", cacheHits);
-        stats.put("cacheMisses", cacheMisses);
-        stats.put("hitRate", cacheMisses > 0 ? (double) cacheHits / (cacheHits + cacheMisses) : 0.0);
-        stats.put("hsCodeCacheSize", hsCodeCache.size());
-        stats.put("tariffCacheSize", tariffCache.size());
-        stats.put("exchangeCacheSize", exchangeCache.size());
-        stats.put("cacheDurationMs", CACHE_DURATION_MS);
-        return stats;
-    }
     
     /**
      * 캐시 클리어 (만료된 항목 정리)
@@ -752,6 +800,82 @@ public class HSCodeService {
         cleared += hsCodeCache.entrySet().removeIf(entry -> entry.getValue().isExpired()) ? 1 : 0;
         cleared += tariffCache.entrySet().removeIf(entry -> entry.getValue().isExpired()) ? 1 : 0;
         cleared += exchangeCache.entrySet().removeIf(entry -> entry.getValue().isExpired()) ? 1 : 0;
-        log.info("Cleared {} expired cache entries", cleared);
+        cacheEvictions += cleared;
+        log.info("Cleared {} expired cache entries, total evictions: {}", cleared, cacheEvictions);
+    }
+    
+    /**
+     * 성능 통계 기록 (응답 시간 추가)
+     */
+    public void recordPerformanceStats(boolean cacheHit, long responseTime) {
+        totalApiCalls++;
+        if (cacheHit) {
+            totalCacheResponseTime += responseTime;
+        } else {
+            totalApiResponseTime += responseTime;
+        }
+        
+        // 5분마다 통계 로깅
+        long now = System.currentTimeMillis();
+        if (now - lastStatisticsLogTime > 300000) { // 5분 = 300,000ms
+            logPerformanceStatistics();
+            lastStatisticsLogTime = now;
+        }
+    }
+    
+    /**
+     * 상세 성능 통계 로깅
+     */
+    private void logPerformanceStatistics() {
+        if (totalApiCalls == 0) return;
+        
+        long totalHits = cacheHits;
+        long totalMisses = cacheMisses;
+        long total = totalHits + totalMisses;
+        
+        double hitRate = total > 0 ? (double) totalHits / total * 100 : 0.0;
+        double avgCacheResponseTime = totalHits > 0 ? (double) totalCacheResponseTime / totalHits : 0.0;
+        double avgApiResponseTime = totalMisses > 0 ? (double) totalApiResponseTime / totalMisses : 0.0;
+        
+        log.info("=== HS Code Service Performance Statistics ===");
+        log.info("Cache hits: {} ({:.2f}%), misses: {} ({:.2f}%)", 
+                totalHits, hitRate, totalMisses, 100.0 - hitRate);
+        log.info("Avg response times - Cache: {:.2f}ms, API: {:.2f}ms", 
+                avgCacheResponseTime, avgApiResponseTime);
+        log.info("Cache sizes - HS: {}, Tariff: {}, Exchange: {}", 
+                hsCodeCache.size(), tariffCache.size(), exchangeCache.size());
+    }
+    
+    /**
+     * 실시간 성능 메트릭 조회 (관리자용)
+     */
+    public Map<String, Object> getDetailedPerformanceMetrics() {
+        long totalHits = cacheHits;
+        long totalMisses = cacheMisses;
+        long total = totalHits + totalMisses;
+        
+        double hitRate = total > 0 ? (double) totalHits / total * 100 : 0.0;
+        double avgCacheResponseTime = totalHits > 0 ? (double) totalCacheResponseTime / totalHits : 0.0;
+        double avgApiResponseTime = totalMisses > 0 ? (double) totalApiResponseTime / totalMisses : 0.0;
+        double performanceImprovement = avgApiResponseTime > 0 && avgCacheResponseTime > 0 ? 
+                (1 - avgCacheResponseTime / avgApiResponseTime) * 100 : 0.0;
+        
+        return Map.of(
+            "totalApiCalls", totalApiCalls,
+            "cacheHits", totalHits,
+            "cacheMisses", totalMisses,
+            "cacheEvictions", cacheEvictions,
+            "hitRate", Math.round(hitRate * 100) / 100.0,
+            "averageCacheResponseTime", Math.round(avgCacheResponseTime * 100) / 100.0,
+            "averageApiResponseTime", Math.round(avgApiResponseTime * 100) / 100.0,
+            "performanceImprovement", Math.round(performanceImprovement * 100) / 100.0,
+            "currentCacheSize", Map.of(
+                "hsCode", hsCodeCache.size(),
+                "tariff", tariffCache.size(),
+                "exchange", exchangeCache.size(),
+                "total", hsCodeCache.size() + tariffCache.size() + exchangeCache.size()
+            ),
+            "lastStatisticsUpdate", lastStatisticsLogTime
+        );
     }
 }

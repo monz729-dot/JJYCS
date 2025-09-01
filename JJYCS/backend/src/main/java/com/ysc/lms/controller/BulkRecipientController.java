@@ -25,9 +25,6 @@ public class BulkRecipientController {
     private final BulkRecipientService bulkRecipientService;
     private final UserRepository userRepository;
 
-    /**
-     * 수취인 정보 일괄 업로드 (CSV 파일)
-     */
     @PostMapping("/upload")
     @PreAuthorize("hasAnyRole('CORPORATE', 'PARTNER')")
     public ResponseEntity<?> uploadRecipients(
@@ -57,9 +54,6 @@ public class BulkRecipientController {
         }
     }
 
-    /**
-     * 사용자별 등록된 수취인 목록 조회
-     */
     @GetMapping("/list")
     @PreAuthorize("hasAnyRole('CORPORATE', 'PARTNER')")
     public ResponseEntity<?> getRecipientList(
@@ -87,9 +81,6 @@ public class BulkRecipientController {
         }
     }
 
-    /**
-     * 수취인 정보 수정
-     */
     @PutMapping("/{recipientId}")
     @PreAuthorize("hasAnyRole('CORPORATE', 'PARTNER')")
     public ResponseEntity<?> updateRecipient(
@@ -118,9 +109,6 @@ public class BulkRecipientController {
         }
     }
 
-    /**
-     * 수취인 정보 삭제
-     */
     @DeleteMapping("/{recipientId}")
     @PreAuthorize("hasAnyRole('CORPORATE', 'PARTNER')")
     public ResponseEntity<?> deleteRecipient(
@@ -147,9 +135,6 @@ public class BulkRecipientController {
         }
     }
 
-    /**
-     * CSV 템플릿 다운로드
-     */
     @GetMapping("/template")
     @PreAuthorize("hasAnyRole('CORPORATE', 'PARTNER')")
     public ResponseEntity<?> downloadTemplate() {

@@ -242,22 +242,6 @@ const navigationItems = computed(() => [
     badge: getPendingOrdersCount() // 승인 대기중인 주문 개수
   },
   {
-    id: 'workflow-simulator',
-    label: '시뮬레이터',
-    icon: BarChartIcon,
-    route: 'WorkflowSimulator',
-    description: '워크플로우 시뮬레이터',
-    badge: 0
-  },
-  {
-    id: 'page-list',
-    label: '전체페이지',
-    icon: ListIcon,
-    route: 'PageList',
-    description: '전체 페이지 목록',
-    badge: 0
-  },
-  {
     id: 'admin-settings',
     label: '설정',
     icon: SettingsIcon,

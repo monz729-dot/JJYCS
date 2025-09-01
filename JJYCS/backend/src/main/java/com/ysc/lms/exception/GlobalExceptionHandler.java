@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -13,6 +14,7 @@ import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.NoHandlerFoundException;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.HashMap;
@@ -55,7 +57,22 @@ public class GlobalExceptionHandler {
     }
     
     /**
-     * 권한 없음
+     * 인증 실패 (JWT 토큰 없음, 만료, 변조 등)
+     */
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<Map<String, Object>> handleAuthenticationException(AuthenticationException e) {
+        log.warn("Authentication failed: {}", e.getMessage());
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("error", "인증에 실패했습니다. 다시 로그인해주세요.");
+        response.put("code", "AUTHENTICATION_FAILED");
+        
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+    }
+    
+    /**
+     * 권한 없음 (인증은 되었지만 접근 권한이 없는 경우)
      */
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Map<String, Object>> handleAccessDeniedException(AccessDeniedException e) {
@@ -80,6 +97,22 @@ public class GlobalExceptionHandler {
         response.put("success", false);
         response.put("error", e.getMessage());
         response.put("code", "RESOURCE_NOT_FOUND");
+        
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+    
+    /**
+     * 존재하지 않는 URL 경로 (404)
+     */
+    @ExceptionHandler(NoHandlerFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleNoHandlerFoundException(NoHandlerFoundException e) {
+        log.warn("No handler found for request: {} {}", e.getHttpMethod(), e.getRequestURL());
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("error", "요청하신 페이지를 찾을 수 없습니다.");
+        response.put("code", "NOT_FOUND");
+        response.put("path", e.getRequestURL());
         
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }

@@ -381,16 +381,13 @@ const itemPagination = ref({
   size: 20
 })
 
-// API 기본 URL
 const apiBaseUrl = computed(() => import.meta.env.VITE_API_BASE_URL || '/api')
 
-// 인증 헤더
 const authHeaders = computed(() => ({
   'Authorization': `Bearer ${authStore.token}`,
   'Content-Type': 'application/json'
 }))
 
-// 수취인 관련 함수들
 const loadRecipients = async (page = 0) => {
   recipientLoading.value = true
   try {
