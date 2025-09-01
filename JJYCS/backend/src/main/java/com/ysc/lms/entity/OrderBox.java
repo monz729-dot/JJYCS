@@ -29,14 +29,15 @@ public class OrderBox {
     @Column(nullable = false, length = 50)
     private String boxNumber;
 
-    @Column(nullable = false, precision = 8, scale = 2)
-    private BigDecimal width;
+    // 치수 정보 (단위: mm)
+    @Column(nullable = false)
+    private Integer width;
 
-    @Column(nullable = false, precision = 8, scale = 2)
-    private BigDecimal height;
+    @Column(nullable = false)
+    private Integer height;
 
-    @Column(nullable = false, precision = 8, scale = 2)
-    private BigDecimal depth;
+    @Column(nullable = false)
+    private Integer depth;
 
     @Column(nullable = false, precision = 8, scale = 2)
     private BigDecimal weight;
@@ -52,23 +53,29 @@ public class OrderBox {
     @PreUpdate
     public void calculateCbm() {
         if (width != null && height != null && depth != null) {
-            this.cbm = width.multiply(height)
-                          .multiply(depth)
-                          .divide(new BigDecimal("1000000"), 6, BigDecimal.ROUND_HALF_UP);
+            // CBM = (width(mm) × height(mm) × depth(mm)) / 1,000,000,000
+            BigDecimal widthM = new BigDecimal(width).divide(new BigDecimal("1000"), 6, BigDecimal.ROUND_HALF_UP);
+            BigDecimal heightM = new BigDecimal(height).divide(new BigDecimal("1000"), 6, BigDecimal.ROUND_HALF_UP);
+            BigDecimal depthM = new BigDecimal(depth).divide(new BigDecimal("1000"), 6, BigDecimal.ROUND_HALF_UP);
+            
+            this.cbm = widthM.multiply(heightM)
+                          .multiply(depthM)
+                          .setScale(6, BigDecimal.ROUND_HALF_UP);
         }
     }
     
-    // OrderBusinessRuleService 호환 메서드들
-    public BigDecimal getWidthCm() {
-        return width;
-    }
-    
-    public BigDecimal getHeightCm() {
-        return height;
-    }
-    
-    public BigDecimal getDepthCm() {
-        return depth;
+    // Utility methods for CBM calculation
+    public BigDecimal getCbmCalculated() {
+        if (width != null && height != null && depth != null) {
+            BigDecimal widthM = new BigDecimal(width).divide(new BigDecimal("1000"), 6, BigDecimal.ROUND_HALF_UP);
+            BigDecimal heightM = new BigDecimal(height).divide(new BigDecimal("1000"), 6, BigDecimal.ROUND_HALF_UP);
+            BigDecimal depthM = new BigDecimal(depth).divide(new BigDecimal("1000"), 6, BigDecimal.ROUND_HALF_UP);
+            
+            return widthM.multiply(heightM)
+                        .multiply(depthM)
+                        .setScale(6, BigDecimal.ROUND_HALF_UP);
+        }
+        return BigDecimal.ZERO;
     }
     
     public void setCbmM3(BigDecimal cbmM3) {

@@ -82,26 +82,29 @@ public class OrderBusinessRuleService {
     }
     
     /**
-     * 박스 CBM 계산 (가로 × 세로 × 높이 / 1,000,000)
+     * 박스 CBM 계산 (가로 × 세로 × 높이 / 1,000,000,000)
+     * 입력: mm 단위, 출력: m³
      */
     private BigDecimal calculateBoxCBM(OrderBox box) {
-        if (box.getWidthCm() == null || box.getHeightCm() == null || box.getDepthCm() == null) {
+        if (box.getWidth() == null || box.getHeight() == null || box.getDepth() == null) {
             return BigDecimal.ZERO;
         }
         
-        BigDecimal width = box.getWidthCm();
-        BigDecimal height = box.getHeightCm();
-        BigDecimal depth = box.getDepthCm();
+        // mm to m conversion (divide by 1000)
+        BigDecimal widthM = new BigDecimal(box.getWidth()).divide(BigDecimal.valueOf(1000), 6, RoundingMode.HALF_UP);
+        BigDecimal heightM = new BigDecimal(box.getHeight()).divide(BigDecimal.valueOf(1000), 6, RoundingMode.HALF_UP);
+        BigDecimal depthM = new BigDecimal(box.getDepth()).divide(BigDecimal.valueOf(1000), 6, RoundingMode.HALF_UP);
         
-        BigDecimal cbm = width.multiply(height).multiply(depth)
-                        .divide(BigDecimal.valueOf(1000000), 6, RoundingMode.HALF_UP);
+        BigDecimal cbm = widthM.multiply(heightM).multiply(depthM)
+                        .setScale(6, RoundingMode.HALF_UP);
         
         // 최소 CBM 적용 (너무 작은 값 방지)
         if (cbm.compareTo(minCbmRate) < 0) {
             cbm = minCbmRate;
         }
         
-        log.debug("Calculated CBM for box {}x{}x{}: {}", width, height, depth, cbm);
+        log.debug("Calculated CBM for box {}mm x {}mm x {}mm: {} m³", 
+                 box.getWidth(), box.getHeight(), box.getDepth(), cbm);
         
         return cbm;
     }

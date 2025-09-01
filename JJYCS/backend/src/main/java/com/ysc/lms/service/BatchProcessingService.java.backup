@@ -1,0 +1,416 @@
+package com.ysc.lms.service;
+
+import com.ysc.lms.entity.Order;
+import com.ysc.lms.entity.OrderBox;
+import com.ysc.lms.repository.OrderRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 일괄 입출고 처리 서비스
+ */
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class BatchProcessingService {
+    
+    private final OrderRepository orderRepository;
+    private final EnhancedQrCodeService qrCodeService;
+    
+    /**
+     * 일괄 입고 처리
+     */
+    @Transactional
+    public BatchProcessingResult batchInboundProcessing(BatchInboundRequest request) {
+        BatchProcessingResult result = new BatchProcessingResult();
+        List<String> successOrders = new ArrayList<>();
+        List<String> failedOrders = new ArrayList<>();
+        Map<String, String> errorMessages = new HashMap<>();
+        
+        try {
+            log.info("Starting batch inbound processing for {} orders", request.getOrderCodes().size());
+            
+            for (String orderCode : request.getOrderCodes()) {
+                try {
+                    // 주문 조회
+                    Order order = orderRepository.findByOrderNumber(orderCode).orElse(null);
+                    if (order == null) {
+                        failedOrders.add(orderCode);
+                        errorMessages.put(orderCode, "주문을 찾을 수 없습니다");
+                        continue;
+                    }
+                    
+                    // 입고 처리 가능 상태 확인
+                    if (!canProcessInbound(order)) {
+                        failedOrders.add(orderCode);
+                        errorMessages.put(orderCode, "입고 처리할 수 없는 상태입니다: " + order.getStatus());
+                        continue;
+                    }
+                    
+                    // 입고 처리
+                    processOrderInbound(order, request);
+                    successOrders.add(orderCode);
+                    
+                    log.info("Successfully processed inbound for order: {}", orderCode);
+                    
+                } catch (Exception e) {
+                    log.error("Failed to process inbound for order {}: {}", orderCode, e.getMessage());
+                    failedOrders.add(orderCode);
+                    errorMessages.put(orderCode, e.getMessage());
+                }
+            }
+            
+            result.setSuccess(true);
+            result.setTotalCount(request.getOrderCodes().size());
+            result.setSuccessCount(successOrders.size());
+            result.setFailedCount(failedOrders.size());
+            result.setSuccessOrders(successOrders);
+            result.setFailedOrders(failedOrders);
+            result.setErrorMessages(errorMessages);
+            result.setProcessedAt(LocalDateTime.now());
+            
+            log.info("Batch inbound processing completed: {} success, {} failed", 
+                successOrders.size(), failedOrders.size());
+            
+        } catch (Exception e) {
+            log.error("Batch inbound processing failed: {}", e.getMessage());
+            result.setSuccess(false);
+            result.setErrorMessage("일괄 처리 중 오류가 발생했습니다: " + e.getMessage());
+        }
+        
+        return result;
+    }
+    
+    /**
+     * 일괄 출고 처리
+     */
+    @Transactional
+    public BatchProcessingResult batchOutboundProcessing(BatchOutboundRequest request) {
+        BatchProcessingResult result = new BatchProcessingResult();
+        List<String> successOrders = new ArrayList<>();
+        List<String> failedOrders = new ArrayList<>();
+        Map<String, String> errorMessages = new HashMap<>();
+        
+        try {
+            log.info("Starting batch outbound processing for {} orders", request.getOrderCodes().size());
+            
+            for (String orderCode : request.getOrderCodes()) {
+                try {
+                    // 주문 조회
+                    Order order = orderRepository.findByOrderNumber(orderCode).orElse(null);
+                    if (order == null) {
+                        failedOrders.add(orderCode);
+                        errorMessages.put(orderCode, "주문을 찾을 수 없습니다");
+                        continue;
+                    }
+                    
+                    // 출고 처리 가능 상태 확인
+                    if (!canProcessOutbound(order)) {
+                        failedOrders.add(orderCode);
+                        errorMessages.put(orderCode, "출고 처리할 수 없는 상태입니다: " + order.getStatus());
+                        continue;
+                    }
+                    
+                    // 출고 처리
+                    processOrderOutbound(order, request);
+                    successOrders.add(orderCode);
+                    
+                    log.info("Successfully processed outbound for order: {}", orderCode);
+                    
+                } catch (Exception e) {
+                    log.error("Failed to process outbound for order {}: {}", orderCode, e.getMessage());
+                    failedOrders.add(orderCode);
+                    errorMessages.put(orderCode, e.getMessage());
+                }
+            }
+            
+            result.setSuccess(true);
+            result.setTotalCount(request.getOrderCodes().size());
+            result.setSuccessCount(successOrders.size());
+            result.setFailedCount(failedOrders.size());
+            result.setSuccessOrders(successOrders);
+            result.setFailedOrders(failedOrders);
+            result.setErrorMessages(errorMessages);
+            result.setProcessedAt(LocalDateTime.now());
+            
+            log.info("Batch outbound processing completed: {} success, {} failed", 
+                successOrders.size(), failedOrders.size());
+            
+        } catch (Exception e) {
+            log.error("Batch outbound processing failed: {}", e.getMessage());
+            result.setSuccess(false);
+            result.setErrorMessage("일괄 처리 중 오류가 발생했습니다: " + e.getMessage());
+        }
+        
+        return result;
+    }
+    
+    /**
+     * QR 코드 일괄 스캔 처리
+     */
+    @Transactional
+    public BatchProcessingResult batchQrScanProcessing(BatchQrScanRequest request) {
+        BatchProcessingResult result = new BatchProcessingResult();
+        List<String> successOrders = new ArrayList<>();
+        List<String> failedOrders = new ArrayList<>();
+        Map<String, String> errorMessages = new HashMap<>();
+        
+        try {
+            log.info("Starting batch QR scan processing for {} codes", request.getQrCodes().size());
+            
+            for (String qrCode : request.getQrCodes()) {
+                try {
+                    // QR 코드 디코딩
+                    Map<String, String> decodedData = qrCodeService.scanQrCode(qrCode);
+                    
+                    String orderNumber = decodedData.get("ORDER");
+                    if (orderNumber == null) {
+                        failedOrders.add("UNKNOWN");
+                        errorMessages.put("UNKNOWN", "QR 코드에서 주문 번호를 찾을 수 없습니다");
+                        continue;
+                    }
+                    
+                    // 주문 조회
+                    Order order = orderRepository.findByOrderNumber(orderNumber).orElse(null);
+                    if (order == null) {
+                        failedOrders.add(orderNumber);
+                        errorMessages.put(orderNumber, "주문을 찾을 수 없습니다");
+                        continue;
+                    }
+                    
+                    // 스캔 타입에 따른 처리
+                    processQrScanAction(order, request.getScanType(), decodedData);
+                    successOrders.add(orderNumber);
+                    
+                    log.info("Successfully processed QR scan for order: {}", orderNumber);
+                    
+                } catch (Exception e) {
+                    log.error("Failed to process QR scan: {}", e.getMessage());
+                    failedOrders.add("UNKNOWN");
+                    errorMessages.put("UNKNOWN", e.getMessage());
+                }
+            }
+            
+            result.setSuccess(true);
+            result.setTotalCount(request.getQrCodes().size());
+            result.setSuccessCount(successOrders.size());
+            result.setFailedCount(failedOrders.size());
+            result.setSuccessOrders(successOrders);
+            result.setFailedOrders(failedOrders);
+            result.setErrorMessages(errorMessages);
+            result.setProcessedAt(LocalDateTime.now());
+            
+            log.info("Batch QR scan processing completed: {} success, {} failed", 
+                successOrders.size(), failedOrders.size());
+            
+        } catch (Exception e) {
+            log.error("Batch QR scan processing failed: {}", e.getMessage());
+            result.setSuccess(false);
+            result.setErrorMessage("일괄 QR 스캔 처리 중 오류가 발생했습니다: " + e.getMessage());
+        }
+        
+        return result;
+    }
+    
+    /**
+     * 입고 처리 가능 여부 확인
+     */
+    private boolean canProcessInbound(Order order) {
+        Order.OrderStatus status = order.getStatus();
+        return status == Order.OrderStatus.RECEIVED || 
+               status == Order.OrderStatus.IN_TRANSIT || 
+               status == Order.OrderStatus.ARRIVED;
+    }
+    
+    /**
+     * 출고 처리 가능 여부 확인
+     */
+    private boolean canProcessOutbound(Order order) {
+        Order.OrderStatus status = order.getStatus();
+        return status == Order.OrderStatus.IN_WAREHOUSE || 
+               status == Order.OrderStatus.SHIPPING;
+    }
+    
+    /**
+     * 개별 주문 입고 처리
+     */
+    private void processOrderInbound(Order order, BatchInboundRequest request) {
+        // 상태 변경
+        order.setStatus(Order.OrderStatus.IN_WAREHOUSE);
+        order.setArrivedAt(LocalDateTime.now());
+        
+        // 창고 위치 설정
+        if (request.getWarehouseLocation() != null) {
+            order.setStorageLocation(request.getWarehouseLocation());
+        }
+        
+        // 실제 무게 설정
+        if (request.getActualWeight() != null) {
+            order.setActualWeight(request.getActualWeight());
+        }
+        
+        // 메모 추가
+        if (request.getNotes() != null) {
+            String existingNotes = order.getWarehouseNotes();
+            String newNotes = existingNotes != null ? 
+                existingNotes + "\n[입고] " + request.getNotes() : 
+                "[입고] " + request.getNotes();
+            order.setWarehouseNotes(newNotes);
+        }
+        
+        order.setUpdatedAt(LocalDateTime.now());
+        orderRepository.save(order);
+    }
+    
+    /**
+     * 개별 주문 출고 처리
+     */
+    private void processOrderOutbound(Order order, BatchOutboundRequest request) {
+        // 상태 변경
+        order.setStatus(Order.OrderStatus.SHIPPED);
+        order.setShippedAt(LocalDateTime.now());
+        
+        // 송장 번호 설정
+        if (request.getTrackingNumber() != null) {
+            order.setTrackingNumber(request.getTrackingNumber());
+        }
+        
+        // 메모 추가
+        if (request.getNotes() != null) {
+            String existingNotes = order.getWarehouseNotes();
+            String newNotes = existingNotes != null ? 
+                existingNotes + "\n[출고] " + request.getNotes() : 
+                "[출고] " + request.getNotes();
+            order.setWarehouseNotes(newNotes);
+        }
+        
+        order.setUpdatedAt(LocalDateTime.now());
+        orderRepository.save(order);
+    }
+    
+    /**
+     * QR 스캔 액션 처리
+     */
+    private void processQrScanAction(Order order, String scanType, Map<String, String> decodedData) {
+        switch (scanType.toUpperCase()) {
+            case "INBOUND":
+                if (canProcessInbound(order)) {
+                    order.setStatus(Order.OrderStatus.IN_WAREHOUSE);
+                    order.setArrivedAt(LocalDateTime.now());
+                }
+                break;
+            case "OUTBOUND":
+                if (canProcessOutbound(order)) {
+                    order.setStatus(Order.OrderStatus.SHIPPED);
+                    order.setShippedAt(LocalDateTime.now());
+                }
+                break;
+            case "HOLD":
+                order.setStatus(Order.OrderStatus.HOLD);
+                break;
+            case "MIXBOX":
+                // 믹스박스 처리 로직
+                String boxId = decodedData.get("BOX");
+                if (boxId != null) {
+                    // 박스 정보 업데이트
+                    for (OrderBox box : order.getBoxes()) {
+                        if (boxId.equals(box.getBoxNumber())) {
+                            // 믹스박스 플래그 설정 (필요시 추가)
+                            break;
+                        }
+                    }
+                }
+                break;
+        }
+        
+        order.setUpdatedAt(LocalDateTime.now());
+        orderRepository.save(order);
+    }
+    
+    // DTO Classes
+    
+    public static class BatchInboundRequest {
+        private List<String> orderCodes;
+        private String warehouseLocation;
+        private java.math.BigDecimal actualWeight;
+        private String notes;
+        
+        // Getters and Setters
+        public List<String> getOrderCodes() { return orderCodes; }
+        public void setOrderCodes(List<String> orderCodes) { this.orderCodes = orderCodes; }
+        public String getWarehouseLocation() { return warehouseLocation; }
+        public void setWarehouseLocation(String warehouseLocation) { this.warehouseLocation = warehouseLocation; }
+        public java.math.BigDecimal getActualWeight() { return actualWeight; }
+        public void setActualWeight(java.math.BigDecimal actualWeight) { this.actualWeight = actualWeight; }
+        public String getNotes() { return notes; }
+        public void setNotes(String notes) { this.notes = notes; }
+    }
+    
+    public static class BatchOutboundRequest {
+        private List<String> orderCodes;
+        private String trackingNumber;
+        private String courierCompany;
+        private String notes;
+        
+        // Getters and Setters
+        public List<String> getOrderCodes() { return orderCodes; }
+        public void setOrderCodes(List<String> orderCodes) { this.orderCodes = orderCodes; }
+        public String getTrackingNumber() { return trackingNumber; }
+        public void setTrackingNumber(String trackingNumber) { this.trackingNumber = trackingNumber; }
+        public String getCourierCompany() { return courierCompany; }
+        public void setCourierCompany(String courierCompany) { this.courierCompany = courierCompany; }
+        public String getNotes() { return notes; }
+        public void setNotes(String notes) { this.notes = notes; }
+    }
+    
+    public static class BatchQrScanRequest {
+        private List<String> qrCodes;  // Base64 인코딩된 QR 코드 이미지들
+        private String scanType;       // INBOUND, OUTBOUND, HOLD, MIXBOX
+        
+        // Getters and Setters
+        public List<String> getQrCodes() { return qrCodes; }
+        public void setQrCodes(List<String> qrCodes) { this.qrCodes = qrCodes; }
+        public String getScanType() { return scanType; }
+        public void setScanType(String scanType) { this.scanType = scanType; }
+    }
+    
+    public static class BatchProcessingResult {
+        private boolean success;
+        private String errorMessage;
+        private int totalCount;
+        private int successCount;
+        private int failedCount;
+        private List<String> successOrders;
+        private List<String> failedOrders;
+        private Map<String, String> errorMessages;
+        private LocalDateTime processedAt;
+        
+        // Getters and Setters
+        public boolean isSuccess() { return success; }
+        public void setSuccess(boolean success) { this.success = success; }
+        public String getErrorMessage() { return errorMessage; }
+        public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
+        public int getTotalCount() { return totalCount; }
+        public void setTotalCount(int totalCount) { this.totalCount = totalCount; }
+        public int getSuccessCount() { return successCount; }
+        public void setSuccessCount(int successCount) { this.successCount = successCount; }
+        public int getFailedCount() { return failedCount; }
+        public void setFailedCount(int failedCount) { this.failedCount = failedCount; }
+        public List<String> getSuccessOrders() { return successOrders; }
+        public void setSuccessOrders(List<String> successOrders) { this.successOrders = successOrders; }
+        public List<String> getFailedOrders() { return failedOrders; }
+        public void setFailedOrders(List<String> failedOrders) { this.failedOrders = failedOrders; }
+        public Map<String, String> getErrorMessages() { return errorMessages; }
+        public void setErrorMessages(Map<String, String> errorMessages) { this.errorMessages = errorMessages; }
+        public LocalDateTime getProcessedAt() { return processedAt; }
+        public void setProcessedAt(LocalDateTime processedAt) { this.processedAt = processedAt; }
+    }
+}

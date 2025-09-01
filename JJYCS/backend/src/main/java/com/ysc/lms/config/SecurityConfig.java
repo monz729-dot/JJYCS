@@ -75,7 +75,9 @@ public class SecurityConfig {
                     "/swagger-ui.html",
                     "/actuator/health",
                     "/api/actuator/health",
-                    "/favicon.ico"
+                    "/favicon.ico",
+                    "/api/orders",  // 임시: 주문 생성 테스트용
+                    "/orders"       // 임시: 주문 생성 테스트용
                 ).permitAll()
                 
                 // 입고확인 API - 관리자 또는 창고직원

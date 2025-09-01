@@ -61,15 +61,15 @@ public class HSCodeService {
     }
 
     // HS부호검색 API
-    @Value("${app.api.hscode.search.key:s240o275s078n237g000a070s0}")
+    @Value("${HSCODE_SEARCH_API_KEY:s240o275s078n237g000a070s0}")
     private String hsSearchApiKey;
 
     // 관세율기본조회 API
-    @Value("${app.api.hscode.tariff.key:s240o275s078n237g000a070s0}")
+    @Value("${HSCODE_TARIFF_API_KEY:s240o275s078n237g000a070s0}")
     private String tariffBasicApiKey;
 
     // 관세환율정보조회 API
-    @Value("${app.api.hscode.exchange.key:s240o275s078n237g000a070s0}")
+    @Value("${HSCODE_EXCHANGE_API_KEY:s240o275s078n237g000a070s0}")
     private String tariffExchangeApiKey;
 
     private static final String HS_SEARCH_BASE_URL = "https://unipass.customs.go.kr:38010/ext/rest/hsCodeSearchService/search";

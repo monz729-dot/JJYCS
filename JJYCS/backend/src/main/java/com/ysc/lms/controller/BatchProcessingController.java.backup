@@ -1,0 +1,170 @@
+package com.ysc.lms.controller;
+
+import com.ysc.lms.service.BatchProcessingService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+/**
+ * 일괄 입출고 처리 컨트롤러
+ */
+@RestController
+@RequestMapping("/api/batch")
+@RequiredArgsConstructor
+@Slf4j
+@CrossOrigin
+public class BatchProcessingController {
+    
+    private final BatchProcessingService batchProcessingService;
+    
+    /**
+     * 일괄 입고 처리
+     */
+    @PostMapping("/inbound")
+    @PreAuthorize("hasRole('WAREHOUSE') or hasRole('ADMIN')")
+    public ResponseEntity<?> batchInboundProcessing(@RequestBody BatchProcessingService.BatchInboundRequest request) {
+        try {
+            log.info("Processing batch inbound for {} orders", request.getOrderCodes().size());
+            
+            if (request.getOrderCodes() == null || request.getOrderCodes().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(new ErrorResponse("주문 코드 목록이 필요합니다"));
+            }
+            
+            BatchProcessingService.BatchProcessingResult result = 
+                batchProcessingService.batchInboundProcessing(request);
+            
+            return ResponseEntity.ok(result);
+            
+        } catch (Exception e) {
+            log.error("Batch inbound processing failed: {}", e.getMessage());
+            return ResponseEntity.internalServerError()
+                .body(new ErrorResponse("일괄 입고 처리 중 오류가 발생했습니다: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * 일괄 출고 처리
+     */
+    @PostMapping("/outbound")
+    @PreAuthorize("hasRole('WAREHOUSE') or hasRole('ADMIN')")
+    public ResponseEntity<?> batchOutboundProcessing(@RequestBody BatchProcessingService.BatchOutboundRequest request) {
+        try {
+            log.info("Processing batch outbound for {} orders", request.getOrderCodes().size());
+            
+            if (request.getOrderCodes() == null || request.getOrderCodes().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(new ErrorResponse("주문 코드 목록이 필요합니다"));
+            }
+            
+            BatchProcessingService.BatchProcessingResult result = 
+                batchProcessingService.batchOutboundProcessing(request);
+            
+            return ResponseEntity.ok(result);
+            
+        } catch (Exception e) {
+            log.error("Batch outbound processing failed: {}", e.getMessage());
+            return ResponseEntity.internalServerError()
+                .body(new ErrorResponse("일괄 출고 처리 중 오류가 발생했습니다: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * QR 코드 일괄 스캔 처리
+     */
+    @PostMapping("/qr-scan")
+    @PreAuthorize("hasRole('WAREHOUSE') or hasRole('ADMIN')")
+    public ResponseEntity<?> batchQrScanProcessing(@RequestBody BatchProcessingService.BatchQrScanRequest request) {
+        try {
+            log.info("Processing batch QR scan for {} codes", request.getQrCodes().size());
+            
+            if (request.getQrCodes() == null || request.getQrCodes().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(new ErrorResponse("QR 코드 목록이 필요합니다"));
+            }
+            
+            if (request.getScanType() == null || request.getScanType().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(new ErrorResponse("스캔 타입이 필요합니다 (INBOUND, OUTBOUND, HOLD, MIXBOX)"));
+            }
+            
+            BatchProcessingService.BatchProcessingResult result = 
+                batchProcessingService.batchQrScanProcessing(request);
+            
+            return ResponseEntity.ok(result);
+            
+        } catch (Exception e) {
+            log.error("Batch QR scan processing failed: {}", e.getMessage());
+            return ResponseEntity.internalServerError()
+                .body(new ErrorResponse("일괄 QR 스캔 처리 중 오류가 발생했습니다: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * 일괄 처리 상태별 주문 조회
+     */
+    @GetMapping("/orders/status/{status}")
+    @PreAuthorize("hasRole('WAREHOUSE') or hasRole('ADMIN')")
+    public ResponseEntity<?> getOrdersByStatusForBatch(@PathVariable String status) {
+        try {
+            // TODO: 상태별 주문 조회 로직 구현
+            // OrderRepository에서 상태별로 주문을 조회하여 일괄 처리 가능한 주문들을 반환
+            
+            return ResponseEntity.ok(new SuccessResponse("상태별 주문 조회 기능은 구현 예정입니다"));
+            
+        } catch (Exception e) {
+            log.error("Failed to get orders by status: {}", e.getMessage());
+            return ResponseEntity.internalServerError()
+                .body(new ErrorResponse("주문 조회 중 오류가 발생했습니다: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * 일괄 처리 히스토리 조회
+     */
+    @GetMapping("/history")
+    @PreAuthorize("hasRole('WAREHOUSE') or hasRole('ADMIN')")
+    public ResponseEntity<?> getBatchProcessingHistory(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        try {
+            // TODO: 일괄 처리 히스토리 조회 로직 구현
+            // BatchProcessingHistory 엔티티를 만들어서 처리 이력을 저장하고 조회
+            
+            return ResponseEntity.ok(new SuccessResponse("일괄 처리 히스토리 조회 기능은 구현 예정입니다"));
+            
+        } catch (Exception e) {
+            log.error("Failed to get batch processing history: {}", e.getMessage());
+            return ResponseEntity.internalServerError()
+                .body(new ErrorResponse("히스토리 조회 중 오류가 발생했습니다: " + e.getMessage()));
+        }
+    }
+    
+    // Response DTOs
+    
+    private static class ErrorResponse {
+        private final boolean success = false;
+        private final String message;
+        
+        public ErrorResponse(String message) {
+            this.message = message;
+        }
+        
+        public boolean isSuccess() { return success; }
+        public String getMessage() { return message; }
+    }
+    
+    private static class SuccessResponse {
+        private final boolean success = true;
+        private final String message;
+        
+        public SuccessResponse(String message) {
+            this.message = message;
+        }
+        
+        public boolean isSuccess() { return success; }
+        public String getMessage() { return message; }
+    }
+}

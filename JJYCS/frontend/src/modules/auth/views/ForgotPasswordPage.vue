@@ -58,9 +58,10 @@
                   type="tel"
                   class="form-input"
                   :class="{ 'error-input': fieldErrors.phone }"
-                  placeholder="연락처를 입력하세요 (예: 01012345678)"
+                  placeholder="연락처를 입력하세요 (예: 010-1234-5678)"
+                  maxlength="13"
                   required
-                  @input="clearFieldError('phone')"
+                  @input="formatPhoneNumber"
                 />
                 <div v-if="fieldErrors.phone" class="field-error">
                   {{ fieldErrors.phone }}
@@ -358,6 +359,28 @@ const validatePassword = (password: string) => {
 const handlePasswordChange = () => {
   validatePassword(formData.newPassword)
   clearFieldError('newPassword')
+}
+
+const formatPhoneNumber = () => {
+  // 숫자만 입력되도록 필터링
+  let phone = formData.phone.replace(/\D/g, '')
+  
+  // 11자리 초과 시 자르기
+  if (phone.length > 11) {
+    phone = phone.substring(0, 11)
+  }
+  
+  // 010-1234-5678 형식으로 포맷팅
+  if (phone.length >= 3) {
+    if (phone.length <= 7) {
+      phone = phone.replace(/(\d{3})(\d+)/, '$1-$2')
+    } else {
+      phone = phone.replace(/(\d{3})(\d{4})(\d+)/, '$1-$2-$3')
+    }
+  }
+  
+  formData.phone = phone
+  clearFieldError('phone')
 }
 
 const formatVerificationCode = () => {

@@ -185,9 +185,13 @@ public class OrderService {
                 OrderBox orderBox = new OrderBox();
                 orderBox.setOrder(savedOrder);
                 orderBox.setBoxNumber("BOX-" + System.currentTimeMillis());
-                orderBox.setWidth(boxRequest.getWidthCm());
-                orderBox.setHeight(boxRequest.getHeightCm());
-                orderBox.setDepth(boxRequest.getDepthCm());
+                // Convert BigDecimal cm to Integer mm
+                orderBox.setWidth(boxRequest.getWidthCm() != null ? 
+                    boxRequest.getWidthCm().multiply(new BigDecimal("10")).intValue() : null);
+                orderBox.setHeight(boxRequest.getHeightCm() != null ? 
+                    boxRequest.getHeightCm().multiply(new BigDecimal("10")).intValue() : null);
+                orderBox.setDepth(boxRequest.getDepthCm() != null ? 
+                    boxRequest.getDepthCm().multiply(new BigDecimal("10")).intValue() : null);
                 orderBox.setWeight(boxRequest.getWeightKg() != null ? boxRequest.getWeightKg() : BigDecimal.ZERO);
                 
                 savedOrder.getBoxes().add(orderBox);
@@ -296,9 +300,9 @@ public class OrderService {
             tempOrder.setOrderBoxes(new ArrayList<>());
             for (CreateOrderRequest.OrderBoxRequest boxRequest : request.getOrderBoxes()) {
                 OrderBox box = new OrderBox();
-                box.setWidth(boxRequest.getWidthCm());
-                box.setHeight(boxRequest.getHeightCm());
-                box.setDepth(boxRequest.getDepthCm());
+                box.setWidth(boxRequest.getWidthCm() != null ? boxRequest.getWidthCm().intValue() : null);
+                box.setHeight(boxRequest.getHeightCm() != null ? boxRequest.getHeightCm().intValue() : null);
+                box.setDepth(boxRequest.getDepthCm() != null ? boxRequest.getDepthCm().intValue() : null);
                 tempOrder.getOrderBoxes().add(box);
             }
         }
