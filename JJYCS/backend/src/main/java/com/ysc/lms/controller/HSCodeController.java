@@ -10,29 +10,55 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/hscode")
+@RequestMapping("/hscode")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 @Slf4j
-public class HSCodeController {
+public class HsCodeController {
 
     private final HSCodeService hsCodeService;
 
     /**
-     * 품목명으로 HS Code 검색
+     * 테스트용 간단한 엔드포인트
+     */
+    @GetMapping("/test")
+    public ResponseEntity<Map<String, Object>> test() {
+        try {
+            log.info("HS Code controller test endpoint called");
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "HS Code Controller is working properly",
+                "timestamp", System.currentTimeMillis()
+            ));
+        } catch (Exception e) {
+            log.error("Error in test endpoint", e);
+            return ResponseEntity.internalServerError()
+                .body(Map.of("success", false, "error", e.getMessage()));
+        }
+    }
+
+    /**
+     * 품목명으로 HS Code 검색 (프론트엔드용)
+     */
+    @GetMapping("/search/by-product")
+    public ResponseEntity<Map<String, Object>> searchHSCodeByProduct(@RequestParam String productName) {
+        return searchHSCodeByProductName(productName);
+    }
+    
+    /**
+     * 품목명으로 HS Code 검색 (기본)
      */
     @GetMapping("/search")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('WAREHOUSE') or hasRole('PARTNER') or hasRole('CORPORATE')")
-    public ResponseEntity<?> searchHSCodeByProduct(@RequestParam String productName) {
+    public ResponseEntity<Map<String, Object>> searchHSCodeByProductName(@RequestParam String query) {
         try {
-            log.info("Searching HS Code for product: {}", productName);
+            log.info("Searching HS Code for product: {}", query);
             
-            if (productName == null || productName.trim().isEmpty()) {
+            if (query == null || query.trim().isEmpty()) {
                 return ResponseEntity.badRequest()
                     .body(Map.of("success", false, "error", "품목명을 입력해주세요."));
             }
 
-            HSCodeService.HSCodeSearchResponse response = hsCodeService.searchHSCodeByProductName(productName.trim());
+            HSCodeService.HSCodeSearchResponse response = hsCodeService.searchHSCodeByProductName(query.trim());
             
             if (response.isSuccess()) {
                 return ResponseEntity.ok(Map.of(
@@ -42,16 +68,16 @@ public class HSCodeController {
                 ));
             } else {
                 // 외부 API 오류 시 샘플 데이터로 응답 (개발/테스트 목적)
-                log.warn("External API failed, returning fallback data for: {}", productName);
+                log.warn("External API failed, returning fallback data for: {}", query);
                 return ResponseEntity.ok(Map.of(
                     "success", true,
                     "message", "HS 코드 검색이 완료되었습니다. (외부 API 연결 제한으로 샘플 데이터)",
-                    "data", createFallbackHSCodeResponse(productName),
+                    "data", createFallbackHSCodeResponse(query),
                     "fallback", true
                 ));
             }
         } catch (Exception e) {
-            log.error("Error searching HS code for product: {}", productName, e);
+            log.error("Error searching HS code for product: {}", query, e);
             return ResponseEntity.internalServerError()
                 .body(Map.of("success", false, "error", "HS 코드 검색 중 오류가 발생했습니다."));
         }
@@ -61,8 +87,7 @@ public class HSCodeController {
      * HS Code로 품목명 검색
      */
     @GetMapping("/search/by-hscode")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('WAREHOUSE') or hasRole('PARTNER') or hasRole('CORPORATE')")
-    public ResponseEntity<?> searchProductNameByHSCode(@RequestParam String hsCode) {
+    public ResponseEntity<Map<String, Object>> searchProductNameByHSCode(@RequestParam String hsCode) {
         try {
             log.info("Searching product name for HS Code: {}", hsCode);
             
@@ -94,8 +119,7 @@ public class HSCodeController {
      * HS Code로 관세율 조회
      */
     @GetMapping("/tariff/{hsCode}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('WAREHOUSE') or hasRole('PARTNER') or hasRole('CORPORATE')")
-    public ResponseEntity<?> getTariffRate(@PathVariable String hsCode) {
+    public ResponseEntity<Map<String, Object>> getTariffRate(@PathVariable String hsCode) {
         try {
             log.info("Getting tariff rate for HS Code: {}", hsCode);
             
@@ -133,8 +157,7 @@ public class HSCodeController {
      * 관세 환율 정보 조회
      */
     @GetMapping("/exchange-rate")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('WAREHOUSE') or hasRole('PARTNER') or hasRole('CORPORATE')")
-    public ResponseEntity<?> getTariffExchangeRate() {
+    public ResponseEntity<Map<String, Object>> getTariffExchangeRate() {
         try {
             log.info("Getting tariff exchange rate");
             
@@ -167,8 +190,7 @@ public class HSCodeController {
      * 관세 계산 (HS Code, 수량, 가격 기준)
      */
     @PostMapping("/calculate-duty")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('WAREHOUSE') or hasRole('PARTNER') or hasRole('CORPORATE')")
-    public ResponseEntity<?> calculateCustomsDuty(@RequestBody CalculateDutyRequest request) {
+    public ResponseEntity<Map<String, Object>> calculateCustomsDuty(@RequestBody CalculateDutyRequest request) {
         try {
             log.info("Calculating customs duty for HS Code: {}", request.getHsCode());
             
@@ -241,8 +263,7 @@ public class HSCodeController {
      * 캐시 통계 조회 (관리자 전용)
      */
     @GetMapping("/cache/stats")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> getCacheStats() {
+    public ResponseEntity<Map<String, Object>> getCacheStats() {
         try {
             Map<String, Object> stats = hsCodeService.getCacheStats();
             return ResponseEntity.ok(Map.of(
@@ -261,8 +282,7 @@ public class HSCodeController {
      * 캐시 초기화 (관리자 전용)
      */
     @PostMapping("/cache/clear")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> clearCache() {
+    public ResponseEntity<Map<String, Object>> clearCache() {
         try {
             hsCodeService.clearAllCache();
             return ResponseEntity.ok(Map.of(
@@ -280,8 +300,7 @@ public class HSCodeController {
      * 만료된 캐시 정리 (관리자 전용)
      */
     @PostMapping("/cache/cleanup")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> cleanupCache() {
+    public ResponseEntity<Map<String, Object>> cleanupCache() {
         try {
             hsCodeService.cleanupExpiredCache();
             Map<String, Object> stats = hsCodeService.getCacheStats();

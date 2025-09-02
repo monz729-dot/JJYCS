@@ -419,8 +419,8 @@ public class AdminController {
             
             // 배송 타입별 통계
             Map<String, Long> orderTypeStats = Map.of(
-                "AIR", orderRepository.countByOrderType(Order.ShippingType.AIR),
-                "SEA", orderRepository.countByOrderType(Order.ShippingType.SEA)
+                "AIR", orderRepository.countByOrderType(Order.OrderType.AIR),
+                "SEA", orderRepository.countByOrderType(Order.OrderType.SEA)
             );
             
             // 시간별 신규 주문 (오늘, 이번주, 이번달)

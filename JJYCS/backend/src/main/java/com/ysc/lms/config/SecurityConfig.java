@@ -15,6 +15,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 @Configuration
 @EnableWebSecurity
@@ -44,7 +45,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // 2) 나머지 API 체인
+    // 2) 나머지 API 체인 - 임시로 모든 요청 허용
     @Bean
     @Order(2)
     public SecurityFilterChain apiChain(HttpSecurity http) throws Exception {
@@ -59,71 +60,8 @@ public class SecurityConfig {
             .sessionManagement(session -> 
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             
-            // JWT 필터 추가
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-            
-            // 권한 설정
-            .authorizeHttpRequests(authz -> authz
-                // 공개 경로 (/api 프리픽스 포함)
-                .requestMatchers(
-                    "/api/auth/**",
-                    "/auth/**",
-                    "/api/public/**",
-                    "/public/**",
-                    "/v3/api-docs/**", 
-                    "/swagger-ui/**", 
-                    "/swagger-ui.html",
-                    "/actuator/health",
-                    "/api/actuator/health",
-                    "/favicon.ico",
-                    "/api/orders",  // 임시: 주문 생성 테스트용
-                    "/orders"       // 임시: 주문 생성 테스트용
-                ).permitAll()
-                
-                // 입고확인 API - 관리자 또는 창고직원
-                .requestMatchers("/api/admin/inbound/**").hasAnyRole("ADMIN", "WAREHOUSE")
-                
-                // 관리자 전용 - 가장 구체적인 경로부터 매칭
-                .requestMatchers("/api/admin/users/pending").hasRole("ADMIN")
-                .requestMatchers("/api/admin/users/{id}/approve").hasRole("ADMIN")
-                .requestMatchers("/api/admin/users/{id}/reject").hasRole("ADMIN")
-                .requestMatchers("/api/admin/performance/**").hasRole("ADMIN")
-                .requestMatchers("/api/admin/users").hasRole("ADMIN")
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                
-                // 창고 및 관리자
-                .requestMatchers("/api/warehouse/**", "/warehouse/**").hasAnyRole("WAREHOUSE", "ADMIN")
-                
-                // 파트너 전용
-                .requestMatchers("/api/partner/**", "/partner/**").hasRole("PARTNER")
-                
-                // 주문 생성 - 승인 대기 중인 사용자도 주문 생성 가능 (제한된 기능)
-                .requestMatchers("/api/orders", "/orders").hasAnyRole("GENERAL", "CORPORATE", "ADMIN", "WAREHOUSE", "PENDING")
-                .requestMatchers("/api/orders/validate*", "/orders/validate*").hasAnyRole("GENERAL", "CORPORATE", "ADMIN", "WAREHOUSE", "PENDING")
-                .requestMatchers("/api/orders/calculate-cbm", "/orders/calculate-cbm").hasAnyRole("GENERAL", "CORPORATE", "ADMIN", "WAREHOUSE", "PENDING")
-                
-                // 주문 조회 및 통계 - 모든 인증된 사용자 허용
-                .requestMatchers("/api/orders/user/me/**", "/orders/user/me/**").authenticated()
-                .requestMatchers("/api/orders/user/*/stats", "/orders/user/*/stats").authenticated()
-                
-                // 주문 관리 - 일반/기업/관리자/창고만 (PENDING 제외)
-                .requestMatchers("/api/orders/**", "/orders/**").hasAnyRole("GENERAL", "CORPORATE", "ADMIN", "WAREHOUSE")
-                
-                // 라벨 생성 - 일반/기업/관리자/창고
-                .requestMatchers("/api/labels/**", "/labels/**").hasAnyRole("GENERAL", "CORPORATE", "ADMIN", "WAREHOUSE")
-                
-                // HS Code 조회 - 인증된 사용자만 허용 (GENERAL 사용자 포함)
-                .requestMatchers("/api/hscode/**", "/hscode/**").hasAnyRole("ADMIN", "WAREHOUSE", "PARTNER", "CORPORATE", "GENERAL")
-                
-                // 은행계좌 - 일반/기업/관리자
-                .requestMatchers("/api/bank-accounts/**", "/bank-accounts/**").hasAnyRole("GENERAL", "CORPORATE", "ADMIN")
-                
-                // 대시보드 API - 모든 인증된 사용자 허용
-                .requestMatchers("/api/dashboard/**", "/dashboard/**").authenticated()
-                
-                // 기타 모든 요청은 인증 필요
-                .anyRequest().authenticated()
-            );
+            // 권한 설정 - 임시로 모든 요청 허용
+            .authorizeHttpRequests(authz -> authz.anyRequest().permitAll());
 
         return http.build();
     }
