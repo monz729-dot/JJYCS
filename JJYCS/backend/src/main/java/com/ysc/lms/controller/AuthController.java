@@ -1,5 +1,6 @@
 package com.ysc.lms.controller;
 
+import com.ysc.lms.constants.ErrorCodes;
 import com.ysc.lms.entity.EmailVerificationToken;
 import com.ysc.lms.entity.User;
 import com.ysc.lms.repository.EmailVerificationTokenRepository;
@@ -30,7 +31,7 @@ public class AuthController {
     private final EmailVerificationTokenRepository tokenRepository;
     
     @PostMapping("/signup")
-    public ResponseEntity<Map<String, Object>> signup(@RequestBody SignupRequest request) {
+    public ResponseEntity<Map<String, Object>> signup(@jakarta.validation.Valid @RequestBody SignupRequest request) {
         try {
             System.out.println("=== Signup request received ===");
             System.out.println("Email: " + request.getEmail());
@@ -39,7 +40,7 @@ public class AuthController {
             // userType 유효성 검사
             if (request.getUserType() == null || request.getUserType().trim().isEmpty()) {
                 return ResponseEntity.badRequest()
-                    .body(Map.of("success", false, "error", "회원 유형을 선택해주세요."));
+                    .body(Map.of("success", false, "error", "회원 유형을 선택해주세요.", "code", ErrorCodes.VALIDATION_ERROR));
             }
             
             User.UserType userType;
@@ -48,7 +49,7 @@ public class AuthController {
             } catch (IllegalArgumentException e) {
                 System.err.println("Invalid userType: " + request.getUserType());
                 return ResponseEntity.badRequest()
-                    .body(Map.of("success", false, "error", "잘못된 회원 유형입니다: " + request.getUserType()));
+                    .body(Map.of("success", false, "error", "잘못된 회원 유형입니다: " + request.getUserType(), "code", ErrorCodes.INVALID_USER_TYPE));
             }
             
             // 사용자 생성
@@ -907,18 +908,66 @@ public class AuthController {
     
     // DTO 클래스들
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
+    @com.ysc.lms.validation.ConditionalRequired(rules = {
+        @com.ysc.lms.validation.ConditionalRequired.Rule(
+            conditionField = "userType",
+            conditionValues = {"CORPORATE"},
+            requiredFields = {"companyName", "businessNumber"},
+            message = "기업 회원은 회사명과 사업자등록번호를 반드시 입력해야 합니다."
+        ),
+        @com.ysc.lms.validation.ConditionalRequired.Rule(
+            conditionField = "userType", 
+            conditionValues = {"PARTNER"},
+            requiredFields = {"companyName"},
+            message = "파트너 회원은 회사명을 반드시 입력해야 합니다."
+        )
+    })
     public static class SignupRequest {
+        @jakarta.validation.constraints.NotBlank(message = "이메일을 입력해주세요")
+        @jakarta.validation.constraints.Email(message = "올바른 이메일 형식을 입력해주세요")
         private String email;
+        
+        @jakarta.validation.constraints.NotBlank(message = "비밀번호를 입력해주세요")
+        @jakarta.validation.constraints.Size(min = 8, message = "비밀번호는 최소 8자 이상이어야 합니다")
         private String password;
+        
+        @jakarta.validation.constraints.NotBlank(message = "이름을 입력해주세요")
+        @jakarta.validation.constraints.Size(max = 50, message = "이름은 50자를 초과할 수 없습니다")
         private String name;
+        
+        @jakarta.validation.constraints.Pattern(
+            regexp = "^[0-9]{2,3}-[0-9]{3,4}-[0-9]{4}$", 
+            message = "올바른 전화번호 형식을 입력해주세요 (예: 010-1234-5678)"
+        )
         private String phone;
+        
+        @jakarta.validation.constraints.NotBlank(message = "회원 유형을 선택해주세요")
         private String userType;
+        
+        @jakarta.validation.constraints.Size(max = 100, message = "회사명은 100자를 초과할 수 없습니다")
         private String companyName;
+        
+        @jakarta.validation.constraints.Pattern(
+            regexp = "^[0-9]{3}-[0-9]{2}-[0-9]{5}$", 
+            message = "올바른 사업자등록번호 형식을 입력해주세요 (예: 123-45-67890)"
+        )
         private String businessNumber;
+        
+        @jakarta.validation.constraints.Size(max = 200, message = "회사 주소는 200자를 초과할 수 없습니다")
         private String companyAddress;
+        
+        @jakarta.validation.constraints.Size(max = 50, message = "담당자명은 50자를 초과할 수 없습니다")
         private String contactPerson;
+        
+        @jakarta.validation.constraints.Pattern(
+            regexp = "^[0-9]{2,3}-[0-9]{3,4}-[0-9]{4}$", 
+            message = "올바른 담당자 전화번호 형식을 입력해주세요"
+        )
         private String contactPhone;
+        
+        @jakarta.validation.constraints.Size(max = 200, message = "주소는 200자를 초과할 수 없습니다")
         private String address;
+        
         private Boolean agreeMarketing;
         // partnerRegion 필드 제거됨 (추천/수수료 기능 제거)
         

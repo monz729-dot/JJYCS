@@ -34,16 +34,37 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // 개발 환경: localhost 포트 범위 허용
-        configuration.setAllowedOriginPatterns(Arrays.asList(
-            "http://localhost:*",
-            "http://127.0.0.1:*"
-        ));
+        // 개발 환경: 구체적인 Origin만 허용 (allowCredentials=true와 호환)
+        if (allowedOrigins != null && !allowedOrigins.isEmpty()) {
+            configuration.setAllowedOrigins(allowedOrigins);
+        } else {
+            // 기본값: 개발환경 포트만 허용
+            configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:3008",
+                "http://127.0.0.1:3008",
+                "http://localhost:5173",
+                "http://127.0.0.1:5173"
+            ));
+        }
         
         configuration.setAllowedMethods(allowedMethods);
-        configuration.setAllowedHeaders(allowedHeaders);
+        
+        // allowCredentials=true일 때는 특정 헤더만 허용
+        configuration.setAllowedHeaders(Arrays.asList(
+            "Authorization",
+            "Content-Type", 
+            "Accept",
+            "Origin",
+            "X-Requested-With"
+        ));
+        
         configuration.setAllowCredentials(allowCredentials);
         configuration.setMaxAge(maxAge);
+        
+        // 보안을 위한 추가 설정
+        configuration.setExposedHeaders(Arrays.asList(
+            "Authorization"
+        ));
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

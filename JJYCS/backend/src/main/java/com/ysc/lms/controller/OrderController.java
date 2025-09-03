@@ -24,7 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-@RestController
+// TEMPORARILY DISABLED - conflicts with SimpleOrderController
+// @RestController
 @RequestMapping("/api/orders")
 @RequiredArgsConstructor
 @Slf4j

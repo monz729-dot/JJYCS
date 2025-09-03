@@ -229,11 +229,24 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByCreatedAtAfter(LocalDateTime startTime);
     
     // 코드 생성을 위한 최대 주문코드 조회
-    @Query(value = "SELECT order_number FROM orders WHERE order_number LIKE :prefix ORDER BY order_number DESC LIMIT 1", nativeQuery = true)
+    @Query(value = "SELECT order_no FROM orders WHERE order_no LIKE :prefix ORDER BY order_no DESC LIMIT 1", nativeQuery = true)
     String findMaxOrderCodeByPrefix(@Param("prefix") String prefix);
     
     // AdminController에서 필요한 추가 메소드들
     Long countByShippingType(Order.ShippingType shippingType);
     Long countByCreatedAtAfter(LocalDateTime date);
     List<Order> findTop10ByCreatedAtAfterOrderByCreatedAtDesc(LocalDateTime date);
+    
+    // TODO 요구사항: 간단한 주문 관리용 메서드들 (중복 메서드 제거)
+    
+    // 오늘 생성된 주문 개수 (주문번호 생성용)
+    @Query("SELECT COUNT(o) FROM Order o WHERE DATE(o.createdAt) = CURRENT_DATE")
+    long countTodayOrders();
+    
+    // 사용자가 주문을 생성할 수 있는지 확인 (DRAFT 상태 제한)
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.userId = :userId AND o.status = 'DRAFT'")
+    long countDraftOrdersByUserId(@Param("userId") Long userId);
+    
+    // 주문번호 중복 확인 (orderNo 필드용)
+    boolean existsByOrderNumber(String orderNumber);
 }

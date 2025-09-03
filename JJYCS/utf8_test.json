@@ -1,0 +1,7 @@
+{
+  "email": "utf8테스트@한글도메인.com",
+  "password": "비밀번호123!",
+  "name": "한글이름테스트",
+  "userType": "GENERAL",
+  "phone": "010-9999-8888"
+}

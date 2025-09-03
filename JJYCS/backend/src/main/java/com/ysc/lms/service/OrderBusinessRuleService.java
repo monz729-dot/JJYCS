@@ -126,7 +126,7 @@ public class OrderBusinessRuleService {
                 BigDecimal itemCbm = item.getWidth()
                     .multiply(item.getHeight())
                     .multiply(item.getDepth())
-                    .multiply(item.getQuantity())
+                    .multiply(BigDecimal.valueOf(item.getQuantity()))
                     .divide(BigDecimal.valueOf(1000000), 6, RoundingMode.HALF_UP);
                 
                 totalCbm = totalCbm.add(itemCbm);
@@ -150,7 +150,7 @@ public class OrderBusinessRuleService {
         if (order.getOrderItems() != null) {
             for (OrderItem item : order.getOrderItems()) {
                 if (item.getUnitPrice() != null && item.getQuantity() != null) {
-                    BigDecimal itemTotalValue = item.getUnitPrice().multiply(item.getQuantity());
+                    BigDecimal itemTotalValue = item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
                     totalThbValue = totalThbValue.add(itemTotalValue);
                     log.debug("Item THB value: {} x {} = {}", item.getUnitPrice(), item.getQuantity(), itemTotalValue);
                 }

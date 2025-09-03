@@ -46,21 +46,18 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     # Hibernate DDL 설정
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: validate
     # SQL 초기화 설정
     defer-datasource-initialization: true
   sql:
     init:
-      mode: always
-      platform: postgresql
-      data-locations: classpath:data-postgresql.sql
-      continue-on-error: true
+      mode: never
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        # 테이블 자동 생성 강제 설정
+        # 테이블 자동 생성 모드
         hbm2ddl:
-          auto: create-drop
+          auto: validate
         show-sql: true
         format_sql: true
         use_sql_comments: true
@@ -78,12 +75,19 @@ spring:
     # 트랜잭션 설정
     open-in-view: false
     
+  # Flyway 설정
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    validate-on-migrate: true
+    
   # 이메일 설정 (Gmail SMTP)
   mail:
     host: smtp.gmail.com
     port: 587
     username: ${SMTP_USERNAME:monz729@gmail.com}
-    password: ${SMTP_PASSWORD:eyubylejwyuqnqvj}
+    password: ${SMTP_PASSWORD:eyub ylej wyuq nqvj}
     properties:
       mail:
         smtp:
@@ -101,6 +105,28 @@ supabase:
   url: https://suexposyicisufsnqglp.supabase.co
   anon-key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN1ZXhwb3N5aWNpc3Vmc25xZ2xwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUwNzMwNjAsImV4cCI6MjA3MDY0OTA2MH0.f-lVqHuzwbqncryPMXKNLph5RTGj0jugL8DxQTbWANk
   service-role-key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN1ZXhwb3N5aWNpc3Vmc25xZ2xwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTA3MzA2MCwiZXhwIjoyMDcwNjQ5MDYwfQ.qd5oI0YhWuaSs3MLejMKF68V5vH-Vxyv6HjG108HWnc
+
+# CORS 설정 (Supabase 환경 - 개발용)
+cors:
+  allowed-origins:
+    - http://localhost:3008
+    - http://127.0.0.1:3008
+    - http://localhost:5173
+    - http://127.0.0.1:5173
+  allowed-methods:
+    - GET
+    - POST
+    - PUT
+    - DELETE
+    - OPTIONS
+  allowed-headers:
+    - Authorization
+    - Content-Type
+    - Accept
+    - Origin
+    - X-Requested-With
+  allow-credentials: true
+  max-age: 3600
 
 # 로깅 설정
 logging:

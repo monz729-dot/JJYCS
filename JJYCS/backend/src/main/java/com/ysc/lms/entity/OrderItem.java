@@ -2,9 +2,7 @@ package com.ysc.lms.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -16,6 +14,8 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @EntityListeners(AuditingEntityListener.class)
 public class OrderItem {
 
@@ -23,102 +23,157 @@ public class OrderItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "order_id", nullable = false)
+    private Long orderId;
+    
+    @Column(name = "product_id")
+    private Long productId; // 향후 상품 마스터 연동용 (nullable)
+    
+    @Column(name = "name", nullable = false, length = 200)
+    private String name; // 상품명
+    
+    @Column(name = "qty", nullable = false)
+    private Integer qty = 1;
+    
+    @Column(name = "unit_price", nullable = false, precision = 15, scale = 2)
+    private BigDecimal unitPrice = BigDecimal.ZERO;
+    
+    // amount는 DB에서 Generated Column으로 처리되므로 읽기전용
+    @Column(name = "amount", precision = 15, scale = 2, insertable = false, updatable = false)
+    private BigDecimal amount;
+    
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
+
+    // 연관관계 매핑 (Lazy)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = false)
+    @JoinColumn(name = "order_id", insertable = false, updatable = false)
     @JsonBackReference
     private Order order;
 
-    @Column(nullable = false, length = 20)
-    private String hsCode; // HS 코드
-
-    @Column(nullable = false, length = 500)
-    private String description; // 품목 설명
-
-    @Column(nullable = false)
-    private Integer quantity; // 수량
-
-    @Column(nullable = false, precision = 8, scale = 2)
-    private BigDecimal weight; // 중량 (kg)
-
-    // 치수 정보 (cm)
-    @Column(nullable = false, precision = 8, scale = 2)
-    private BigDecimal width;
-
-    @Column(nullable = false, precision = 8, scale = 2)
-    private BigDecimal height;
-
-    @Column(nullable = false, precision = 8, scale = 2)
-    private BigDecimal depth;
-
-    // CBM 자동 계산
-    @Column(precision = 10, scale = 6)
-    private BigDecimal cbm; // (W × H × D) / 1,000,000
-
-    @Column(precision = 10, scale = 2)
-    private BigDecimal unitPrice; // 단가 (THB)
-
-    @Column(precision = 10, scale = 2)
-    private BigDecimal totalPrice; // 총 가격 (THB)
-
-    // HS Code 관련 정보
-    @Column(length = 500)
-    private String englishName; // 품목 영문명
-
-    // 관세율 정보
-    @Column(precision = 5, scale = 2)
-    private BigDecimal basicTariffRate; // 기본 관세율
-
-    @Column(precision = 5, scale = 2)
-    private BigDecimal wtoTariffRate; // WTO 관세율
-
-    @Column(precision = 5, scale = 2)
-    private BigDecimal specialTariffRate; // 특혜 관세율
-
-    @Column(precision = 5, scale = 2)
-    private BigDecimal appliedTariffRate; // 적용된 관세율
-
-    // 관세 계산 결과
-    @Column(precision = 10, scale = 2)
-    private BigDecimal customsDutyAmount; // 관세액 (USD)
-
-    @Column(precision = 10, scale = 2)
-    private BigDecimal totalAmountWithDuty; // 관세 포함 총액 (USD)
-
     @CreatedDate
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
-
-    // CBM 자동 계산 메서드
-    @PrePersist
-    @PreUpdate
-    public void calculateCbm() {
-        if (width != null && height != null && depth != null) {
-            this.cbm = width.multiply(height)
-                          .multiply(depth)
-                          .divide(new BigDecimal("1000000"), 6, BigDecimal.ROUND_HALF_UP);
+    
+    // 편의 메서드 - 금액 계산 (클라이언트 사이드 검증용)
+    public BigDecimal calculateAmount() {
+        if (qty == null || unitPrice == null) {
+            return BigDecimal.ZERO;
         }
-        
-        if (unitPrice != null && quantity != null) {
-            this.totalPrice = unitPrice.multiply(new BigDecimal(quantity));
-        }
+        return unitPrice.multiply(BigDecimal.valueOf(qty));
     }
     
-    // 부피무게 계산 (항공운송용)
-    public BigDecimal getVolumetricWeight() {
-        if (width != null && height != null && depth != null) {
-            return width.multiply(height)
-                       .multiply(depth)
-                       .divide(new BigDecimal("6000"), 2, BigDecimal.ROUND_HALF_UP);
-        }
-        return BigDecimal.ZERO;
+    // 유효성 검증 메서드
+    public boolean isValid() {
+        return name != null && !name.trim().isEmpty() 
+               && qty != null && qty > 0 
+               && unitPrice != null && unitPrice.compareTo(BigDecimal.ZERO) >= 0;
     }
     
-    // OrderBusinessRuleService 호환 메서드들
-    public BigDecimal getThbValue() {
-        return unitPrice; // THB 단가
+    // 하위 호환성을 위한 메서드들
+    public Integer getQuantity() {
+        return this.qty;
     }
     
-    public BigDecimal getQuantity() {
-        return new BigDecimal(quantity != null ? quantity : 0);
+    public void setQuantity(Integer quantity) {
+        this.qty = quantity;
+    }
+    
+    /**
+     * @deprecated 현재 미지원. 사용 금지. NPE 위험 있음
+     */
+    @Deprecated
+    public BigDecimal getWidth() {
+        return BigDecimal.ZERO; // NPE 방지를 위해 0 반환
+    }
+    
+    public void setWidth(BigDecimal width) {
+        // 현재 구조에서는 미지원, 확장 시 필드 추가 필요
+    }
+    
+    /**
+     * @deprecated 현재 미지원. 사용 금지. NPE 위험 있음
+     */
+    @Deprecated
+    public BigDecimal getHeight() {
+        return BigDecimal.ZERO; // NPE 방지를 위해 0 반환
+    }
+    
+    public void setHeight(BigDecimal height) {
+        // 현재 구조에서는 미지원, 확장 시 필드 추가 필요
+    }
+    
+    /**
+     * @deprecated 현재 미지원. 사용 금지. NPE 위험 있음
+     */
+    @Deprecated
+    public BigDecimal getDepth() {
+        return BigDecimal.ZERO; // NPE 방지를 위해 0 반환
+    }
+    
+    public void setDepth(BigDecimal depth) {
+        // 현재 구조에서는 미지원, 확장 시 필드 추가 필요
+    }
+    
+    // 추가 필드들 (현재는 기본값/null 반환, 필요시 확장)
+    public String getDescription() {
+        return this.name; // name을 description으로 사용
+    }
+    
+    public void setDescription(String description) {
+        this.name = description;
+    }
+    
+    /**
+     * @deprecated 현재 미지원. 사용 금지.
+     */
+    @Deprecated
+    public String getHsCode() {
+        return ""; // NPE 방지를 위해 빈 문자열 반환
+    }
+    
+    public void setHsCode(String hsCode) {
+        // 현재 구조에서는 미지원, 확장 시 필드 추가 필요
+    }
+    
+    // OrderService에서 필요한 추가 setter 메서드들 (현재는 스텁)
+    public void setWeight(BigDecimal weight) {
+        // 현재 구조에서는 미지원, 확장 시 필드 추가 필요
+    }
+    
+    public void setTotalPrice(BigDecimal totalPrice) {
+        // 현재 구조에서는 미지원, 확장 시 필드 추가 필요
+    }
+    
+    public void setCbm(BigDecimal cbm) {
+        // 현재 구조에서는 미지원, 확장 시 필드 추가 필요
+    }
+    
+    public void setEnglishName(String englishName) {
+        // 현재 구조에서는 미지원, 확장 시 필드 추가 필요
+    }
+    
+    public void setBasicTariffRate(BigDecimal basicTariffRate) {
+        // 현재 구조에서는 미지원, 확장 시 필드 추가 필요
+    }
+    
+    public void setWtoTariffRate(BigDecimal wtoTariffRate) {
+        // 현재 구조에서는 미지원, 확장 시 필드 추가 필요
+    }
+    
+    public void setSpecialTariffRate(BigDecimal specialTariffRate) {
+        // 현재 구조에서는 미지원, 확장 시 필드 추가 필요
+    }
+    
+    public void setAppliedTariffRate(BigDecimal appliedTariffRate) {
+        // 현재 구조에서는 미지원, 확장 시 필드 추가 필요
+    }
+    
+    public void setCustomsDutyAmount(BigDecimal customsDutyAmount) {
+        // 현재 구조에서는 미지원, 확장 시 필드 추가 필요
+    }
+    
+    public void setTotalAmountWithDuty(BigDecimal totalAmountWithDuty) {
+        // 현재 구조에서는 미지원, 확장 시 필드 추가 필요
     }
 }

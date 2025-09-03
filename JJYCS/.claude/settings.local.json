@@ -39,7 +39,9 @@
       "Bash(./mvnw.cmd:*)",
       "Bash(find:*)",
       "Bash(.mvnw.cmd clean compile)",
-      "Bash(set \"SPRING_PROFILES_ACTIVE=supabase\")"
+      "Bash(set \"SPRING_PROFILES_ACTIVE=supabase\")",
+      "Bash(del test_signup.json)",
+      "Bash(del V003__Create_orders_tables.sql)"
     ],
     "deny": [],
     "ask": [],

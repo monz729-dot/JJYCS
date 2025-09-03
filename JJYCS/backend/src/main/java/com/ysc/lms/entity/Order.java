@@ -4,9 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 // import com.ysc.lms.listener.OrderEntityListener;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -21,6 +19,8 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @EntityListeners(AuditingEntityListener.class)
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Order {
@@ -29,17 +29,30 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 50)
-    private String orderNumber; // YCS-240115-001 형태
+    @Column(name = "order_no", nullable = false, unique = true, length = 20)
+    private String orderNumber; // 주문번호
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "password", "orders"})
-    private User user;
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private OrderStatus status = OrderStatus.RECEIVED;
+    @Column(name = "status", nullable = false, length = 20)
+    private OrderStatus status = OrderStatus.DRAFT;
+    
+    @Column(name = "total_amount", nullable = false, precision = 15, scale = 2)
+    private BigDecimal totalAmount = BigDecimal.ZERO;
+    
+    @Column(name = "currency", nullable = false, length = 3)
+    private String currency = "KRW";
+    
+    @Column(name = "note", length = 1000)
+    private String note;
+
+    // 연관관계 매핑 (Lazy)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "password", "orders"})
+    private User user;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -279,26 +292,73 @@ public class Order {
     }
 
     public enum OrderStatus {
-        RECEIVED,           // 접수완료
-        CONFIRMED,          // 확인됨 (AdminController용)
-        ARRIVED,           // 창고도착
-        IN_WAREHOUSE,       // 창고보관 중
-        REPACKING,         // 리패킹진행
-        HOLD,              // 보류
-        SHIPPING,          // 배송중
-        DELIVERED,         // 배송완료
-        BILLING,           // 청구서발행
-        PAYMENT_PENDING,   // 입금대기
-        PAYMENT_CONFIRMED, // 입금확인
-        COMPLETED,         // 완료
-        // 추가 상태 (프론트엔드 호환용)
-        PENDING,           // 대기 중
-        PROCESSING,        // 처리 중
-        SHIPPED,           // 발송됨
-        IN_TRANSIT,        // 운송 중
-        CANCELLED,         // 취소됨
-        DELAYED            // 지연됨
+        DRAFT("임시저장"),          // 임시저장 상태
+        SUBMITTED("제출완료"),       // 제출완료 상태
+        CANCELLED("취소됨"),         // 취소됨 상태
+        IN_WAREHOUSE("창고입고"),     // 창고입고 상태
+        SHIPPED("배송완료"),         // 배송완료 상태
+        RECEIVED("접수완료"),        // 접수완료 상태
+        ARRIVED("창고도착"),         // 창고도착 상태
+        REPACKING("리패킹"),         // 리패킹 상태
+        SHIPPING("배송중"),          // 배송중 상태
+        DELIVERED("배송완료"),       // 배송완료 상태
+        COMPLETED("완료"),           // 완료 상태
+        BILLING("정산중"),           // 정산중 상태
+        PAYMENT_PENDING("결제대기"),  // 결제대기 상태
+        PAYMENT_CONFIRMED("결제완료"), // 결제완료 상태
+        PENDING("대기중"),           // 대기중 상태
+        CONFIRMED("확인완료"),       // 확인완료 상태
+        PROCESSING("처리중"),        // 처리중 상태
+        IN_TRANSIT("운송중"),        // 운송중 상태
+        HOLD("보류");               // 보류 상태
+        
+        private final String displayName;
+        
+        OrderStatus(String displayName) {
+            this.displayName = displayName;
+        }
+        
+        public String getDisplayName() {
+            return displayName;
+        }
     }
+    
+    // 상태 전환 검증 메서드
+    public boolean canTransitionTo(OrderStatus newStatus) {
+        switch (this.status) {
+            case DRAFT:
+                return newStatus == OrderStatus.SUBMITTED || newStatus == OrderStatus.CANCELLED;
+            case SUBMITTED:
+                return newStatus == OrderStatus.RECEIVED || newStatus == OrderStatus.CANCELLED;
+            case RECEIVED:
+                return newStatus == OrderStatus.ARRIVED || newStatus == OrderStatus.CANCELLED;
+            case ARRIVED:
+                return newStatus == OrderStatus.REPACKING || newStatus == OrderStatus.IN_WAREHOUSE || newStatus == OrderStatus.CANCELLED;
+            case REPACKING:
+                return newStatus == OrderStatus.IN_WAREHOUSE || newStatus == OrderStatus.CANCELLED;
+            case IN_WAREHOUSE:
+                return newStatus == OrderStatus.SHIPPING || newStatus == OrderStatus.SHIPPED || newStatus == OrderStatus.CANCELLED;
+            case SHIPPING:
+                return newStatus == OrderStatus.DELIVERED || newStatus == OrderStatus.SHIPPED || newStatus == OrderStatus.CANCELLED;
+            case SHIPPED:
+                return newStatus == OrderStatus.DELIVERED || newStatus == OrderStatus.BILLING;
+            case DELIVERED:
+                return newStatus == OrderStatus.BILLING || newStatus == OrderStatus.COMPLETED;
+            case BILLING:
+                return newStatus == OrderStatus.PAYMENT_PENDING || newStatus == OrderStatus.COMPLETED;
+            case PAYMENT_PENDING:
+                return newStatus == OrderStatus.PAYMENT_CONFIRMED || newStatus == OrderStatus.BILLING;
+            case PAYMENT_CONFIRMED:
+                return newStatus == OrderStatus.COMPLETED;
+            case COMPLETED:
+                return false; // 완료된 주문은 상태 변경 불가
+            case CANCELLED:
+                return false; // 취소된 주문은 상태 변경 불가
+            default:
+                return false;
+        }
+    }
+    
 
     public enum ShippingType {
         SEA,  // 해상운송

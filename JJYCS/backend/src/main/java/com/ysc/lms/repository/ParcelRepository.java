@@ -43,7 +43,7 @@ public interface ParcelRepository extends JpaRepository<Parcel, Long> {
     
     // 품목 키워드로 검색 (수기 매칭용)
     @Query("SELECT p FROM Parcel p JOIN p.order o JOIN o.items i WHERE " +
-           "(i.description LIKE %:keyword%) " +
+           "(i.name LIKE %:keyword%) " +
            "AND p.isMatched = false")
     List<Parcel> findUnmatchedByItemKeyword(@Param("keyword") String keyword);
     

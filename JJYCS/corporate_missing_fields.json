@@ -1,0 +1,7 @@
+{
+  "email": "corporate-validation@example.com",
+  "password": "testpass123",
+  "name": "기업회원검증테스트",
+  "userType": "CORPORATE",
+  "phone": "010-1111-2222"
+}

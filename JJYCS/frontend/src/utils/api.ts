@@ -14,8 +14,14 @@ class ApiClient {
       timeout: 15000,
       withCredentials: true,
       headers: {
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json; charset=utf-8',
+        'Accept': 'application/json, text/plain, */*',
+        'Accept-Charset': 'utf-8',
+        'Accept-Language': 'ko-KR,ko;q=0.9,en;q=0.8'
+      },
+      // UTF-8 인코딩 강제
+      responseType: 'json',
+      responseEncoding: 'utf8'
     })
 
     this.setupInterceptors()
@@ -23,13 +29,25 @@ class ApiClient {
   }
 
   private setupInterceptors() {
-    // Request interceptor for auth token
+    // Request interceptor for auth token and UTF-8 headers
     this.client.interceptors.request.use(
       (config) => {
         const token = tokenStorage.getToken()
         if (token) {
           config.headers.Authorization = `Bearer ${token}`
         }
+        
+        // UTF-8 헤더 강제 적용
+        if (!config.headers['Content-Type']) {
+          config.headers['Content-Type'] = 'application/json; charset=utf-8'
+        } else if (typeof config.headers['Content-Type'] === 'string' && 
+                   config.headers['Content-Type'].includes('application/json') && 
+                   !config.headers['Content-Type'].includes('charset')) {
+          config.headers['Content-Type'] += '; charset=utf-8'
+        }
+        
+        config.headers['Accept-Charset'] = 'utf-8'
+        
         return config
       },
       (error) => {
@@ -302,6 +320,9 @@ export const dashboardApi = {
 export const ordersApi = {
   createOrder: (data: any) =>
     api.post('/orders', data),
+  
+  submitOrder: (orderId: number) =>
+    api.patch(`/orders/${orderId}/submit`),
   
   getOrders: (page: number = 1, pageSize: number = 20, filters?: any) =>
     api.get('/orders', { params: { page, pageSize, ...filters } }),

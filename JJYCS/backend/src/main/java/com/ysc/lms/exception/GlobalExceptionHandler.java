@@ -21,6 +21,7 @@ import org.springframework.transaction.TransactionSystemException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import com.ysc.lms.constants.ErrorCodes;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
@@ -110,6 +111,36 @@ public class GlobalExceptionHandler {
     }
     
     /**
+     * 권한 부족 (403 Forbidden)
+     */
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<Map<String, Object>> handleForbiddenException(ForbiddenException e) {
+        log.warn("ForbiddenException: {}", e.getMessage());
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("error", e.getMessage());
+        response.put("code", e.getErrorCode());
+        
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+    }
+    
+    /**
+     * 비즈니스 규칙 위반 (422)
+     */
+    @ExceptionHandler(BusinessRuleViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleBusinessRuleViolationException(BusinessRuleViolationException e) {
+        log.warn("BusinessRuleViolationException: {}", e.getMessage());
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("error", e.getMessage());
+        response.put("code", ErrorCodes.BUSINESS_RULE_VIOLATION);
+        
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(response);
+    }
+    
+    /**
      * 존재하지 않는 URL 경로 (404)
      */
     @ExceptionHandler(NoHandlerFoundException.class)
@@ -165,12 +196,23 @@ public class GlobalExceptionHandler {
         Map<String, Object> response = new HashMap<>();
         response.put("success", false);
         
-        // 사용자 친화적 메시지로 변환
-        String userMessage = convertToUserFriendlyMessage(e.getMessage());
-        response.put("error", userMessage);
-        response.put("code", "INVALID_ARGUMENT");
-        
-        return ResponseEntity.badRequest().body(response);
+        // 메시지별로 구체적인 에러 코드 할당
+        String message = e.getMessage();
+        if (message != null && message.contains("Email already exists")) {
+            response.put("error", "이미 가입된 이메일입니다.");
+            response.put("code", ErrorCodes.DUPLICATE_EMAIL);
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+        } else if (message != null && message.contains("Username already exists")) {
+            response.put("error", "이미 사용 중인 사용자명입니다.");
+            response.put("code", ErrorCodes.DUPLICATE_USERNAME);
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+        } else {
+            // 사용자 친화적 메시지로 변환
+            String userMessage = convertToUserFriendlyMessage(message);
+            response.put("error", userMessage);
+            response.put("code", ErrorCodes.VALIDATION_ERROR);
+            return ResponseEntity.badRequest().body(response);
+        }
     }
     
     /**
@@ -506,6 +548,7 @@ public class GlobalExceptionHandler {
     
     private boolean isDevEnvironment() {
         String profile = System.getProperty("spring.profiles.active", "");
-        return profile.contains("dev") || profile.contains("local") || profile.contains("supabase");
+        // supabase는 운영 DB이므로 디버그 정보 노출 금지
+        return profile.contains("dev") || profile.contains("local");
     }
 }
