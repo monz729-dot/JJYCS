@@ -14,14 +14,14 @@ public interface NotificationTemplateRepository extends JpaRepository<Notificati
     
     Optional<NotificationTemplate> findByNameAndIsActiveTrue(String name);
     
-    List<NotificationTemplate> findByTypeAndIsActiveTrue(NotificationTemplate.NotificationType type);
+    List<NotificationTemplate> findByTypeAndIsActiveTrue(NotificationTemplate.NotificationChannelType type);
     
     List<NotificationTemplate> findByCategoryAndIsActiveTrue(String category);
     
     @Query("SELECT nt FROM NotificationTemplate nt WHERE nt.name = :name AND nt.type = :type AND nt.isActive = true")
-    Optional<NotificationTemplate> findByNameAndTypeAndActive(@Param("name") String name, @Param("type") NotificationTemplate.NotificationType type);
+    Optional<NotificationTemplate> findByNameAndTypeAndActive(@Param("name") String name, @Param("type") NotificationTemplate.NotificationChannelType type);
     
     List<NotificationTemplate> findByIsActiveTrueOrderByNameAsc();
     
-    boolean existsByNameAndType(String name, NotificationTemplate.NotificationType type);
+    boolean existsByNameAndType(String name, NotificationTemplate.NotificationChannelType type);
 }

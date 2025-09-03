@@ -200,9 +200,9 @@ public class OrderBusinessRuleService {
         
         // 주문 타입 업데이트
         if ("AIR".equals(recommendedMethod)) {
-            order.setOrderType(Order.OrderType.AIR);
+            order.setOrderType(Order.ShippingType.AIR);
         } else {
-            order.setOrderType(Order.OrderType.SEA);
+            order.setOrderType(Order.ShippingType.SEA);
         }
     }
     

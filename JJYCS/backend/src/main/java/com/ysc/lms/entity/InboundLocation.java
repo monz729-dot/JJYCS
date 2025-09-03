@@ -12,10 +12,7 @@ import java.time.LocalDateTime;
  * YCS 접수지 정보 엔티티
  */
 @Entity
-@Table(name = "inbound_locations", indexes = {
-    @Index(name = "idx_inbound_locations_is_active", columnList = "is_active"),
-    @Index(name = "idx_inbound_locations_display_order", columnList = "display_order")
-})
+@Table(name = "inbound_locations")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

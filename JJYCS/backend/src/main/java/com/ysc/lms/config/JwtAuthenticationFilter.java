@@ -148,6 +148,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                path.startsWith("/v3/api-docs") ||
                path.startsWith("/swagger-ui") ||
                path.startsWith("/actuator/health") ||
+               path.startsWith("/hscode/") ||         // HS Code API 경로 추가
                path.equals("/favicon.ico");
     }
 }

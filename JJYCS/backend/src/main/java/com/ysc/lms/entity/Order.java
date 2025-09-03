@@ -29,7 +29,7 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false, length = 50)
+    @Column(nullable = false, length = 50)
     private String orderNumber; // YCS-240115-001 형태
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -305,23 +305,14 @@ public class Order {
         AIR   // 항공운송
     }
     
-    // OrderBusinessRuleService 호환을 위한 OrderType enum (ShippingType과 동일)
-    public enum OrderType {
-        SEA,  // 해상운송
-        AIR   // 항공운송
+    // Deprecated: OrderType enum 제거됨 - ShippingType 사용
+    // 호환성을 위한 메서드들
+    public ShippingType getOrderType() {
+        return this.shippingType;
     }
     
-    @Enumerated(EnumType.STRING)
-    private OrderType orderType = OrderType.SEA;
-    
-    public OrderType getOrderType() {
-        return orderType;
-    }
-    
-    public void setOrderType(OrderType orderType) {
-        this.orderType = orderType;
-        // ShippingType과 동기화
-        this.shippingType = orderType == OrderType.AIR ? ShippingType.AIR : ShippingType.SEA;
+    public void setOrderType(ShippingType orderType) {
+        this.shippingType = orderType;
     }
 
     // CBM 29 초과 시 항공 전환 로직

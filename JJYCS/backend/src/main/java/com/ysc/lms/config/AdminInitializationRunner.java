@@ -278,12 +278,12 @@ public class AdminInitializationRunner {
             // 배송 타입 설정 (일부는 CBM에 따라 항공으로)
             if (i == 2 || i == 4) { // 2번, 4번 주문은 항공 운송
                 order.setShippingType(Order.ShippingType.AIR);
-                order.setOrderType(Order.OrderType.AIR);
+                order.setOrderType(Order.ShippingType.AIR);
                 order.setTotalCbm(new BigDecimal("30.5")); // CBM 29 초과
                 order.setCbmWarningMessage("CBM이 29m³를 초과하여 항공 운송으로 변경되었습니다.");
             } else {
                 order.setShippingType(Order.ShippingType.SEA);
-                order.setOrderType(Order.OrderType.SEA);
+                order.setOrderType(Order.ShippingType.SEA);
                 order.setTotalCbm(new BigDecimal("15.2"));
             }
             

@@ -21,7 +21,7 @@ public interface NotificationQueueRepository extends JpaRepository<NotificationQ
     // List<NotificationQueue> findByRelatedOrderIdOrderByCreatedAtDesc(Long orderId); // Field removed from entity
     
     List<NotificationQueue> findByTypeAndStatusOrderByScheduledAtAsc(
-        NotificationTemplate.NotificationType type, 
+        NotificationTemplate.NotificationChannelType type, 
         NotificationQueue.SendStatus status
     );
     

@@ -233,7 +233,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     String findMaxOrderCodeByPrefix(@Param("prefix") String prefix);
     
     // AdminController에서 필요한 추가 메소드들
-    Long countByOrderType(Order.OrderType orderType);
+    Long countByShippingType(Order.ShippingType shippingType);
     Long countByCreatedAtAfter(LocalDateTime date);
     List<Order> findTop10ByCreatedAtAfterOrderByCreatedAtDesc(LocalDateTime date);
 }

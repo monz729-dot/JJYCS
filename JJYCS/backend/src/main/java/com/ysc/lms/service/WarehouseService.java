@@ -470,7 +470,7 @@ public class WarehouseService {
                 item.put("waitingHours", waitingHours);
                 
                 // 우선순위 (대기 시간이 길수록, 항공일수록 높음)
-                int priority = (int) waitingHours + (order.getOrderType() == Order.OrderType.AIR ? 50 : 0);
+                int priority = (int) waitingHours + (order.getOrderType() == Order.ShippingType.AIR ? 50 : 0);
                 item.put("priority", priority);
                 
                 pendingItems.add(item);

@@ -12,11 +12,7 @@ import java.time.LocalDateTime;
  * 택배사 정보 엔티티
  */
 @Entity
-@Table(name = "courier_companies", indexes = {
-    @Index(name = "idx_courier_companies_code", columnList = "code"),
-    @Index(name = "idx_courier_companies_is_active", columnList = "is_active"),
-    @Index(name = "idx_courier_companies_display_order", columnList = "display_order")
-}, uniqueConstraints = {
+@Table(name = "courier_companies", uniqueConstraints = {
     @UniqueConstraint(name = "uk_courier_companies_code", columnNames = "code")
 })
 @Data

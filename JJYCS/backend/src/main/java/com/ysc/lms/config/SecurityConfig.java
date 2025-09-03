@@ -31,12 +31,16 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // 1) H2 콘솔 전용 체인 (항상 먼저 평가되도록 Order 낮게)
+    // H2 콘솔 전용 체인 - Supabase 프로필에서는 비활성화
     @Bean
     @Order(0)
+    @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+        name = "spring.h2.console.enabled", 
+        havingValue = "true", 
+        matchIfMissing = false
+    )
     public SecurityFilterChain h2ConsoleChain(HttpSecurity http) throws Exception {
         http
-            // 컨텍스트패스(/api)와 무관하게 servletPath는 /h2-console 로 들어옵니다.
             .securityMatcher(PathRequest.toH2Console())
             .csrf(csrf -> csrf.disable())
             .headers(h -> h.frameOptions(f -> f.sameOrigin()))

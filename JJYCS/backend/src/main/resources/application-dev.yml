@@ -35,6 +35,8 @@ spring:
     hibernate:
       # ✅ For H2 memory database, use create to ensure tables exist
       ddl-auto: create          # Create tables first
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
     show-sql: true
     properties:
       hibernate:

@@ -27,7 +27,7 @@ public class NotificationQueue {
     
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
-    private NotificationTemplate.NotificationType type;
+    private NotificationTemplate.NotificationChannelType type;
     
     @Column(name = "title", nullable = false, length = 200)
     private String title;

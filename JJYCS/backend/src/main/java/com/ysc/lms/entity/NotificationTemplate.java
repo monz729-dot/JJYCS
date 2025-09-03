@@ -27,7 +27,7 @@ public class NotificationTemplate {
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private NotificationType type;
+    private NotificationChannelType type;
     
     @Column(nullable = false)
     private String subject;
@@ -54,16 +54,16 @@ public class NotificationTemplate {
     @LastModifiedDate
     private LocalDateTime updatedAt;
     
-    public enum NotificationType {
+    public enum NotificationChannelType {
         EMAIL, SMS, PUSH, IN_APP, WEBHOOK
     }
     
     public boolean isEmailType() {
-        return this.type == NotificationType.EMAIL;
+        return this.type == NotificationChannelType.EMAIL;
     }
     
     public boolean isSmsType() {
-        return this.type == NotificationType.SMS;
+        return this.type == NotificationChannelType.SMS;
     }
     
     public static class Templates {
@@ -97,7 +97,7 @@ public class NotificationTemplate {
     public static NotificationTemplate createEmailTemplate(String name, String subject, String content) {
         NotificationTemplate template = new NotificationTemplate();
         template.setName(name);
-        template.setType(NotificationType.EMAIL);
+        template.setType(NotificationChannelType.EMAIL);
         template.setSubject(subject);
         template.setContent(content);
         template.setIsActive(true);
@@ -107,7 +107,7 @@ public class NotificationTemplate {
     public static NotificationTemplate createSmsTemplate(String name, String content) {
         NotificationTemplate template = new NotificationTemplate();
         template.setName(name);
-        template.setType(NotificationType.SMS);
+        template.setType(NotificationChannelType.SMS);
         template.setSmsContent(content);
         template.setIsActive(true);
         return template;

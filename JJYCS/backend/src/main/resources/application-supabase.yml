@@ -1,0 +1,111 @@
+# Supabase PostgreSQL Configuration
+server:
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+      force-request: true
+      force-response: true
+
+spring:
+  # HTTP 인코딩 설정
+  http:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+  # H2 Console 비활성화 (PostgreSQL 사용 시)
+  h2:
+    console:
+      enabled: false
+  datasource:
+    # Direct connection (개발용)
+    # url: jdbc:postgresql://aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres?user=postgres.suexposyicisufsnqglp&password=@4680wryip!!
+    
+    # Connection pooling (프로덕션 권장) - Transaction mode
+    url: jdbc:postgresql://aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres?pgbouncer=true&sslmode=require
+    username: postgres.suexposyicisufsnqglp
+    password: ${SUPABASE_DB_PASSWORD:@4680wryip!!}
+    driver-class-name: org.postgresql.Driver
+    
+    # HikariCP 설정 (Connection Pool)
+    hikari:
+      pool-name: YCS-LMS-Supabase-Pool
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1200000
+      leak-detection-threshold: 60000
+      connection-test-query: SELECT 1
+      
+  jpa:
+    # PostgreSQL Dialect 설정
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    # Hibernate DDL 설정
+    hibernate:
+      ddl-auto: create-drop
+    # SQL 초기화 설정
+    defer-datasource-initialization: true
+  sql:
+    init:
+      mode: always
+      platform: postgresql
+      data-locations: classpath:data-postgresql.sql
+      continue-on-error: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        # 테이블 자동 생성 강제 설정
+        hbm2ddl:
+          auto: create-drop
+        show-sql: true
+        format_sql: true
+        use_sql_comments: true
+        # PostgreSQL 최적화 설정
+        jdbc:
+          batch_size: 25
+          batch_versioned_data: true
+          order_inserts: true
+          order_updates: true
+        default_batch_fetch_size: 16
+        # 대소문자 처리 - camelCase를 snake_case로 변환
+        physical_naming_strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
+        implicit_naming_strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
+    
+    # 트랜잭션 설정
+    open-in-view: false
+    
+  # 이메일 설정 (Gmail SMTP)
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${SMTP_USERNAME:monz729@gmail.com}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          timeout: 5000
+          connectiontimeout: 5000
+          writetimeout: 5000
+    test-connection: false
+
+# Supabase API 설정 (선택사항 - REST API 사용 시)
+supabase:
+  url: https://suexposyicisufsnqglp.supabase.co
+  anon-key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN1ZXhwb3N5aWNpc3Vmc25xZ2xwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUwNzMwNjAsImV4cCI6MjA3MDY0OTA2MH0.f-lVqHuzwbqncryPMXKNLph5RTGj0jugL8DxQTbWANk
+  service-role-key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN1ZXhwb3N5aWNpc3Vmc25xZ2xwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTA3MzA2MCwiZXhwIjoyMDcwNjQ5MDYwfQ.qd5oI0YhWuaSs3MLejMKF68V5vH-Vxyv6HjG108HWnc
+
+# 로깅 설정
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.postgresql: DEBUG
+    com.zaxxer.hikari: DEBUG
+    com.ysc.lms: DEBUG

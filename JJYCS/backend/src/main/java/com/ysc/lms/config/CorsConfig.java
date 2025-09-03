@@ -31,7 +31,7 @@ public class CorsConfig {
 
     @Bean
     @Profile("dev")
-    public CorsConfigurationSource corsConfigurationSourceDev() {
+    public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
         // 개발 환경: localhost 포트 범위 허용
@@ -52,7 +52,7 @@ public class CorsConfig {
     }
 
     @Bean
-    @Profile("!dev")
+    @Profile("prod")
     public CorsConfigurationSource corsConfigurationSourceProd() {
         CorsConfiguration configuration = new CorsConfiguration();
         
