@@ -15,10 +15,18 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DataAccessException;
+import org.springframework.transaction.TransactionSystemException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import java.util.HashMap;
 import java.util.Map;
+import java.sql.SQLException;
 
 @RestControllerAdvice
 @Slf4j
@@ -184,11 +192,173 @@ public class GlobalExceptionHandler {
     }
     
     /**
+     * 데이터 무결성 위반 예외 처리 (중복 키, NOT NULL 제약 등)
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleDataIntegrityViolationException(DataIntegrityViolationException e) {
+        log.error("Data integrity violation: {}", e.getMessage(), e);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("code", "DATA_INTEGRITY_VIOLATION");
+        
+        String message = e.getMessage();
+        if (message != null) {
+            if (message.contains("duplicate") || message.contains("unique") || message.contains("already exists")) {
+                response.put("error", "이미 사용 중인 데이터입니다. 다른 값을 입력해주세요.");
+            } else if (message.contains("cannot be null") || message.contains("not-null")) {
+                response.put("error", "필수 정보가 누락되었습니다.");
+            } else {
+                response.put("error", "데이터 제약조건을 위반했습니다.");
+            }
+        } else {
+            response.put("error", "데이터 저장 중 오류가 발생했습니다.");
+        }
+        
+        // 개발환경에서만 상세 정보 제공
+        if (isDevEnvironment()) {
+            response.put("debug", e.getMostSpecificCause().getMessage());
+        }
+        
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
+    
+    /**
+     * 데이터베이스 접근 예외 처리
+     */
+    @ExceptionHandler(DataAccessException.class)
+    public ResponseEntity<Map<String, Object>> handleDataAccessException(DataAccessException e) {
+        log.error("Database access error: {}", e.getMessage(), e);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("error", "데이터베이스 접근 중 오류가 발생했습니다.");
+        response.put("code", "DATABASE_ERROR");
+        
+        if (isDevEnvironment()) {
+            response.put("debug", e.getMostSpecificCause().getMessage());
+        }
+        
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+    
+    /**
+     * SQL 예외 처리
+     */
+    @ExceptionHandler(SQLException.class)
+    public ResponseEntity<Map<String, Object>> handleSQLException(SQLException e) {
+        log.error("SQL error: {} - {}", e.getSQLState(), e.getMessage(), e);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("error", "데이터베이스 쿼리 실행 중 오류가 발생했습니다.");
+        response.put("code", "SQL_ERROR");
+        
+        if (isDevEnvironment()) {
+            response.put("debug", String.format("SQL State: %s, Error Code: %d, Message: %s", 
+                e.getSQLState(), e.getErrorCode(), e.getMessage()));
+        }
+        
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+    
+    /**
+     * 트랜잭션 예외 처리
+     */
+    @ExceptionHandler(TransactionSystemException.class)
+    public ResponseEntity<Map<String, Object>> handleTransactionSystemException(TransactionSystemException e) {
+        log.error("Transaction error: {}", e.getMessage(), e);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("error", "트랜잭션 처리 중 오류가 발생했습니다.");
+        response.put("code", "TRANSACTION_ERROR");
+        
+        if (isDevEnvironment()) {
+            response.put("debug", e.getMostSpecificCause().getMessage());
+        }
+        
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+    
+    /**
+     * JSON 파싱 오류 처리
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
+        log.error("JSON parsing error: {}", e.getMessage());
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("error", "요청 데이터 형식이 올바르지 않습니다.");
+        response.put("code", "JSON_PARSING_ERROR");
+        
+        if (isDevEnvironment()) {
+            response.put("debug", e.getMostSpecificCause().getMessage());
+        }
+        
+        return ResponseEntity.badRequest().body(response);
+    }
+    
+    /**
+     * 파라미터 타입 불일치 예외 처리
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, Object>> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e) {
+        log.error("Parameter type mismatch: {}", e.getMessage());
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("error", String.format("파라미터 '%s'의 값이 올바르지 않습니다.", e.getName()));
+        response.put("code", "PARAMETER_TYPE_MISMATCH");
+        
+        return ResponseEntity.badRequest().body(response);
+    }
+    
+    /**
+     * 필수 파라미터 누락 예외 처리
+     */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<Map<String, Object>> handleMissingServletRequestParameterException(MissingServletRequestParameterException e) {
+        log.error("Missing required parameter: {}", e.getMessage());
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("error", String.format("필수 파라미터 '%s'가 누락되었습니다.", e.getParameterName()));
+        response.put("code", "MISSING_PARAMETER");
+        
+        return ResponseEntity.badRequest().body(response);
+    }
+    
+    /**
+     * Constraint 위반 예외 처리
+     */
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleConstraintViolationException(ConstraintViolationException e) {
+        log.error("Constraint violation: {}", e.getMessage());
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("error", "입력값 제약조건을 위반했습니다.");
+        response.put("code", "CONSTRAINT_VIOLATION");
+        
+        // 상세한 제약조건 위반 정보
+        Map<String, String> violations = new HashMap<>();
+        e.getConstraintViolations().forEach(violation -> {
+            String propertyPath = violation.getPropertyPath().toString();
+            violations.put(propertyPath, violation.getMessage());
+        });
+        response.put("violations", violations);
+        
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    /**
      * 기본 예외 처리
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneralException(Exception e) {
-        log.error("Unexpected error occurred", e);
+        log.error("Unexpected error occurred: {} - {}", e.getClass().getSimpleName(), e.getMessage(), e);
         
         Map<String, Object> response = new HashMap<>();
         response.put("success", false);
@@ -198,6 +368,16 @@ public class GlobalExceptionHandler {
         // 개발 환경에서만 상세 오류 표시
         if (isDevEnvironment()) {
             response.put("debug", e.getMessage());
+            response.put("exception", e.getClass().getSimpleName());
+            // 스택 트레이스의 첫 3줄만 포함
+            StackTraceElement[] stack = e.getStackTrace();
+            if (stack.length > 0) {
+                StringBuilder stackTrace = new StringBuilder();
+                for (int i = 0; i < Math.min(3, stack.length); i++) {
+                    stackTrace.append(stack[i].toString()).append("\n");
+                }
+                response.put("stackTrace", stackTrace.toString());
+            }
         }
         
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
@@ -326,6 +506,6 @@ public class GlobalExceptionHandler {
     
     private boolean isDevEnvironment() {
         String profile = System.getProperty("spring.profiles.active", "");
-        return profile.contains("dev") || profile.contains("local");
+        return profile.contains("dev") || profile.contains("local") || profile.contains("supabase");
     }
 }

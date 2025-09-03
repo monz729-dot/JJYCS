@@ -30,7 +30,7 @@ public class CorsConfig {
     private Long maxAge;
 
     @Bean
-    @Profile("dev")
+    @Profile({"dev", "supabase"})
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         

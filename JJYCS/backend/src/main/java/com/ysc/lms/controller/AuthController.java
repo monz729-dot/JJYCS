@@ -906,6 +906,7 @@ public class AuthController {
     }
     
     // DTO 클래스들
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
     public static class SignupRequest {
         private String email;
         private String password;
@@ -915,6 +916,10 @@ public class AuthController {
         private String companyName;
         private String businessNumber;
         private String companyAddress;
+        private String contactPerson;
+        private String contactPhone;
+        private String address;
+        private Boolean agreeMarketing;
         // partnerRegion 필드 제거됨 (추천/수수료 기능 제거)
         
         // Getters and Setters
@@ -934,6 +939,14 @@ public class AuthController {
         public void setBusinessNumber(String businessNumber) { this.businessNumber = businessNumber; }
         public String getCompanyAddress() { return companyAddress; }
         public void setCompanyAddress(String companyAddress) { this.companyAddress = companyAddress; }
+        public String getContactPerson() { return contactPerson; }
+        public void setContactPerson(String contactPerson) { this.contactPerson = contactPerson; }
+        public String getContactPhone() { return contactPhone; }
+        public void setContactPhone(String contactPhone) { this.contactPhone = contactPhone; }
+        public String getAddress() { return address; }
+        public void setAddress(String address) { this.address = address; }
+        public Boolean getAgreeMarketing() { return agreeMarketing; }
+        public void setAgreeMarketing(Boolean agreeMarketing) { this.agreeMarketing = agreeMarketing; }
     }
     
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
