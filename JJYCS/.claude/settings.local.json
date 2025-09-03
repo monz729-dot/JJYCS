@@ -38,7 +38,8 @@
       "Bash(del \"C:\\YCS-ver2\\JJYCS\\backend\\src\\main\\java\\com\\ysc\\lms\\config\\CharacterEncodingFilterConfig.java\")",
       "Bash(./mvnw.cmd:*)",
       "Bash(find:*)",
-      "Bash(.mvnw.cmd clean compile)"
+      "Bash(.mvnw.cmd clean compile)",
+      "Bash(set \"SPRING_PROFILES_ACTIVE=supabase\")"
     ],
     "deny": [],
     "ask": [],

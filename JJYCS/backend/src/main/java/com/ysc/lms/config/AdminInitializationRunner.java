@@ -24,7 +24,7 @@ import java.time.LocalDateTime;
  * 환경변수를 통해 관리자 계정 정보를 설정할 수 있습니다.
  */
 @Configuration
-@Profile({"dev", "prod", "production"})
+@Profile({"dev", "supabase", "prod", "production"})
 @RequiredArgsConstructor
 @Slf4j
 public class AdminInitializationRunner {

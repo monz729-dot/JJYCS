@@ -52,8 +52,7 @@ public class CourierCompany {
     /**
      * 송장 추적 URL 템플릿
      */
-    @Column(name = "tracking_url_template", length = 500, 
-            columnDefinition = "VARCHAR(500) COMMENT '송장 추적 URL 템플릿'")
+    @Column(name = "tracking_url_template", length = 500)
     private String trackingUrlTemplate;
     
     /**

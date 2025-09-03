@@ -21,7 +21,6 @@ public class MinimalSecurityConfig {
             .authorizeHttpRequests(authorize -> 
                 authorize
                     .requestMatchers("/test/**").permitAll()
-                    .requestMatchers("/h2-console/**").permitAll()
                     .requestMatchers("/actuator/**").permitAll()
                     .requestMatchers("/auth/**").permitAll()
                     .requestMatchers("/admin/**").permitAll()
@@ -29,8 +28,7 @@ public class MinimalSecurityConfig {
                     .requestMatchers("/orders/**").permitAll()
                     .requestMatchers("/hscode/**").permitAll()
                     .anyRequest().authenticated()
-            )
-            .headers().frameOptions().disable(); // For H2 console
+            );
 
         return http.build();
     }

@@ -1046,4 +1046,121 @@ public class AuthController {
         public String getConfirmPassword() { return confirmPassword; }
         public void setConfirmPassword(String confirmPassword) { this.confirmPassword = confirmPassword; }
     }
+    
+    // 이메일 인증 재전송
+    @PostMapping("/resend-verification")
+    public ResponseEntity<Map<String, Object>> resendVerificationEmail(@RequestBody ResendVerificationRequest request) {
+        try {
+            log.info("이메일 인증 재전송 요청: email={}", request.getEmail());
+            
+            // 입력값 검증
+            if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "이메일을 입력해주세요."));
+            }
+            
+            // 사용자 확인
+            var userOpt = userService.findByEmail(request.getEmail());
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "존재하지 않는 사용자입니다."));
+            }
+            
+            User user = userOpt.get();
+            
+            // 이미 인증된 사용자인지 확인
+            if (user.getEmailVerified()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "이미 인증된 이메일입니다."));
+            }
+            
+            // 새로운 인증 토큰 생성
+            String verificationCode = String.format("%06d", (int)(Math.random() * 1000000));
+            EmailVerificationToken token = EmailVerificationToken.builder()
+                .email(user.getEmail())
+                .token(verificationCode)
+                .tokenType(EmailVerificationToken.TokenType.EMAIL_VERIFICATION)
+                .userId(user.getId())
+                .createdAt(LocalDateTime.now())
+                .expiresAt(LocalDateTime.now().plusHours(24))
+                .used(false)
+                .build();
+            
+            tokenRepository.save(token);
+            
+            // 이메일 발송
+            emailService.sendVerificationEmail(user.getEmail(), user.getName(), verificationCode);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "인증 이메일이 재전송되었습니다."
+            ));
+            
+        } catch (Exception e) {
+            log.error("이메일 재전송 중 오류: ", e);
+            return ResponseEntity.internalServerError()
+                .body(Map.of("success", false, "error", "이메일 재전송 중 오류가 발생했습니다."));
+        }
+    }
+    
+    // 비밀번호 찾기 이메일 재전송
+    @PostMapping("/resend-password-reset")
+    public ResponseEntity<Map<String, Object>> resendPasswordReset(@RequestBody ResendPasswordResetRequest request) {
+        try {
+            log.info("비밀번호 재설정 이메일 재전송: email={}", request.getEmail());
+            
+            var userOpt = userService.findByEmail(request.getEmail());
+            if (userOpt.isEmpty()) {
+                // 보안상 사용자가 존재하지 않아도 성공 응답
+                return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "비밀번호 재설정 링크가 이메일로 재전송되었습니다."
+                ));
+            }
+            
+            User user = userOpt.get();
+            
+            // 새로운 재설정 토큰 생성
+            String resetToken = String.format("%06d", (int)(Math.random() * 1000000));
+            EmailVerificationToken token = EmailVerificationToken.builder()
+                .email(user.getEmail())
+                .token(resetToken)
+                .tokenType(EmailVerificationToken.TokenType.PASSWORD_RESET)
+                .userId(user.getId())
+                .createdAt(LocalDateTime.now())
+                .expiresAt(LocalDateTime.now().plusHours(1))
+                .used(false)
+                .build();
+                
+            tokenRepository.save(token);
+            
+            // 이메일 발송
+            emailService.sendPasswordResetEmail(user.getEmail(), user.getName(), resetToken);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "비밀번호 재설정 링크가 이메일로 재전송되었습니다."
+            ));
+            
+        } catch (Exception e) {
+            log.error("비밀번호 재설정 재전송 중 오류: ", e);
+            return ResponseEntity.internalServerError()
+                .body(Map.of("success", false, "error", "재전송 중 오류가 발생했습니다."));
+        }
+    }
+    
+    // 재전송 요청 DTO
+    public static class ResendVerificationRequest {
+        private String email;
+        
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+    }
+    
+    public static class ResendPasswordResetRequest {
+        private String email;
+        
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+    }
 }

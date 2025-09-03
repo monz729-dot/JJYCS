@@ -13,7 +13,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.beans.factory.annotation.Qualifier;
 
@@ -31,25 +30,7 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // H2 콘솔 전용 체인 - Supabase 프로필에서는 비활성화
-    @Bean
-    @Order(0)
-    @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
-        name = "spring.h2.console.enabled", 
-        havingValue = "true", 
-        matchIfMissing = false
-    )
-    public SecurityFilterChain h2ConsoleChain(HttpSecurity http) throws Exception {
-        http
-            .securityMatcher(PathRequest.toH2Console())
-            .csrf(csrf -> csrf.disable())
-            .headers(h -> h.frameOptions(f -> f.sameOrigin()))
-            .authorizeHttpRequests(a -> a.anyRequest().permitAll());
-        
-        return http.build();
-    }
-
-    // 2) 나머지 API 체인 - 임시로 모든 요청 허용
+    // API 체인 - 임시로 모든 요청 허용
     @Bean
     @Order(2)
     public SecurityFilterChain apiChain(HttpSecurity http) throws Exception {

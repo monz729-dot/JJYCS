@@ -142,8 +142,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         
         // 인증이 필요없는 경로들
         return path.startsWith("/auth/") ||
-               path.startsWith("/h2-console") ||      // 핵심: servletPath 기준
-               path.startsWith("/api/h2-console") ||  // 혹시 모를 구현 차이 대비(옵션)
                path.startsWith("/public/") ||
                path.startsWith("/v3/api-docs") ||
                path.startsWith("/swagger-ui") ||

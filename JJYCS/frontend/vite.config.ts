@@ -47,7 +47,7 @@ export default defineConfig({
     port: 3006, // package.json에 맞춰 수정
     proxy: {
       '/api': {
-        target: 'http://localhost:8081', // 백엔드 포트 수정
+        target: 'http://localhost:8080', // 백엔드 포트 수정
         changeOrigin: true,
         secure: false,
       },

@@ -24,7 +24,7 @@ spring:
     # url: jdbc:postgresql://aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres?user=postgres.suexposyicisufsnqglp&password=@4680wryip!!
     
     # Connection pooling (프로덕션 권장) - Transaction mode
-    url: jdbc:postgresql://aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres?pgbouncer=true&sslmode=require
+    url: jdbc:postgresql://aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres?sslmode=require&prepareThreshold=0
     username: postgres.suexposyicisufsnqglp
     password: ${SUPABASE_DB_PASSWORD:@4680wryip!!}
     driver-class-name: org.postgresql.Driver
@@ -32,13 +32,14 @@ spring:
     # HikariCP 설정 (Connection Pool)
     hikari:
       pool-name: YCS-LMS-Supabase-Pool
-      maximum-pool-size: 10
-      minimum-idle: 5
+      maximum-pool-size: 5
+      minimum-idle: 2
       idle-timeout: 300000
       connection-timeout: 20000
-      max-lifetime: 1200000
+      max-lifetime: 600000
       leak-detection-threshold: 60000
       connection-test-query: SELECT 1
+      auto-commit: false
       
   jpa:
     # PostgreSQL Dialect 설정
@@ -82,7 +83,7 @@ spring:
     host: smtp.gmail.com
     port: 587
     username: ${SMTP_USERNAME:monz729@gmail.com}
-    password: ${SMTP_PASSWORD:}
+    password: ${SMTP_PASSWORD:eyubylejwyuqnqvj}
     properties:
       mail:
         smtp:

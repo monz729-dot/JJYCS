@@ -21,7 +21,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .addPathPatterns("/api/**")
                 .excludePathPatterns(
                     "/api/actuator/**",  // Actuator 엔드포인트 제외
-                    "/api/h2-console/**", // H2 콘솔 제외
                     "/api/swagger-ui/**", // Swagger UI 제외
                     "/api/v3/api-docs/**" // API Docs 제외
                 );

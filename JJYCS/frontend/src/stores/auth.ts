@@ -132,19 +132,28 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await authApi.register(data)
       console.log('[AUTH] Register response:', response)
       
-      if (response.success) {
-        return { 
-          success: true, 
-          message: response.message || 'Registration successful. Please check your email for verification.' 
+      if (response.success && response.data) {
+        // response.data contains the actual backend response
+        const backendResponse = response.data
+        
+        if (backendResponse.success) {
+          return { 
+            success: true, 
+            message: backendResponse.message || 'Registration successful. Please check your email for verification.' 
+          }
+        } else {
+          error.value = backendResponse.error || '회원가입 처리 중 오류가 발생했습니다.'
+          console.error('[AUTH] Register error:', backendResponse.error, backendResponse)
+          return { success: false, error: error.value }
         }
       } else {
-        error.value = response.error || 'Registration failed'
+        error.value = response.error || '회원가입 처리 중 오류가 발생했습니다.'
         console.error('[AUTH] Register error:', response.error, response)
         return { success: false, error: error.value }
       }
     } catch (err: any) {
       console.error('[AUTH] Register exception:', err.response?.status, err.response?.data || err.message)
-      error.value = err.response?.data?.error || err.message || 'Registration failed'
+      error.value = err.response?.data?.error || err.message || '회원가입 처리 중 오류가 발생했습니다.'
       return { success: false, error: error.value }
     } finally {
       loading.value = false
