@@ -41,7 +41,9 @@
       "Bash(.mvnw.cmd clean compile)",
       "Bash(set \"SPRING_PROFILES_ACTIVE=supabase\")",
       "Bash(del test_signup.json)",
-      "Bash(del V003__Create_orders_tables.sql)"
+      "Bash(del V003__Create_orders_tables.sql)",
+      "Bash(set HSCODE_TARIFF_API_KEY=y270u255i028u267i010o090s0)",
+      "Bash(set HSCODE_EXCHANGE_API_KEY=p230m215f048a247h000v070a0)"
     ],
     "deny": [],
     "ask": [],

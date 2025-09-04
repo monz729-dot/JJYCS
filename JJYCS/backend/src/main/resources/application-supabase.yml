@@ -128,6 +128,15 @@ cors:
   allow-credentials: true
   max-age: 3600
 
+# HS 코드 API 설정
+hscode:
+  api:
+    search-key: ${HSCODE_SEARCH_API_KEY:s240o275s078n237g000a070s0}
+    tariff-key: ${HSCODE_TARIFF_API_KEY:y270u255i028u267i010o090s0}
+    exchange-key: ${HSCODE_EXCHANGE_API_KEY:p230m215f048a247h000v070a0}
+    base-url: https://unipass.customs.go.kr:38010/ext/rest
+    timeout: 10000
+
 # 로깅 설정
 logging:
   level:

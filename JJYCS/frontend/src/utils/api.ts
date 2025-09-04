@@ -10,18 +10,13 @@ class ApiClient {
 
   constructor() {
     this.client = axios.create({
-      baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+      baseURL: 'http://localhost:8080/api',
       timeout: 15000,
       withCredentials: true,
       headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-        'Accept': 'application/json, text/plain, */*',
-        'Accept-Charset': 'utf-8',
-        'Accept-Language': 'ko-KR,ko;q=0.9,en;q=0.8'
+        'Content-Type': 'application/json'
       },
-      // UTF-8 인코딩 강제
-      responseType: 'json',
-      responseEncoding: 'utf8'
+      responseType: 'json'
     })
 
     this.setupInterceptors()
@@ -37,16 +32,10 @@ class ApiClient {
           config.headers.Authorization = `Bearer ${token}`
         }
         
-        // UTF-8 헤더 강제 적용
+        // Content-Type이 없으면 기본값 설정
         if (!config.headers['Content-Type']) {
-          config.headers['Content-Type'] = 'application/json; charset=utf-8'
-        } else if (typeof config.headers['Content-Type'] === 'string' && 
-                   config.headers['Content-Type'].includes('application/json') && 
-                   !config.headers['Content-Type'].includes('charset')) {
-          config.headers['Content-Type'] += '; charset=utf-8'
+          config.headers['Content-Type'] = 'application/json'
         }
-        
-        config.headers['Accept-Charset'] = 'utf-8'
         
         return config
       },
